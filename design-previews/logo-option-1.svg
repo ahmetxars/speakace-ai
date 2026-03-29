@@ -1,0 +1,10 @@
+<svg width="960" height="320" viewBox="0 0 960 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="320" rx="32" fill="#FCF7F1"/>
+  <rect x="36" y="36" width="248" height="248" rx="64" fill="#FFF7EE" stroke="#E6D6C7" stroke-width="8"/>
+  <path d="M90 112C90 87.6995 109.699 68 134 68H186C210.301 68 230 87.6995 230 112V154C230 178.301 210.301 198 186 198H162L126 230V198H134C109.699 198 90 178.301 90 154V112Z" fill="#D95D39"/>
+  <path d="M177.305 104C166.232 95.5714 149.84 95.2966 136.98 102.612C126.053 108.824 123.841 122.792 134.409 129.034C140.294 132.51 148.027 133.321 154.115 136.253C159.045 138.628 160.108 143.945 155.242 147.197C148.517 151.692 138.592 151.113 132.129 146.962" stroke="#FFF8F2" stroke-width="14" stroke-linecap="round"/>
+  <path d="M146 84L172 84" stroke="#1D6F75" stroke-width="10" stroke-linecap="round"/>
+  <text x="334" y="146" fill="#1B120D" font-family="Inter, Arial, sans-serif" font-size="76" font-weight="800">SpeakAce</text>
+  <text x="338" y="193" fill="#1D6F75" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">AI Speaking Coach</text>
+  <text x="338" y="236" fill="#6C5A4F" font-family="Inter, Arial, sans-serif" font-size="24">Speech bubble + S mark</text>
+</svg>

@@ -44,7 +44,7 @@ function AuthPageInner() {
       })
     });
 
-    const data = (await response.json()) as { error?: string; verificationRequired?: boolean; verificationUrl?: string; needsEmailVerification?: boolean };
+    const data = (await response.json()) as { error?: string; verificationRequired?: boolean; verificationUrl?: string; needsEmailVerification?: boolean; emailSent?: boolean };
     if (!response.ok) {
       setError(data.error ?? (tr ? "Kimlik dogrulama basarisiz oldu." : "Authentication failed."));
       if (data.needsEmailVerification) {
@@ -54,7 +54,11 @@ function AuthPageInner() {
     }
 
     if (mode === "signup" && data.verificationRequired) {
-      setNotice(tr ? "Hesabin olusturuldu. Giris yapmadan once e-posta dogrulamasi gerekli." : "Your account was created. Email verification is required before signing in.");
+      setNotice(
+        data.emailSent
+          ? tr ? "Hesabin olusturuldu. Dogrulama maili gonderildi, lutfen gelen kutunu kontrol et." : "Your account was created. A verification email has been sent, so please check your inbox."
+          : tr ? "Hesabin olusturuldu. Giris yapmadan once e-posta dogrulamasi gerekli." : "Your account was created. Email verification is required before signing in."
+      );
       setActionUrl(data.verificationUrl ?? "");
       return;
     }
@@ -93,12 +97,16 @@ function AuthPageInner() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email })
     });
-    const data = (await response.json()) as { error?: string; message?: string; resetUrl?: string };
+    const data = (await response.json()) as { error?: string; message?: string; resetUrl?: string; emailSent?: boolean };
     if (!response.ok) {
       setError(data.error ?? (tr ? "Sifre sifirlama linki olusturulamadi." : "Could not create a password reset link."));
       return;
     }
-    setNotice(tr ? "Eger hesap varsa sifre sifirlama linki hazirlandi." : "If the account exists, a password reset link is ready.");
+    setNotice(
+      data.emailSent
+        ? tr ? "Eger hesap varsa sifre sifirlama maili gonderildi." : "If the account exists, a password reset email has been sent."
+        : tr ? "Eger hesap varsa sifre sifirlama linki hazirlandi." : "If the account exists, a password reset link is ready."
+    );
     setActionUrl(data.resetUrl ?? "");
   };
 
@@ -111,12 +119,16 @@ function AuthPageInner() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email })
     });
-    const data = (await response.json()) as { error?: string; verificationUrl?: string };
+    const data = (await response.json()) as { error?: string; verificationUrl?: string; emailSent?: boolean };
     if (!response.ok) {
       setError(data.error ?? (tr ? "Dogrulama linki tekrar gonderilemedi." : "Could not resend verification link."));
       return;
     }
-    setNotice(tr ? "Eger hesap hala dogrulanmadiysa yeni link hazirlandi." : "If the account is still unverified, a new link is ready.");
+    setNotice(
+      data.emailSent
+        ? tr ? "Eger hesap hala dogrulanmadiysa yeni dogrulama maili gonderildi." : "If the account is still unverified, a new verification email has been sent."
+        : tr ? "Eger hesap hala dogrulanmadiysa yeni link hazirlandi." : "If the account is still unverified, a new link is ready."
+    );
     setActionUrl(data.verificationUrl ?? "");
   };
 
@@ -203,9 +215,9 @@ function AuthPageInner() {
           {notice ? <p style={{ color: "var(--success)", margin: 0, lineHeight: 1.65 }}>{notice}</p> : null}
           {actionUrl ? (
             <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.6)" }}>
-              <strong>{tr ? "Gelisim ortaminda acilan link" : "Development link"}</strong>
+              <strong>{tr ? "Yedek link" : "Fallback link"}</strong>
               <p style={{ margin: "0.55rem 0 0.6rem", lineHeight: 1.65, color: "var(--muted)" }}>
-                {tr ? "Mail servisi baglanana kadar bu linki kullanarak akisi test edebilirsin." : "Until an email provider is connected, you can use this link to test the flow."}
+                {tr ? "Mail servisi tam baglanana kadar bu link ile akisi manuel olarak da test edebilirsin." : "Until the email provider is fully connected, you can still test the flow manually with this link."}
               </p>
               <a href={actionUrl} style={{ color: "var(--accent-deep)", fontWeight: 700, wordBreak: "break-all" }}>{actionUrl}</a>
             </div>

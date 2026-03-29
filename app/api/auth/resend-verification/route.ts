@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       message: "If that account exists and is still unverified, a verification link is ready.",
+      emailSent: "emailSent" in result ? result.emailSent : false,
       verificationUrl: "verificationUrl" in result ? result.verificationUrl : undefined
     });
   } catch (error) {

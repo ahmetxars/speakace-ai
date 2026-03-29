@@ -1,8 +1,9 @@
 import { createHash, randomBytes } from "node:crypto";
 import { compare, hash } from "bcryptjs";
-import { withAdminPrivileges } from "@/lib/admin";
+import { isAdminEmail, withAdminPrivileges } from "@/lib/admin";
 import { createMemberProfile } from "@/lib/membership";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
+import { hasEmailTransport, sendPasswordResetEmail, sendVerificationEmail } from "@/lib/server/email";
 import { MemberProfile } from "@/lib/types";
 import { getMember, upsertMember } from "@/lib/store";
 
@@ -72,6 +73,7 @@ export async function signUpWithPassword(input: { email: string; password: strin
 
   const passwordHash = await hash(input.password, 12);
   const profile = withAdminPrivileges(createMemberProfile(normalizedEmail, input.name));
+  const autoVerified = isAdminEmail(normalizedEmail);
 
   if (hasDatabaseUrl()) {
     const sql = getSql();
@@ -84,16 +86,16 @@ export async function signUpWithPassword(input: { email: string; password: strin
 
     const rows = await sql<MemberProfile[]>`
       insert into users (id, email, name, role, plan, password_hash, email_verified, created_at)
-      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.plan}, ${passwordHash}, ${false}, ${profile.createdAt})
+      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.plan}, ${passwordHash}, ${autoVerified}, ${profile.createdAt})
       returning id, email, name, role, plan, email_verified as "emailVerified", created_at as "createdAt"
     `;
 
     return withAdminPrivileges(rows[0]);
   }
 
-  await upsertMember(profile);
+  await upsertMember({ ...profile, emailVerified: autoVerified });
   getMemoryAuthStore().passwordHashes.set(profile.id, passwordHash);
-  return profile;
+  return { ...profile, emailVerified: autoVerified };
 }
 
 export async function signInWithPassword(input: { email: string; password: string }) {
@@ -118,8 +120,12 @@ export async function signInWithPassword(input: { email: string; password: strin
     if (!isValid) {
       throw new Error("Invalid email or password.");
     }
-    if (!user.emailVerified) {
+    if (!user.emailVerified && !isAdminEmail(normalizedEmail)) {
       throw new Error("Please verify your email before signing in.");
+    }
+    if (!user.emailVerified && isAdminEmail(normalizedEmail)) {
+      await sql`update users set email_verified = true where id = ${user.id}`;
+      user.emailVerified = true;
     }
 
     return withAdminPrivileges({
@@ -147,8 +153,12 @@ export async function signInWithPassword(input: { email: string; password: strin
   if (!isValid) {
     throw new Error("Invalid email or password.");
   }
-  if (!profile.emailVerified) {
+  if (!profile.emailVerified && !isAdminEmail(normalizedEmail)) {
     throw new Error("Please verify your email before signing in.");
+  }
+  if (!profile.emailVerified && isAdminEmail(normalizedEmail)) {
+    await upsertMember({ ...profile, emailVerified: true });
+    return withAdminPrivileges({ ...profile, emailVerified: true });
   }
 
   return withAdminPrivileges(profile);
@@ -332,9 +342,19 @@ export async function createEmailVerificationFlow(email: string) {
     ttlMs: VERIFY_TOKEN_TTL_MS
   });
 
+  const verificationUrl = buildAppUrl(`/auth?verify=${token}`);
+  if (hasEmailTransport()) {
+    await sendVerificationEmail({
+      to: user.email,
+      name: user.name,
+      verificationUrl
+    });
+  }
+
   return {
     ok: true as const,
-    verificationUrl: buildAppUrl(`/auth?verify=${token}`)
+    verificationUrl,
+    emailSent: hasEmailTransport()
   };
 }
 
@@ -387,9 +407,19 @@ export async function createPasswordResetFlow(email: string) {
     ttlMs: RESET_TOKEN_TTL_MS
   });
 
+  const resetUrl = buildAppUrl(`/auth?reset=${token}`);
+  if (hasEmailTransport()) {
+    await sendPasswordResetEmail({
+      to: resolvedProfile.email,
+      name: resolvedProfile.name,
+      resetUrl
+    });
+  }
+
   return {
     ok: true as const,
-    resetUrl: buildAppUrl(`/auth?reset=${token}`)
+    resetUrl,
+    emailSent: hasEmailTransport()
   };
 }
 

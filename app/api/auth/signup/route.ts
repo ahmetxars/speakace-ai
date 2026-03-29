@@ -6,6 +6,7 @@ import {
   getSessionCookieOptions,
   signUpWithPassword
 } from "@/lib/server/auth";
+import { isAdminEmail } from "@/lib/admin";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 
 export async function POST(request: Request) {
@@ -26,12 +27,14 @@ export async function POST(request: Request) {
       password: body.password ?? "",
       name: body.name ?? ""
     });
+    const autoVerified = isAdminEmail(profile.email);
     const verification = await createEmailVerificationFlow(profile.email);
     const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), "", getSessionCookieOptions(new Date(0)));
     return NextResponse.json({
       profile,
-      verificationRequired: true,
+      verificationRequired: !autoVerified,
+      emailSent: "emailSent" in verification ? verification.emailSent : false,
       verificationUrl: "verificationUrl" in verification ? verification.verificationUrl : undefined
     });
   } catch (error) {

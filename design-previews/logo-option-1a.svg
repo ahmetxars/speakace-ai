@@ -1,0 +1,11 @@
+<svg width="1080" height="360" viewBox="0 0 1080 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1080" height="360" rx="36" fill="#FCF7F1"/>
+  <rect x="42" y="42" width="276" height="276" rx="72" fill="#FFF8F1" stroke="#E7D7C8" stroke-width="8"/>
+  <path d="M100 128C100 99.2812 123.281 76 152 76H211C239.719 76 263 99.2812 263 128V176C263 204.719 239.719 228 211 228H180L142 262V228H152C123.281 228 100 204.719 100 176V128Z" fill="#D95D39"/>
+  <path d="M207 111C195.465 100.781 177.52 98.8019 162.374 104.674C151.253 108.986 145.14 117.13 145.14 126.175C145.14 136.194 152.08 143.069 165.96 146.799L179.194 150.359C188.718 152.921 193.48 156.715 193.48 162.877C193.48 171.922 183.891 178.277 170.205 178.277C158.541 178.277 148.308 174.676 139.883 167.811" stroke="#FFF9F4" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M273 108C282.196 117.387 288.094 129.69 289.77 143.198" stroke="#1D6F75" stroke-width="8" stroke-linecap="round"/>
+  <path d="M278 169C275.977 179.028 271.281 188.328 264.391 196.036" stroke="#1D6F75" stroke-width="8" stroke-linecap="round"/>
+  <text x="370" y="155" fill="#1A120D" font-family="Inter, Arial, sans-serif" font-size="86" font-weight="800" letter-spacing="-2">SpeakAce</text>
+  <text x="374" y="206" fill="#1D6F75" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700">AI Speaking Coach</text>
+  <text x="374" y="255" fill="#6A594E" font-family="Inter, Arial, sans-serif" font-size="25">Refined speech bubble mark with warm, confident coaching energy</text>
+</svg>

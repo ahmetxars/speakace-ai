@@ -1,0 +1,12 @@
+<svg width="1080" height="360" viewBox="0 0 1080 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1080" height="360" rx="36" fill="#FCF7F1"/>
+  <rect x="42" y="42" width="276" height="276" rx="72" fill="#FFF8F1" stroke="#E7D7C8" stroke-width="8"/>
+  <path d="M99 130C99 100.729 122.729 77 152 77H210C239.271 77 263 100.729 263 130V177C263 206.271 239.271 230 210 230H181L143 262V230H152C122.729 230 99 206.271 99 177V130Z" fill="#D95D39"/>
+  <path d="M202 111C191.829 103.314 177.205 101.899 164.332 106.825C152.788 111.242 146.109 119.226 146.109 127.892C146.109 137.366 152.467 143.807 165.184 147.214L179.689 151.101C189.065 153.614 193.753 157.536 193.753 163.489C193.753 172.551 184.024 178.854 170.033 178.854C158.247 178.854 147.798 175.125 138.685 167.668" stroke="#FFF8F2" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="236" cy="102" r="9" fill="#1D6F75"/>
+  <circle cx="258" cy="124" r="7" fill="#1D6F75" opacity="0.72"/>
+  <circle cx="271" cy="147" r="5" fill="#1D6F75" opacity="0.5"/>
+  <text x="370" y="155" fill="#1A120D" font-family="Inter, Arial, sans-serif" font-size="86" font-weight="800" letter-spacing="-2">SpeakAce</text>
+  <text x="374" y="206" fill="#1D6F75" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700">AI Speaking Coach</text>
+  <text x="374" y="255" fill="#6A594E" font-family="Inter, Arial, sans-serif" font-size="25">Soft signal accent for a more polished coaching brand</text>
+</svg>

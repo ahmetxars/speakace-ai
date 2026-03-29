@@ -1,0 +1,16 @@
+<svg width="960" height="320" viewBox="0 0 960 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="320" rx="32" fill="#FCF7F1"/>
+  <rect x="36" y="36" width="248" height="248" rx="64" fill="#FFF7EE" stroke="#E6D6C7" stroke-width="8"/>
+  <rect x="105" y="82" width="110" height="120" rx="55" fill="#1D6F75"/>
+  <rect x="134" y="207" width="52" height="20" rx="10" fill="#1D6F75"/>
+  <rect x="122" y="226" width="76" height="20" rx="10" fill="#1D6F75"/>
+  <path d="M236 203L252 185" stroke="#D95D39" stroke-width="12" stroke-linecap="round"/>
+  <path d="M205 180L229 152" stroke="#D95D39" stroke-width="12" stroke-linecap="round"/>
+  <path d="M177 160L205 126" stroke="#D95D39" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="118" cy="124" r="10" fill="#FFF8F2"/>
+  <circle cx="150" cy="112" r="10" fill="#FFF8F2"/>
+  <circle cx="182" cy="124" r="10" fill="#FFF8F2"/>
+  <text x="334" y="146" fill="#1B120D" font-family="Inter, Arial, sans-serif" font-size="76" font-weight="800">SpeakAce</text>
+  <text x="338" y="193" fill="#D95D39" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">AI Speaking Coach</text>
+  <text x="338" y="236" fill="#6C5A4F" font-family="Inter, Arial, sans-serif" font-size="24">Microphone + growth signal</text>
+</svg>

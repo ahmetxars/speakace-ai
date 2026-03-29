@@ -24,6 +24,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       message: "If that account exists, a password reset link is ready.",
+      emailSent: "emailSent" in result ? result.emailSent : false,
       resetUrl: "resetUrl" in result ? result.resetUrl : undefined
     });
   } catch (error) {

@@ -1,0 +1,12 @@
+<svg width="1080" height="360" viewBox="0 0 1080 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1080" height="360" rx="36" fill="#FCF7F1"/>
+  <rect x="42" y="42" width="276" height="276" rx="72" fill="#FFF8F1" stroke="#E7D7C8" stroke-width="8"/>
+  <path d="M96 133C96 100.968 121.968 75 154 75H208C240.032 75 266 100.968 266 133V180C266 212.032 240.032 238 208 238H176L137 270V238H154C121.968 238 96 212.032 96 180V133Z" fill="#1D6F75"/>
+  <path d="M211 116C201.067 107.444 185.526 105.742 172.162 110.885C160.345 115.432 153.438 123.775 153.438 132.975C153.438 143.258 160.801 150.382 175.529 154.21L187.66 157.365C196.753 159.731 201.3 163.271 201.3 169.086C201.3 177.999 192.207 184.159 178.918 184.159C167.229 184.159 156.749 180.562 147.477 173.366" stroke="#FFF8F2" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M103 101L120 110" stroke="#D95D39" stroke-width="8" stroke-linecap="round"/>
+  <path d="M268 216L284 226" stroke="#D95D39" stroke-width="8" stroke-linecap="round"/>
+  <path d="M289 136H306" stroke="#D95D39" stroke-width="8" stroke-linecap="round"/>
+  <text x="370" y="155" fill="#1A120D" font-family="Inter, Arial, sans-serif" font-size="86" font-weight="800" letter-spacing="-2">SpeakAce</text>
+  <text x="374" y="206" fill="#D95D39" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700">AI Speaking Coach</text>
+  <text x="374" y="255" fill="#6A594E" font-family="Inter, Arial, sans-serif" font-size="25">Cool-tone premium variant with stronger product feel</text>
+</svg>
