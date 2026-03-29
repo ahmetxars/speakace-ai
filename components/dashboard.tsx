@@ -1,0 +1,985 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useAppState } from "@/components/providers";
+import { trackClientEvent } from "@/lib/analytics-client";
+import { AnalyticsSummary } from "@/lib/analytics-store";
+import { HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership } from "@/lib/types";
+
+const emptySummary: ProgressSummary = {
+  totalSessions: 0,
+  averageScore: 0,
+  streakDays: 0,
+  freeSessionsRemaining: 4,
+  remainingMinutesToday: 8,
+  currentPlan: "free",
+  recentSessions: []
+};
+
+export function Dashboard() {
+  const { signedIn, signOut, currentUser, language } = useAppState();
+  const tr = language === "tr";
+  const [summary, setSummary] = useState<ProgressSummary>(emptySummary);
+  const [targetScore, setTargetScore] = useState<string>("");
+  const [analytics, setAnalytics] = useState<AnalyticsSummary>({
+    totalEvents: 0,
+    pageViews: 0,
+    practiceStarts: 0,
+    uploads: 0,
+    simulationsCompleted: 0,
+    mockReportViews: 0
+  });
+  const [weeklyChecklist, setWeeklyChecklist] = useState<Record<string, boolean>>({});
+  const [joinedClasses, setJoinedClasses] = useState<StudentClassMembership[]>([]);
+  const [joinCode, setJoinCode] = useState("");
+  const [joinNotice, setJoinNotice] = useState("");
+  const [joinError, setJoinError] = useState("");
+  const [homework, setHomework] = useState<HomeworkAssignment[]>([]);
+  const [sharedStudyClasses, setSharedStudyClasses] = useState<
+    Array<{ classId: string; className: string; teacherName: string; items: SharedClassStudyItem[] }>
+  >([]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    fetch(`/api/progress/summary?userId=${encodeURIComponent(currentUser.id)}`)
+      .then((response) => response.json())
+      .then((data: ProgressSummary) => setSummary(data))
+      .catch(() => setSummary(emptySummary));
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!signedIn || !currentUser || currentUser.isTeacher) {
+      setJoinedClasses([]);
+      return;
+    }
+
+    fetch("/api/classes/join")
+      .then((response) => response.json())
+      .then((data: { classes?: StudentClassMembership[] }) => setJoinedClasses(data.classes ?? []))
+      .catch(() => setJoinedClasses([]));
+  }, [currentUser, signedIn]);
+
+  useEffect(() => {
+    if (!signedIn || !currentUser || currentUser.isTeacher) {
+      setHomework([]);
+      return;
+    }
+    fetch("/api/homework")
+      .then((response) => response.json())
+      .then((data: { assignments?: HomeworkAssignment[] }) => setHomework(data.assignments ?? []))
+      .catch(() => setHomework([]));
+  }, [currentUser, signedIn]);
+
+  useEffect(() => {
+    if (!signedIn || !currentUser || currentUser.isTeacher) {
+      setSharedStudyClasses([]);
+      return;
+    }
+    fetch("/api/classes/shared-study")
+      .then((response) => response.json())
+      .then((data: { classes?: Array<{ classId: string; className: string; teacherName: string; items: SharedClassStudyItem[] }> }) =>
+        setSharedStudyClasses(data.classes ?? [])
+      )
+      .catch(() => setSharedStudyClasses([]));
+  }, [currentUser, signedIn]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setAnalytics({
+        totalEvents: 0,
+        pageViews: 0,
+        practiceStarts: 0,
+        uploads: 0,
+        simulationsCompleted: 0,
+        mockReportViews: 0
+      });
+      return;
+    }
+
+    fetch(`/api/analytics/summary?userId=${encodeURIComponent(currentUser.id)}`)
+      .then((response) => response.json())
+      .then((data: AnalyticsSummary) => setAnalytics(data))
+      .catch(() =>
+        setAnalytics({
+          totalEvents: 0,
+          pageViews: 0,
+          practiceStarts: 0,
+          uploads: 0,
+          simulationsCompleted: 0,
+          mockReportViews: 0
+        })
+      );
+  }, [currentUser]);
+
+  const scoredSessions = useMemo(
+    () => summary.recentSessions.filter((session) => session.report),
+    [summary.recentSessions]
+  );
+
+  const latestExamType = scoredSessions[0]?.examType ?? "IELTS";
+  const storageKey = currentUser ? `speakace-target-${currentUser.id}` : "speakace-target-guest";
+  const checklistStorageKey = currentUser ? `speakace-weekly-checklist-${currentUser.id}-${getIsoWeekKey(new Date())}` : `speakace-weekly-checklist-guest-${getIsoWeekKey(new Date())}`;
+
+  useEffect(() => {
+    const stored = typeof window !== "undefined" ? window.localStorage.getItem(storageKey) : null;
+    if (stored !== null) {
+      setTargetScore(stored);
+      return;
+    }
+
+    setTargetScore("");
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(checklistStorageKey);
+    if (!stored) {
+      setWeeklyChecklist({});
+      return;
+    }
+
+    try {
+      setWeeklyChecklist(JSON.parse(stored) as Record<string, boolean>);
+    } catch {
+      setWeeklyChecklist({});
+    }
+  }, [checklistStorageKey]);
+
+  const handleTargetScoreChange = (value: string) => {
+    setTargetScore(value);
+    if (typeof window !== "undefined") {
+      if (value) {
+        window.localStorage.setItem(storageKey, value);
+      } else {
+        window.localStorage.removeItem(storageKey);
+      }
+    }
+    if (currentUser?.id) {
+      void trackClientEvent({ userId: currentUser.id, event: "target_score_updated", path: "/app" });
+    }
+  };
+
+  const bestScore = useMemo(() => {
+    if (!scoredSessions.length) return null;
+    return Math.max(...scoredSessions.map((session) => session.report?.overall ?? 0));
+  }, [scoredSessions]);
+
+  const weakestSkill = useMemo(() => {
+    const buckets = new Map<string, { total: number; count: number }>();
+
+    scoredSessions.forEach((session) => {
+      session.report?.categories.forEach((category) => {
+        const current = buckets.get(category.label) ?? { total: 0, count: 0 };
+        buckets.set(category.label, {
+          total: current.total + category.score,
+          count: current.count + 1
+        });
+      });
+    });
+
+    const averaged = [...buckets.entries()].map(([label, stats]) => ({
+      label,
+      score: Number((stats.total / stats.count).toFixed(1))
+    }));
+
+    if (!averaged.length) return null;
+    return averaged.sort((a, b) => a.score - b.score)[0];
+  }, [scoredSessions]);
+
+  const recentTrend = useMemo(() => scoredSessions.slice(0, 7).reverse(), [scoredSessions]);
+  const numericTarget = Number(targetScore || 0);
+  const scoreGap = numericTarget && summary.averageScore ? Number((numericTarget - summary.averageScore).toFixed(1)) : null;
+  const targetLabel = latestExamType === "IELTS" ? (tr ? "hedef band" : "target band") : tr ? "hedef skor" : "target score";
+
+  const nextStudyFocus = useMemo(() => {
+    if (!weakestSkill) {
+      return tr
+        ? "Duzenli speaking yaptikca sistem hangi skill tarafinda daha cok calisman gerektigini daha net gosterecek. Once net, tamamlanmis ve dogal cevaplar vermeye odaklan."
+        : "As you complete more speaking attempts, the dashboard will identify the skill that needs the most work. For now, focus on complete, natural, and clearly structured answers.";
+    }
+
+    const focusMap: Record<string, { tr: string; en: string }> = {
+      "Fluency and Coherence": {
+        tr: "Akicilik ve tutarlilik su anda en zayif alanin. Fikirlerini daha temiz baglayip duraksamalari azaltman puani daha hizli yukari ceker.",
+        en: "Fluency and coherence is your weakest area right now. Smoother transitions and fewer long pauses will raise your score faster."
+      },
+      "Lexical Resource": {
+        tr: "Kelime kullanimi gelismeli. Ayni kelimeleri tekrar etmek yerine konuya uygun 1-2 daha guclu ifade kullan.",
+        en: "Vocabulary range needs work. Replace repeated words with one or two stronger topic-specific expressions."
+      },
+      "Grammatical Range and Accuracy": {
+        tr: "Dilbilgisel dogruluk geride kaliyor. Bir tik daha yavas konusup daha temiz ve kontrollu cumleler kurmak faydali olacak.",
+        en: "Grammatical accuracy is lagging. Slow down slightly and build cleaner, more controlled sentences."
+      },
+      Pronunciation: {
+        tr: "Telaffuz tarafinda calisma lazim. Kelime sonlarini, vurgu noktalarini ve anlasilir ritmi daha net vermeye odaklan.",
+        en: "Pronunciation needs more work. Focus on clearer word endings, stress, and a more understandable rhythm."
+      },
+      Delivery: {
+        tr: "Delivery seni asagi cekiyor. Ritim, netlik ve nefes kontrolune dikkat ederek daha profesyonel bir duyum yakalayabilirsin.",
+        en: "Delivery is pulling your score down. Better pace, clarity, and breath control will make your response sound more polished."
+      },
+      "Language Use": {
+        tr: "Dil kullanimi daha cesitli olmali. Ayni kaliplari tekrar etmek yerine cumlelerini farkli yapilarla genislet.",
+        en: "Language use should be more varied. Expand your sentence patterns instead of repeating the same structures."
+      },
+      "Topic Development": {
+        tr: "Icerik gelisimi zayif. Her cevapta net bir ana fikir, bir neden ve bir ornek kullanmaya calis.",
+        en: "Topic development is weak. Try to include a clear main idea, one reason, and one supporting example in every answer."
+      }
+    };
+
+    return tr
+      ? focusMap[weakestSkill.label]?.tr ?? "Bir sonraki denemede en zayif skill'ine odaklan."
+      : focusMap[weakestSkill.label]?.en ?? "Focus on your weakest skill in the next attempt.";
+  }, [tr, weakestSkill]);
+
+  const roadmap = useMemo(() => {
+    if (!summary.averageScore) {
+      return tr
+        ? "Henuz yeterli speaking denemesi yok. Once 3-4 farkli task coz, sonra sistem ortalamana gore daha isabetli bir yol plani cikarir."
+        : "You do not have enough scored attempts yet. Complete 3-4 different tasks first, then the roadmap becomes much more reliable.";
+    }
+
+    if (!numericTarget) {
+      return tr
+        ? "Istege bagli bir hedef band belirledikten sonra sistem ortalama skorun ile hedef arasindaki farka gore daha net bir yol cizecek. Simdilik odak, dogal ve tamamlanmis cevaplar vermek olmali."
+        : "Once you set an optional target score, the dashboard will map your current average against that goal more clearly. For now, focus on natural and complete responses.";
+    }
+
+    if ((scoreGap ?? 0) <= 0) {
+      return tr
+        ? `Ortalaman su an ${targetLabel} seviyene cok yakin ya da ustunde. Bundan sonraki asama puani korurken istikrarli kaliteyi surdurmek: daha net acilis, daha temiz baglanti ve daha dogal bir ritim.`
+        : `Your average is already close to or above your ${targetLabel}. The next phase is consistency: cleaner openings, smoother linking, and a more natural rhythm.`;
+    }
+
+    if ((scoreGap ?? 0) >= (latestExamType === "IELTS" ? 1.2 : 0.8)) {
+      return tr
+        ? `Hedefin ile ortalaman arasinda belirgin bir fark var. En hizli ilerleme icin once cevap iskeletini sabitle, sonra her cevapta reason + example kullan, en son zayif skill'ini ayri drill ile guclendir.`
+        : `There is still a meaningful gap between your average and your target. The fastest path is to stabilize your answer structure first, then add a clear reason and example, and finally train your weakest skill separately.`;
+    }
+
+    return tr
+      ? `Hedefine yaklasiyorsun. Bu seviyede skoru yukari tasiyan sey daha olgun ornekler, daha dogal baglanti kelimeleri ve gereksiz tekrarlarin azalmasidir.`
+      : `You are getting close to your target. At this level, stronger examples, more natural linking, and fewer repeated phrases will move the score higher.`;
+  }, [latestExamType, numericTarget, scoreGap, summary.averageScore, targetLabel, tr]);
+
+  const strategyTips = useMemo(() => {
+    if (latestExamType === "IELTS") {
+      return tr
+        ? [
+            "Hazir kalip cumleleri ezberleyip her soruya yapistirma; examiner bunu hizli fark eder ve cevap dogalligini dusurur.",
+            "Part 1'de direkt cevap + 1 neden, Part 2'de giris-gelisme-kapanis, Part 3'te opinion + reason + example kullan.",
+            "Dogal baglanti kelimeleri kullan; ama yapay, asiri resmi ve ezber hissi veren kaliplar kullanma.",
+            "Ayni soruyu ikinci kez cozup improved answer ile kendi transcript'ini karsilastirman en hizli ilerleme yollarindan biridir."
+          ]
+        : [
+            "Do not glue memorized template sentences onto every answer; examiners notice that quickly and it hurts naturalness.",
+            "Use direct answer + 1 reason in Part 1, opening-middle-close in Part 2, and opinion + reason + example in Part 3.",
+            "Use natural linking phrases, but avoid sounding scripted or overly formal.",
+            "Repeating the same question once more and comparing your transcript with the improved answer is one of the fastest ways to improve."
+          ];
+    }
+
+    return tr
+      ? [
+          "TOEFL integrated task'lerde kendi fikrini eklemen gerekmiyorsa source'u temiz ozetle; gereksiz ekstra yorum ekleme.",
+          "Notlarini ana konu + speaker/example mantigiyla tut ki cevap verirken dagilma.",
+          "Kisa yapisal kalip sozler kullanabilirsin; ama cevabin ana icerigi her zaman task'e ozel olmali.",
+          "Ayni task'i tekrar cozup improved answer ile karsilastirmak source tasima becerini hizla guclendirir."
+        ]
+      : [
+          "In TOEFL integrated tasks, summarize the source material cleanly instead of adding extra opinion when it is not needed.",
+          "Take notes as main point + speaker/example so your response stays organized.",
+          "Short structural phrases are fine, but the core content should always stay task-specific.",
+          "Repeating the same task and comparing it with the improved answer quickly improves source-transfer skill."
+        ];
+  }, [latestExamType, tr]);
+
+  const weeklyPlan = useMemo(() => {
+    const weakLabel = weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : tr ? "temel yapi" : "basic structure";
+
+    if (!summary.totalSessions) {
+      return tr
+        ? [
+            "Bugun 2 farkli speaking task coz ve net, tamamlanmis cevap vermeye odaklan.",
+            "Result ekraninda improved answer ile kendi transcript'ini karsilastir.",
+            "Henuz hiz degil, anlasilirlik ve yapiyi onceliklendir."
+          ]
+        : [
+            "Complete 2 different speaking tasks today and focus on giving complete answers.",
+            "Compare your transcript with the improved answer on the result screen.",
+            "Do not chase speed yet; prioritize clarity and structure first."
+          ];
+    }
+
+    if ((scoreGap ?? 0) > 0.8 || !numericTarget) {
+      return tr
+        ? [
+            "Her practice gununde bir yeni soru ve bir tekrar soru coz.",
+            `Ikinci denemede ozellikle ${weakLabel} tarafina odaklan.`,
+            "Her cevapta en az bir neden ve bir ornek kullanmadan bitirme."
+          ]
+        : [
+            "On each practice day, do one new prompt and one repeat prompt.",
+            `Use the second attempt to focus specifically on ${weakLabel}.`,
+            "Do not finish an answer without at least one reason and one example."
+          ];
+    }
+
+    return tr
+      ? [
+          "Bu hafta kaliteyi yukari cekmek icin daha dogal acilislar ve daha olgun ornekler kullan.",
+          `Her gun kisa bir ${weakLabel} drill'i ekle.`,
+          "Ezber kalip yerine esnek, kisa ve dogal baglanti ifadeleri tercih et."
+        ]
+      : [
+          "This week, focus on more natural openings and more mature examples to lift quality.",
+          `Add a short daily ${weakLabel} drill.`,
+          "Prefer flexible and natural linking phrases over memorized template blocks."
+        ];
+  }, [numericTarget, scoreGap, summary.totalSessions, tr, weakestSkill]);
+
+  const weeklyChecklistItems = useMemo(
+    () =>
+      weeklyPlan.slice(0, 3).map((step, index) => ({
+        id: `weekly-${index + 1}`,
+        text: step,
+        done: Boolean(weeklyChecklist[`weekly-${index + 1}`])
+      })),
+    [weeklyChecklist, weeklyPlan]
+  );
+
+  const completedChecklistCount = weeklyChecklistItems.filter((item) => item.done).length;
+  const streakCalendar = useMemo(() => buildRecentStreakCalendar(summary.recentSessions), [summary.recentSessions]);
+
+  const targetGapNote = useMemo(() => {
+    if (!numericTarget) {
+      return tr ? "Istege bagli hedef secilmedi" : "No optional target selected";
+    }
+    if (!summary.averageScore) {
+      return tr ? "Yeterli skor olusunca fark burada gorunecek" : "The gap will appear here once you have enough scored attempts";
+    }
+    if ((scoreGap ?? 0) <= 0) {
+      return tr ? "Hedef band / skor seviyesine ulasildi" : "You are already at or above your target";
+    }
+    return tr ? `${scoreGap} puanlik fark kapatilacak` : `${scoreGap} points left to close the gap`;
+  }, [numericTarget, scoreGap, summary.averageScore, tr]);
+
+  const overdueHomeworkCount = useMemo(
+    () => homework.filter((item) => !item.completedAt && item.dueAt && new Date(item.dueAt).getTime() < Date.now()).length,
+    [homework]
+  );
+  const dueSoonHomeworkCount = useMemo(
+    () =>
+      homework.filter((item) => {
+        if (item.completedAt || !item.dueAt) return false;
+        const time = new Date(item.dueAt).getTime();
+        const now = Date.now();
+        return time >= now && time <= now + 1000 * 60 * 60 * 24 * 2;
+      }).length,
+    [homework]
+  );
+
+  const toggleChecklistItem = (id: string) => {
+    setWeeklyChecklist((current) => {
+      const next = { ...current, [id]: !current[id] };
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(checklistStorageKey, JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
+  const joinClass = async () => {
+    setJoinError("");
+    setJoinNotice("");
+    const response = await fetch("/api/classes/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ joinCode })
+    });
+    const data = (await response.json()) as { error?: string; classroom?: { name: string } };
+    if (!response.ok) {
+      setJoinError(data.error ?? (tr ? "Sinifa katilinamadi." : "Could not join class."));
+      return;
+    }
+    setJoinCode("");
+    setJoinNotice(tr ? "Sinifa katilim basarili." : "You joined the class.");
+    const refresh = await fetch("/api/classes/join");
+    const refreshData = (await refresh.json()) as { classes?: StudentClassMembership[] };
+    setJoinedClasses(refreshData.classes ?? []);
+  };
+
+  const completeHomework = async (assignmentId: string) => {
+    const response = await fetch("/api/homework", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignmentId })
+    });
+    const data = (await response.json()) as { assignment?: HomeworkAssignment };
+    if (!response.ok || !data.assignment) return;
+    setHomework((current) => current.map((item) => (item.id === assignmentId ? data.assignment! : item)));
+  };
+
+  const mistakeNotebook = useMemo(() => {
+    const improvementCounts = new Map<string, number>();
+    const fillerCounts = new Map<string, number>();
+
+    scoredSessions.forEach((session) => {
+      session.report?.improvements.forEach((item) => {
+        improvementCounts.set(item, (improvementCounts.get(item) ?? 0) + 1);
+      });
+      session.report?.fillerWords.forEach((item) => {
+        const normalized = item.trim();
+        if (!normalized) return;
+        fillerCounts.set(normalized, (fillerCounts.get(normalized) ?? 0) + 1);
+      });
+    });
+
+    const repeatedImprovements = [...improvementCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([text, count]) => ({ text, count }));
+
+    const repeatedFillers = [...fillerCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([text, count]) => ({ text, count }));
+
+    return {
+      repeatedImprovements,
+      repeatedFillers,
+      weakSkillLabel: weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : null
+    };
+  }, [scoredSessions, tr, weakestSkill]);
+
+  return (
+    <div className="page-shell section" style={{ display: "grid", gap: "1.4rem" }}>
+      <section
+        className="card"
+        style={{
+          padding: "1.6rem",
+          display: "grid",
+          gap: "1.2rem",
+          gridTemplateColumns: "minmax(280px, 1.3fr) repeat(3, minmax(180px, 1fr))"
+        }}
+      >
+        <div>
+          <span className="eyebrow">{tr ? "Panel" : "Dashboard"}</span>
+          <h1 style={{ fontSize: "clamp(2rem, 4vw, 3.4rem)", marginBottom: "0.8rem" }}>{tr ? "Speaking ilerleme panelin" : "Your speaking progress board"}</h1>
+          <p style={{ color: "var(--muted)", lineHeight: 1.65 }}>
+            {tr
+              ? "Burasi artik sadece skor aldigin bir alan degil. Hangi skill'in geride kaldigini, en iyi sonucunu, hedefini ve sonraki calisma odagini buradan gorebilirsin."
+              : "This is no longer just a score screen. You can now track your weakest skill, best result, target, and smartest next study focus from one place."}
+          </p>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", marginTop: "1rem" }}>
+            <Link className="button button-primary" href="/app/practice">
+              {tr ? "Pratige basla" : "Start practice"}
+            </Link>
+            {currentUser?.isTeacher ? (
+              <Link className="button button-secondary" href="/app/teacher">
+                {tr ? "Ogretmen paneli" : "Teacher panel"}
+              </Link>
+            ) : null}
+            <Link className="button button-secondary" href="/app/billing">
+              {tr ? "Planini gor" : "View plan"}
+            </Link>
+          </div>
+        </div>
+
+        <StatCard label={tr ? "Toplam deneme" : "Total attempts"} value={String(summary.totalSessions)} note={tr ? "Tum speaking sessionlarin" : "All speaking sessions so far"} />
+        <StatCard label="Best score" value={bestScore === null ? "-" : String(bestScore)} note={tr ? "Son denemelerdeki en iyi sonucun" : "Your best result across recent attempts"} />
+        <TargetCard examType={latestExamType} targetScore={targetScore} onChange={handleTargetScoreChange} tr={tr} />
+      </section>
+
+      <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
+        <StatCard label={tr ? "Ortalama tahmin" : "Average estimate"} value={summary.averageScore ? String(summary.averageScore) : tr ? "Skor yok" : "No score"} note={tr ? "Son denemelerin genel ortalamasi" : "Across your recent attempts"} />
+        <StatCard label="Weakest skill" value={weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : "-"} note={tr ? "En cok calisman gereken alan" : "The area that needs the most work"} />
+        <StatCard label="Streak" value={String(summary.streakDays)} note={tr ? "Arka arkaya calisma gunlerin" : "Your current streak in practice days"} />
+        <StatCard label={tr ? "Hedef farki" : "Target gap"} value={numericTarget && scoreGap !== null ? (scoreGap <= 0 ? "0" : String(scoreGap)) : "-"} note={targetGapNote} />
+      </section>
+
+      <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
+        <StatCard label={tr ? "Sayfa goruntuleme" : "Page views"} value={String(analytics.pageViews)} note={tr ? "Panel ve sonuc sayfasi ziyaretleri" : "Visits across dashboard and result pages"} />
+        <StatCard label={tr ? "Practice baslangici" : "Practice starts"} value={String(analytics.practiceStarts)} note={tr ? "Konusma denemesi baslatma sayin" : "How many times you started practice"} />
+        <StatCard label={tr ? "Yuklenen kayit" : "Uploaded recordings"} value={String(analytics.uploads)} note={tr ? "Transcript icin giden ses kayitlari" : "Recordings sent for transcript"} />
+        <StatCard label={tr ? "Tamamlanan simulasyon" : "Completed simulations"} value={String(analytics.simulationsCompleted)} note={tr ? "Bitirilen tam mock sinavlar" : "Full mock exams completed"} />
+      </section>
+
+      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1.3fr) minmax(280px, 0.9fr)", gap: "1rem", alignItems: "start" }}>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Trend" : "Trend"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Son 7 deneme trendi" : "Last 7 attempt trend"}</h2>
+          </div>
+
+          {recentTrend.length ? (
+            <div style={{ display: "grid", gap: "0.7rem" }}>
+              {recentTrend.map((session) => {
+                const score = session.report?.overall ?? 0;
+                const maxScore = session.examType === "IELTS" ? 9 : 4;
+                const width = Math.max((score / maxScore) * 100, 8);
+
+                return (
+                  <Link
+                    key={session.id}
+                    href={`/app/results/${session.id}`}
+                    style={{ display: "grid", gridTemplateColumns: "150px 1fr 56px", gap: "0.8rem", alignItems: "center", textDecoration: "none", color: "inherit" }}
+                  >
+                    <span style={{ color: "var(--muted)", fontSize: "0.92rem" }}>{session.prompt.title}</span>
+                    <div style={{ height: 12, borderRadius: 999, background: "rgba(29, 111, 117, 0.12)", overflow: "hidden" }}>
+                      <div style={{ width: `${width}%`, height: "100%", background: "linear-gradient(90deg, var(--accent), var(--accent-cool))" }} />
+                    </div>
+                    <strong>{score || "-"}</strong>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <p style={{ color: "var(--muted)", margin: 0 }}>{tr ? "Trend gostermek icin henuz yeterli deneme yok." : "You need a few more attempts before the trend becomes useful."}</p>
+          )}
+        </div>
+
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Odak" : "Focus"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Next study focus" : "Next study focus"}</h2>
+          </div>
+          <p style={{ color: "var(--text)", lineHeight: 1.75, margin: 0 }}>{nextStudyFocus}</p>
+          <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
+            <strong>{tr ? "Yol plani" : "Roadmap"}</strong>
+            <p style={{ margin: "0.55rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>{roadmap}</p>
+          </div>
+        </div>
+      </section>
+
+      {signedIn && !currentUser?.isTeacher ? (
+        <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 0.9fr) minmax(320px, 1.1fr)", gap: "1rem", alignItems: "start" }}>
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+            <div>
+              <span className="eyebrow">{tr ? "Sinif katilimi" : "Class join"}</span>
+              <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Kod ile sinifa katil" : "Join a class with code"}</h2>
+            </div>
+            <input
+              value={joinCode}
+              onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
+              placeholder={tr ? "Ornek: AB12CD" : "Example: AB12CD"}
+              style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
+            />
+            <button type="button" className="button button-primary" onClick={joinClass}>
+              {tr ? "Sinifa katil" : "Join class"}
+            </button>
+            {joinNotice ? <p style={{ margin: 0, color: "var(--success)" }}>{joinNotice}</p> : null}
+            {joinError ? <p style={{ margin: 0, color: "var(--accent-deep)" }}>{joinError}</p> : null}
+            <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
+              {tr ? "Ogretmenin verdigi join code ile sinifa baglanip speaking gelisimini kurs paneline tasiyabilirsin." : "Use the teacher's join code to connect your account to a class and share your speaking progress with the course dashboard."}
+            </p>
+          </div>
+
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+            <div>
+              <span className="eyebrow">{tr ? "Bagli siniflar" : "Joined classes"}</span>
+              <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Kurs baglantilarin" : "Your course links"}</h2>
+            </div>
+            {joinedClasses.length ? (
+              <div className="grid" style={{ gap: "0.75rem" }}>
+                {joinedClasses.map((item) => (
+                  <div key={`${item.classId}-${item.joinedAt}`} className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
+                    <strong>{item.className}</strong>
+                    <div className="practice-meta" style={{ marginTop: "0.35rem" }}>
+                      {item.teacherName} · {item.teacherEmail}
+                    </div>
+                    <div style={{ color: "var(--muted)", marginTop: "0.5rem", lineHeight: 1.6 }}>
+                      {tr ? `Kod: ${item.joinCode} · Katilim: ${new Date(item.joinedAt).toLocaleDateString("tr-TR")}` : `Code: ${item.joinCode} · Joined: ${new Date(item.joinedAt).toLocaleDateString("en-US")}`}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
+                {tr ? "Henuz bagli oldugun bir sinif yok." : "You have not joined a class yet."}
+              </div>
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {signedIn && !currentUser?.isTeacher ? (
+        <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+            <div>
+              <span className="eyebrow">{tr ? "Homework board" : "Homework board"}</span>
+              <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Atanmis calismalar" : "Assigned practice"}</h2>
+            </div>
+            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.7rem" }}>
+              <div className="card" style={{ padding: "0.8rem", background: "rgba(188, 92, 58, 0.08)" }}>
+                <div className="practice-meta">{tr ? "Geciken" : "Overdue"}</div>
+                <strong>{overdueHomeworkCount}</strong>
+              </div>
+              <div className="card" style={{ padding: "0.8rem", background: "rgba(196, 147, 58, 0.08)" }}>
+                <div className="practice-meta">{tr ? "2 gun icinde" : "Due in 2 days"}</div>
+                <strong>{dueSoonHomeworkCount}</strong>
+              </div>
+            </div>
+            {homework.length ? (
+              <div className="grid" style={{ gap: "0.75rem" }}>
+                {homework.slice(0, 6).map((item) => (
+                  <div key={item.id} className="card" style={{ padding: "0.95rem", background: item.completedAt ? "rgba(47, 125, 75, 0.08)" : "var(--surface-strong)", display: "grid", gap: "0.55rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "center", flexWrap: "wrap" }}>
+                      <strong>{item.title}</strong>
+                      <span className="pill">
+                        {item.completedAt
+                          ? tr ? "Tamam" : "Done"
+                          : item.dueAt && new Date(item.dueAt).getTime() < Date.now()
+                            ? tr ? "Gecikti" : "Overdue"
+                            : tr ? "Bekliyor" : "Pending"}
+                      </span>
+                    </div>
+                    <div className="practice-meta">{item.focusSkill}</div>
+                    <p style={{ margin: 0, lineHeight: 1.7 }}>{item.instructions}</p>
+                    {item.dueAt ? (
+                      <div className="practice-meta">
+                        {tr ? "Teslim" : "Due"}: {new Date(item.dueAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}
+                      </div>
+                    ) : null}
+                    <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+                      {item.promptId ? (
+                        <Link
+                          className="button button-secondary"
+                          href={{
+                            pathname: "/app/practice",
+                            query: {
+                              promptId: item.promptId,
+                              examType: item.recommendedTaskType.startsWith("toefl") ? "TOEFL" : "IELTS",
+                              taskType: item.recommendedTaskType,
+                              difficulty: "Target"
+                            }
+                          }}
+                        >
+                          {tr ? "Calismayi ac" : "Open practice"}
+                        </Link>
+                      ) : null}
+                      {!item.completedAt ? (
+                        <button type="button" className="button button-secondary" onClick={() => completeHomework(item.id)}>
+                          {tr ? "Tamamlandi olarak isle" : "Mark complete"}
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
+                {tr ? "Henuz ogretmenden atanmis bir homework yok." : "There is no teacher-assigned homework yet."}
+              </div>
+            )}
+          </div>
+
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+            <div>
+              <span className="eyebrow">{tr ? "Paylasilan study list" : "Shared study list"}</span>
+              <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Ogretmenden gelen oneriler" : "Teacher recommendations"}</h2>
+            </div>
+            {sharedStudyClasses.length ? (
+              <div className="grid" style={{ gap: "0.75rem" }}>
+                {sharedStudyClasses.map((entry) => (
+                  <div key={entry.classId} className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)", display: "grid", gap: "0.6rem" }}>
+                    <strong>{entry.className}</strong>
+                    <div className="practice-meta">{entry.teacherName}</div>
+                    <div style={{ display: "grid", gap: "0.55rem" }}>
+                      {entry.items.slice(0, 3).map((item) => (
+                        <div key={item.id} className="card" style={{ padding: "0.75rem", background: "rgba(29, 111, 117, 0.06)", display: "grid", gap: "0.35rem" }}>
+                          <strong style={{ fontSize: "0.96rem" }}>{item.title}</strong>
+                          {item.note ? <div className="practice-meta">{item.note}</div> : null}
+                          <Link
+                            className="button button-secondary"
+                            href={{
+                              pathname: "/app/practice",
+                              query: {
+                                promptId: item.promptId,
+                                examType: item.examType,
+                                taskType: item.taskType,
+                                difficulty: item.difficulty
+                              }
+                            }}
+                          >
+                            {tr ? "Practice'de ac" : "Open in practice"}
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
+                {tr ? "Ogretmenin henuz sinifin icin ortak bir study list onermedi." : "Your teacher has not shared a class study list yet."}
+              </p>
+            )}
+            <Link className="button button-secondary" href="/app/study-lists">
+              {tr ? "Study lists sayfasini ac" : "Open study lists"}
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Weekly checklist" : "Weekly checklist"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Bu haftanin gorevleri" : "This week's tasks"}</h2>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "rgba(47, 125, 75, 0.08)" }}>
+            <strong>{tr ? "Tamamlanma durumu" : "Completion status"}</strong>
+            <p style={{ margin: "0.55rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>
+              {tr
+                ? `${completedChecklistCount}/${weeklyChecklistItems.length} gorev tamamlandi.`
+                : `${completedChecklistCount}/${weeklyChecklistItems.length} tasks completed.`}
+            </p>
+          </div>
+          <div style={{ display: "grid", gap: "0.7rem" }}>
+            {weeklyChecklistItems.map((item) => (
+              <label key={item.id} className="card" style={{ padding: "0.95rem", background: item.done ? "rgba(47, 125, 75, 0.08)" : "var(--surface-strong)", display: "flex", gap: "0.8rem", alignItems: "flex-start", cursor: "pointer" }}>
+                <input type="checkbox" checked={item.done} onChange={() => toggleChecklistItem(item.id)} style={{ marginTop: "0.3rem" }} />
+                <span style={{ lineHeight: 1.7 }}>{item.text}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Streak tracker" : "Streak tracker"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Son 7 gun" : "Last 7 days"}</h2>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
+            <strong>{tr ? "Aktif seri" : "Active streak"}</strong>
+            <p style={{ margin: "0.55rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>
+              {tr
+                ? `${summary.streakDays} gun ust uste practice yaptin.`
+                : `You have practiced for ${summary.streakDays} day(s) in a row.`}
+            </p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "0.6rem" }}>
+            {streakCalendar.map((day) => (
+              <div key={day.key} className="card" style={{ padding: "0.8rem 0.55rem", textAlign: "center", background: day.active ? "rgba(47, 125, 75, 0.12)" : "var(--surface-strong)" }}>
+                <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.35rem" }}>{day.label}</div>
+                <div style={{ width: 12, height: 12, borderRadius: 999, margin: "0 auto 0.35rem", background: day.active ? "var(--success)" : "rgba(29, 111, 117, 0.18)" }} />
+                <div style={{ fontSize: "0.82rem", color: "var(--muted)" }}>{day.active ? (tr ? "Var" : "Done") : (tr ? "Bos" : "Off")}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Mistake notebook" : "Mistake notebook"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Tekrar eden hatalar" : "Repeated mistakes"}</h2>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "rgba(217, 93, 57, 0.06)" }}>
+            <strong>{tr ? "En cok geri donen skill" : "Most repeated weak area"}</strong>
+            <p style={{ margin: "0.55rem 0 0", lineHeight: 1.7, color: "var(--muted)" }}>
+              {mistakeNotebook.weakSkillLabel ?? (tr ? "Yeterli veri yok" : "Not enough data yet")}
+            </p>
+          </div>
+          <NotebookList
+            title={tr ? "Surekli gelen duzeltmeler" : "Repeated improvement notes"}
+            items={mistakeNotebook.repeatedImprovements}
+            emptyLabel={tr ? "Daha fazla deneme geldikce tekrar eden duzeltmeler burada toplanacak." : "Repeated improvement notes will appear here as more sessions come in."}
+            tr={tr}
+          />
+          <NotebookList
+            title={tr ? "Sik filler kelimeler" : "Frequent filler words"}
+            items={mistakeNotebook.repeatedFillers}
+            emptyLabel={tr ? "Henuz tekrar eden filler kelime gorunmuyor." : "No repeated filler words yet."}
+            tr={tr}
+          />
+          <Link href="/app/review" className="button button-secondary" style={{ width: "fit-content" }}>
+            {tr ? "Tum hata panosunu ac" : "Open full review board"}
+          </Link>
+        </div>
+
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Koç tavsiyesi" : "Coach advice"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Nasil practice yapmali?" : "How should you practice?"}</h2>
+          </div>
+          <ul style={{ margin: 0, paddingLeft: "1.15rem" }}>
+            {strategyTips.map((tip) => (
+              <li key={tip} style={{ marginTop: "0.55rem", lineHeight: 1.7 }}>{tip}</li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Haftalik plan" : "Weekly plan"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Ne yapmaliyim?" : "What should I do next?"}</h2>
+          </div>
+          <ol style={{ margin: 0, paddingLeft: "1.2rem" }}>
+            {weeklyPlan.map((step) => (
+              <li key={step} style={{ marginTop: "0.55rem", lineHeight: 1.7 }}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="section">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Son calismalar" : "Recent work"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.8rem 0 0.4rem" }}>{tr ? "Son sessionlar" : "Latest sessions"}</h2>
+          </div>
+          <button className="button button-secondary" type="button" onClick={signedIn ? signOut : undefined}>
+            {signedIn ? (tr ? "Cikis yap" : "Sign out") : tr ? "Misafir modu aktif" : "Guest mode active"}
+          </button>
+        </div>
+
+        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", marginTop: "1rem" }}>
+          {summary.recentSessions.length ? (
+            summary.recentSessions.map((session) => <SessionCard key={session.id} session={session} tr={tr} />)
+          ) : (
+            <div className="card" style={{ padding: "1.2rem" }}>
+              {tr ? "Henuz session yok. IELTS cue card veya TOEFL task ile basla." : "No sessions yet. Start with an IELTS cue card or a TOEFL task."}
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function TargetCard({
+  examType,
+  targetScore,
+  onChange,
+  tr
+}: {
+  examType: "IELTS" | "TOEFL";
+  targetScore: string;
+  onChange: (value: string) => void;
+  tr: boolean;
+}) {
+  const options = examType === "IELTS" ? ["6.0", "6.5", "7.0", "7.5", "8.0"] : ["2.5", "3.0", "3.5", "4.0"];
+
+  return (
+    <div className="card" style={{ padding: "1.2rem", background: "var(--surface-strong)", display: "grid", gap: "0.65rem" }}>
+      <div style={{ color: "var(--muted)" }}>{tr ? "Hedef skor" : "Target score"}</div>
+      <div style={{ fontSize: "2rem", fontWeight: 800 }}>{targetScore || (tr ? "Secilmedi" : "Optional")}</div>
+      <select className="practice-select" value={targetScore} onChange={(event) => onChange(event.target.value)}>
+        <option value="">{tr ? "Hedef secme" : "No target"}</option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+      <div style={{ color: "var(--muted)", lineHeight: 1.55 }}>
+        {tr
+          ? "Istersen hedef band belirle; dashboard ortalaman ile farki hesaplayip daha net bir yol plani cikarsin."
+          : "Set an optional target so the dashboard can map your average against a clearer improvement plan."}
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <div className="card" style={{ padding: "1.2rem", background: "var(--surface-strong)" }}>
+      <div style={{ color: "var(--muted)", marginBottom: "0.5rem" }}>{label}</div>
+      <div style={{ fontSize: "2rem", fontWeight: 800 }}>{value}</div>
+      <div style={{ color: "var(--muted)", marginTop: "0.45rem", lineHeight: 1.55 }}>{note}</div>
+    </div>
+  );
+}
+
+function SessionCard({ session, tr }: { session: SpeakingSession; tr: boolean }) {
+  return (
+    <Link href={`/app/results/${session.id}`} className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.6rem" }}>
+      <span className="pill">
+        {session.examType} · {session.taskType}
+      </span>
+      <strong>{session.prompt.title}</strong>
+      <span style={{ color: "var(--muted)" }}>
+        {session.report ? `${session.report.scaleLabel}: ${session.report.overall}` : tr ? "Degerlendirme bekleniyor" : "Awaiting evaluation"}
+      </span>
+    </Link>
+  );
+}
+
+function translateCategoryLabel(label: string) {
+  const labels: Record<string, string> = {
+    "Fluency and Coherence": "Akicilik ve Tutarlilik",
+    "Lexical Resource": "Kelime Kullanimi",
+    "Grammatical Range and Accuracy": "Dilbilgisi ve Dogruluk",
+    Pronunciation: "Telaffuz",
+    Delivery: "Delivery",
+    "Language Use": "Dil kullanimi",
+    "Topic Development": "Icerik gelisimi"
+  };
+
+  return labels[label] ?? label;
+}
+
+function NotebookList({
+  title,
+  items,
+  emptyLabel,
+  tr
+}: {
+  title: string;
+  items: Array<{ text: string; count: number }>;
+  emptyLabel: string;
+  tr: boolean;
+}) {
+  return (
+    <div className="card" style={{ padding: "1rem" }}>
+      <strong>{title}</strong>
+      {items.length ? (
+        <div style={{ display: "grid", gap: "0.55rem", marginTop: "0.8rem" }}>
+          {items.map((item) => (
+            <div key={`${item.text}-${item.count}`} style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "flex-start" }}>
+              <span style={{ lineHeight: 1.6 }}>{item.text}</span>
+              <span className="pill">{tr ? `${item.count} kez` : `${item.count}x`}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p style={{ margin: "0.7rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>{emptyLabel}</p>
+      )}
+    </div>
+  );
+}
+
+function getIsoWeekKey(date: Date) {
+  const working = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = working.getUTCDay() || 7;
+  working.setUTCDate(working.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(working.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((working.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return `${working.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+function buildRecentStreakCalendar(sessions: SpeakingSession[]) {
+  const activeDays = new Set(
+    sessions.map((session) => new Date(session.createdAt).toISOString().slice(0, 10))
+  );
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (6 - index));
+    const key = date.toISOString().slice(0, 10);
+    return {
+      key,
+      label: date.toLocaleDateString("en-US", { weekday: "short" }),
+      active: activeDays.has(key)
+    };
+  });
+}

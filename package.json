@@ -1,0 +1,30 @@
+{
+  "name": "speakace-ai",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "db:push": "node scripts/apply-schema.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "next": "15.3.0",
+    "postgres": "^3.4.8",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "eslint": "^9.24.0",
+    "eslint-config-next": "15.3.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.2"
+  }
+}

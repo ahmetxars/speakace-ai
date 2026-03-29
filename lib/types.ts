@@ -1,0 +1,231 @@
+export type ExamType = "IELTS" | "TOEFL";
+
+export type TaskType =
+  | "ielts-part-1"
+  | "ielts-part-2"
+  | "ielts-part-3"
+  | "toefl-task-1"
+  | "toefl-task-2"
+  | "toefl-task-3"
+  | "toefl-task-4"
+  | "toefl-independent"
+  | "toefl-integrated";
+
+export type Difficulty = "Starter" | "Target" | "Stretch";
+
+export type SubscriptionPlan = "free" | "plus" | "pro";
+export type UserRole = "guest" | "member";
+
+export type FeedbackCategory =
+  | "fluency"
+  | "coherence"
+  | "lexicalResource"
+  | "grammar"
+  | "delivery"
+  | "languageUse"
+  | "topicDevelopment";
+
+export interface ScoreCategory {
+  category: FeedbackCategory;
+  score: number;
+  label: string;
+}
+
+export interface ScoreReport {
+  overall: number;
+  scaleLabel: string;
+  categories: ScoreCategory[];
+  strengths: string[];
+  improvements: string[];
+  nextExercise: string;
+  caution: string;
+  fillerWords: string[];
+  improvedAnswer: string;
+}
+
+export interface PromptTemplate {
+  id: string;
+  examType: ExamType;
+  taskType: TaskType;
+  title: string;
+  prompt: string;
+  prepSeconds: number;
+  speakingSeconds: number;
+  difficulty: Difficulty;
+}
+
+export interface SpeakingSession {
+  id: string;
+  userId: string;
+  examType: ExamType;
+  taskType: TaskType;
+  difficulty: Difficulty;
+  plan: SubscriptionPlan;
+  prompt: PromptTemplate;
+  createdAt: string;
+  audioUploaded: boolean;
+  audioBytes?: number;
+  rawTranscript?: string;
+  transcript?: string;
+  transcriptQualityScore?: number;
+  transcriptQualityLabel?: string;
+  transcriptSource?: "openai" | "generated";
+  transcriptStatus?: string;
+  report?: ScoreReport;
+}
+
+export interface MemberProfile {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  plan: SubscriptionPlan;
+  emailVerified?: boolean;
+  isAdmin?: boolean;
+  isTeacher?: boolean;
+  createdAt: string;
+}
+
+export interface PlanLimits {
+  sessionsPerDay: number;
+  speakingMinutesPerDay: number;
+  label: string;
+  price: number;
+}
+
+export interface ProgressSummary {
+  totalSessions: number;
+  averageScore: number;
+  streakDays: number;
+  freeSessionsRemaining: number;
+  remainingMinutesToday: number;
+  currentPlan: SubscriptionPlan;
+  recentSessions: SpeakingSession[];
+}
+
+export interface TeacherClass {
+  id: string;
+  teacherId: string;
+  name: string;
+  joinCode: string;
+  createdAt: string;
+}
+
+export interface StudentClassMembership {
+  classId: string;
+  className: string;
+  teacherName: string;
+  teacherEmail: string;
+  joinCode: string;
+  joinedAt: string;
+}
+
+export interface TeacherNote {
+  id: string;
+  teacherId: string;
+  studentId: string;
+  sessionId?: string;
+  note: string;
+  createdAt: string;
+}
+
+export interface TeacherStudentOverview {
+  student: MemberProfile;
+  totalSessions: number;
+  averageScore: number;
+  bestScore: number | null;
+  weakestSkill: string | null;
+  lastSessionTitle: string | null;
+  lastExamType?: ExamType | null;
+  lastTaskType?: TaskType | null;
+  scoreDelta?: number | null;
+}
+
+export interface TeacherClassAnalytics {
+  classId: string;
+  className: string;
+  totalStudents: number;
+  activeStudents: number;
+  totalAttempts: number;
+  classAverageScore: number;
+  classBestScore: number | null;
+  mostCommonWeakestSkill: string | null;
+  homeworkCompletionRate?: number;
+  overdueHomeworkCount?: number;
+  dueSoonHomeworkCount?: number;
+}
+
+export type InstitutionPlan = "starter" | "team" | "campus";
+
+export interface InstitutionBillingSummary {
+  teacherId: string;
+  plan: InstitutionPlan;
+  status: "draft" | "active";
+  seatCount: number;
+  monthlyPrice: number;
+  includedClasses: number;
+  includedStudents: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HomeworkAssignment {
+  id: string;
+  teacherId: string;
+  studentId: string;
+  classId?: string;
+  title: string;
+  instructions: string;
+  focusSkill: string;
+  recommendedTaskType: TaskType;
+  promptId?: string;
+  dueAt?: string;
+  createdAt: string;
+  completedAt?: string;
+}
+
+export interface HomeworkAutoAssignRule {
+  classId: string;
+  teacherId: string;
+  enabled: boolean;
+  scoreThreshold: number;
+  dueDays: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeacherHomeworkOverview {
+  assignment: HomeworkAssignment;
+  studentName: string;
+  studentEmail: string;
+}
+
+export interface StudyListFolder {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface StudyListItem {
+  id: string;
+  folderId: string;
+  promptId: string;
+  examType: ExamType;
+  taskType: TaskType;
+  difficulty: Difficulty;
+  title: string;
+  createdAt: string;
+}
+
+export interface SharedClassStudyItem {
+  id: string;
+  classId: string;
+  teacherId: string;
+  promptId: string;
+  examType: ExamType;
+  taskType: TaskType;
+  difficulty: Difficulty;
+  title: string;
+  note?: string;
+  createdAt: string;
+}

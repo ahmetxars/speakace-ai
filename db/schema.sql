@@ -1,0 +1,248 @@
+create table if not exists users (
+  id text primary key,
+  email text not null unique,
+  name text not null,
+  role text not null check (role in ('guest', 'member')),
+  plan text not null check (plan in ('free', 'plus', 'pro')),
+  password_hash text,
+  email_verified boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists auth_sessions (
+  id text primary key,
+  user_id text not null references users(id) on delete cascade,
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists auth_tokens (
+  id text primary key,
+  user_id text not null references users(id) on delete cascade,
+  token_hash text not null unique,
+  token_type text not null check (token_type in ('verify_email', 'reset_password')),
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists teacher_classes (
+  id text primary key,
+  teacher_id text not null references users(id) on delete cascade,
+  name text not null,
+  join_code text not null unique,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists teacher_class_enrollments (
+  class_id text not null references teacher_classes(id) on delete cascade,
+  student_id text not null references users(id) on delete cascade,
+  joined_at timestamptz not null default now(),
+  primary key (class_id, student_id)
+);
+
+create table if not exists teacher_notes (
+  id text primary key,
+  teacher_id text not null references users(id) on delete cascade,
+  student_id text not null references users(id) on delete cascade,
+  session_id text references speaking_sessions(id) on delete set null,
+  note text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists institution_billing (
+  teacher_id text primary key references users(id) on delete cascade,
+  plan text not null check (plan in ('starter', 'team', 'campus')),
+  status text not null check (status in ('draft', 'active')) default 'draft',
+  seat_count integer not null default 20,
+  monthly_price numeric(8,2) not null default 49,
+  included_classes integer not null default 3,
+  included_students integer not null default 20,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists homework_assignments (
+  id text primary key,
+  teacher_id text not null references users(id) on delete cascade,
+  student_id text not null references users(id) on delete cascade,
+  class_id text references teacher_classes(id) on delete set null,
+  title text not null,
+  instructions text not null,
+  focus_skill text not null,
+  recommended_task_type text not null,
+  prompt_id text,
+  due_at timestamptz,
+  completed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists homework_auto_assign_rules (
+  class_id text primary key references teacher_classes(id) on delete cascade,
+  teacher_id text not null references users(id) on delete cascade,
+  enabled boolean not null default false,
+  score_threshold numeric(4,1) not null default 5.5,
+  due_days integer not null default 7,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists class_shared_study_items (
+  id text primary key,
+  class_id text not null references teacher_classes(id) on delete cascade,
+  teacher_id text not null references users(id) on delete cascade,
+  prompt_id text not null,
+  exam_type text not null check (exam_type in ('IELTS', 'TOEFL')),
+  task_type text not null,
+  difficulty text not null,
+  title text not null,
+  note text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists usage_daily (
+  user_id text not null references users(id) on delete cascade,
+  usage_date date not null,
+  sessions_count integer not null default 0,
+  speaking_seconds integer not null default 0,
+  primary key (user_id, usage_date)
+);
+
+create table if not exists speaking_sessions (
+  id text primary key,
+  user_id text not null references users(id) on delete cascade,
+  exam_type text not null check (exam_type in ('IELTS', 'TOEFL')),
+  task_type text not null,
+  difficulty text not null,
+  plan text not null check (plan in ('free', 'plus', 'pro')),
+  prompt_id text not null,
+  prompt_title text not null,
+  prompt_text text not null,
+  prep_seconds integer not null,
+  speaking_seconds integer not null,
+  audio_uploaded boolean not null default false,
+  audio_bytes integer,
+  transcript text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists feedback_reports (
+  session_id text primary key references speaking_sessions(id) on delete cascade,
+  overall_score numeric(4,1) not null,
+  scale_label text not null,
+  categories_json jsonb not null,
+  strengths_json jsonb not null,
+  improvements_json jsonb not null,
+  next_exercise text not null,
+  caution text not null,
+  filler_words_json jsonb not null,
+  improved_answer text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_speaking_sessions_user_created_at
+  on speaking_sessions(user_id, created_at desc);
+
+create index if not exists idx_auth_sessions_user_id
+  on auth_sessions(user_id);
+
+create index if not exists idx_auth_tokens_user_id
+  on auth_tokens(user_id);
+
+create index if not exists idx_auth_tokens_type_expires_at
+  on auth_tokens(token_type, expires_at);
+
+create index if not exists idx_teacher_classes_teacher_id
+  on teacher_classes(teacher_id);
+
+create index if not exists idx_teacher_notes_teacher_student
+  on teacher_notes(teacher_id, student_id, created_at desc);
+
+create index if not exists idx_teacher_enrollments_student_id
+  on teacher_class_enrollments(student_id, joined_at desc);
+
+create index if not exists idx_homework_assignments_student_created
+  on homework_assignments(student_id, created_at desc);
+
+create index if not exists idx_homework_assignments_teacher_created
+  on homework_assignments(teacher_id, created_at desc);
+
+create index if not exists idx_homework_assignments_class_due
+  on homework_assignments(class_id, due_at desc);
+
+create index if not exists idx_homework_auto_assign_rules_teacher
+  on homework_auto_assign_rules(teacher_id, updated_at desc);
+
+create index if not exists idx_class_shared_study_items_class_created
+  on class_shared_study_items(class_id, created_at desc);
+
+alter table users drop constraint if exists users_plan_check;
+alter table users drop constraint if exists users_role_check;
+alter table speaking_sessions drop constraint if exists speaking_sessions_plan_check;
+alter table speaking_sessions drop constraint if exists speaking_sessions_exam_type_check;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'users_role_check'
+      and conrelid = 'users'::regclass
+  ) then
+    alter table users
+      add constraint users_role_check
+      check (role in ('guest', 'member'));
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'users_plan_check'
+      and conrelid = 'users'::regclass
+  ) then
+    alter table users
+      add constraint users_plan_check
+      check (plan in ('free', 'plus', 'pro'));
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'speaking_sessions_exam_type_check'
+      and conrelid = 'speaking_sessions'::regclass
+  ) then
+    alter table speaking_sessions
+      add constraint speaking_sessions_exam_type_check
+      check (exam_type in ('IELTS', 'TOEFL'));
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'speaking_sessions_plan_check'
+      and conrelid = 'speaking_sessions'::regclass
+  ) then
+    alter table speaking_sessions
+      add constraint speaking_sessions_plan_check
+      check (plan in ('free', 'plus', 'pro'));
+  end if;
+end $$;
+
+alter table speaking_sessions add column if not exists raw_transcript text;
+alter table speaking_sessions add column if not exists cleaned_transcript text;
+alter table speaking_sessions add column if not exists transcript_quality_score numeric(5,2);
+alter table speaking_sessions add column if not exists transcript_quality_label text;
+alter table users add column if not exists email_verified boolean not null default false;
+
+
+alter table feedback_reports add column if not exists improved_answer text;
