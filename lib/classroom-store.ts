@@ -2,17 +2,20 @@ import { getMember, getProgressSummary } from "@/lib/store";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { listTeacherHomework } from "@/lib/homework-store";
 import {
+  InstitutionAnalyticsSummary,
   InstitutionBillingSummary,
   MemberProfile,
+  StudentComparison,
   StudentClassMembership,
-  TeacherClass,
+  TeacherClass as TeacherClassRecord,
   TeacherClassAnalytics,
+  TeacherEnrollmentRequest,
   TeacherNote,
   TeacherStudentOverview
 } from "@/lib/types";
 
 type MemoryClassroomStore = {
-  classes: Map<string, TeacherClass>;
+  classes: Map<string, TeacherClassRecord>;
   enrollments: Map<string, Set<string>>;
   notes: Map<string, TeacherNote>;
   billing: Map<string, InstitutionBillingSummary>;
@@ -101,21 +104,25 @@ export async function createTeacherClass(input: { teacherId: string; name: strin
     throw new Error("Class name is required.");
   }
 
-  const classroom: TeacherClass = {
+  const classroom: TeacherClassRecord = {
     id: crypto.randomUUID(),
     teacherId: input.teacherId,
     name,
     joinCode: buildJoinCode(),
+    approvalRequired: true,
+    joinMessage: "",
     createdAt: new Date().toISOString()
   };
 
   if (hasDatabaseUrl()) {
     const sql = getSql();
-    const rows = await sql<TeacherClass[]>`
-      insert into teacher_classes (id, teacher_id, name, join_code, created_at)
-      values (${classroom.id}, ${classroom.teacherId}, ${classroom.name}, ${classroom.joinCode}, ${classroom.createdAt})
-      returning id, teacher_id as "teacherId", name, join_code as "joinCode", created_at as "createdAt"
-    `;
+    const approvalRequired = classroom.approvalRequired ?? true;
+    const joinMessage = classroom.joinMessage ?? null;
+    const rows = (await sql`
+      insert into teacher_classes (id, teacher_id, name, join_code, approval_required, join_message, created_at)
+      values (${classroom.id}, ${classroom.teacherId}, ${classroom.name}, ${classroom.joinCode}, ${approvalRequired}, ${joinMessage}, ${classroom.createdAt})
+      returning id, teacher_id as "teacherId", name, join_code as "joinCode", approval_required as "approvalRequired", join_message as "joinMessage", created_at as "createdAt"
+    `) as unknown as TeacherClassRecord[];
     return rows[0];
   }
 
@@ -128,20 +135,23 @@ export async function createTeacherClass(input: { teacherId: string; name: strin
 export async function listTeacherClasses(teacherId: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
-    const rows = await sql<Array<TeacherClass & { studentCount: number }>>`
+    const rows = (await sql`
       select
         c.id,
         c.teacher_id as "teacherId",
         c.name,
         c.join_code as "joinCode",
+        c.approval_required as "approvalRequired",
+        c.join_message as "joinMessage",
         c.created_at as "createdAt",
-        count(e.student_id)::int as "studentCount"
+        count(case when e.status = 'approved' then e.student_id end)::int as "studentCount",
+        count(case when e.status = 'pending' then e.student_id end)::int as "pendingCount"
       from teacher_classes c
       left join teacher_class_enrollments e on e.class_id = c.id
       where c.teacher_id = ${teacherId}
       group by c.id
       order by c.created_at desc
-    `;
+    `) as unknown as Array<TeacherClassRecord & { studentCount: number; pendingCount: number }>;
     return rows;
   }
 
@@ -158,12 +168,12 @@ export async function listTeacherClasses(teacherId: string) {
 export async function getTeacherClassById(classId: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
-    const rows = await sql<TeacherClass[]>`
-      select id, teacher_id as "teacherId", name, join_code as "joinCode", created_at as "createdAt"
+    const rows = (await sql`
+      select id, teacher_id as "teacherId", name, join_code as "joinCode", approval_required as "approvalRequired", join_message as "joinMessage", created_at as "createdAt"
       from teacher_classes
       where id = ${classId}
       limit 1
-    `;
+    `) as unknown as TeacherClassRecord[];
     return rows[0] ?? null;
   }
 
@@ -180,9 +190,10 @@ export async function addStudentToTeacherClass(input: { teacherId: string; class
   if (hasDatabaseUrl()) {
     const sql = getSql();
     await sql`
-      insert into teacher_class_enrollments (class_id, student_id, joined_at)
-      values (${input.classId}, ${student.id}, ${new Date().toISOString()})
-      on conflict (class_id, student_id) do nothing
+      insert into teacher_class_enrollments (class_id, student_id, status, requested_at, approved_at, joined_at)
+      values (${input.classId}, ${student.id}, 'approved', ${new Date().toISOString()}, ${new Date().toISOString()}, ${new Date().toISOString()})
+      on conflict (class_id, student_id)
+      do update set status = 'approved', approved_at = ${new Date().toISOString()}
     `;
     return student;
   }
@@ -207,22 +218,31 @@ export async function joinTeacherClassByCode(input: { studentId: string; joinCod
 
   if (hasDatabaseUrl()) {
     const sql = getSql();
-    const classrooms = await sql<TeacherClass[]>`
-      select id, teacher_id as "teacherId", name, join_code as "joinCode", created_at as "createdAt"
+    const classrooms = (await sql`
+      select id, teacher_id as "teacherId", name, join_code as "joinCode", approval_required as "approvalRequired", join_message as "joinMessage", created_at as "createdAt"
       from teacher_classes
       where upper(join_code) = ${normalizedCode}
       limit 1
-    `;
+    `) as unknown as TeacherClassRecord[];
     const classroom = classrooms[0];
     if (!classroom) {
       throw new Error("Class code was not found.");
     }
+    const status = classroom.approvalRequired ? "pending" : "approved";
     await sql`
-      insert into teacher_class_enrollments (class_id, student_id, joined_at)
-      values (${classroom.id}, ${input.studentId}, ${new Date().toISOString()})
-      on conflict (class_id, student_id) do nothing
+      insert into teacher_class_enrollments (class_id, student_id, status, requested_at, approved_at, joined_at)
+      values (
+        ${classroom.id},
+        ${input.studentId},
+        ${status},
+        ${new Date().toISOString()},
+        ${status === "approved" ? new Date().toISOString() : null},
+        ${new Date().toISOString()}
+      )
+      on conflict (class_id, student_id)
+      do update set status = excluded.status, requested_at = excluded.requested_at
     `;
-    return classroom;
+    return { classroom, status };
   }
 
   const classroom = [...getStore().classes.values()].find((item) => item.joinCode.toUpperCase() === normalizedCode);
@@ -230,9 +250,11 @@ export async function joinTeacherClassByCode(input: { studentId: string; joinCod
     throw new Error("Class code was not found.");
   }
   const set = getStore().enrollments.get(classroom.id) ?? new Set<string>();
-  set.add(input.studentId);
-  getStore().enrollments.set(classroom.id, set);
-  return classroom;
+  if (!classroom.approvalRequired) {
+    set.add(input.studentId);
+    getStore().enrollments.set(classroom.id, set);
+  }
+  return { classroom, status: classroom.approvalRequired ? "pending" : "approved" };
 }
 
 export async function listStudentClasses(studentId: string) {
@@ -245,11 +267,13 @@ export async function listStudentClasses(studentId: string) {
         t.name as "teacherName",
         t.email as "teacherEmail",
         c.join_code as "joinCode",
-        e.joined_at as "joinedAt"
+        e.joined_at as "joinedAt",
+        e.status as "status"
       from teacher_class_enrollments e
       join teacher_classes c on c.id = e.class_id
       join users t on t.id = c.teacher_id
       where e.student_id = ${studentId}
+        and e.status = 'approved'
       order by e.joined_at desc
     `;
   }
@@ -282,6 +306,7 @@ export async function listClassStudents(input: { teacherId: string; classId: str
       select student_id as "studentId"
       from teacher_class_enrollments
       where class_id = ${input.classId}
+        and status = 'approved'
       order by joined_at desc
     `;
     studentIds = rows.map((row) => row.studentId);
@@ -326,6 +351,7 @@ export async function getTeacherClassAnalytics(input: { teacherId: string; class
 
   const completedHomework = homework.filter((item) => item.assignment.completedAt).length;
   const activeHomework = homework.filter((item) => !item.assignment.completedAt);
+  const pendingApprovalCount = (await listPendingClassRequests(input)).length;
   const now = Date.now();
   const overdueHomeworkCount = activeHomework.filter((item) => item.assignment.dueAt && new Date(item.assignment.dueAt).getTime() < now).length;
   const dueSoonHomeworkCount = activeHomework.filter((item) => {
@@ -348,7 +374,9 @@ export async function getTeacherClassAnalytics(input: { teacherId: string; class
     mostCommonWeakestSkill,
     homeworkCompletionRate: homework.length ? Number(((completedHomework / homework.length) * 100).toFixed(0)) : 0,
     overdueHomeworkCount,
-    dueSoonHomeworkCount
+    dueSoonHomeworkCount,
+    pendingApprovalCount,
+    atRiskStudentCount: students.filter((student) => (student.riskFlags?.length ?? 0) > 0).length
   };
 
   return analytics;
@@ -394,6 +422,134 @@ export async function getTeacherStudentDetail(input: { teacherId: string; studen
     overview: buildStudentOverview(student, summary),
     notes
   };
+}
+
+export async function listPendingClassRequests(input: { teacherId: string; classId: string }) {
+  await ensureTeacherOwnsClass(input.teacherId, input.classId);
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const rows = await sql<Array<{ studentId: string; requestedAt: string }>>`
+      select student_id as "studentId", requested_at as "requestedAt"
+      from teacher_class_enrollments
+      where class_id = ${input.classId}
+        and status = 'pending'
+      order by requested_at desc
+    `;
+    const members = await Promise.all(rows.map((row) => getMember(row.studentId)));
+    return rows
+      .map((row, index) => members[index] ? { classId: input.classId, student: members[index]!, requestedAt: row.requestedAt } : null)
+      .filter(Boolean) as TeacherEnrollmentRequest[];
+  }
+  return [];
+}
+
+export async function updateEnrollmentApproval(input: {
+  teacherId: string;
+  classId: string;
+  studentId: string;
+  action: "approve" | "reject";
+}) {
+  await ensureTeacherOwnsClass(input.teacherId, input.classId);
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    if (input.action === "approve") {
+      await sql`
+        update teacher_class_enrollments
+        set status = 'approved', approved_at = ${new Date().toISOString()}
+        where class_id = ${input.classId} and student_id = ${input.studentId}
+      `;
+      return;
+    }
+    await sql`
+      delete from teacher_class_enrollments
+      where class_id = ${input.classId} and student_id = ${input.studentId}
+    `;
+    return;
+  }
+}
+
+export async function updateTeacherClassSettings(input: {
+  teacherId: string;
+  classId: string;
+  approvalRequired: boolean;
+  joinMessage?: string;
+}) {
+  await ensureTeacherOwnsClass(input.teacherId, input.classId);
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const rows = (await sql`
+      update teacher_classes
+      set approval_required = ${input.approvalRequired},
+          join_message = ${input.joinMessage ?? null}
+      where id = ${input.classId}
+      returning id, teacher_id as "teacherId", name, join_code as "joinCode", approval_required as "approvalRequired", join_message as "joinMessage", created_at as "createdAt"
+    `) as unknown as TeacherClassRecord[];
+    return rows[0] ?? null;
+  }
+
+  const store = getStore();
+  const classroom = store.classes.get(input.classId);
+  if (!classroom) return null;
+  const next = { ...classroom, approvalRequired: input.approvalRequired, joinMessage: input.joinMessage ?? "" };
+  store.classes.set(input.classId, next);
+  return next;
+}
+
+export async function listAtRiskStudentsForTeacher(teacherId: string) {
+  const classes = await listTeacherClasses(teacherId);
+  const rows = await Promise.all(classes.map((item) => listClassStudents({ teacherId, classId: item.id })));
+  return rows.flat().filter((student) => (student.riskFlags?.length ?? 0) > 0);
+}
+
+export async function getInstitutionAnalytics(teacherId: string) {
+  const classes = await listTeacherClasses(teacherId);
+  const analyticsRows = await Promise.all(classes.map((item) => getTeacherClassAnalytics({ teacherId, classId: item.id })));
+  const notes = await Promise.all(classes.map((item) => listClassStudents({ teacherId, classId: item.id })));
+  const studentPool = notes.flat();
+  const totalStudents = studentPool.length;
+  const averageScore = analyticsRows.length ? Number((analyticsRows.reduce((sum, item) => sum + item.classAverageScore, 0) / analyticsRows.length).toFixed(1)) : 0;
+  const homeworkCompletionRate = analyticsRows.length ? Number((analyticsRows.reduce((sum, item) => sum + (item.homeworkCompletionRate ?? 0), 0) / analyticsRows.length).toFixed(0)) : 0;
+  const teacherNotes = await Promise.all(studentPool.map((student) => listTeacherNotes({ teacherId, studentId: student.student.id })));
+  const reviewedStudents = teacherNotes.filter((items) => items.length > 0).length;
+  const weaknessCounts = new Map<string, number>();
+  studentPool.forEach((student) => {
+    if (student.weakestSkill) {
+      weaknessCounts.set(student.weakestSkill, (weaknessCounts.get(student.weakestSkill) ?? 0) + 1);
+    }
+  });
+  return {
+    totalClasses: classes.length,
+    totalStudents,
+    activeStudents: analyticsRows.reduce((sum, item) => sum + item.activeStudents, 0),
+    totalAttempts: analyticsRows.reduce((sum, item) => sum + item.totalAttempts, 0),
+    averageScore,
+    homeworkCompletionRate,
+    overdueHomeworkCount: analyticsRows.reduce((sum, item) => sum + (item.overdueHomeworkCount ?? 0), 0),
+    dueSoonHomeworkCount: analyticsRows.reduce((sum, item) => sum + (item.dueSoonHomeworkCount ?? 0), 0),
+    pendingApprovalCount: analyticsRows.reduce((sum, item) => sum + (item.pendingApprovalCount ?? 0), 0),
+    atRiskStudentCount: studentPool.filter((student) => (student.riskFlags?.length ?? 0) > 0).length,
+    mostCommonWeakestSkill: [...weaknessCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null,
+    teacherNoteCoverage: totalStudents ? Number(((reviewedStudents / totalStudents) * 100).toFixed(0)) : 0,
+    improvementAverage: studentPool.length
+      ? Number((studentPool.reduce((sum, student) => sum + (student.scoreDelta ?? 0), 0) / studentPool.length).toFixed(1))
+      : 0,
+    classes: analyticsRows
+  } satisfies InstitutionAnalyticsSummary;
+}
+
+export async function compareStudentsForTeacher(input: { teacherId: string; leftId: string; rightId: string }) {
+  const left = (await getTeacherStudentDetail({ teacherId: input.teacherId, studentId: input.leftId })).overview;
+  const right = (await getTeacherStudentDetail({ teacherId: input.teacherId, studentId: input.rightId })).overview;
+  const strongerAreas = [left, right]
+    .flatMap((student) => student.weakestSkill ? [] : ["Balanced"])
+    .slice(0, 2);
+  return {
+    left,
+    right,
+    scoreGap: Number(((left.averageScore ?? 0) - (right.averageScore ?? 0)).toFixed(1)),
+    sessionGap: left.totalSessions - right.totalSessions,
+    strongerAreas
+  } satisfies StudentComparison;
 }
 
 export async function createTeacherNote(input: { teacherId: string; studentId: string; note: string; sessionId?: string }) {
@@ -552,7 +708,9 @@ function buildStudentOverview(student: MemberProfile, summary: Awaited<ReturnTyp
     lastSessionTitle: summary.recentSessions[0]?.prompt.title ?? null,
     lastExamType: summary.recentSessions[0]?.examType ?? null,
     lastTaskType: summary.recentSessions[0]?.taskType ?? null,
-    scoreDelta
+    scoreDelta,
+    lastActiveAt: summary.recentSessions[0]?.createdAt ?? null,
+    riskFlags: buildRiskFlags(summary)
   };
 }
 
@@ -574,4 +732,20 @@ function findWeakestSkill(sessions: Awaited<ReturnType<typeof getProgressSummary
   return [...buckets.entries()]
     .map(([label, stats]) => ({ label, average: stats.total / stats.count }))
     .sort((a, b) => a.average - b.average)[0]?.label ?? null;
+}
+
+function buildRiskFlags(summary: Awaited<ReturnType<typeof getProgressSummary>>) {
+  const flags: string[] = [];
+  const latest = summary.recentSessions[0];
+  if (!latest) return flags;
+  const lastActiveDays = Math.floor((Date.now() - new Date(latest.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+  if (lastActiveDays >= 7) flags.push("Inactive 7d");
+  if (summary.averageScore > 0 && summary.averageScore < 5.5) flags.push("Low average");
+  const scored = summary.recentSessions.filter((session) => session.report);
+  if (scored.length >= 2) {
+    const latestScore = scored[0].report?.overall ?? 0;
+    const previousScore = scored[1].report?.overall ?? 0;
+    if (latestScore + 0.7 <= previousScore) flags.push("Score drop");
+  }
+  return flags;
 }

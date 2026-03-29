@@ -42,11 +42,11 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const classroom = await joinTeacherClassByCode({
+    const result = await joinTeacherClassByCode({
       studentId: profile.id,
       joinCode: String(body.joinCode ?? "")
     });
-    return NextResponse.json({ classroom });
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Could not join class." }, { status: 400 });
   }

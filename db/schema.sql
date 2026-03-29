@@ -32,23 +32,31 @@ create table if not exists teacher_classes (
   teacher_id text not null references users(id) on delete cascade,
   name text not null,
   join_code text not null unique,
+  approval_required boolean not null default true,
+  join_message text,
   created_at timestamptz not null default now()
 );
 
 create table if not exists teacher_class_enrollments (
   class_id text not null references teacher_classes(id) on delete cascade,
   student_id text not null references users(id) on delete cascade,
+  status text not null default 'approved' check (status in ('pending', 'approved')),
+  requested_at timestamptz not null default now(),
+  approved_at timestamptz,
   joined_at timestamptz not null default now(),
   primary key (class_id, student_id)
 );
 
-create table if not exists teacher_notes (
-  id text primary key,
-  teacher_id text not null references users(id) on delete cascade,
-  student_id text not null references users(id) on delete cascade,
-  session_id text references speaking_sessions(id) on delete set null,
-  note text not null,
-  created_at timestamptz not null default now()
+create table if not exists student_profiles (
+  user_id text primary key references users(id) on delete cascade,
+  preferred_exam_type text not null check (preferred_exam_type in ('IELTS', 'TOEFL')) default 'IELTS',
+  target_score numeric(4,1),
+  weekly_goal integer not null default 4,
+  study_days_json jsonb not null default '[]'::jsonb,
+  current_level text not null default 'Building basics',
+  focus_skill text not null default 'Balanced practice',
+  bio text,
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists institution_billing (
@@ -141,6 +149,27 @@ create table if not exists feedback_reports (
   created_at timestamptz not null default now()
 );
 
+create table if not exists teacher_notes (
+  id text primary key,
+  teacher_id text not null references users(id) on delete cascade,
+  student_id text not null references users(id) on delete cascade,
+  session_id text references speaking_sessions(id) on delete set null,
+  note text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table speaking_sessions add column if not exists raw_transcript text;
+alter table speaking_sessions add column if not exists cleaned_transcript text;
+alter table speaking_sessions add column if not exists transcript_quality_score numeric(5,2);
+alter table speaking_sessions add column if not exists transcript_quality_label text;
+alter table users add column if not exists email_verified boolean not null default false;
+alter table teacher_classes add column if not exists approval_required boolean not null default true;
+alter table teacher_classes add column if not exists join_message text;
+alter table teacher_class_enrollments add column if not exists status text not null default 'approved';
+alter table teacher_class_enrollments add column if not exists requested_at timestamptz not null default now();
+alter table teacher_class_enrollments add column if not exists approved_at timestamptz;
+alter table feedback_reports add column if not exists improved_answer text;
+
 create index if not exists idx_speaking_sessions_user_created_at
   on speaking_sessions(user_id, created_at desc);
 
@@ -161,6 +190,9 @@ create index if not exists idx_teacher_notes_teacher_student
 
 create index if not exists idx_teacher_enrollments_student_id
   on teacher_class_enrollments(student_id, joined_at desc);
+
+create index if not exists idx_teacher_enrollments_class_status
+  on teacher_class_enrollments(class_id, status, requested_at desc);
 
 create index if not exists idx_homework_assignments_student_created
   on homework_assignments(student_id, created_at desc);
@@ -238,11 +270,16 @@ begin
   end if;
 end $$;
 
-alter table speaking_sessions add column if not exists raw_transcript text;
-alter table speaking_sessions add column if not exists cleaned_transcript text;
-alter table speaking_sessions add column if not exists transcript_quality_score numeric(5,2);
-alter table speaking_sessions add column if not exists transcript_quality_label text;
-alter table users add column if not exists email_verified boolean not null default false;
-
-
-alter table feedback_reports add column if not exists improved_answer text;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'teacher_class_enrollments_status_check'
+      and conrelid = 'teacher_class_enrollments'::regclass
+  ) then
+    alter table teacher_class_enrollments
+      add constraint teacher_class_enrollments_status_check
+      check (status in ('pending', 'approved'));
+  end if;
+end $$;

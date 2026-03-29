@@ -15,6 +15,7 @@ export type Difficulty = "Starter" | "Target" | "Stretch";
 
 export type SubscriptionPlan = "free" | "plus" | "pro";
 export type UserRole = "guest" | "member";
+export type EnrollmentStatus = "pending" | "approved";
 
 export type FeedbackCategory =
   | "fluency"
@@ -109,6 +110,8 @@ export interface TeacherClass {
   name: string;
   joinCode: string;
   createdAt: string;
+  approvalRequired?: boolean;
+  joinMessage?: string | null;
 }
 
 export interface StudentClassMembership {
@@ -118,6 +121,7 @@ export interface StudentClassMembership {
   teacherEmail: string;
   joinCode: string;
   joinedAt: string;
+  status?: EnrollmentStatus;
 }
 
 export interface TeacherNote {
@@ -139,6 +143,8 @@ export interface TeacherStudentOverview {
   lastExamType?: ExamType | null;
   lastTaskType?: TaskType | null;
   scoreDelta?: number | null;
+  lastActiveAt?: string | null;
+  riskFlags?: string[];
 }
 
 export interface TeacherClassAnalytics {
@@ -153,6 +159,8 @@ export interface TeacherClassAnalytics {
   homeworkCompletionRate?: number;
   overdueHomeworkCount?: number;
   dueSoonHomeworkCount?: number;
+  pendingApprovalCount?: number;
+  atRiskStudentCount?: number;
 }
 
 export type InstitutionPlan = "starter" | "team" | "campus";
@@ -228,4 +236,47 @@ export interface SharedClassStudyItem {
   title: string;
   note?: string;
   createdAt: string;
+}
+
+export interface TeacherEnrollmentRequest {
+  classId: string;
+  student: MemberProfile;
+  requestedAt: string;
+}
+
+export interface StudentProfile {
+  userId: string;
+  preferredExamType: ExamType;
+  targetScore: number | null;
+  weeklyGoal: number;
+  studyDays: string[];
+  currentLevel: string;
+  focusSkill: string;
+  bio?: string;
+  updatedAt: string;
+}
+
+export interface InstitutionAnalyticsSummary {
+  totalClasses: number;
+  totalStudents: number;
+  activeStudents: number;
+  totalAttempts: number;
+  averageScore: number;
+  homeworkCompletionRate: number;
+  overdueHomeworkCount: number;
+  dueSoonHomeworkCount: number;
+  pendingApprovalCount: number;
+  atRiskStudentCount: number;
+  mostCommonWeakestSkill: string | null;
+  teacherNoteCoverage: number;
+  improvementAverage: number;
+  classes: TeacherClassAnalytics[];
+}
+
+export interface StudentComparison {
+  left: TeacherStudentOverview;
+  right: TeacherStudentOverview;
+  scoreGap: number;
+  sessionGap: number;
+  strongerAreas: string[];
 }

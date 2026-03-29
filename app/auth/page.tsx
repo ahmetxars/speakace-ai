@@ -59,7 +59,7 @@ function AuthPageInner() {
           ? tr ? "Hesabin olusturuldu. Dogrulama maili gonderildi, lutfen gelen kutunu kontrol et." : "Your account was created. A verification email has been sent, so please check your inbox."
           : tr ? "Hesabin olusturuldu. Giris yapmadan once e-posta dogrulamasi gerekli." : "Your account was created. Email verification is required before signing in."
       );
-      setActionUrl(data.verificationUrl ?? "");
+      setActionUrl(data.emailSent ? "" : data.verificationUrl ?? "");
       return;
     }
 
@@ -107,7 +107,7 @@ function AuthPageInner() {
         ? tr ? "Eger hesap varsa sifre sifirlama maili gonderildi." : "If the account exists, a password reset email has been sent."
         : tr ? "Eger hesap varsa sifre sifirlama linki hazirlandi." : "If the account exists, a password reset link is ready."
     );
-    setActionUrl(data.resetUrl ?? "");
+    setActionUrl(data.emailSent ? "" : data.resetUrl ?? "");
   };
 
   const resendVerification = async () => {
@@ -129,7 +129,7 @@ function AuthPageInner() {
         ? tr ? "Eger hesap hala dogrulanmadiysa yeni dogrulama maili gonderildi." : "If the account is still unverified, a new verification email has been sent."
         : tr ? "Eger hesap hala dogrulanmadiysa yeni link hazirlandi." : "If the account is still unverified, a new link is ready."
     );
-    setActionUrl(data.verificationUrl ?? "");
+    setActionUrl(data.emailSent ? "" : data.verificationUrl ?? "");
   };
 
   const resetPassword = async () => {

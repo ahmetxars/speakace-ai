@@ -403,13 +403,21 @@ export function Dashboard() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ joinCode })
     });
-    const data = (await response.json()) as { error?: string; classroom?: { name: string } };
+    const data = (await response.json()) as { error?: string; classroom?: { name: string; joinMessage?: string | null }; status?: "pending" | "approved" };
     if (!response.ok) {
       setJoinError(data.error ?? (tr ? "Sinifa katilinamadi." : "Could not join class."));
       return;
     }
     setJoinCode("");
-    setJoinNotice(tr ? "Sinifa katilim basarili." : "You joined the class.");
+    setJoinNotice(
+      data.status === "pending"
+        ? tr
+          ? `Talebin alindi. Ogretmen onayindan sonra sinif gorunecek.${data.classroom?.joinMessage ? ` ${data.classroom.joinMessage}` : ""}`
+          : `Your request was sent. The class will appear after teacher approval.${data.classroom?.joinMessage ? ` ${data.classroom.joinMessage}` : ""}`
+        : tr
+          ? "Sinifa katilim basarili."
+          : "You joined the class."
+    );
     const refresh = await fetch("/api/classes/join");
     const refreshData = (await refresh.json()) as { classes?: StudentClassMembership[] };
     setJoinedClasses(refreshData.classes ?? []);
@@ -485,7 +493,11 @@ export function Dashboard() {
               <Link className="button button-secondary" href="/app/teacher">
                 {tr ? "Ogretmen paneli" : "Teacher panel"}
               </Link>
-            ) : null}
+            ) : (
+              <Link className="button button-secondary" href="/app/profile">
+                {tr ? "Profilim" : "My profile"}
+              </Link>
+            )}
             <Link className="button button-secondary" href="/app/billing">
               {tr ? "Planini gor" : "View plan"}
             </Link>

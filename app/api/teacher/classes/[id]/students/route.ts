@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { addStudentToTeacherClass, listClassStudents } from "@/lib/classroom-store";
+import { addStudentToTeacherClass, listClassStudents, listPendingClassRequests } from "@/lib/classroom-store";
 import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 
@@ -22,8 +22,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
   try {
     const { id } = await params;
-    const students = await listClassStudents({ teacherId: profile.id, classId: id });
-    return NextResponse.json({ students });
+    const [students, pendingRequests] = await Promise.all([
+      listClassStudents({ teacherId: profile.id, classId: id }),
+      listPendingClassRequests({ teacherId: profile.id, classId: id })
+    ]);
+    return NextResponse.json({ students, pendingRequests });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Could not load students." }, { status: 400 });
   }

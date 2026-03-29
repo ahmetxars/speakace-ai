@@ -36,8 +36,10 @@ export function SiteHeader() {
         <nav style={{ display: "flex", gap: "0.9rem", alignItems: "center", flexWrap: "wrap" }}>
           <Link href="/app/practice">{content.nav.practice}</Link>
           {signedIn ? <Link href="/app">{content.nav.dashboard}</Link> : <Link href="/#pricing">{content.nav.pricing}</Link>}
+          {signedIn && !currentUser?.isTeacher ? <Link href="/app/profile">{language === "tr" ? "Profil" : "Profile"}</Link> : null}
           {signedIn && currentUser?.isTeacher ? <Link href="/app/teacher">{language === "tr" ? "Ogretmen" : "Teacher"}</Link> : null}
           {signedIn && currentUser?.isTeacher ? <Link href="/app/teacher/billing">{language === "tr" ? "Kurum" : "Institution"}</Link> : null}
+          {signedIn && currentUser?.isTeacher ? <Link href="/app/teacher/institution">{language === "tr" ? "Analitik" : "Analytics"}</Link> : null}
           {signedIn ? <Link href="/app/study-lists">{language === "tr" ? "Listeler" : "Study lists"}</Link> : null}
           {signedIn ? <Link href="/app/review">{language === "tr" ? "Review" : "Review"}</Link> : null}
           {signedIn ? <Link href="/app/billing">{content.nav.billing}</Link> : null}

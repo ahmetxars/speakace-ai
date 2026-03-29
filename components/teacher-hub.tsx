@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { useAppState } from "@/components/providers";
 import { listPromptsForTask } from "@/lib/prompts";
-import { ExamType, HomeworkAutoAssignRule, SharedClassStudyItem, TaskType, TeacherClassAnalytics, TeacherStudentOverview } from "@/lib/types";
+import { ExamType, HomeworkAutoAssignRule, SharedClassStudyItem, TaskType, TeacherClassAnalytics, TeacherEnrollmentRequest, TeacherStudentOverview } from "@/lib/types";
 
 type TeacherClassSummary = {
   id: string;
@@ -14,6 +14,9 @@ type TeacherClassSummary = {
   joinCode: string;
   createdAt: string;
   studentCount: number;
+  pendingCount?: number;
+  approvalRequired?: boolean;
+  joinMessage?: string | null;
 };
 
 type HomeworkSummary = {
@@ -34,6 +37,7 @@ export function TeacherHub() {
   const [students, setStudents] = useState<TeacherStudentOverview[]>([]);
   const [analytics, setAnalytics] = useState<TeacherClassAnalytics | null>(null);
   const [sharedItems, setSharedItems] = useState<SharedClassStudyItem[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<TeacherEnrollmentRequest[]>([]);
   const [newClassName, setNewClassName] = useState("");
   const [studentEmail, setStudentEmail] = useState("");
   const [notice, setNotice] = useState("");
@@ -50,6 +54,17 @@ export function TeacherHub() {
   const [shareTaskType, setShareTaskType] = useState<TaskType>("ielts-part-1");
   const [sharePromptId, setSharePromptId] = useState("");
   const [shareNote, setShareNote] = useState("");
+  const [bulkHomework, setBulkHomework] = useState({
+    title: "",
+    instructions: "",
+    focusSkill: "Balanced practice",
+    recommendedTaskType: "ielts-part-1" as TaskType,
+    dueDays: 7
+  });
+  const [classSettings, setClassSettings] = useState({
+    approvalRequired: true,
+    joinMessage: ""
+  });
 
   const selectedClass = useMemo(() => classes.find((item) => item.id === selectedClassId) ?? null, [classes, selectedClassId]);
   const availableTasks = useMemo(() => (shareExamType === "IELTS" ? IELTS_TASKS : TOEFL_TASKS), [shareExamType]);
@@ -62,6 +77,14 @@ export function TeacherHub() {
   useEffect(() => {
     setSharePromptId(availableSharePrompts[0]?.id ?? "");
   }, [availableSharePrompts]);
+
+  useEffect(() => {
+    if (!selectedClass) return;
+    setClassSettings({
+      approvalRequired: selectedClass.approvalRequired ?? true,
+      joinMessage: selectedClass.joinMessage ?? ""
+    });
+  }, [selectedClass]);
 
   const filteredStudents = useMemo(
     () =>
@@ -98,6 +121,10 @@ export function TeacherHub() {
   const filterSkillOptions = useMemo(
     () => [...new Set(students.map((item) => item.weakestSkill).filter(Boolean))] as string[],
     [students]
+  );
+  const atRiskStudents = useMemo(
+    () => filteredStudents.filter((item) => (item.riskFlags?.length ?? 0) > 0).slice(0, 6),
+    [filteredStudents]
   );
 
   useEffect(() => {
@@ -145,15 +172,20 @@ export function TeacherHub() {
         fetch(`/api/teacher/classes/${classId}/auto-assign`)
       ]);
 
-      const studentsData = (await studentsResponse.json()) as { students?: TeacherStudentOverview[] };
+      const studentsData = (await studentsResponse.json()) as { students?: TeacherStudentOverview[]; pendingRequests?: TeacherEnrollmentRequest[] };
       const analyticsData = (await analyticsResponse.json()) as { analytics?: TeacherClassAnalytics };
       const sharedData = (await sharedResponse.json()) as { items?: SharedClassStudyItem[] };
       const ruleData = (await ruleResponse.json()) as { rule?: HomeworkAutoAssignRule };
 
       setStudents(studentsData.students ?? []);
+      setPendingRequests(studentsData.pendingRequests ?? []);
       setAnalytics(analyticsData.analytics ?? null);
       setSharedItems(sharedData.items ?? []);
       setRule(ruleData.rule ?? null);
+      setClassSettings({
+        approvalRequired: selectedClass?.approvalRequired ?? true,
+        joinMessage: selectedClass?.joinMessage ?? ""
+      });
 
       if (ruleData.rule?.enabled) {
         const runResponse = await fetch(`/api/teacher/classes/${classId}/auto-assign`, {
@@ -176,8 +208,9 @@ export function TeacherHub() {
       setAnalytics(null);
       setSharedItems([]);
       setRule(null);
+      setPendingRequests([]);
     }
-  }, [refreshHomeworkSummary, tr]);
+  }, [refreshHomeworkSummary, selectedClass?.approvalRequired, selectedClass?.joinMessage, tr]);
 
   useEffect(() => {
     if (!selectedClassId) {
@@ -228,6 +261,64 @@ export function TeacherHub() {
     setNotice(tr ? "Ogrenci sinifa eklendi." : "Student added to class.");
     await loadSelectedClass(selectedClassId);
     setClasses((current) => current.map((item) => (item.id === selectedClassId ? { ...item, studentCount: item.studentCount + 1 } : item)));
+  };
+
+  const updateClassSettings = async () => {
+    if (!selectedClassId) return;
+    setError("");
+    setNotice("");
+    const response = await fetch(`/api/teacher/classes/${selectedClassId}/settings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(classSettings)
+    });
+    const data = (await response.json()) as { classroom?: TeacherClassSummary; error?: string };
+    if (!response.ok || !data.classroom) {
+      setError(data.error ?? (tr ? "Sinif ayarlari kaydedilemedi." : "Could not save class settings."));
+      return;
+    }
+    setClasses((current) => current.map((item) => (item.id === selectedClassId ? { ...item, ...data.classroom } : item)));
+    setNotice(tr ? "Sinif ayarlari kaydedildi." : "Class settings saved.");
+  };
+
+  const handleApproval = async (studentId: string, action: "approve" | "reject") => {
+    if (!selectedClassId) return;
+    setError("");
+    setNotice("");
+    const response = await fetch(`/api/teacher/classes/${selectedClassId}/approvals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ studentId, action })
+    });
+    const data = (await response.json()) as { error?: string };
+    if (!response.ok) {
+      setError(data.error ?? (tr ? "Onay islemi tamamlanamadi." : "Could not update approval."));
+      return;
+    }
+    setPendingRequests((current) => current.filter((item) => item.student.id !== studentId));
+    await loadSelectedClass(selectedClassId);
+    setNotice(action === "approve" ? (tr ? "Ogrenci onaylandi." : "Student approved.") : tr ? "Talep reddedildi." : "Request rejected.");
+  };
+
+  const assignBulkHomework = async () => {
+    if (!selectedClassId) return;
+    setError("");
+    setNotice("");
+    const response = await fetch(`/api/teacher/classes/${selectedClassId}/bulk-homework`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...bulkHomework,
+        dueAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * bulkHomework.dueDays).toISOString()
+      })
+    });
+    const data = (await response.json()) as { created?: Array<{ id: string }>; error?: string };
+    if (!response.ok) {
+      setError(data.error ?? (tr ? "Toplu homework olusturulamadi." : "Could not create bulk homework."));
+      return;
+    }
+    setNotice(tr ? `${data.created?.length ?? 0} ogrenciye toplu homework atandi.` : `Bulk homework assigned to ${data.created?.length ?? 0} students.`);
+    await refreshHomeworkSummary();
   };
 
   const copyJoinCode = async () => {
@@ -390,7 +481,7 @@ export function TeacherHub() {
               >
                 <strong>{item.name}</strong>
                 <div className="practice-meta" style={{ marginTop: "0.35rem" }}>
-                  {tr ? `Kod: ${item.joinCode} · ${item.studentCount} ogrenci` : `Code: ${item.joinCode} · ${item.studentCount} students`}
+                  {tr ? `Kod: ${item.joinCode} · ${item.studentCount} ogrenci · ${item.pendingCount ?? 0} bekleyen` : `Code: ${item.joinCode} · ${item.studentCount} students · ${item.pendingCount ?? 0} pending`}
                 </div>
               </button>
             ))}
@@ -408,7 +499,7 @@ export function TeacherHub() {
                 <div>
                   <strong>{tr ? "Davet kodu" : "Invite code"}</strong>
                   <div className="practice-meta" style={{ marginTop: "0.35rem" }}>
-                    {selectedClass.joinCode} {copiedCode === selectedClass.joinCode ? (tr ? "· kopyalandi" : "· copied") : ""}
+                    {selectedClass.joinCode} {copiedCode === selectedClass.joinCode ? (tr ? "· kopyalandi" : "· copied") : ""} {selectedClass.approvalRequired ? `· ${tr ? "onayli katilim" : "approval required"}` : ""}
                   </div>
                 </div>
                 <button type="button" className="button button-secondary" onClick={copyJoinCode}>
@@ -430,8 +521,65 @@ export function TeacherHub() {
                   />
                   <TeacherStat label={tr ? "Homework tamamlama" : "Homework completion"} value={`${analytics.homeworkCompletionRate ?? 0}%`} />
                   <TeacherStat label={tr ? "Geciken homework" : "Overdue homework"} value={String(analytics.overdueHomeworkCount ?? 0)} />
+                  <TeacherStat label={tr ? "Bekleyen onay" : "Pending approvals"} value={String(analytics.pendingApprovalCount ?? 0)} />
+                  <TeacherStat label={tr ? "Riskli ogrenci" : "At-risk students"} value={String(analytics.atRiskStudentCount ?? 0)} />
                 </div>
               ) : null}
+
+              <div className="grid" style={{ gridTemplateColumns: "minmax(240px, 0.9fr) minmax(280px, 1.1fr)", gap: "0.85rem", alignItems: "start" }}>
+                <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
+                  <strong>{tr ? "Teacher class approval" : "Teacher class approval"}</strong>
+                  <label style={{ display: "grid", gap: "0.35rem" }}>
+                    <span className="practice-meta">{tr ? "Join request onayi gerekli" : "Require approval for join requests"}</span>
+                    <input type="checkbox" checked={classSettings.approvalRequired} onChange={(event) => setClassSettings((current) => ({ ...current, approvalRequired: event.target.checked }))} />
+                  </label>
+                  <textarea
+                    value={classSettings.joinMessage}
+                    onChange={(event) => setClassSettings((current) => ({ ...current, joinMessage: event.target.value }))}
+                    rows={3}
+                    placeholder={tr ? "Katilim sonrasi ogrencinin gorecegi kisa mesaj..." : "Short note students will see after joining..."}
+                    style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }}
+                  />
+                  <button type="button" className="button button-secondary" onClick={updateClassSettings}>
+                    {tr ? "Ayarları kaydet" : "Save settings"}
+                  </button>
+                  {pendingRequests.length ? (
+                    <div style={{ display: "grid", gap: "0.55rem" }}>
+                      {pendingRequests.map((item) => (
+                        <div key={item.student.id} className="card" style={{ padding: "0.8rem", display: "grid", gap: "0.45rem", background: "rgba(255,255,255,0.55)" }}>
+                          <strong>{item.student.name}</strong>
+                          <div className="practice-meta">{item.student.email}</div>
+                          <div className="practice-meta">{new Date(item.requestedAt).toLocaleString(tr ? "tr-TR" : "en-US")}</div>
+                          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                            <button type="button" className="button button-secondary" onClick={() => handleApproval(item.student.id, "approve")}>{tr ? "Onayla" : "Approve"}</button>
+                            <button type="button" className="button button-secondary" onClick={() => handleApproval(item.student.id, "reject")}>{tr ? "Reddet" : "Reject"}</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Bekleyen katilim talebi yok." : "No pending join requests."}</p>
+                  )}
+                </div>
+
+                <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
+                  <strong>{tr ? "Toplu odev atama" : "Bulk homework assignment"}</strong>
+                  <input value={bulkHomework.title} onChange={(event) => setBulkHomework((current) => ({ ...current, title: event.target.value }))} placeholder={tr ? "Ornek: Part 2 akicilik odev paketi" : "Example: Part 2 fluency pack"} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }} />
+                  <textarea value={bulkHomework.instructions} onChange={(event) => setBulkHomework((current) => ({ ...current, instructions: event.target.value }))} rows={4} placeholder={tr ? "Tum sinifa gidecek odev yonergesi..." : "Instructions that will be sent to the entire class..."} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }} />
+                  <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.6rem" }}>
+                    <input value={bulkHomework.focusSkill} onChange={(event) => setBulkHomework((current) => ({ ...current, focusSkill: event.target.value }))} placeholder={tr ? "Odak skill" : "Focus skill"} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }} />
+                    <select value={bulkHomework.recommendedTaskType} onChange={(event) => setBulkHomework((current) => ({ ...current, recommendedTaskType: event.target.value as TaskType }))} style={selectStyle}>
+                      {[...IELTS_TASKS, ...TOEFL_TASKS].map((task) => (
+                        <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>
+                      ))}
+                    </select>
+                    <input type="number" min="1" max="21" value={bulkHomework.dueDays} onChange={(event) => setBulkHomework((current) => ({ ...current, dueDays: Number(event.target.value) || 7 }))} placeholder={tr ? "Teslim gunu" : "Due days"} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }} />
+                  </div>
+                  <button type="button" className="button button-secondary" onClick={assignBulkHomework}>
+                    {tr ? "Tum secili ogrencilere ata" : "Assign to current class"}
+                  </button>
+                </div>
+              </div>
 
               <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>
                 <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
@@ -597,10 +745,28 @@ export function TeacherHub() {
                 <Link className="button button-secondary" href="/app/teacher/billing" style={{ justifyContent: "center" }}>
                   {tr ? "Kurum paketini yonet" : "Manage institution plan"}
                 </Link>
+                <Link className="button button-secondary" href="/app/teacher/institution" style={{ justifyContent: "center" }}>
+                  {tr ? "Kurum analitigi" : "Institution analytics"}
+                </Link>
+                <Link className="button button-secondary" href="/app/teacher/compare" style={{ justifyContent: "center" }}>
+                  {tr ? "Ogrenci karsilastir" : "Compare students"}
+                </Link>
               </div>
 
               {notice ? <p style={{ color: "var(--success)", margin: 0 }}>{notice}</p> : null}
               {error ? <p style={{ color: "var(--accent-deep)", margin: 0 }}>{error}</p> : null}
+
+              <div className="card" style={{ padding: "1rem", background: "rgba(217, 93, 57, 0.08)", display: "grid", gap: "0.7rem" }}>
+                <strong>{tr ? "Riskli ogrenci uyarilari" : "At-risk student warnings"}</strong>
+                {atRiskStudents.length ? atRiskStudents.map((item) => (
+                  <div key={item.student.id} style={{ display: "grid", gap: "0.25rem" }}>
+                    <strong>{item.student.name}</strong>
+                    <div className="practice-meta">{(item.riskFlags ?? []).join(" · ")}</div>
+                  </div>
+                )) : (
+                  <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Su anda riskli gorunen ogrenci yok." : "No at-risk students detected right now."}</p>
+                )}
+              </div>
 
               <div className="grid" style={{ gap: "0.8rem" }}>
                 {filteredStudents.length ? (
