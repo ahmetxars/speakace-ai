@@ -61,7 +61,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         students: students.map((item) => ({
           id: item.student.id,
           averageScore: item.averageScore,
-          totalSessions: item.totalSessions
+          totalSessions: item.totalSessions,
+          weakestSkill: item.weakestSkill,
+          lastExamType: item.lastExamType,
+          lastTaskType: item.lastTaskType
         }))
       });
       return NextResponse.json({ rule: result.rule, created: result.created });
@@ -72,7 +75,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       classId: id,
       enabled: Boolean(body.enabled),
       scoreThreshold: Number(body.scoreThreshold ?? 5.5),
-      dueDays: Number(body.dueDays ?? 7)
+      dueDays: Number(body.dueDays ?? 7),
+      examType: body.examType === "IELTS" || body.examType === "TOEFL" ? body.examType : "all",
+      taskType: typeof body.taskType === "string" ? body.taskType : "all",
+      focusSkill: body.focusSkill ? String(body.focusSkill) : null
     });
     return NextResponse.json({ rule });
   } catch (error) {

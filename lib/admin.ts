@@ -18,12 +18,13 @@ export function isAdminEmail(email: string) {
 }
 
 export function withAdminPrivileges(profile: MemberProfile): MemberProfile {
-  if (!isAdminEmail(profile.email)) {
+  if (!profile.adminAccess && !isAdminEmail(profile.email)) {
     return withTeacherPrivileges(profile);
   }
 
   return withTeacherPrivileges({
     ...profile,
+    adminAccess: true,
     isAdmin: true,
     plan: "pro"
   });

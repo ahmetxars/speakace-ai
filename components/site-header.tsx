@@ -28,7 +28,7 @@ export function SiteHeader() {
           <div style={{ color: "var(--muted)", fontSize: "0.95rem", marginTop: "0.2rem" }}>{content.tagline}</div>
           {currentUser ? (
             <div style={{ color: "var(--accent-cool)", fontSize: "0.85rem", marginTop: "0.35rem" }}>
-              {currentUser.name} · {currentUser.plan.toUpperCase()}{currentUser.isTeacher ? " · TEACHER" : ""}
+              {currentUser.name} · {currentUser.plan.toUpperCase()}{currentUser.isTeacher ? language === "tr" ? " · ÖĞRETMEN" : " · TEACHER" : ""}
             </div>
           ) : null}
         </div>
@@ -36,12 +36,16 @@ export function SiteHeader() {
         <nav style={{ display: "flex", gap: "0.9rem", alignItems: "center", flexWrap: "wrap" }}>
           <Link href="/app/practice">{content.nav.practice}</Link>
           {signedIn ? <Link href="/app">{content.nav.dashboard}</Link> : <Link href="/#pricing">{content.nav.pricing}</Link>}
+          <Link href="/blog">{language === "tr" ? "Blog" : "Blog"}</Link>
           {signedIn && !currentUser?.isTeacher ? <Link href="/app/profile">{language === "tr" ? "Profil" : "Profile"}</Link> : null}
-          {signedIn && currentUser?.isTeacher ? <Link href="/app/teacher">{language === "tr" ? "Ogretmen" : "Teacher"}</Link> : null}
+          {signedIn ? <Link href="/app/notifications">{language === "tr" ? "Bildirimler" : "Notifications"}</Link> : null}
+          {signedIn ? <Link href="/app/analytics">{language === "tr" ? "Analitik" : "Analytics"}</Link> : null}
+          {signedIn && currentUser?.isTeacher ? <Link href="/app/teacher">{language === "tr" ? "Öğretmen" : "Teacher"}</Link> : null}
           {signedIn && currentUser?.isTeacher ? <Link href="/app/teacher/billing">{language === "tr" ? "Kurum" : "Institution"}</Link> : null}
-          {signedIn && currentUser?.isTeacher ? <Link href="/app/teacher/institution">{language === "tr" ? "Analitik" : "Analytics"}</Link> : null}
-          {signedIn ? <Link href="/app/study-lists">{language === "tr" ? "Listeler" : "Study lists"}</Link> : null}
-          {signedIn ? <Link href="/app/review">{language === "tr" ? "Review" : "Review"}</Link> : null}
+          {signedIn && currentUser?.isTeacher ? <Link href="/app/teacher/institution">{language === "tr" ? "Kurum analitiği" : "Analytics"}</Link> : null}
+          {signedIn && currentUser?.isAdmin ? <Link href="/app/institution-admin">{language === "tr" ? "Kurum yönetimi" : "Institution admin"}</Link> : null}
+          {signedIn ? <Link href="/app/study-lists">{language === "tr" ? "Çalışma listeleri" : "Study lists"}</Link> : null}
+          {signedIn ? <Link href="/app/review">{language === "tr" ? "Gözden geçir" : "Review"}</Link> : null}
           {signedIn ? <Link href="/app/billing">{content.nav.billing}</Link> : null}
           <Link href="/app/settings">{content.nav.settings}</Link>
           {signedIn ? (

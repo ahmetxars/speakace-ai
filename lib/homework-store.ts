@@ -23,6 +23,9 @@ function buildDefaultRule(teacherId: string, classId: string): HomeworkAutoAssig
     enabled: false,
     scoreThreshold: 5.5,
     dueDays: 7,
+    examType: "all",
+    taskType: "all",
+    focusSkill: null,
     createdAt: now,
     updatedAt: now
   };
@@ -184,6 +187,9 @@ export async function getHomeworkAutoAssignRule(input: { teacherId: string; clas
         enabled,
         score_threshold as "scoreThreshold",
         due_days as "dueDays",
+        exam_type as "examType",
+        task_type as "taskType",
+        focus_skill as "focusSkill",
         created_at as "createdAt",
         updated_at as "updatedAt"
       from homework_auto_assign_rules
@@ -202,6 +208,9 @@ export async function upsertHomeworkAutoAssignRule(input: {
   enabled: boolean;
   scoreThreshold: number;
   dueDays: number;
+  examType?: HomeworkAutoAssignRule["examType"];
+  taskType?: HomeworkAutoAssignRule["taskType"];
+  focusSkill?: string | null;
 }) {
   const now = new Date().toISOString();
   const next: HomeworkAutoAssignRule = {
@@ -211,6 +220,9 @@ export async function upsertHomeworkAutoAssignRule(input: {
     enabled: input.enabled,
     scoreThreshold: Number(input.scoreThreshold.toFixed(1)),
     dueDays: Math.max(1, Math.min(21, Math.round(input.dueDays))),
+    examType: input.examType ?? "all",
+    taskType: input.taskType ?? "all",
+    focusSkill: input.focusSkill?.trim() || null,
     updatedAt: now
   };
 
@@ -218,9 +230,9 @@ export async function upsertHomeworkAutoAssignRule(input: {
     const sql = getSql();
     const rows = await sql<HomeworkAutoAssignRule[]>`
       insert into homework_auto_assign_rules (
-        class_id, teacher_id, enabled, score_threshold, due_days, created_at, updated_at
+        class_id, teacher_id, enabled, score_threshold, due_days, exam_type, task_type, focus_skill, created_at, updated_at
       ) values (
-        ${next.classId}, ${next.teacherId}, ${next.enabled}, ${next.scoreThreshold}, ${next.dueDays}, ${next.createdAt}, ${next.updatedAt}
+        ${next.classId}, ${next.teacherId}, ${next.enabled}, ${next.scoreThreshold}, ${next.dueDays}, ${next.examType ?? "all"}, ${next.taskType ?? "all"}, ${next.focusSkill ?? null}, ${next.createdAt}, ${next.updatedAt}
       )
       on conflict (class_id)
       do update set
@@ -228,6 +240,9 @@ export async function upsertHomeworkAutoAssignRule(input: {
         enabled = excluded.enabled,
         score_threshold = excluded.score_threshold,
         due_days = excluded.due_days,
+        exam_type = excluded.exam_type,
+        task_type = excluded.task_type,
+        focus_skill = excluded.focus_skill,
         updated_at = excluded.updated_at
       returning
         class_id as "classId",
@@ -235,6 +250,9 @@ export async function upsertHomeworkAutoAssignRule(input: {
         enabled,
         score_threshold as "scoreThreshold",
         due_days as "dueDays",
+        exam_type as "examType",
+        task_type as "taskType",
+        focus_skill as "focusSkill",
         created_at as "createdAt",
         updated_at as "updatedAt"
     `;
@@ -349,7 +367,14 @@ export async function buildAdaptiveHomeworkSuggestions(studentId: string) {
 export async function runAdaptiveHomeworkAutoAssign(input: {
   teacherId: string;
   classId: string;
-  students: Array<{ id: string; averageScore: number; totalSessions: number }>;
+  students: Array<{
+    id: string;
+    averageScore: number;
+    totalSessions: number;
+    weakestSkill?: string | null;
+    lastExamType?: string | null;
+    lastTaskType?: string | null;
+  }>;
 }) {
   const rule = await getHomeworkAutoAssignRule({ teacherId: input.teacherId, classId: input.classId });
   if (!rule.enabled) {
@@ -362,6 +387,15 @@ export async function runAdaptiveHomeworkAutoAssign(input: {
 
   for (const student of input.students) {
     if (!student.totalSessions || !student.averageScore || student.averageScore >= rule.scoreThreshold) {
+      continue;
+    }
+    if (rule.examType && rule.examType !== "all" && student.lastExamType !== rule.examType) {
+      continue;
+    }
+    if (rule.taskType && rule.taskType !== "all" && student.lastTaskType !== rule.taskType) {
+      continue;
+    }
+    if (rule.focusSkill && student.weakestSkill !== rule.focusSkill) {
       continue;
     }
 
@@ -382,7 +416,7 @@ export async function runAdaptiveHomeworkAutoAssign(input: {
       classId: input.classId,
       title: suggestion.title,
       instructions: suggestion.instructions,
-      focusSkill: suggestion.focusSkill,
+      focusSkill: rule.focusSkill ?? suggestion.focusSkill,
       recommendedTaskType: suggestion.recommendedTaskType,
       dueAt: new Date(now + 1000 * 60 * 60 * 24 * rule.dueDays).toISOString()
     });

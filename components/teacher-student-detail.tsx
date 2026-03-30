@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "@/components/providers";
+import { TeacherNoteTemplates } from "@/components/teacher-note-templates";
+import { trackClientEvent } from "@/lib/analytics-client";
 import { HomeworkAssignment, ProgressSummary, TeacherNote, TeacherStudentOverview } from "@/lib/types";
 
 type StudentDetailPayload = {
@@ -31,6 +33,8 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [sessionDrafts, setSessionDrafts] = useState<Record<string, string>>({});
+  const [noteTags, setNoteTags] = useState<string[]>([]);
+  const [sessionTags, setSessionTags] = useState<Record<string, string[]>>({});
   const [homeworkSuggestions, setHomeworkSuggestions] = useState<HomeworkSuggestion[]>([]);
   const [assignedHomework, setAssignedHomework] = useState<HomeworkAssignment[]>([]);
   const [dueDays, setDueDays] = useState(7);
@@ -77,7 +81,7 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
     const response = await fetch("/api/teacher/notes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studentId, note })
+      body: JSON.stringify({ studentId, note, tags: noteTags })
     });
     const data = (await response.json()) as { error?: string; note?: TeacherNote };
     if (!response.ok || !data.note) {
@@ -85,8 +89,12 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
       return;
     }
     setNote("");
+    setNoteTags([]);
     setNotice(tr ? "Ogretmen notu kaydedildi." : "Teacher note saved.");
     setDetail((current) => (current ? { ...current, notes: [data.note!, ...current.notes] } : current));
+    if (currentUser?.id) {
+      void trackClientEvent({ userId: currentUser.id, event: "teacher_note_saved", path: `/app/teacher/student/${studentId}` });
+    }
   };
 
   const saveSessionNote = async (sessionId: string) => {
@@ -97,7 +105,7 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
     const response = await fetch("/api/teacher/notes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studentId, note: text, sessionId })
+      body: JSON.stringify({ studentId, note: text, sessionId, tags: sessionTags[sessionId] ?? [] })
     });
     const data = (await response.json()) as { error?: string; note?: TeacherNote };
     if (!response.ok || !data.note) {
@@ -105,8 +113,12 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
       return;
     }
     setSessionDrafts((current) => ({ ...current, [sessionId]: "" }));
+    setSessionTags((current) => ({ ...current, [sessionId]: [] }));
     setNotice(tr ? "Session notu kaydedildi." : "Session note saved.");
     setDetail((current) => (current ? { ...current, notes: [data.note!, ...current.notes] } : current));
+    if (currentUser?.id) {
+      void trackClientEvent({ userId: currentUser.id, event: "teacher_note_saved", path: `/app/teacher/student/${studentId}` });
+    }
   };
 
   const assignHomework = async (suggestion: HomeworkSuggestion) => {
@@ -187,8 +199,44 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
                     </div>
                   </div>
                 </Link>
+                <Link href={`/app/replay/${session.id}`} className="button button-secondary" style={{ width: "fit-content" }}>
+                  {tr ? "Replay ac" : "Open replay"}
+                </Link>
                 <div className="card" style={{ padding: "0.85rem", background: "rgba(255,255,255,0.55)", display: "grid", gap: "0.55rem" }}>
                   <strong style={{ fontSize: "0.95rem" }}>{tr ? "Bu denemeye yorum birak" : "Comment on this attempt"}</strong>
+                  <TeacherNoteTemplates
+                    tr={tr}
+                    onSelect={(value) =>
+                      setSessionDrafts((current) => ({
+                        ...current,
+                        [session.id]: current[session.id] ? `${current[session.id]}\n${value}` : value
+                      }))
+                    }
+                  />
+                  <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
+                    {["fluency", "pronunciation", "structure", "example", "vocabulary"].map((tag) => {
+                      const active = (sessionTags[session.id] ?? []).includes(tag);
+                      return (
+                        <button
+                          key={`${session.id}-${tag}`}
+                          type="button"
+                          className="button button-secondary"
+                          style={{ background: active ? "rgba(29, 111, 117, 0.12)" : undefined }}
+                          onClick={() =>
+                            setSessionTags((current) => {
+                              const currentTags = current[session.id] ?? [];
+                              return {
+                                ...current,
+                                [session.id]: active ? currentTags.filter((item) => item !== tag) : [...currentTags, tag]
+                              };
+                            })
+                          }
+                        >
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
                   <textarea
                     value={sessionDrafts[session.id] ?? ""}
                     onChange={(event) => setSessionDrafts((current) => ({ ...current, [session.id]: event.target.value }))}
@@ -203,6 +251,7 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
                     <div style={{ display: "grid", gap: "0.45rem" }}>
                       {sessionNotesMap.get(session.id)!.slice(0, 2).map((item) => (
                         <div key={item.id} className="practice-meta" style={{ lineHeight: 1.6 }}>
+                          {item.tags?.length ? <div style={{ marginBottom: "0.25rem" }}>{item.tags.map((tag) => `#${tag}`).join(" ")}</div> : null}
                           {item.note}
                         </div>
                       ))}
@@ -308,6 +357,23 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
             placeholder={tr ? "Ogrencinin bir sonraki derste neye odaklanmasi gerektigini yaz..." : "Write what this student should focus on in the next lesson..."}
             style={{ padding: "0.95rem", borderRadius: 16, border: "1px solid var(--line)", resize: "vertical" }}
           />
+          <TeacherNoteTemplates tr={tr} onSelect={(value) => setNote((current) => (current ? `${current}\n${value}` : value))} />
+          <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
+            {["fluency", "pronunciation", "structure", "example", "vocabulary"].map((tag) => {
+              const active = noteTags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  className="button button-secondary"
+                  style={{ background: active ? "rgba(29, 111, 117, 0.12)" : undefined }}
+                  onClick={() => setNoteTags((current) => (active ? current.filter((item) => item !== tag) : [...current, tag]))}
+                >
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
           <button type="button" className="button button-primary" onClick={saveNote}>
             {tr ? "Ogretmen notunu kaydet" : "Save teacher note"}
           </button>
@@ -317,6 +383,7 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
             {detail.notes.length ? detail.notes.map((item) => (
               <div key={item.id} className="card" style={{ padding: "0.95rem", background: "rgba(255,255,255,0.58)" }}>
                 <div className="practice-meta" style={{ marginBottom: "0.45rem" }}>{new Date(item.createdAt).toLocaleString(tr ? "tr-TR" : "en-US")}</div>
+                {item.tags?.length ? <div className="practice-meta" style={{ marginBottom: "0.45rem" }}>{item.tags.map((tag) => `#${tag}`).join(" ")}</div> : null}
                 <p style={{ margin: 0, lineHeight: 1.7 }}>{item.note}</p>
               </div>
             )) : (

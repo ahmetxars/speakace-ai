@@ -63,16 +63,16 @@ export function StudyListsBoard() {
   return (
     <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
       <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
-        <span className="eyebrow">{tr ? "Study lists" : "Study lists"}</span>
-        <h1 style={{ margin: 0 }}>{tr ? "Bookmark klasorlerin" : "Your bookmark folders"}</h1>
+        <span className="eyebrow">{tr ? "Çalışma listeleri" : "Study lists"}</span>
+        <h1 style={{ margin: 0 }}>{tr ? "Kaydettiğin çalışma listeleri" : "Your bookmark folders"}</h1>
         <p style={{ color: "var(--muted)", maxWidth: 760, lineHeight: 1.7 }}>
-          {tr ? "Result ekraninda kaydettigin sorulari burada klasorler halinde tutabilir, sonra tekrar practice akisina gonderebilirsin." : "Keep the prompts you saved from result screens in folders here and relaunch them into practice later."}
+          {tr ? "Sonuç ekranında kaydettiğin soruları burada klasörler halinde tutabilir, istediğin zaman yeniden practice akışına gönderebilirsin." : "Keep the prompts you saved from result screens in folders here and relaunch them into practice later."}
         </p>
       </section>
 
       <section className="grid" style={{ gridTemplateColumns: "minmax(280px, 0.9fr) minmax(320px, 1.1fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-          <strong>{tr ? "Yeni klasor" : "New folder"}</strong>
+          <strong>{tr ? "Yeni klasör" : "New folder"}</strong>
           <input
             value={newFolderName}
             onChange={(event) => setNewFolderName(event.target.value)}
@@ -97,14 +97,14 @@ export function StudyListsBoard() {
               </div>
             )) : (
               <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
-                {tr ? "Henuz klasor yok." : "No folders yet."}
+                {tr ? "Henüz klasör yok." : "No folders yet."}
               </div>
             )}
           </div>
         </div>
 
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-          <strong>{selectedFolderId ? (folders.find((folder) => folder.id === selectedFolderId)?.name ?? (tr ? "Klasor" : "Folder")) : tr ? "Bir klasor sec" : "Select a folder"}</strong>
+          <strong>{selectedFolderId ? (folders.find((folder) => folder.id === selectedFolderId)?.name ?? (tr ? "Klasör" : "Folder")) : tr ? "Bir klasör seç" : "Select a folder"}</strong>
           {selectedFolderId ? (
             selectedItems.length ? (
               <div className="grid" style={{ gap: "0.75rem" }}>
@@ -136,12 +136,12 @@ export function StudyListsBoard() {
               </div>
             ) : (
               <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
-                {tr ? "Bu klasorde henuz soru yok." : "There are no prompts in this folder yet."}
+                {tr ? "Bu klasörde henüz soru yok." : "There are no prompts in this folder yet."}
               </div>
             )
           ) : (
             <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
-              {tr ? "Sag tarafta icerigi gormek icin soldan bir klasor sec." : "Select a folder on the left to view its prompts here."}
+              {tr ? "İçeriği görmek için soldan bir klasör seç." : "Select a folder on the left to view its prompts here."}
             </div>
           )}
         </div>

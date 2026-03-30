@@ -1,13 +1,16 @@
 import type { MetadataRoute } from "next";
+import { blogPosts } from "@/lib/marketing-content";
 import { siteConfig } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const routes = ["", "/ielts-speaking-practice", "/toefl-speaking-practice", "/auth", "/app"];
+  const routes = ["", "/ielts-speaking-practice", "/toefl-speaking-practice", "/blog", "/auth", "/app"];
+  const blogRoutes = blogPosts.map((post) => `/blog/${post.slug}`);
+  const allRoutes = [...routes, ...blogRoutes];
 
-  return routes.map((route) => ({
+  return allRoutes.map((route) => ({
     url: `${siteConfig.domain}${route}`,
     lastModified: new Date(),
-    changeFrequency: route === "" ? "weekly" : "monthly",
-    priority: route === "" ? 1 : 0.8
+    changeFrequency: route === "" || route === "/blog" ? "weekly" : "monthly",
+    priority: route === "" ? 1 : route.startsWith("/blog/") ? 0.82 : 0.8
   }));
 }

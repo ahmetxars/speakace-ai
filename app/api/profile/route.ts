@@ -35,7 +35,8 @@ export async function POST(request: Request) {
       studyDays: Array.isArray(body.studyDays) ? body.studyDays.map(String) : [],
       currentLevel: String(body.currentLevel ?? ""),
       focusSkill: String(body.focusSkill ?? ""),
-      bio: body.bio ? String(body.bio) : ""
+      bio: body.bio ? String(body.bio) : "",
+      onboardingComplete: Boolean(body.onboardingComplete)
     });
     return NextResponse.json({ profile: studentProfile });
   } catch (error) {

@@ -12,7 +12,10 @@ const IELTS_PART_1 = [
   "What subject did you enjoy the most at school, and what made it interesting?",
   "Do you prefer studying alone or with other people? Why?",
   "How important is music in your daily life?",
-  "What do you usually do on weekends?"
+  "What do you usually do on weekends?",
+  "What kind of place do you go to when you need to think clearly?",
+  "Do you enjoy cooking, and how often do you cook for yourself or others?",
+  "What kind of shop do you visit most often, and why?"
 ];
 
 const IELTS_PART_2 = [
@@ -23,7 +26,9 @@ const IELTS_PART_2 = [
   "Describe a book, film, or video that taught you something useful. You should say what it was, when you encountered it, what you learned, and explain why it stayed in your mind.",
   "Describe a time when you had to wait for something important. You should say what you were waiting for, how long you waited, what you did while waiting, and explain how you felt in the end.",
   "Describe a useful object you own. You should say what it is, how often you use it, why you got it, and explain why it is important to you.",
-  "Describe a memorable conversation you had recently. You should say who you spoke to, what you talked about, where it happened, and explain why you remember it clearly."
+  "Describe a memorable conversation you had recently. You should say who you spoke to, what you talked about, where it happened, and explain why you remember it clearly.",
+  "Describe a piece of technology that helps you in daily life. You should say what it is, how you use it, when you started using it, and explain why it is so useful.",
+  "Describe an event in your life that made you more confident. You should say what happened, who was involved, how you felt at the time, and explain why it changed you."
 ];
 
 const IELTS_PART_3 = [
@@ -34,7 +39,9 @@ const IELTS_PART_3 = [
   "What are the long-term effects of spending too much time on mobile apps?",
   "How important is it for children to learn how to manage money?",
   "Why do some workers prefer remote work while others prefer the office?",
-  "Do you think people today have better opportunities to improve their lives than in the past?"
+  "Do you think people today have better opportunities to improve their lives than in the past?",
+  "Why do some people become strongly attached to certain products or brands?",
+  "How should schools balance academic learning with practical life skills?"
 ];
 
 const TOEFL_TASK_1 = [
@@ -42,7 +49,9 @@ const TOEFL_TASK_1 = [
   "Do you agree or disagree with the following statement: University students should be required to take classes outside their main field of study. Explain your opinion using reasons and examples.",
   "Some people think it is better to spend money on experiences, while others think it is better to save money for the future. Which do you think is better? Explain why.",
   "Do you agree or disagree that teamwork is more valuable than individual achievement in most jobs? Use details and examples to support your opinion.",
-  "Some students like courses that give frequent small assignments. Others prefer courses with one major final project. Which do you prefer and why?"
+  "Some students like courses that give frequent small assignments. Others prefer courses with one major final project. Which do you prefer and why?",
+  "Do you agree or disagree that it is better to become very skilled in one area than to be good at many different things?",
+  "Some people prefer living in a large city, while others prefer living in a small town. Which do you think offers a better quality of life?"
 ];
 
 const TOEFL_TASK_2 = [
@@ -65,6 +74,11 @@ const TOEFL_TASK_2 = [
     title: "TOEFL Task 2 Campus Announcement 4",
     prompt: "Campus notice: The university will move more office hours online. Conversation: The man thinks this will be more convenient for busy students, but the woman feels in-person meetings are more effective. Summarize the announcement and explain the speakers' positions.",
     difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 5",
+    prompt: "Campus notice: The student center will close one floor to create a quiet study lounge. Conversation: The woman likes the idea because students need more silent areas, but the man dislikes it because clubs will lose meeting space. Summarize the announcement and explain the students' reactions.",
+    difficulty: "Target" as Difficulty
   }
 ];
 
@@ -88,6 +102,11 @@ const TOEFL_TASK_3 = [
     title: "TOEFL Task 3 Academic Concept 4",
     prompt: "Reading: Opportunity cost is the value of the best alternative that is given up when a choice is made. Lecture: The professor gives an example of a student choosing a part-time job instead of an unpaid internship and losing the chance to build experience. Explain opportunity cost and how the example shows it.",
     difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 5",
+    prompt: "Reading: Cognitive mapping is the mental process of creating an internal representation of a space so that a person or animal can navigate it efficiently. Lecture: The professor describes students who quickly learn the layout of a new campus and begin taking shortcuts between buildings even without using a map. Explain cognitive mapping and how the example illustrates it.",
+    difficulty: "Stretch" as Difficulty
   }
 ];
 
@@ -111,6 +130,11 @@ const TOEFL_TASK_4 = [
     title: "TOEFL Task 4 Lecture Summary 4",
     prompt: "Lecture summary: The professor discusses two strategies animals use to avoid predators. Some rely on camouflage to blend into their environment. Others travel in groups so they can detect danger earlier. Summarize the lecture.",
     difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 5",
+    prompt: "Lecture summary: The professor explains two ways companies improve employee motivation. One is giving workers more autonomy over how they complete tasks. The other is providing regular feedback so progress becomes visible. Summarize the lecture.",
+    difficulty: "Target" as Difficulty
   }
 ];
 

@@ -41,13 +41,13 @@ export function StudentProfile() {
 
   const profileReadiness = useMemo(() => {
     if (!profile?.targetScore || !summary.averageScore) {
-      return tr ? "Hedef belirledikten sonra sistem yol planini daha net cizer." : "Set a target to unlock a clearer roadmap.";
+      return tr ? "Bir hedef belirlediğinde sistem sana daha net bir yol haritası çıkarır." : "Set a target to unlock a clearer roadmap.";
     }
     const gap = Number((profile.targetScore - summary.averageScore).toFixed(1));
     if (gap <= 0) {
-      return tr ? "Hedef skora cok yakinsin. Simdi odak istikrar olmali." : "You are close to your target score. Consistency is now the priority.";
+      return tr ? "Hedef skoruna oldukça yakınsın. Bundan sonra asıl odak istikrar olmalı." : "You are close to your target score. Consistency is now the priority.";
     }
-    return tr ? `Hedefe ${gap} puan uzaktasin. Haftalik planini koruyarak ilerle.` : `You are ${gap} points away from your target. Stay consistent with your weekly plan.`;
+    return tr ? `Hedefine ulaşmak için yaklaşık ${gap} puanlık bir mesafe var. Haftalık planını koruyarak ilerle.` : `You are ${gap} points away from your target. Stay consistent with your weekly plan.`;
   }, [profile?.targetScore, summary.averageScore, tr]);
 
   const saveProfile = async () => {
@@ -65,13 +65,13 @@ export function StudentProfile() {
       return;
     }
     setProfile(data.profile);
-    setNotice(tr ? "Profil guncellendi." : "Profile updated.");
+    setNotice(tr ? "Profilin güncellendi." : "Profile updated.");
   };
 
   if (!currentUser || !profile) {
     return (
       <main className="page-shell section">
-        <div className="card" style={{ padding: "1.5rem" }}>{tr ? "Profil yukleniyor..." : "Loading profile..."}</div>
+        <div className="card" style={{ padding: "1.5rem" }}>{tr ? "Profil yükleniyor..." : "Loading profile..."}</div>
       </main>
     );
   }
@@ -79,7 +79,7 @@ export function StudentProfile() {
   return (
     <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
       <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "0.9rem" }}>
-        <span className="eyebrow">{tr ? "Ogrenci profili" : "Student profile"}</span>
+        <span className="eyebrow">{tr ? "Öğrenci profili" : "Student profile"}</span>
         <h1 style={{ margin: 0 }}>{currentUser.name}</h1>
         <p style={{ color: "var(--muted)", margin: 0 }}>{currentUser.email}</p>
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "0.75rem" }}>
@@ -92,18 +92,18 @@ export function StudentProfile() {
 
       <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <strong>{tr ? "Hedef ve tercihlerin" : "Goals and preferences"}</strong>
+          <strong>{tr ? "Hedeflerin ve tercihlerin" : "Goals and preferences"}</strong>
           <select value={profile.preferredExamType} onChange={(event) => setProfile((current) => current ? { ...current, preferredExamType: event.target.value as "IELTS" | "TOEFL" } : current)} className="practice-select">
             <option value="IELTS">IELTS</option>
             <option value="TOEFL">TOEFL</option>
           </select>
-          <input value={profile.targetScore ?? ""} type="number" min="1" max={profile.preferredExamType === "IELTS" ? "9" : "30"} step="0.1" onChange={(event) => setProfile((current) => current ? { ...current, targetScore: event.target.value ? Number(event.target.value) : null } : current)} placeholder={tr ? "Hedef skor" : "Target score"} style={inputStyle} />
-          <input value={profile.weeklyGoal} type="number" min="1" max="14" onChange={(event) => setProfile((current) => current ? { ...current, weeklyGoal: Number(event.target.value) || 4 } : current)} placeholder={tr ? "Haftalik hedef" : "Weekly goal"} style={inputStyle} />
-          <input value={profile.currentLevel} onChange={(event) => setProfile((current) => current ? { ...current, currentLevel: event.target.value } : current)} placeholder={tr ? "Seviyen" : "Current level"} style={inputStyle} />
-          <input value={profile.focusSkill} onChange={(event) => setProfile((current) => current ? { ...current, focusSkill: event.target.value } : current)} placeholder={tr ? "Ana odak skill" : "Main focus skill"} style={inputStyle} />
-          <textarea value={profile.bio ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, bio: event.target.value } : current)} rows={4} placeholder={tr ? "Kisa calisma notu..." : "Short study note..."} style={{ ...inputStyle, resize: "vertical" }} />
+          <input value={profile.targetScore ?? ""} type="number" min="1" max={profile.preferredExamType === "IELTS" ? "9" : "30"} step="0.1" onChange={(event) => setProfile((current) => current ? { ...current, targetScore: event.target.value ? Number(event.target.value) : null } : current)} placeholder={tr ? "Hedef skorun" : "Target score"} style={inputStyle} />
+          <input value={profile.weeklyGoal} type="number" min="1" max="14" onChange={(event) => setProfile((current) => current ? { ...current, weeklyGoal: Number(event.target.value) || 4 } : current)} placeholder={tr ? "Haftalık hedef" : "Weekly goal"} style={inputStyle} />
+          <input value={profile.currentLevel} onChange={(event) => setProfile((current) => current ? { ...current, currentLevel: event.target.value } : current)} placeholder={tr ? "Mevcut seviyen" : "Current level"} style={inputStyle} />
+          <input value={profile.focusSkill} onChange={(event) => setProfile((current) => current ? { ...current, focusSkill: event.target.value } : current)} placeholder={tr ? "Ana çalışma odağın" : "Main focus skill"} style={inputStyle} />
+          <textarea value={profile.bio ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, bio: event.target.value } : current)} rows={4} placeholder={tr ? "Kısa bir çalışma notu ekle..." : "Short study note..."} style={{ ...inputStyle, resize: "vertical" }} />
           <div style={{ display: "grid", gap: "0.45rem" }}>
-            <span className="practice-meta">{tr ? "Calisma gunleri" : "Study days"}</span>
+            <span className="practice-meta">{tr ? "Çalışma günleri" : "Study days"}</span>
             <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
               {studyDayOptions.map((day) => {
                 const active = profile.studyDays.includes(day);
@@ -139,16 +139,16 @@ export function StudentProfile() {
           <strong>{tr ? "Profil yorumu" : "Profile insight"}</strong>
           <p style={{ margin: 0, lineHeight: 1.7 }}>{profileReadiness}</p>
           <div className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)", display: "grid", gap: "0.45rem" }}>
-            <strong>{tr ? "Bu hafta odak" : "This week’s focus"}</strong>
+            <strong>{tr ? "Bu haftaki odak" : "This week’s focus"}</strong>
             <div className="practice-meta">{profile.focusSkill}</div>
             <div style={{ color: "var(--muted)", lineHeight: 1.7 }}>
               {tr
-                ? `${profile.weeklyGoal} speaking hedefi belirledin. ${profile.studyDays.join(", ")} gunlerinde kisa ama duzenli denemeler yap.`
+                ? `Bu hafta için ${profile.weeklyGoal} speaking hedefi belirledin. ${profile.studyDays.join(", ")} günlerinde kısa ama düzenli denemeler yapman iyi olur.`
                 : `You set a ${profile.weeklyGoal}-session weekly goal. Use ${profile.studyDays.join(", ")} for short but consistent practice blocks.`}
             </div>
           </div>
           <div className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)", display: "grid", gap: "0.45rem" }}>
-            <strong>{tr ? "Sinav tercihi" : "Preferred exam"}</strong>
+            <strong>{tr ? "Sınav tercihi" : "Preferred exam"}</strong>
             <div>{profile.preferredExamType}</div>
             <div className="practice-meta">{profile.currentLevel}</div>
           </div>

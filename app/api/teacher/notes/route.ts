@@ -36,7 +36,8 @@ export async function POST(request: Request) {
       teacherId: profile.id,
       studentId: String(body.studentId ?? ""),
       sessionId: body.sessionId ? String(body.sessionId) : undefined,
-      note: String(body.note ?? "")
+      note: String(body.note ?? ""),
+      tags: Array.isArray(body.tags) ? body.tags.map(String) : []
     });
     return NextResponse.json({ note });
   } catch (error) {

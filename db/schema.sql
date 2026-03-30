@@ -109,6 +109,24 @@ create table if not exists class_shared_study_items (
   created_at timestamptz not null default now()
 );
 
+create table if not exists analytics_events (
+  id text primary key,
+  user_id text not null references users(id) on delete cascade,
+  event text not null,
+  path text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists announcements (
+  id text primary key,
+  author_id text not null references users(id) on delete cascade,
+  audience_type text not null check (audience_type in ('global', 'teacher', 'class')),
+  class_id text references teacher_classes(id) on delete cascade,
+  title text not null,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists usage_daily (
   user_id text not null references users(id) on delete cascade,
   usage_date date not null,
@@ -163,12 +181,19 @@ alter table speaking_sessions add column if not exists cleaned_transcript text;
 alter table speaking_sessions add column if not exists transcript_quality_score numeric(5,2);
 alter table speaking_sessions add column if not exists transcript_quality_label text;
 alter table users add column if not exists email_verified boolean not null default false;
+alter table users add column if not exists admin_access boolean not null default false;
+alter table users add column if not exists teacher_access boolean not null default false;
 alter table teacher_classes add column if not exists approval_required boolean not null default true;
 alter table teacher_classes add column if not exists join_message text;
 alter table teacher_class_enrollments add column if not exists status text not null default 'approved';
 alter table teacher_class_enrollments add column if not exists requested_at timestamptz not null default now();
 alter table teacher_class_enrollments add column if not exists approved_at timestamptz;
 alter table feedback_reports add column if not exists improved_answer text;
+alter table teacher_notes add column if not exists tags_json jsonb not null default '[]'::jsonb;
+alter table student_profiles add column if not exists onboarding_complete boolean not null default false;
+alter table homework_auto_assign_rules add column if not exists exam_type text;
+alter table homework_auto_assign_rules add column if not exists task_type text;
+alter table homework_auto_assign_rules add column if not exists focus_skill text;
 
 create index if not exists idx_speaking_sessions_user_created_at
   on speaking_sessions(user_id, created_at desc);
@@ -208,6 +233,12 @@ create index if not exists idx_homework_auto_assign_rules_teacher
 
 create index if not exists idx_class_shared_study_items_class_created
   on class_shared_study_items(class_id, created_at desc);
+
+create index if not exists idx_analytics_events_user_created
+  on analytics_events(user_id, created_at desc);
+
+create index if not exists idx_announcements_audience_created
+  on announcements(audience_type, created_at desc);
 
 alter table users drop constraint if exists users_plan_check;
 alter table users drop constraint if exists users_role_check;

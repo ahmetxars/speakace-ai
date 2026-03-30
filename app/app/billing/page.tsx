@@ -11,17 +11,17 @@ export default function BillingPage() {
     return (
       <main className="page-shell section">
         <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
-          <span className="eyebrow">{tr ? "Odeme" : "Billing"}</span>
-          <h1 style={{ margin: 0 }}>{tr ? "Faturalandirma icin giris yap" : "Sign in to manage billing"}</h1>
+          <span className="eyebrow">{tr ? "Ödeme" : "Billing"}</span>
+          <h1 style={{ margin: 0 }}>{tr ? "Ödeme ayarları için giriş yap" : "Sign in to manage billing"}</h1>
           <p style={{ color: "var(--muted)", maxWidth: 720 }}>
-            {tr ? "Fiyatlari ana sayfada gorebilirsin. Ucretli planlari satin almak ve fatura detaylarini yonetmek icin once giris yapman gerekir." : "You can view pricing on the home page. To purchase a paid plan and manage invoices, sign in first."}
+            {tr ? "Fiyatları ana sayfada görebilirsin. Ücretli plan satın almak ve fatura bilgilerini yönetmek için önce giriş yapman gerekir." : "You can view pricing on the home page. To purchase a paid plan and manage invoices, sign in first."}
           </p>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
             <Link className="button button-primary" href="/auth">
-              {tr ? "Giris yap" : "Sign in"}
+              {tr ? "Giriş yap" : "Sign in"}
             </Link>
             <Link className="button button-secondary" href="/#pricing">
-              {tr ? "Fiyatlara don" : "Back to pricing"}
+              {tr ? "Fiyatlara dön" : "Back to pricing"}
             </Link>
           </div>
         </div>
@@ -32,10 +32,10 @@ export default function BillingPage() {
   return (
     <main className="page-shell section">
       <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
-        <span className="eyebrow">{tr ? "Odeme" : "Billing"}</span>
-        <h1 style={{ margin: 0 }}>{tr ? "Ucretli planlar checkout ile acilacak" : "Paid plans unlock after checkout"}</h1>
+        <span className="eyebrow">{tr ? "Ödeme" : "Billing"}</span>
+        <h1 style={{ margin: 0 }}>{tr ? "Ücretli planlar ödeme sonrasında açılır" : "Paid plans unlock after checkout"}</h1>
         <p style={{ color: "var(--muted)", maxWidth: 720 }}>
-          {tr ? "Plus ve Pro planlari dogrudan butonla acilmiyor. Odeme sistemi baglandiginda checkout ile aktive edilecek." : "Plus and Pro should not unlock from a simple click. They will activate through checkout once payments are wired."}
+          {tr ? "Plus ve Pro planları tek tuşla açılmaz. Ödeme sistemi bağlandığında ödeme akışı tamamlandıktan sonra aktifleşir." : "Plus and Pro should not unlock from a simple click. They will activate through checkout once payments are wired."}
         </p>
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
           <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
@@ -44,23 +44,23 @@ export default function BillingPage() {
           </div>
           <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
             <strong>Plus · $9</strong>
-            <p>{tr ? "Gunluk 18 session, 35 dakika speaking, daha detayli score breakdown ve progress takibi." : "18 daily sessions, 35 speaking minutes, score breakdowns, and stronger progress support."}</p>
+            <p>{tr ? "Günde 18 oturum, 35 dakika speaking süresi, daha ayrıntılı puan dökümü ve ilerleme takibi." : "18 daily sessions, 35 speaking minutes, score breakdowns, and stronger progress support."}</p>
           </div>
           <div className="card" style={{ padding: "1rem", background: "rgba(217, 93, 57, 0.08)" }}>
             <strong>Pro · $12</strong>
-            <p>{tr ? "Gunluk 40 session, 90 dakika speaking, daha derin feedback ve en yuksek calisma hacmi." : "40 daily sessions, 90 speaking minutes, deeper feedback, and the strongest study allowance."}</p>
+            <p>{tr ? "Günde 40 oturum, 90 dakika speaking süresi, daha derin geri bildirim ve en yüksek çalışma hacmi." : "40 daily sessions, 90 speaking minutes, deeper feedback, and the strongest study allowance."}</p>
           </div>
         </div>
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
           <button className="button button-secondary" type="button" disabled>
-            {tr ? "Plus checkout yakinda" : "Plus checkout soon"}
+            {tr ? "Plus ödeme akışı yakında" : "Plus checkout soon"}
           </button>
           <button className="button button-primary" type="button" disabled>
-            {tr ? "Pro checkout yakinda" : "Pro checkout soon"}
+            {tr ? "Pro ödeme akışı yakında" : "Pro checkout soon"}
           </button>
         </div>
         <p style={{ color: "var(--muted)" }}>
-          {tr ? `Mevcut plan: ${currentUser?.plan ?? "free"}. Gercek odeme entegrasyonu bir sonraki adimda Stripe ile baglanacak.` : `Current plan: ${currentUser?.plan ?? "free"}. Real payment wiring will come next with Stripe.`}
+          {tr ? `Şu anki planın: ${currentUser?.plan ?? "free"}. Gerçek ödeme entegrasyonu bir sonraki adımda Stripe ile bağlanacak.` : `Current plan: ${currentUser?.plan ?? "free"}. Real payment wiring will come next with Stripe.`}
         </p>
       </div>
     </main>

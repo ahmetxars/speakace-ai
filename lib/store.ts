@@ -612,16 +612,18 @@ export async function upsertMember(profile: MemberProfile) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      insert into users (id, email, name, role, plan, email_verified, created_at)
-      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.plan}, ${profile.emailVerified ?? false}, ${profile.createdAt})
+      insert into users (id, email, name, role, plan, email_verified, admin_access, teacher_access, created_at)
+      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.plan}, ${profile.emailVerified ?? false}, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false}, ${profile.createdAt})
       on conflict (id)
       do update set
         email = excluded.email,
         name = excluded.name,
         role = excluded.role,
         plan = excluded.plan,
-        email_verified = excluded.email_verified
-      returning id, email, name, role, plan, email_verified as "emailVerified", created_at as "createdAt"
+        email_verified = excluded.email_verified,
+        admin_access = excluded.admin_access,
+        teacher_access = excluded.teacher_access
+      returning id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
     `;
 
     return withAdminPrivileges(rows[0]);
@@ -637,7 +639,7 @@ export async function getMember(userId: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select id, email, name, role, plan, email_verified as "emailVerified", created_at as "createdAt"
+      select id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where id = ${userId}
       limit 1

@@ -84,6 +84,8 @@ export interface MemberProfile {
   emailVerified?: boolean;
   isAdmin?: boolean;
   isTeacher?: boolean;
+  adminAccess?: boolean;
+  teacherAccess?: boolean;
   createdAt: string;
 }
 
@@ -130,6 +132,7 @@ export interface TeacherNote {
   studentId: string;
   sessionId?: string;
   note: string;
+  tags?: string[];
   createdAt: string;
 }
 
@@ -198,6 +201,9 @@ export interface HomeworkAutoAssignRule {
   enabled: boolean;
   scoreThreshold: number;
   dueDays: number;
+  examType?: ExamType | "all";
+  taskType?: TaskType | "all";
+  focusSkill?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -253,7 +259,30 @@ export interface StudentProfile {
   currentLevel: string;
   focusSkill: string;
   bio?: string;
+  onboardingComplete?: boolean;
   updatedAt: string;
+}
+
+export interface AnnouncementItem {
+  id: string;
+  authorId: string;
+  audienceType: "global" | "teacher" | "class";
+  classId?: string | null;
+  title: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface InstitutionUserSummary {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  plan: SubscriptionPlan;
+  emailVerified?: boolean;
+  adminAccess?: boolean;
+  teacherAccess?: boolean;
+  createdAt: string;
 }
 
 export interface InstitutionAnalyticsSummary {

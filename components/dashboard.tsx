@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "@/components/providers";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { AnalyticsSummary } from "@/lib/analytics-store";
-import { HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership } from "@/lib/types";
+import { AnnouncementItem, HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership, StudentProfile } from "@/lib/types";
 
 const emptySummary: ProgressSummary = {
   totalSessions: 0,
@@ -18,7 +18,7 @@ const emptySummary: ProgressSummary = {
 };
 
 export function Dashboard() {
-  const { signedIn, signOut, currentUser, language } = useAppState();
+  const { signedIn, currentUser, language, signOut } = useAppState();
   const tr = language === "tr";
   const [summary, setSummary] = useState<ProgressSummary>(emptySummary);
   const [targetScore, setTargetScore] = useState<string>("");
@@ -39,6 +39,8 @@ export function Dashboard() {
   const [sharedStudyClasses, setSharedStudyClasses] = useState<
     Array<{ classId: string; className: string; teacherName: string; items: SharedClassStudyItem[] }>
   >([]);
+  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
 
   useEffect(() => {
     if (!currentUser) {
@@ -114,6 +116,24 @@ export function Dashboard() {
         })
       );
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!signedIn || !currentUser) {
+      setAnnouncements([]);
+      setProfile(null);
+      return;
+    }
+
+    fetch("/api/announcements")
+      .then((response) => response.json())
+      .then((data: { announcements?: AnnouncementItem[] }) => setAnnouncements(data.announcements ?? []))
+      .catch(() => setAnnouncements([]));
+
+    fetch("/api/profile")
+      .then((response) => response.json())
+      .then((data: { profile?: StudentProfile }) => setProfile(data.profile ?? null))
+      .catch(() => setProfile(null));
+  }, [currentUser, signedIn]);
 
   const scoredSessions = useMemo(
     () => summary.recentSessions.filter((session) => session.report),
@@ -344,6 +364,25 @@ export function Dashboard() {
         ];
   }, [numericTarget, scoreGap, summary.totalSessions, tr, weakestSkill]);
 
+  const dailyMission = useMemo(() => {
+    const focusLabel = weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : tr ? "temel speaking yapisi" : "basic speaking structure";
+    const basePrompt = latestExamType === "IELTS"
+      ? tr
+        ? "Bir IELTS gorevi sec ve cevabini reason + example ile tamamla."
+        : "Choose one IELTS task and complete your answer with a clear reason and example."
+      : tr
+        ? "Bir TOEFL task sec ve cevabini source point + net summary mantigiyla kur."
+        : "Choose one TOEFL task and organize your response around source point plus a clear summary.";
+
+    return {
+      title: tr ? "Bugunun mini gorevi" : "Today's mini mission",
+      primary: basePrompt,
+      secondary: tr
+        ? `${focusLabel} tarafinda kisa bir tekrar yap ve improved answer ile kendi cevabini karsilastir.`
+        : `Add a short ${focusLabel} drill and compare your response with the improved answer.`
+    };
+  }, [latestExamType, tr, weakestSkill]);
+
   const weeklyChecklistItems = useMemo(
     () =>
       weeklyPlan.slice(0, 3).map((step, index) => ({
@@ -384,6 +423,7 @@ export function Dashboard() {
       }).length,
     [homework]
   );
+  const needsOnboarding = Boolean(signedIn && currentUser && !currentUser.isTeacher && profile && !profile.onboardingComplete);
 
   const toggleChecklistItem = (id: string) => {
     setWeeklyChecklist((current) => {
@@ -466,8 +506,41 @@ export function Dashboard() {
     };
   }, [scoredSessions, tr, weakestSkill]);
 
+  const troubleWords = useMemo(() => {
+    const buckets = new Map<string, number>();
+    const source = [...mistakeNotebook.repeatedFillers];
+
+    scoredSessions.forEach((session) => {
+      const transcript = session.rawTranscript || session.transcript || "";
+      transcript
+        .split(/\s+/)
+        .map((item) => item.toLowerCase().replace(/[^a-z']/g, ""))
+        .filter((item) => item.length >= 5)
+        .forEach((item) => buckets.set(item, (buckets.get(item) ?? 0) + 1));
+    });
+
+    source.forEach((item) => buckets.set(item.text.toLowerCase(), (buckets.get(item.text.toLowerCase()) ?? 0) + item.count));
+
+    return [...buckets.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([word, count]) => ({ word, count }));
+  }, [mistakeNotebook.repeatedFillers, scoredSessions]);
+
   return (
     <div className="page-shell section" style={{ display: "grid", gap: "1.4rem" }}>
+      {needsOnboarding ? (
+        <section className="card" style={{ padding: "1.1rem", display: "grid", gap: "0.75rem", background: "rgba(29, 111, 117, 0.08)" }}>
+          <strong>{tr ? "Ilk kurulum eksik" : "Onboarding incomplete"}</strong>
+          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
+            {tr ? "Hedef skorunu ve calisma profilini netlestirirsen dashboard ve practice onerileri daha dogru hale gelir." : "Finish your target score and study profile to unlock more accurate dashboard and practice guidance."}
+          </p>
+          <Link className="button button-primary" href="/app/onboarding">
+            {tr ? "Onboardingi tamamla" : "Complete onboarding"}
+          </Link>
+        </section>
+      ) : null}
+
       <section
         className="card"
         style={{
@@ -522,6 +595,65 @@ export function Dashboard() {
         <StatCard label={tr ? "Yuklenen kayit" : "Uploaded recordings"} value={String(analytics.uploads)} note={tr ? "Transcript icin giden ses kayitlari" : "Recordings sent for transcript"} />
         <StatCard label={tr ? "Tamamlanan simulasyon" : "Completed simulations"} value={String(analytics.simulationsCompleted)} note={tr ? "Bitirilen tam mock sinavlar" : "Full mock exams completed"} />
       </section>
+
+      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Gunluk gorev" : "Daily mission"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{dailyMission.title}</h2>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "rgba(217, 93, 57, 0.08)" }}>
+            <strong>{dailyMission.primary}</strong>
+            <p style={{ margin: "0.55rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>{dailyMission.secondary}</p>
+          </div>
+          <Link className="button button-primary" href="/app/practice">
+            {tr ? "Bugunun practice'ini ac" : "Open today's practice"}
+          </Link>
+        </div>
+
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Trouble words" : "Trouble words"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Takildigin kelimeler" : "Words to clean up"}</h2>
+          </div>
+          {troubleWords.length ? (
+            <div style={{ display: "grid", gap: "0.65rem" }}>
+              {troubleWords.map((item) => (
+                <div key={`${item.word}-${item.count}`} className="card" style={{ padding: "0.85rem", background: "var(--surface-strong)", display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "center" }}>
+                  <strong>{item.word}</strong>
+                  <span className="pill">{tr ? `${item.count} tekrar` : `${item.count} repeats`}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
+              {tr ? "Birkac deneme daha geldikce sik tekrar ettigin kelimeler burada toplanacak." : "As more sessions come in, the words you overuse will appear here."}
+            </p>
+          )}
+          <div className="practice-meta">
+            {tr
+              ? "Amac bunlari tamamen silmek degil; daha cesitli ve dogal kelime secimi kullanmak."
+              : "The goal is not to remove them entirely, but to replace overused words with more varied and natural choices."}
+          </div>
+        </div>
+      </section>
+
+      {announcements.length ? (
+        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Duyurular" : "Announcements"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Sinif ve platform akisi" : "Class and platform feed"}</h2>
+          </div>
+          <div className="grid" style={{ gap: "0.75rem" }}>
+            {announcements.slice(0, 4).map((item) => (
+              <div key={item.id} className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)" }}>
+                <strong>{item.title}</strong>
+                <p style={{ margin: "0.45rem 0 0", lineHeight: 1.7 }}>{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1.3fr) minmax(280px, 0.9fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem" }}>

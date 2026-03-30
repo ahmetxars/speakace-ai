@@ -306,6 +306,27 @@ img {
   margin-top: 0.55rem;
 }
 
+.quick-pitch {
+  padding: 1.4rem;
+}
+
+.quick-pitch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.compact-list {
+  padding-left: 1.1rem;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.compact-list li + li {
+  margin-top: 0.45rem;
+}
+
 .mini-metric {
   text-align: center;
 }

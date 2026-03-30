@@ -25,6 +25,7 @@ function defaultProfile(userId: string): StudentProfile {
     currentLevel: "Building basics",
     focusSkill: "Balanced practice",
     bio: "",
+    onboardingComplete: false,
     updatedAt: new Date().toISOString()
   };
 }
@@ -42,6 +43,7 @@ export async function getStudentProfile(userId: string) {
         current_level as "currentLevel",
         focus_skill as "focusSkill",
         bio,
+        onboarding_complete as "onboardingComplete",
         updated_at as "updatedAt"
       from student_profiles
       where user_id = ${userId}
@@ -62,6 +64,7 @@ export async function upsertStudentProfile(input: {
   currentLevel: string;
   focusSkill: string;
   bio?: string;
+  onboardingComplete?: boolean;
 }) {
   const next: StudentProfile = {
     userId: input.userId,
@@ -72,6 +75,7 @@ export async function upsertStudentProfile(input: {
     currentLevel: input.currentLevel.trim() || "Building basics",
     focusSkill: input.focusSkill.trim() || "Balanced practice",
     bio: input.bio?.trim() ?? "",
+    onboardingComplete: Boolean(input.onboardingComplete),
     updatedAt: new Date().toISOString()
   };
 
@@ -81,10 +85,10 @@ export async function upsertStudentProfile(input: {
     const rows = (await sql`
       insert into student_profiles (
         user_id, preferred_exam_type, target_score, weekly_goal, study_days_json,
-        current_level, focus_skill, bio, updated_at
+        current_level, focus_skill, bio, onboarding_complete, updated_at
       ) values (
         ${next.userId}, ${next.preferredExamType}, ${next.targetScore}, ${next.weeklyGoal},
-        ${JSON.stringify(next.studyDays)}::jsonb, ${next.currentLevel}, ${next.focusSkill}, ${bio}, ${next.updatedAt}
+        ${JSON.stringify(next.studyDays)}::jsonb, ${next.currentLevel}, ${next.focusSkill}, ${bio}, ${next.onboardingComplete ?? false}, ${next.updatedAt}
       )
       on conflict (user_id)
       do update set
@@ -95,6 +99,7 @@ export async function upsertStudentProfile(input: {
         current_level = excluded.current_level,
         focus_skill = excluded.focus_skill,
         bio = excluded.bio,
+        onboarding_complete = excluded.onboarding_complete,
         updated_at = excluded.updated_at
       returning
         user_id as "userId",
@@ -105,6 +110,7 @@ export async function upsertStudentProfile(input: {
         current_level as "currentLevel",
         focus_skill as "focusSkill",
         bio,
+        onboarding_complete as "onboardingComplete",
         updated_at as "updatedAt"
     `) as unknown as StudentProfile[];
     return rows[0];

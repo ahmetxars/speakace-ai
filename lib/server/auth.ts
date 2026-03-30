@@ -85,9 +85,9 @@ export async function signUpWithPassword(input: { email: string; password: strin
     }
 
     const rows = await sql<MemberProfile[]>`
-      insert into users (id, email, name, role, plan, password_hash, email_verified, created_at)
-      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.plan}, ${passwordHash}, ${autoVerified}, ${profile.createdAt})
-      returning id, email, name, role, plan, email_verified as "emailVerified", created_at as "createdAt"
+      insert into users (id, email, name, role, plan, password_hash, email_verified, admin_access, teacher_access, created_at)
+      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.plan}, ${passwordHash}, ${autoVerified}, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false}, ${profile.createdAt})
+      returning id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
     `;
 
     return withAdminPrivileges(rows[0]);
@@ -106,7 +106,7 @@ export async function signInWithPassword(input: { email: string; password: strin
     const rows = await sql<
       Array<MemberProfile & { password_hash: string | null; emailVerified?: boolean }>
     >`
-      select id, email, name, role, plan, password_hash, email_verified as "emailVerified", created_at as "createdAt"
+      select id, email, name, role, plan, password_hash, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where email = ${normalizedEmail}
       limit 1
@@ -134,6 +134,8 @@ export async function signInWithPassword(input: { email: string; password: strin
       name: user.name,
       role: user.role,
       plan: user.plan,
+      adminAccess: user.adminAccess,
+      teacherAccess: user.teacherAccess,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt
     });
@@ -195,7 +197,7 @@ export async function getAuthenticatedUser(sessionToken: string | undefined) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select u.id, u.email, u.name, u.role, u.plan, u.email_verified as "emailVerified", u.created_at as "createdAt"
+      select u.id, u.email, u.name, u.role, u.plan, u.email_verified as "emailVerified", u.admin_access as "adminAccess", u.teacher_access as "teacherAccess", u.created_at as "createdAt"
       from auth_sessions s
       inner join users u on u.id = s.user_id
       where s.token_hash = ${tokenHash} and s.expires_at > now()
@@ -315,7 +317,7 @@ async function getUnverifiedUserByEmail(email: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select id, email, name, role, plan, email_verified as "emailVerified", created_at as "createdAt"
+      select id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where email = ${normalizedEmail}
       limit 1
@@ -387,7 +389,7 @@ export async function createPasswordResetFlow(email: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select id, email, name, role, plan, email_verified as "emailVerified", created_at as "createdAt"
+      select id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where email = ${normalizedEmail}
       limit 1

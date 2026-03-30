@@ -8,7 +8,14 @@ export const metadata: Metadata = {
     "Practice TOEFL speaking online with AI feedback, integrated speaking tasks, transcripts, and estimated speaking score support.",
   alternates: {
     canonical: "/toefl-speaking-practice"
-  }
+  },
+  keywords: [
+    "TOEFL speaking practice",
+    "TOEFL speaking AI",
+    "AI English speaking practice",
+    "TOEFL integrated speaking",
+    "speaking score improvement"
+  ]
 };
 
 export default function TOEFLPage() {

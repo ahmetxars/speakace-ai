@@ -148,22 +148,22 @@ export function PracticeConsole() {
 
   const progressLabel = useMemo(() => {
     if (!session) {
-      return tr ? "Aktif session yok" : "No active session";
+      return tr ? "Aktif bir oturum yok" : "No active session";
     }
 
     if (mode === "prep") {
-      return tr ? `Hazirlik: ${remainingSeconds}s` : `Prep time: ${remainingSeconds}s`;
+      return tr ? `Hazırlık: ${remainingSeconds}s` : `Prep time: ${remainingSeconds}s`;
     }
 
     if (mode === "speak") {
-      return tr ? `Konusma: ${remainingSeconds}s` : `Speaking time: ${remainingSeconds}s`;
+      return tr ? `Konuşma: ${remainingSeconds}s` : `Speaking time: ${remainingSeconds}s`;
     }
 
     if (mode === "saving") {
-      return tr ? "Analiz ediliyor" : "Analyzing answer";
+      return tr ? "Yanıt analiz ediliyor" : "Analyzing answer";
     }
 
-    return tr ? "Session tamamlandi" : "Session complete";
+    return tr ? "Oturum tamamlandı" : "Session complete";
   }, [mode, remainingSeconds, session, tr]);
 
   const cleanupMedia = useCallback(() => {
@@ -187,7 +187,7 @@ export function PracticeConsole() {
     setRemainingSeconds(0);
     setSession(null);
     setError(null);
-    setStatus(message ?? (tr ? "Yeni bir speaking calismasi baslatabilirsin." : "You can start a new speaking drill."));
+    setStatus(message ?? (tr ? "Hazırsan yeni bir speaking çalışması başlatabilirsin." : "You can start a new speaking drill."));
   }, [cleanupMedia, tr]);
 
   const evaluateSessionNow = useCallback(async (sessionId: string) => {
@@ -195,13 +195,13 @@ export function PracticeConsole() {
     const data = (await readJsonSafely(response)) as { error?: string; session?: SpeakingSession };
 
     if (!response.ok) {
-      setError(data.error ?? (tr ? "Degerlendirme basarisiz oldu." : "Evaluation failed."));
+      setError(data.error ?? (tr ? "Değerlendirme tamamlanamadı." : "Evaluation failed."));
       setMode("done");
       return null;
     }
 
     if (!data.session) {
-      setError(tr ? "Sonuc verisi bos dondu." : "The result response was empty.");
+      setError(tr ? "Sonuç verisi boş döndü." : "The result response was empty.");
       setMode("done");
       return null;
     }
@@ -236,7 +236,7 @@ export function PracticeConsole() {
         setSession(null);
         setStatus(
           tr
-            ? `${humanizeTaskType(evaluatedSession.taskType, true)} tamamlandi. Siradaki gorev icin devam et.`
+            ? `${humanizeTaskType(evaluatedSession.taskType, true)} tamamlandı. Sıradaki görev için devam et.`
             : `${humanizeTaskType(evaluatedSession.taskType, false)} is complete. Continue to the next task.`
         );
       } else {
@@ -252,7 +252,7 @@ export function PracticeConsole() {
       return evaluatedSession;
     }
 
-    setStatus(tr ? "Sonuc hazir. Sonuc ekranina yonlendiriliyorsun." : "Your result is ready. Opening the full review.");
+    setStatus(tr ? "Sonuç hazır. Sonuç ekranı açılıyor." : "Your result is ready. Opening the full review.");
     router.push(`/app/results/${sessionId}`);
     return evaluatedSession;
   }, [currentUser?.id, router, runMode, simulationState, tr]);
@@ -266,7 +266,7 @@ export function PracticeConsole() {
     }
 
     if (!currentUser) {
-      setError(tr ? "Kullanici profili yukleniyor. Lutfen biraz bekle." : "User profile is loading. Please wait a moment.");
+      setError(tr ? "Kullanıcı profili henüz yükleniyor. Lütfen birkaç saniye bekle." : "User profile is loading. Please wait a moment.");
       return false;
     }
 
@@ -313,7 +313,7 @@ export function PracticeConsole() {
           void trackClientEvent({ userId: currentUser.id, event: "recording_uploaded", path: "/app/practice" });
         }
         setMode("saving");
-        setStatus(tr ? "Kayit yukleniyor ve cevap analiz ediliyor..." : "Uploading your recording and analyzing your answer...");
+        setStatus(tr ? "Kayıt yükleniyor, yanıtın analiz ediliyor..." : "Uploading your recording and analyzing your answer...");
 
         const uploadResponse = await fetch(`/api/speaking/session/${targetSession.id}/upload`, {
           method: "POST",
@@ -333,7 +333,7 @@ export function PracticeConsole() {
         };
 
         if (!uploadResponse.ok) {
-          setError(uploadData.error ?? (tr ? "Kayit yuklenemedi." : "Recording upload failed."));
+          setError(uploadData.error ?? (tr ? "Kayıt yüklenemedi." : "Recording upload failed."));
           setMode("done");
           return;
         }
@@ -348,10 +348,10 @@ export function PracticeConsole() {
         setStatus(
           uploadData.transcriptSource === "openai"
             ? tr
-              ? "Kayit basariyla cozuldu. OpenAI transcript'i uzerinden analiz yapiliyor."
+              ? "Kayıt başarıyla çözüldü. OpenAI transcript'i üzerinden analiz yapılıyor."
               : "Recording captured successfully. Evaluating with the OpenAI transcript."
             : tr
-              ? "Kayit alindi ancak transcript fallback modunda uretildi."
+              ? "Kayıt alındı ancak transcript yedek modda üretildi."
               : "Recording was captured, but the transcript fell back to generated mode."
         );
 
@@ -379,7 +379,7 @@ export function PracticeConsole() {
     if (recorder && recorder.state === "inactive") {
       recorder.start(1000);
       setRecordingLive(true);
-      setStatus(tr ? "Kayit basladi. Simdi konus." : "Recording in progress.");
+      setStatus(tr ? "Kayıt başladı. Şimdi konuşmaya başlayabilirsin." : "Recording in progress.");
     }
   }, [prepareMicrophone, tr]);
 
@@ -492,7 +492,7 @@ export function PracticeConsole() {
     }
 
     setMode("prep");
-    setStatus(tr ? "Mikrofon hazir. Otomatik kayit baslamadan once cevabini zihninde kur." : "Microphone ready. Prepare your structure before automatic recording begins.");
+    setStatus(tr ? "Mikrofon hazır. Otomatik kayıt başlamadan önce cevabını kısaca planla." : "Microphone ready. Prepare your structure before automatic recording begins.");
   };
 
   const endEarly = useCallback(() => {
@@ -562,12 +562,12 @@ export function PracticeConsole() {
           if (mode === "prep") {
             void beginRecording();
             setMode("speak");
-            setStatus(tr ? "Simdi konus. Kayit otomatik olarak basladi." : "Speak now. Recording has started automatically.");
+            setStatus(tr ? "Şimdi konuş. Kayıt otomatik olarak başladı." : "Speak now. Recording has started automatically.");
             return session?.prompt.speakingSeconds ?? 0;
           }
 
           setMode("saving");
-          setStatus(tr ? "Sure doldu. Cevabin analiz ediliyor." : "Time is up. Your recording is being analyzed.");
+          setStatus(tr ? "Süre doldu. Cevabın analiz ediliyor." : "Time is up. Your recording is being analyzed.");
           stopRecording();
           return 0;
         }

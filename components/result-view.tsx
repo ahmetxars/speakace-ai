@@ -215,6 +215,11 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
                   onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
                   onTimeUpdate={handleAudioTimeUpdate}
                 />
+                <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
+                  <Link href={`/app/replay/${session.id}`} className="button button-secondary">
+                    {tr ? "Session replay" : "Session replay"}
+                  </Link>
+                </div>
               </div>
             ) : null}
           </div>

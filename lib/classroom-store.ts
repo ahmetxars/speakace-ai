@@ -1,9 +1,11 @@
 import { getMember, getProgressSummary } from "@/lib/store";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { listTeacherHomework } from "@/lib/homework-store";
+import { isTeacherEmail } from "@/lib/teacher";
 import {
   InstitutionAnalyticsSummary,
   InstitutionBillingSummary,
+  InstitutionUserSummary,
   MemberProfile,
   StudentComparison,
   StudentClassMembership,
@@ -45,7 +47,7 @@ async function findMemberByEmail(email: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select id, email, name, role, plan, email_verified as "emailVerified", created_at as "createdAt"
+      select id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where email = ${normalizedEmail}
       limit 1
@@ -537,6 +539,79 @@ export async function getInstitutionAnalytics(teacherId: string) {
   } satisfies InstitutionAnalyticsSummary;
 }
 
+export async function listInstitutionTeacherSummaries() {
+  const teachers: MemberProfile[] = [];
+
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const rows = await sql<MemberProfile[]>`
+      select id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      from users
+      order by created_at asc
+    `;
+    teachers.push(...rows.filter((item) => item.adminAccess || item.teacherAccess || isTeacherEmail(item.email)));
+  } else {
+    for (const profile of (globalThis as typeof globalThis & { __speakAceStore?: { members: Map<string, MemberProfile> } }).__speakAceStore?.members?.values() ?? []) {
+      if (profile.isAdmin || profile.isTeacher || profile.adminAccess || profile.teacherAccess || isTeacherEmail(profile.email)) {
+        teachers.push(profile);
+      }
+    }
+  }
+
+  const uniqueTeachers = teachers.filter((teacher, index, array) => array.findIndex((item) => item.id === teacher.id) === index);
+  const summaries = await Promise.all(
+    uniqueTeachers.map(async (teacher) => {
+      const [classes, analytics] = await Promise.all([
+        listTeacherClasses(teacher.id),
+        getInstitutionAnalytics(teacher.id)
+      ]);
+      return {
+        teacher,
+        classCount: classes.length,
+        studentCount: analytics.totalStudents,
+        activeStudents: analytics.activeStudents,
+        averageScore: analytics.averageScore,
+        pendingApprovalCount: analytics.pendingApprovalCount,
+        atRiskStudentCount: analytics.atRiskStudentCount,
+        homeworkCompletionRate: analytics.homeworkCompletionRate,
+        mostCommonWeakestSkill: analytics.mostCommonWeakestSkill
+      };
+    })
+  );
+
+  return summaries.sort((a, b) => (b.studentCount - a.studentCount) || (b.averageScore - a.averageScore));
+}
+
+export async function getInstitutionAdminSummary() {
+  const teacherSummaries = await listInstitutionTeacherSummaries();
+  const totalTeachers = teacherSummaries.length;
+  const totalClasses = teacherSummaries.reduce((sum, item) => sum + item.classCount, 0);
+  const totalStudents = teacherSummaries.reduce((sum, item) => sum + item.studentCount, 0);
+  const activeStudents = teacherSummaries.reduce((sum, item) => sum + item.activeStudents, 0);
+  const pendingApprovals = teacherSummaries.reduce((sum, item) => sum + (item.pendingApprovalCount ?? 0), 0);
+  const atRiskStudents = teacherSummaries.reduce((sum, item) => sum + (item.atRiskStudentCount ?? 0), 0);
+  const averageScore = totalTeachers
+    ? Number((teacherSummaries.reduce((sum, item) => sum + item.averageScore, 0) / totalTeachers).toFixed(1))
+    : 0;
+
+  return {
+    totalTeachers,
+    totalClasses,
+    totalStudents,
+    activeStudents,
+    pendingApprovals,
+    atRiskStudents,
+    averageScore,
+    teacherSummaries,
+    alerts: teacherSummaries.flatMap((item) => {
+      const alerts: string[] = [];
+      if ((item.pendingApprovalCount ?? 0) > 0) alerts.push(`${item.teacher.name}: ${item.pendingApprovalCount} pending approvals`);
+      if ((item.atRiskStudentCount ?? 0) > 0) alerts.push(`${item.teacher.name}: ${item.atRiskStudentCount} at-risk students`);
+      return alerts;
+    }).slice(0, 8)
+  };
+}
+
 export async function compareStudentsForTeacher(input: { teacherId: string; leftId: string; rightId: string }) {
   const left = (await getTeacherStudentDetail({ teacherId: input.teacherId, studentId: input.leftId })).overview;
   const right = (await getTeacherStudentDetail({ teacherId: input.teacherId, studentId: input.rightId })).overview;
@@ -552,7 +627,7 @@ export async function compareStudentsForTeacher(input: { teacherId: string; left
   } satisfies StudentComparison;
 }
 
-export async function createTeacherNote(input: { teacherId: string; studentId: string; note: string; sessionId?: string }) {
+export async function createTeacherNote(input: { teacherId: string; studentId: string; note: string; sessionId?: string; tags?: string[] }) {
   const trimmed = input.note.trim();
   if (!trimmed) {
     throw new Error("Note text is required.");
@@ -569,15 +644,16 @@ export async function createTeacherNote(input: { teacherId: string; studentId: s
     studentId: input.studentId,
     sessionId: input.sessionId,
     note: trimmed,
+    tags: (input.tags ?? []).map((item) => item.trim()).filter(Boolean).slice(0, 5),
     createdAt: new Date().toISOString()
   };
 
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<TeacherNote[]>`
-      insert into teacher_notes (id, teacher_id, student_id, session_id, note, created_at)
-      values (${note.id}, ${note.teacherId}, ${note.studentId}, ${note.sessionId ?? null}, ${note.note}, ${note.createdAt})
-      returning id, teacher_id as "teacherId", student_id as "studentId", session_id as "sessionId", note, created_at as "createdAt"
+      insert into teacher_notes (id, teacher_id, student_id, session_id, note, tags_json, created_at)
+      values (${note.id}, ${note.teacherId}, ${note.studentId}, ${note.sessionId ?? null}, ${note.note}, ${JSON.stringify(note.tags ?? [])}::jsonb, ${note.createdAt})
+      returning id, teacher_id as "teacherId", student_id as "studentId", session_id as "sessionId", note, tags_json as "tags", created_at as "createdAt"
     `;
     return rows[0];
   }
@@ -590,7 +666,7 @@ export async function listTeacherNotes(input: { teacherId: string; studentId: st
   if (hasDatabaseUrl()) {
     const sql = getSql();
     return sql<TeacherNote[]>`
-      select id, teacher_id as "teacherId", student_id as "studentId", session_id as "sessionId", note, created_at as "createdAt"
+      select id, teacher_id as "teacherId", student_id as "studentId", session_id as "sessionId", note, tags_json as "tags", created_at as "createdAt"
       from teacher_notes
       where teacher_id = ${input.teacherId} and student_id = ${input.studentId}
       order by created_at desc
@@ -626,6 +702,137 @@ export async function getInstitutionBilling(teacherId: string) {
   return getStore().billing.get(teacherId) ?? buildDefaultInstitutionBilling(teacherId);
 }
 
+export async function listInstitutionUsers(search?: string) {
+  const normalized = search?.trim().toLowerCase() ?? "";
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const rows = await sql<InstitutionUserSummary[]>`
+      select
+        id,
+        email,
+        name,
+        role,
+        plan,
+        email_verified as "emailVerified",
+        admin_access as "adminAccess",
+        teacher_access as "teacherAccess",
+        created_at as "createdAt"
+      from users
+      where (${normalized === ""} or lower(email) like ${`%${normalized}%`} or lower(name) like ${`%${normalized}%`})
+      order by created_at desc
+      limit 200
+    `;
+    return rows;
+  }
+
+  const members = [...((globalThis as typeof globalThis & { __speakAceStore?: { members: Map<string, MemberProfile> } }).__speakAceStore?.members?.values() ?? [])];
+  return members
+    .filter((item) => !normalized || item.email.toLowerCase().includes(normalized) || item.name.toLowerCase().includes(normalized))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    .map((item) => ({
+      id: item.id,
+      email: item.email,
+      name: item.name,
+      role: item.role,
+      plan: item.plan,
+      emailVerified: item.emailVerified,
+      adminAccess: item.adminAccess ?? item.isAdmin ?? false,
+      teacherAccess: item.teacherAccess ?? item.isTeacher ?? false,
+      createdAt: item.createdAt
+    }));
+}
+
+export async function updateInstitutionUserAccess(input: {
+  userId: string;
+  teacherAccess?: boolean;
+  adminAccess?: boolean;
+}) {
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    let rows: InstitutionUserSummary[] = [];
+
+    if (typeof input.teacherAccess === "boolean" && typeof input.adminAccess === "boolean") {
+      rows = (await sql`
+        update users
+        set
+          teacher_access = ${input.teacherAccess},
+          admin_access = ${input.adminAccess}
+        where id = ${input.userId}
+        returning
+          id,
+          email,
+          name,
+          role,
+          plan,
+          email_verified as "emailVerified",
+          admin_access as "adminAccess",
+          teacher_access as "teacherAccess",
+          created_at as "createdAt"
+      `) as unknown as InstitutionUserSummary[];
+    } else if (typeof input.teacherAccess === "boolean") {
+      rows = (await sql`
+        update users
+        set teacher_access = ${input.teacherAccess}
+        where id = ${input.userId}
+        returning
+          id,
+          email,
+          name,
+          role,
+          plan,
+          email_verified as "emailVerified",
+          admin_access as "adminAccess",
+          teacher_access as "teacherAccess",
+          created_at as "createdAt"
+      `) as unknown as InstitutionUserSummary[];
+    } else if (typeof input.adminAccess === "boolean") {
+      rows = (await sql`
+        update users
+        set admin_access = ${input.adminAccess}
+        where id = ${input.userId}
+        returning
+          id,
+          email,
+          name,
+          role,
+          plan,
+          email_verified as "emailVerified",
+          admin_access as "adminAccess",
+          teacher_access as "teacherAccess",
+          created_at as "createdAt"
+      `) as unknown as InstitutionUserSummary[];
+    } else {
+      rows = (await sql`
+        select
+          id,
+          email,
+          name,
+          role,
+          plan,
+          email_verified as "emailVerified",
+          admin_access as "adminAccess",
+          teacher_access as "teacherAccess",
+          created_at as "createdAt"
+        from users
+        where id = ${input.userId}
+      `) as unknown as InstitutionUserSummary[];
+    }
+
+    return rows[0] ?? null;
+  }
+
+  const store = (globalThis as typeof globalThis & { __speakAceStore?: { members: Map<string, MemberProfile> } }).__speakAceStore;
+  const current = store?.members.get(input.userId);
+  if (!current) return null;
+  const next = {
+    ...current,
+    adminAccess: input.adminAccess ?? current.adminAccess ?? false,
+    teacherAccess: input.teacherAccess ?? current.teacherAccess ?? false
+  };
+  store?.members.set(input.userId, next);
+  return next;
+}
+
 export async function updateInstitutionBilling(input: {
   teacherId: string;
   plan: InstitutionBillingSummary["plan"];
@@ -650,7 +857,7 @@ export async function updateInstitutionBilling(input: {
     const sql = getSql();
     const existing = await getInstitutionBilling(input.teacherId);
     const createdAt = existing.createdAt ?? now;
-    const rows = await sql<InstitutionBillingSummary[]>`
+    const rows = (await sql`
       insert into institution_billing (
         teacher_id, plan, status, seat_count, monthly_price, included_classes, included_students, created_at, updated_at
       ) values (
@@ -676,7 +883,7 @@ export async function updateInstitutionBilling(input: {
         included_students as "includedStudents",
         created_at as "createdAt",
         updated_at as "updatedAt"
-    `;
+    `) as unknown as InstitutionBillingSummary[];
     return rows[0];
   }
 

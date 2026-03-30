@@ -17,12 +17,13 @@ export function isTeacherEmail(email: string) {
 }
 
 export function withTeacherPrivileges(profile: MemberProfile): MemberProfile {
-  if (!isTeacherEmail(profile.email)) {
+  if (!profile.teacherAccess && !isTeacherEmail(profile.email)) {
     return profile;
   }
 
   return {
     ...profile,
+    teacherAccess: true,
     isTeacher: true,
     plan: "pro"
   };

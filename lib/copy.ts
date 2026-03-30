@@ -14,14 +14,14 @@ export const copy = {
   },
   tr: {
     brand: "SpeakAce AI",
-    tagline: "TOEFL ve IELTS speaking icin yapay zeka kocuyla pratik yap.",
+    tagline: "TOEFL ve IELTS speaking için yapay zekâ destekli koçla pratik yap.",
     nav: {
       practice: "Pratik",
       pricing: "Fiyatlar",
-      billing: "Odeme",
+      billing: "Ödeme",
       settings: "Ayarlar",
-      signIn: "Giris yap",
-      signOut: "Cikis yap",
+      signIn: "Giriş yap",
+      signOut: "Çıkış yap",
       dashboard: "Panel"
     }
   }

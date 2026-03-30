@@ -49,6 +49,7 @@ export function TeacherHub() {
     task: "all",
     skill: "all"
   });
+  const [studentSearch, setStudentSearch] = useState("");
   const [rule, setRule] = useState<HomeworkAutoAssignRule | null>(null);
   const [shareExamType, setShareExamType] = useState<ExamType>("IELTS");
   const [shareTaskType, setShareTaskType] = useState<TaskType>("ielts-part-1");
@@ -65,6 +66,8 @@ export function TeacherHub() {
     approvalRequired: true,
     joinMessage: ""
   });
+  const [announcementTitle, setAnnouncementTitle] = useState("");
+  const [announcementBody, setAnnouncementBody] = useState("");
 
   const selectedClass = useMemo(() => classes.find((item) => item.id === selectedClassId) ?? null, [classes, selectedClassId]);
   const availableTasks = useMemo(() => (shareExamType === "IELTS" ? IELTS_TASKS : TOEFL_TASKS), [shareExamType]);
@@ -92,9 +95,10 @@ export function TeacherHub() {
         if (filters.exam !== "all" && item.lastExamType !== filters.exam) return false;
         if (filters.task !== "all" && item.lastTaskType !== filters.task) return false;
         if (filters.skill !== "all" && item.weakestSkill !== filters.skill) return false;
+        if (studentSearch && !`${item.student.name} ${item.student.email}`.toLowerCase().includes(studentSearch.toLowerCase())) return false;
         return true;
       }),
-    [filters.exam, filters.skill, filters.task, students]
+    [filters.exam, filters.skill, filters.task, studentSearch, students]
   );
 
   const leaderboard = useMemo(
@@ -364,6 +368,30 @@ export function TeacherHub() {
     setNotice(tr ? "Otomatik odev kurali kaydedildi." : "Auto-assign rule saved.");
   };
 
+  const sendClassAnnouncement = async () => {
+    if (!selectedClassId) return;
+    setError("");
+    setNotice("");
+    const response = await fetch("/api/announcements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        audienceType: "class",
+        classId: selectedClassId,
+        title: announcementTitle,
+        body: announcementBody
+      })
+    });
+    const data = (await response.json()) as { error?: string };
+    if (!response.ok) {
+      setError(data.error ?? (tr ? "Sinif duyurusu gonderilemedi." : "Could not send class announcement."));
+      return;
+    }
+    setAnnouncementTitle("");
+    setAnnouncementBody("");
+    setNotice(tr ? "Sinif duyurusu gonderildi." : "Class announcement sent.");
+  };
+
   const runAutoAssignNow = async () => {
     if (!selectedClassId) return;
     setError("");
@@ -626,6 +654,12 @@ export function TeacherHub() {
               <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
                 <strong>{tr ? "Teacher class filters" : "Teacher class filters"}</strong>
                 <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.7rem" }}>
+                  <input
+                    value={studentSearch}
+                    onChange={(event) => setStudentSearch(event.target.value)}
+                    placeholder={tr ? "Ogrenci ara" : "Search students"}
+                    style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }}
+                  />
                   <select value={filters.exam} onChange={(event) => setFilters((current) => ({ ...current, exam: event.target.value as "all" | ExamType }))} style={selectStyle}>
                     <option value="all">{tr ? "Tum sinavlar" : "All exams"}</option>
                     <option value="IELTS">IELTS</option>
@@ -676,6 +710,32 @@ export function TeacherHub() {
                       style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }}
                     />
                   </label>
+                  <label style={{ display: "grid", gap: "0.3rem" }}>
+                    <span className="practice-meta">{tr ? "Sinav filtresi" : "Exam filter"}</span>
+                    <select value={rule?.examType ?? "all"} onChange={(event) => setRule((current) => current ? { ...current, examType: event.target.value as HomeworkAutoAssignRule["examType"] } : current)} style={selectStyle}>
+                      <option value="all">{tr ? "Tum sinavlar" : "All exams"}</option>
+                      <option value="IELTS">IELTS</option>
+                      <option value="TOEFL">TOEFL</option>
+                    </select>
+                  </label>
+                  <label style={{ display: "grid", gap: "0.3rem" }}>
+                    <span className="practice-meta">{tr ? "Task filtresi" : "Task filter"}</span>
+                    <select value={rule?.taskType ?? "all"} onChange={(event) => setRule((current) => current ? { ...current, taskType: event.target.value as HomeworkAutoAssignRule["taskType"] } : current)} style={selectStyle}>
+                      <option value="all">{tr ? "Tum taskler" : "All tasks"}</option>
+                      {[...IELTS_TASKS, ...TOEFL_TASKS].map((task) => (
+                        <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label style={{ display: "grid", gap: "0.3rem" }}>
+                    <span className="practice-meta">{tr ? "Weak skill filtresi" : "Weak skill filter"}</span>
+                    <select value={rule?.focusSkill ?? ""} onChange={(event) => setRule((current) => current ? { ...current, focusSkill: event.target.value || null } : current)} style={selectStyle}>
+                      <option value="">{tr ? "Hepsi" : "Any skill"}</option>
+                      {filterSkillOptions.map((skill) => (
+                        <option key={skill} value={skill}>{translateCategoryLabel(skill, tr)}</option>
+                      ))}
+                    </select>
+                  </label>
                   <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
                     <button type="button" className="button button-secondary" onClick={saveAutoAssignRule}>{tr ? "Kurali kaydet" : "Save rule"}</button>
                     <button type="button" className="button button-secondary" onClick={runAutoAssignNow}>{tr ? "Simdi calistir" : "Run now"}</button>
@@ -711,6 +771,20 @@ export function TeacherHub() {
                     {tr ? "Prompt paylas" : "Share prompt"}
                   </button>
                 </div>
+              </div>
+
+              <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "center", flexWrap: "wrap" }}>
+                  <strong>{tr ? "Sinifa duyuru gonder" : "Send class announcement"}</strong>
+                  <a className="button button-secondary" href={`/api/teacher/classes/${selectedClassId}/export`}>
+                    {tr ? "CSV rapor indir" : "Download CSV report"}
+                  </a>
+                </div>
+                <input value={announcementTitle} onChange={(event) => setAnnouncementTitle(event.target.value)} placeholder={tr ? "Duyuru basligi" : "Announcement title"} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }} />
+                <textarea value={announcementBody} onChange={(event) => setAnnouncementBody(event.target.value)} rows={3} placeholder={tr ? "Secili sinifa gidecek duyuru..." : "Announcement for the current class..."} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }} />
+                <button type="button" className="button button-secondary" onClick={sendClassAnnouncement}>
+                  {tr ? "Duyuruyu gonder" : "Send announcement"}
+                </button>
               </div>
 
               <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
