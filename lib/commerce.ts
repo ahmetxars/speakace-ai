@@ -2,8 +2,24 @@ export const commerceConfig = {
   plusMonthlyCheckout:
     "https://speakace.lemonsqueezy.com/checkout/buy/95ae8a51-fe50-4b27-a9e3-767db738b374",
   plusMonthlyPrice: "$9.99",
-  plusPlanName: "SpeakAce Plus Monthly"
+  plusPlanName: "SpeakAce Plus Monthly",
+  plusCheckoutPath: "/api/payments/lemon/checkout?plan=plus",
+  customerPortalUrl: "https://speakace.lemonsqueezy.com/billing"
 } as const;
+
+export function buildLemonCheckoutUrl(input?: { email?: string; name?: string; userId?: string }) {
+  const url = new URL(commerceConfig.plusMonthlyCheckout);
+  if (input?.email) {
+    url.searchParams.set("checkout[email]", input.email);
+  }
+  if (input?.name) {
+    url.searchParams.set("checkout[name]", input.name);
+  }
+  if (input?.userId) {
+    url.searchParams.set("checkout[custom][user_id]", input.userId);
+  }
+  return url.toString();
+}
 
 export function getPlanComparison(tr: boolean) {
   return [

@@ -851,6 +851,35 @@ img {
   color: var(--text);
 }
 
+.site-footer {
+  padding: 1rem 0 2.2rem;
+}
+
+.site-footer-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+}
+
+.site-footer-brand,
+.site-footer-links {
+  height: 100%;
+}
+
+.site-footer-links {
+  display: grid;
+  gap: 0.65rem;
+  align-content: start;
+}
+
+.site-footer-links a {
+  color: var(--muted);
+}
+
+.site-footer-links a:hover {
+  color: var(--text);
+}
+
 @keyframes mic-pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(217, 93, 57, 0.34);
@@ -897,6 +926,10 @@ img {
   }
 
   .simulation-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .site-footer-grid {
     grid-template-columns: 1fr;
   }
 }

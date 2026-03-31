@@ -312,7 +312,7 @@ export function MarketingPage({
             <Link className="button button-primary" href={ctaHref}>
               {tr ? "Ücretsiz speaking denemesi başlat" : "Start free speaking practice"}
             </Link>
-            <a className="button button-secondary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+            <a className="button button-secondary" href={commerceConfig.plusCheckoutPath}>
               {tr ? "Plus planını aç" : "Unlock Plus"}
             </a>
           </div>
@@ -521,7 +521,7 @@ export function MarketingPage({
                     "Faster improvement through repeat attempts"
                 ]
             }
-            href={commerceConfig.plusMonthlyCheckout}
+            href={commerceConfig.plusCheckoutPath}
             featured
           />
         </div>
@@ -563,7 +563,7 @@ export function MarketingPage({
                   ? "IELTS speaking practice, AI speaking feedback, tahmini band skorları ve speaking simulator deneyimini tek web uygulamasında birleştiriyoruz."
                   : "We combine IELTS speaking practice, AI speaking feedback, estimated band score support, and a speaking test simulator in one web product."}
               </p>
-              <a className="button button-primary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+              <a className="button button-primary" href={commerceConfig.plusCheckoutPath}>
                 {tr ? "Plus planını al" : "Get Plus"}
               </a>
               <Link className="button button-secondary" href={ctaHref} style={{ marginLeft: "0.7rem" }}>
@@ -613,10 +613,59 @@ export function MarketingPage({
             <Link className="button button-secondary" href="/app/teacher">
               {tr ? "Öğretmen akışını gör" : "See teacher workflow"}
             </Link>
-            <a className="button button-primary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+            <a className="button button-primary" href={commerceConfig.plusCheckoutPath}>
               {tr ? "Ödeme akışını test et" : "Test checkout"}
             </a>
           </div>
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
+          <span className="eyebrow">{tr ? "Kaynak merkezi" : "Resource hub"}</span>
+          <h2>
+            {tr
+              ? "Arama niyeti yuksek sayfalarla daha fazla organik trafik ve daha net donusum yolu"
+              : "High-intent resource pages designed to pull search traffic and convert it"}
+          </h2>
+          <p>
+            {tr
+              ? "Topic listeleri, band score rehberleri ve task bazli sayfalar sayesinde ziyaretci once dogru icerige, sonra practice ve Plus akisina girer."
+              : "With topic pages, band score guides, and task-specific landing pages, visitors can enter through search and move cleanly toward practice and Plus."}
+          </p>
+        </div>
+        <div className="marketing-grid">
+          {[
+            {
+              href: "/resources",
+              title: tr ? "Kaynak merkezi" : "Resource hub",
+              description: tr
+                ? "Tum IELTS speaking rehberlerini ve yuksek niyetli SEO sayfalarini tek yerde topla."
+                : "Collect all IELTS speaking guides and high-intent SEO pages in one place."
+            },
+            {
+              href: "/ielts-speaking-topics",
+              title: tr ? "IELTS speaking topics" : "IELTS speaking topics",
+              description: tr
+                ? "Konu bazli arama yapan ogrencileri practice akisina tasiyan sayfa."
+                : "A search-friendly topic page that turns topic visitors into practice users."
+            },
+            {
+              href: "/ielts-band-score-guide",
+              title: tr ? "Band score rehberi" : "Band score guide",
+              description: tr
+                ? "Skor hedefi olan ogrenciler icin daha guclu bir giris kapisi."
+                : "A stronger entry page for students who search around score improvement."
+            }
+          ].map((item) => (
+            <article key={item.href} className="card feature-card">
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+              <Link className="button button-secondary" href={item.href as Route}>
+                {tr ? "Sayfayi ac" : "Open page"}
+              </Link>
+            </article>
+          ))}
         </div>
       </section>
 

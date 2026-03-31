@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { blogPosts } from "@/lib/marketing-content";
+import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "IELTS Speaking Blog",
@@ -9,10 +10,31 @@ export const metadata: Metadata = {
     "Read simple guides about IELTS speaking practice, AI speaking tools, pronunciation, band score improvement, and speaking test strategy.",
   alternates: {
     canonical: "/blog"
+  },
+  openGraph: {
+    title: "IELTS Speaking Blog | SpeakAce",
+    description:
+      "Read practical IELTS speaking practice guides designed to rank for search and convert learners into users.",
+    url: `${siteConfig.domain}/blog`,
+    siteName: siteConfig.name,
+    type: "website"
   }
 };
 
 export default function BlogIndexPage() {
+  const blogJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: "SpeakAce Blog",
+    url: `${siteConfig.domain}/blog`,
+    blogPost: blogPosts.map((post) => ({
+      "@type": "BlogPosting",
+      headline: post.title,
+      description: post.description,
+      url: `${siteConfig.domain}/blog/${post.slug}`
+    }))
+  };
+
   return (
     <>
       <SiteHeader />
@@ -40,6 +62,27 @@ export default function BlogIndexPage() {
             </article>
           ))}
         </div>
+        <section className="section" style={{ paddingBottom: 0 }}>
+          <div className="card quick-pitch">
+            <h2 style={{ marginBottom: "0.7rem" }}>Start from content. Stay for the feedback loop.</h2>
+            <p className="practice-copy" style={{ marginBottom: "1rem" }}>
+              Blog traffic helps discovery. Real value comes when visitors move into timed speaking
+              tasks, transcript review, and a stronger retry habit.
+            </p>
+            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+              <Link className="button button-primary" href="/resources">
+                Open resource hub
+              </Link>
+              <Link className="button button-secondary" href="/app/practice">
+                Start practice
+              </Link>
+            </div>
+          </div>
+        </section>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
+        />
       </main>
     </>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { SiteFooter } from "@/components/site-footer";
 import { Providers } from "@/components/providers";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
@@ -32,7 +33,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <SiteFooter />
+        </Providers>
       </body>
     </html>
   );

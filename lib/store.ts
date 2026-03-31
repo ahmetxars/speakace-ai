@@ -5,6 +5,7 @@ import { getPromptTemplate } from "@/lib/prompts";
 import { hasDatabaseUrl, getSql } from "@/lib/server/db";
 import { generateFeedbackReport } from "@/lib/server/openai";
 import {
+  BillingStatus,
   Difficulty,
   ExamType,
   MemberProfile,
@@ -649,6 +650,106 @@ export async function getMember(userId: string) {
 
   const profile = getStore().members.get(userId) ?? null;
   return profile ? withAdminPrivileges(profile) : null;
+}
+
+export async function getMemberByEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) return null;
+
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const rows = await sql<MemberProfile[]>`
+      select id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      from users
+      where lower(email) = ${normalizedEmail}
+      limit 1
+    `;
+    return rows[0] ? withAdminPrivileges(rows[0]) : null;
+  }
+
+  const store = getStore();
+  for (const profile of store.members.values()) {
+    if (profile.email.toLowerCase() === normalizedEmail) {
+      return withAdminPrivileges(profile);
+    }
+  }
+  return null;
+}
+
+export async function recordBillingEvent(input: {
+  provider: "lemonsqueezy";
+  eventName: string;
+  userEmail?: string | null;
+  userId?: string | null;
+  plan: MemberProfile["plan"];
+  billingStatus: BillingStatus;
+  providerCustomerId?: string | null;
+  providerSubscriptionId?: string | null;
+  payloadJson: unknown;
+}) {
+  if (!hasDatabaseUrl()) {
+    return;
+  }
+
+  const sql = getSql();
+  await sql`
+    insert into billing_events (
+      id, provider, event_name, user_email, user_id, plan, billing_status,
+      provider_customer_id, provider_subscription_id, payload_json, created_at
+    ) values (
+      ${crypto.randomUUID()}, ${input.provider}, ${input.eventName}, ${input.userEmail ?? null}, ${input.userId ?? null},
+      ${input.plan}, ${input.billingStatus}, ${input.providerCustomerId ?? null}, ${input.providerSubscriptionId ?? null},
+      ${JSON.stringify(input.payloadJson)}, ${new Date().toISOString()}
+    )
+  `;
+}
+
+export async function getActiveBillingPlanForEmail(email: string): Promise<MemberProfile["plan"] | null> {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail || !hasDatabaseUrl()) return null;
+
+  const sql = getSql();
+  const rows = await sql<Array<{ plan: MemberProfile["plan"] }>>`
+    select plan
+    from billing_events
+    where lower(user_email) = ${normalizedEmail}
+      and billing_status in ('active', 'on_trial', 'cancelled')
+    order by created_at desc
+    limit 1
+  `;
+
+  return rows[0]?.plan ?? null;
+}
+
+export async function applyBillingPlanByEmail(input: {
+  email: string;
+  plan: MemberProfile["plan"];
+  billingStatus: BillingStatus;
+  providerCustomerId?: string | null;
+  providerSubscriptionId?: string | null;
+}) {
+  const normalizedEmail = input.email.trim().toLowerCase();
+  if (!normalizedEmail) return null;
+
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const rows = await sql<MemberProfile[]>`
+      update users
+      set
+        plan = ${input.plan},
+        billing_status = ${input.billingStatus},
+        lemon_customer_id = coalesce(${input.providerCustomerId ?? null}, lemon_customer_id),
+        lemon_subscription_id = coalesce(${input.providerSubscriptionId ?? null}, lemon_subscription_id)
+      where lower(email) = ${normalizedEmail}
+      returning id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+    `;
+
+    return rows[0] ? withAdminPrivileges(rows[0]) : null;
+  }
+
+  const member = await getMemberByEmail(normalizedEmail);
+  if (!member) return null;
+  return upsertMember({ ...member, plan: input.plan });
 }
 
 export async function resetStore() {

@@ -53,7 +53,7 @@ export default function PricingPage() {
               <li>Expanded score and transcript insight</li>
               <li>Better retry and improvement workflow</li>
             </ul>
-            <a className="button button-primary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+            <a className="button button-primary" href={commerceConfig.plusCheckoutPath}>
               Buy Plus
             </a>
           </article>

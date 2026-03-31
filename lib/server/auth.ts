@@ -5,7 +5,7 @@ import { createMemberProfile } from "@/lib/membership";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { hasEmailTransport, sendPasswordResetEmail, sendVerificationEmail } from "@/lib/server/email";
 import { MemberProfile } from "@/lib/types";
-import { getMember, upsertMember } from "@/lib/store";
+import { getActiveBillingPlanForEmail, getMember, upsertMember } from "@/lib/store";
 
 const SESSION_COOKIE = "speakace_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
@@ -72,7 +72,11 @@ export async function signUpWithPassword(input: { email: string; password: strin
   }
 
   const passwordHash = await hash(input.password, 12);
-  const profile = withAdminPrivileges(createMemberProfile(normalizedEmail, input.name));
+  const purchasedPlan = await getActiveBillingPlanForEmail(normalizedEmail);
+  const profile = withAdminPrivileges({
+    ...createMemberProfile(normalizedEmail, input.name),
+    plan: purchasedPlan ?? "free"
+  });
   const autoVerified = isAdminEmail(normalizedEmail);
 
   if (hasDatabaseUrl()) {

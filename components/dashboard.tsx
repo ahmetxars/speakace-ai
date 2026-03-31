@@ -624,7 +624,7 @@ export function Dashboard() {
               <li>{tr ? "35 dakika günlük speaking" : "35 daily speaking minutes"}</li>
               <li>{tr ? "Daha güçlü transcript ve skor içgörüleri" : "Stronger transcript and score insight"}</li>
             </ul>
-            <a className="button button-primary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+            <a className="button button-primary" href={commerceConfig.plusCheckoutPath}>
               {tr ? "Plus'a geç" : "Upgrade to Plus"}
             </a>
           </div>

@@ -14,6 +14,15 @@ export type TaskType =
 export type Difficulty = "Starter" | "Target" | "Stretch";
 
 export type SubscriptionPlan = "free" | "plus" | "pro";
+export type BillingStatus =
+  | "free"
+  | "active"
+  | "on_trial"
+  | "paused"
+  | "cancelled"
+  | "past_due"
+  | "expired"
+  | "refunded";
 export type UserRole = "guest" | "member";
 export type EnrollmentStatus = "pending" | "approved";
 
@@ -81,6 +90,9 @@ export interface MemberProfile {
   name: string;
   role: UserRole;
   plan: SubscriptionPlan;
+  billingStatus?: BillingStatus;
+  lemonCustomerId?: string | null;
+  lemonSubscriptionId?: string | null;
   emailVerified?: boolean;
   isAdmin?: boolean;
   isTeacher?: boolean;
@@ -308,4 +320,17 @@ export interface StudentComparison {
   scoreGap: number;
   sessionGap: number;
   strongerAreas: string[];
+}
+
+export interface BillingEventRecord {
+  id: string;
+  provider: "lemonsqueezy";
+  eventName: string;
+  userEmail: string | null;
+  userId?: string | null;
+  plan: SubscriptionPlan;
+  billingStatus: BillingStatus;
+  providerCustomerId?: string | null;
+  providerSubscriptionId?: string | null;
+  createdAt: string;
 }

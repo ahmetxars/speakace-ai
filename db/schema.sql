@@ -117,6 +117,20 @@ create table if not exists analytics_events (
   created_at timestamptz not null default now()
 );
 
+create table if not exists billing_events (
+  id text primary key,
+  provider text not null check (provider in ('lemonsqueezy')),
+  event_name text not null,
+  user_email text,
+  user_id text references users(id) on delete set null,
+  plan text not null check (plan in ('free', 'plus', 'pro')),
+  billing_status text not null,
+  provider_customer_id text,
+  provider_subscription_id text,
+  payload_json jsonb not null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists announcements (
   id text primary key,
   author_id text not null references users(id) on delete cascade,
@@ -183,6 +197,9 @@ alter table speaking_sessions add column if not exists transcript_quality_label 
 alter table users add column if not exists email_verified boolean not null default false;
 alter table users add column if not exists admin_access boolean not null default false;
 alter table users add column if not exists teacher_access boolean not null default false;
+alter table users add column if not exists billing_status text not null default 'free';
+alter table users add column if not exists lemon_customer_id text;
+alter table users add column if not exists lemon_subscription_id text;
 alter table teacher_classes add column if not exists approval_required boolean not null default true;
 alter table teacher_classes add column if not exists join_message text;
 alter table teacher_class_enrollments add column if not exists status text not null default 'approved';
@@ -236,6 +253,12 @@ create index if not exists idx_class_shared_study_items_class_created
 
 create index if not exists idx_analytics_events_user_created
   on analytics_events(user_id, created_at desc);
+
+create index if not exists idx_billing_events_email_created
+  on billing_events(user_email, created_at desc);
+
+create index if not exists idx_billing_events_subscription_created
+  on billing_events(provider_subscription_id, created_at desc);
 
 create index if not exists idx_announcements_audience_created
   on announcements(audience_type, created_at desc);

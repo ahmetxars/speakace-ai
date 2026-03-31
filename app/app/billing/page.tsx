@@ -22,7 +22,7 @@ export default function BillingPage() {
             <Link className="button button-primary" href="/auth">
               {tr ? "Giriş yap" : "Sign in"}
             </Link>
-            <a className="button button-secondary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+            <a className="button button-secondary" href={commerceConfig.plusCheckoutPath}>
               {tr ? "Plus planını gör" : "View Plus plan"}
             </a>
             <Link className="button button-secondary" href="/pricing">
@@ -65,15 +65,23 @@ export default function BillingPage() {
           </div>
         </div>
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-          <a className="button button-primary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
-            {tr ? "Plus planını satın al" : "Buy Plus"}
-          </a>
+          {currentUser?.plan === "free" ? (
+            <a className="button button-primary" href={commerceConfig.plusCheckoutPath}>
+              {tr ? "Plus planını satın al" : "Buy Plus"}
+            </a>
+          ) : (
+            <a className="button button-primary" href="/api/payments/lemon/portal">
+              {tr ? "Faturayı yönet" : "Manage billing"}
+            </a>
+          )}
           <Link className="button button-secondary" href="/pricing">
             {tr ? "Fiyat sayfasını aç" : "Open pricing page"}
           </Link>
         </div>
         <p style={{ color: "var(--muted)" }}>
-          {tr ? `Şu anki planın: ${currentUser?.plan ?? "free"}. Checkout aktif; bir sonraki adım satın alma sonrası plan yükseltmesini webhook ile otomatik hale getirmek.` : `Current plan: ${currentUser?.plan ?? "free"}. Checkout is live; the next step is automatic plan upgrade after purchase through a webhook.`}
+          {tr
+            ? `Şu anki planın: ${currentUser?.plan ?? "free"}. Checkout ve webhook akışı artık aynı hesabı kullanarak planı otomatik yükseltmek için hazır.`
+            : `Current plan: ${currentUser?.plan ?? "free"}. The checkout and webhook flow is now wired to upgrade the same account automatically.`}
         </p>
       </div>
     </main>

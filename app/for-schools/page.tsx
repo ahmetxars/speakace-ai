@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "SpeakAce for Schools",
@@ -8,6 +9,14 @@ export const metadata: Metadata = {
     "SpeakAce helps language schools run IELTS and TOEFL speaking practice with class dashboards, analytics, homework, and institution controls.",
   alternates: {
     canonical: "/for-schools"
+  },
+  openGraph: {
+    title: "SpeakAce for Schools",
+    description:
+      "School-ready IELTS and TOEFL speaking platform with classes, analytics, homework, and institution workflows.",
+    url: `${siteConfig.domain}/for-schools`,
+    siteName: siteConfig.name,
+    type: "website"
   }
 };
 
