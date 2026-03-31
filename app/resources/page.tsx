@@ -73,6 +73,33 @@ const resourceCards: Array<{
   }
 ];
 
+const featuredCollections: Array<{
+  title: string;
+  description: string;
+  href: Route;
+}> = [
+  {
+    title: "Guides and strategy",
+    description: "Clear articles for band score improvement, fluency, structure, and pronunciation.",
+    href: "/guides"
+  },
+  {
+    title: "Sample answers and topics",
+    description: "Part 1, Part 2, and Part 3 practice content with usable answer ideas.",
+    href: "/ielts-speaking-sample-answers"
+  },
+  {
+    title: "Free tools and generators",
+    description: "Simple tools learners can use before they move into full speaking practice.",
+    href: "/tools"
+  },
+  {
+    title: "Practice and comparison pages",
+    description: "Free test flows, weekly challenge pages, and product comparisons for learners exploring options.",
+    href: "/compare"
+  }
+];
+
 export const metadata: Metadata = {
   title: "IELTS Speaking Resources",
   description:
@@ -91,6 +118,8 @@ export const metadata: Metadata = {
 };
 
 export default function ResourcesPage() {
+  const featuredArticle = blogPosts[0];
+  const popularArticles = blogPosts.slice(1, 7);
   const collectionJsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -105,18 +134,54 @@ export default function ResourcesPage() {
         <div className="section-head">
           <span className="eyebrow">Resources</span>
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.8rem)", lineHeight: 0.96 }}>
-            IELTS speaking resources that turn search traffic into real practice
+            IELTS speaking resources, guides, and practice ideas
           </h1>
           <p>
-            These pages are built for students searching for faster score improvement, better
-            structure, stronger fluency, and more focused IELTS speaking practice.
+            Explore topic pages, band score guides, sample answers, and practical articles that
+            help you move from reading into real speaking practice.
           </p>
         </div>
+
+        <section className="section" style={{ paddingBottom: 0 }}>
+          <div className="section-head">
+            <span className="eyebrow">Collections</span>
+            <h2>Start with the content format that fits your goal</h2>
+          </div>
+          <div className="marketing-grid">
+            {featuredCollections.map((collection) => (
+              <article key={collection.href} className="card feature-card">
+                <h3>{collection.title}</h3>
+                <p>{collection.description}</p>
+                <Link className="button button-secondary" href={collection.href}>
+                  Explore collection
+                </Link>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="section" style={{ paddingBottom: 0 }}>
+          <div className="card institution-cta">
+            <div>
+              <span className="eyebrow">Featured article</span>
+              <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{featuredArticle.title}</h2>
+              <p className="practice-copy">{featuredArticle.description}</p>
+            </div>
+            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+              <Link className="button button-primary" href={`/blog/${featuredArticle.slug}`}>
+                Read featured article
+              </Link>
+              <Link className="button button-secondary" href="/blog">
+                Open blog
+              </Link>
+            </div>
+          </div>
+        </section>
 
         <div className="marketing-grid">
           {resourceCards.map((card) => (
             <article key={card.href} className="card feature-card">
-              <div className="pill" style={{ marginBottom: "0.8rem" }}>High-intent SEO</div>
+              <div className="pill" style={{ marginBottom: "0.8rem" }}>Resource</div>
               <h2 style={{ fontSize: "1.4rem" }}>{card.title}</h2>
               <p>{card.description}</p>
               <Link className="button button-primary" href={card.href}>
@@ -167,19 +232,28 @@ export default function ResourcesPage() {
 
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="section-head">
-            <span className="eyebrow">Blog</span>
-            <h2>More articles that support conversion</h2>
+            <span className="eyebrow">Reading paths</span>
+            <h2>Popular articles readers usually open first</h2>
+            <p>
+              Strong resource hubs usually give visitors a simple first path instead of showing an endless wall of links.
+            </p>
           </div>
           <div className="marketing-grid">
-            {blogPosts.slice(0, 6).map((post) => (
+            {popularArticles.map((post) => (
               <article key={post.slug} className="card feature-card">
+                <div className="pill" style={{ marginBottom: "0.8rem" }}>Article</div>
                 <h3>{post.title}</h3>
                 <p>{post.description}</p>
-              <Link className="button button-secondary" href={`/blog/${post.slug}`}>
-                Read article
-              </Link>
+                <Link className="button button-secondary" href={`/blog/${post.slug}`}>
+                  Read article
+                </Link>
               </article>
             ))}
+          </div>
+          <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center" }}>
+            <Link className="button button-primary" href="/blog">
+              Open all articles
+            </Link>
           </div>
         </section>
 
@@ -189,8 +263,8 @@ export default function ResourcesPage() {
               <span className="eyebrow">Next step</span>
               <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Move from reading into practice</h2>
               <p className="practice-copy">
-                The strongest conversion path is simple: high-intent guide, timed speaking task,
-                transcript review, then Plus upgrade when the learner wants more repetitions.
+                The strongest learning path is simple: read one focused guide, try one timed
+                speaking task, review the transcript, then repeat with clearer structure.
               </p>
             </div>
             <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>

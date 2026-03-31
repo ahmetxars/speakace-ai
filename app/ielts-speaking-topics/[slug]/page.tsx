@@ -72,6 +72,14 @@ export default async function TopicDetailPage({
               answer, and retry the same prompt without losing the main idea.
             </p>
           </div>
+          <div className="card" style={{ padding: "1rem", background: "rgba(217, 93, 57, 0.07)", display: "grid", gap: "0.7rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "center", flexWrap: "wrap" }}>
+              <strong>Sample Band {topic.sampleBand} answer</strong>
+              <span className="pill">Estimated Band {topic.sampleBand}</span>
+            </div>
+            <p style={{ margin: 0, color: "var(--text)", lineHeight: 1.8 }}>{topic.sampleAnswer}</p>
+            <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>{topic.sampleWhy}</p>
+          </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
             <Link className="button button-primary" href="/app/practice">
               Practice this topic

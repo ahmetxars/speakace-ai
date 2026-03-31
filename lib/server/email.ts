@@ -119,3 +119,55 @@ export async function sendLeadMagnetEmail(input: { to: string; name?: string }) 
     text: `Hi ${greeting}, your free speaking checklist is ready. Start free practice here: ${practiceUrl} or open the resource hub: ${resourcesUrl}`
   });
 }
+
+export async function sendStudyTaskReminderEmail(input: {
+  to: string;
+  name?: string;
+  taskTitle: string;
+  folderName: string;
+  dueAt?: string;
+  milestonePercent: number;
+}) {
+  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const appUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app/study-lists`;
+  const remainingPercent = Math.max(0, 100 - input.milestonePercent);
+  const dueText = input.dueAt
+    ? new Date(input.dueAt).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      })
+    : "";
+  const subject =
+    input.milestonePercent >= 100
+      ? `Study task deadline reached: ${input.taskTitle}`
+      : `${remainingPercent}% of your task time is left`;
+
+  return sendEmail({
+    to: input.to,
+    subject,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
+        <h2 style="margin:0 0 12px">${subject}</h2>
+        <p>Hi ${greeting},</p>
+        <p>
+          ${
+            input.milestonePercent >= 100
+              ? `Your study task <strong>${input.taskTitle}</strong> has reached its deadline.`
+              : `Your study task <strong>${input.taskTitle}</strong> in <strong>${input.folderName}</strong> has used ${input.milestonePercent}% of its timeline.`
+          }
+        </p>
+        ${dueText ? `<p>Due date: <strong>${dueText}</strong></p>` : ""}
+        <p style="margin:24px 0">
+          <a href="${appUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Open study list</a>
+        </p>
+        <p>You can review the task, update the end date, or mark it complete from your study list workspace.</p>
+      </div>
+    `,
+    text:
+      input.milestonePercent >= 100
+        ? `Hi ${greeting}, your study task "${input.taskTitle}" reached its deadline${dueText ? ` (${dueText})` : ""}. Open it here: ${appUrl}`
+        : `Hi ${greeting}, your study task "${input.taskTitle}" has used ${input.milestonePercent}% of its timeline. ${remainingPercent}% is left${dueText ? ` before ${dueText}` : ""}. Open it here: ${appUrl}`
+  });
+}

@@ -53,6 +53,18 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     setSavedBookmark(bookmarks.some((item) => item.promptId === session.prompt.id));
     const studyItems = readStudyItems();
     setSavedStudyList(studyItems.some((item) => item.promptId === session.prompt.id));
+    void (async () => {
+      try {
+        const response = await fetch("/api/study-lists", { cache: "no-store" });
+        if (!response.ok) return;
+        const payload = (await response.json()) as { items?: Array<{ promptId: string }> };
+        if ((payload.items ?? []).some((item) => item.promptId === session.prompt.id)) {
+          setSavedStudyList(true);
+        }
+      } catch {
+        // local fallback is already applied above
+      }
+    })();
   }, [session.id, session.prompt.id, targetStorageKey]);
 
   const numericTarget = Number(targetScore || 0);
@@ -129,34 +141,73 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
 
   const saveToStudyList = () => {
     if (typeof window === "undefined") return;
-    let folders = readStudyFolders();
-    if (!folders.length) {
-      folders = [
-        {
-          id: crypto.randomUUID(),
-          name: tr ? "Hizli kayitlar" : "Quick saves",
-          createdAt: new Date().toISOString()
+    void (async () => {
+      try {
+        const boardResponse = await fetch("/api/study-lists", { cache: "no-store" });
+        const boardPayload = (await boardResponse.json().catch(() => ({ folders: [] }))) as { folders?: Array<{ id: string; name: string; createdAt: string }> };
+        let folderId = boardPayload.folders?.[0]?.id;
+
+        if (!folderId) {
+          const createResponse = await fetch("/api/study-lists", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "create-folder",
+              name: tr ? "Hizli kayitlar" : "Quick saves"
+            })
+          });
+          const createPayload = (await createResponse.json().catch(() => ({}))) as { folder?: { id: string } };
+          folderId = createPayload.folder?.id;
         }
-      ];
-      writeStudyFolders(folders);
-    }
-    const folderId = folders[0].id;
-    const items = readStudyItems();
-    const next = [
-      {
-        id: crypto.randomUUID(),
-        folderId,
-        promptId: session.prompt.id,
-        examType: session.examType,
-        taskType: session.taskType,
-        difficulty: session.difficulty,
-        title: session.prompt.title,
-        createdAt: new Date().toISOString()
-      },
-      ...items.filter((item) => item.promptId !== session.prompt.id)
-    ].slice(0, 32);
-    writeStudyItems(next);
-    setSavedStudyList(true);
+
+        if (!folderId) {
+          throw new Error("Folder not available");
+        }
+
+        await fetch("/api/study-lists/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            folderId,
+            promptId: session.prompt.id,
+            examType: session.examType,
+            taskType: session.taskType,
+            difficulty: session.difficulty,
+            title: session.prompt.title
+          })
+        });
+        setSavedStudyList(true);
+      } catch {
+        let folders = readStudyFolders();
+        if (!folders.length) {
+          folders = [
+            {
+              id: crypto.randomUUID(),
+              name: tr ? "Hizli kayitlar" : "Quick saves",
+              createdAt: new Date().toISOString()
+            }
+          ];
+          writeStudyFolders(folders);
+        }
+        const folderId = folders[0].id;
+        const items = readStudyItems();
+        const next = [
+          {
+            id: crypto.randomUUID(),
+            folderId,
+            promptId: session.prompt.id,
+            examType: session.examType,
+            taskType: session.taskType,
+            difficulty: session.difficulty,
+            title: session.prompt.title,
+            createdAt: new Date().toISOString()
+          },
+          ...items.filter((item) => item.promptId !== session.prompt.id)
+        ].slice(0, 32);
+        writeStudyItems(next);
+        setSavedStudyList(true);
+      }
+    })();
   };
 
   const handleAudioTimeUpdate = () => {

@@ -243,6 +243,28 @@ export interface StudyListItem {
   createdAt: string;
 }
 
+export interface StudyListTask {
+  id: string;
+  folderId: string;
+  title: string;
+  note?: string;
+  dueAt?: string;
+  createdAt: string;
+  completedAt?: string;
+}
+
+export interface StudyTaskReminder {
+  id: string;
+  taskId: string;
+  userId: string;
+  milestonePercent: number;
+  title: string;
+  body: string;
+  href?: string;
+  emailSentAt?: string | null;
+  createdAt: string;
+}
+
 export interface SharedClassStudyItem {
   id: string;
   classId: string;

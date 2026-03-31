@@ -2,6 +2,7 @@ import { listAnnouncementsForUser } from "@/lib/announcements-store";
 import { listAtRiskStudentsForTeacher, listPendingClassRequests, listTeacherClasses } from "@/lib/classroom-store";
 import { listStudentHomework, listTeacherHomework } from "@/lib/homework-store";
 import { getProgressSummary } from "@/lib/store";
+import { listStudyTaskRemindersForUser } from "@/lib/study-lists-store";
 import { MemberProfile } from "@/lib/types";
 
 export type NotificationItem = {
@@ -106,6 +107,7 @@ export async function getNotificationsForUser(profile: MemberProfile, tr: boolea
     listStudentHomework(profile.id).catch(() => []),
     getProgressSummary(profile.id).catch(() => null)
   ]);
+  const studyReminders = await listStudyTaskRemindersForUser(profile.id).catch(() => []);
   const now = Date.now();
   const dueSoon = homework.filter((item) => !item.completedAt && item.dueAt && new Date(item.dueAt).getTime() <= now + 1000 * 60 * 60 * 24 * 2);
   const overdue = homework.filter((item) => !item.completedAt && item.dueAt && new Date(item.dueAt).getTime() < now);
@@ -129,6 +131,22 @@ export async function getNotificationsForUser(profile: MemberProfile, tr: boolea
       title: item.title,
       body: item.body,
       href: "/app/notifications",
+      createdAt: item.createdAt
+    })),
+    ...studyReminders.slice(0, 4).map((item) => ({
+      id: `study-reminder-${item.id}`,
+      level: item.milestonePercent >= 100 ? ("warning" as const) : ("info" as const),
+      title: tr
+        ? item.milestonePercent >= 100
+          ? "Study task suresi doldu"
+          : `Study task icin %${100 - item.milestonePercent} sure kaldi`
+        : item.title,
+      body: tr
+        ? item.body
+            .replace("Study task deadline reached", "Study task suresi doldu")
+            .replace("of your task time is left", "sure kaldi")
+        : item.body,
+      href: item.href ?? "/app/study-lists",
       createdAt: item.createdAt
     })),
     ...overdue.slice(0, 3).map((item) => ({

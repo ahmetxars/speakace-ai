@@ -16,6 +16,43 @@ const emptySummary: ProgressSummary = {
 
 const studyDayOptions = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+function normalizeStudyDays(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map(String).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.map(String).filter(Boolean);
+      }
+    } catch {
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  }
+  return [];
+}
+
+function normalizeProfile(profile: StudentProfileType | null): StudentProfileType | null {
+  if (!profile) return null;
+  return {
+    ...profile,
+    targetScore: typeof profile.targetScore === "number" ? profile.targetScore : profile.targetScore ? Number(profile.targetScore) : null,
+    weeklyGoal: Number(profile.weeklyGoal || 4),
+    dailyMinutesGoal: Number(profile.dailyMinutesGoal || 15),
+    studyDays: normalizeStudyDays(profile.studyDays),
+    currentLevel: profile.currentLevel || "Building basics",
+    focusSkill: profile.focusSkill || "Balanced practice",
+    examDate: profile.examDate ?? null,
+    targetReason: profile.targetReason || "Improve speaking score",
+    discoverySource: profile.discoverySource || "Google search",
+    bio: profile.bio || ""
+  };
+}
+
 export function StudentProfile() {
   const { currentUser, language } = useAppState();
   const tr = language === "tr";
@@ -27,7 +64,7 @@ export function StudentProfile() {
   useEffect(() => {
     fetch("/api/profile")
       .then((response) => response.json())
-      .then((data: { profile?: StudentProfileType }) => setProfile(data.profile ?? null))
+      .then((data: { profile?: StudentProfileType }) => setProfile(normalizeProfile(data.profile ?? null)))
       .catch(() => setProfile(null));
   }, []);
 
@@ -64,7 +101,7 @@ export function StudentProfile() {
       setError(data.error ?? (tr ? "Profil kaydedilemedi." : "Could not save profile."));
       return;
     }
-    setProfile(data.profile);
+    setProfile(normalizeProfile(data.profile));
     setNotice(tr ? "Profilin güncellendi." : "Profile updated.");
   };
 

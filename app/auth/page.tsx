@@ -30,6 +30,13 @@ function AuthPageInner() {
   const [verifying, setVerifying] = useState(false);
   const [handledVerifyToken, setHandledVerifyToken] = useState("");
 
+  useEffect(() => {
+    const requestedMode = searchParams.get("mode");
+    if (requestedMode === "signin" || requestedMode === "signup") {
+      setMode(requestedMode);
+    }
+  }, [searchParams]);
+
   const submit = async () => {
     setError("");
     setNotice("");

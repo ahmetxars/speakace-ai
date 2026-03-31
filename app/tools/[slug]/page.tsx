@@ -45,7 +45,7 @@ export default async function ToolDetailPage({
       <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
-          <span className="eyebrow">Tool page</span>
+          <span className="eyebrow">Free tool</span>
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.6rem)", lineHeight: 0.96 }}>{page.title}</h1>
           <p>{page.intro}</p>
         </div>
@@ -59,11 +59,11 @@ export default async function ToolDetailPage({
         </div>
         <div className="card institution-cta">
           <div>
-            <span className="eyebrow">Next action</span>
+            <span className="eyebrow">Next step</span>
             <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{page.cta}</h2>
             <p className="practice-copy">
-              Tool-style content performs best when the visitor can move from reading into one real
-              speaking attempt without friction.
+              Use the tool as a simple entry point, then move into one real speaking attempt while
+              the idea is still fresh.
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>

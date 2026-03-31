@@ -27,11 +27,11 @@ export default function CompareHubPage() {
         <div className="section-head">
           <span className="eyebrow">Compare</span>
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.8rem)", lineHeight: 0.96 }}>
-            Comparison pages that capture high-intent traffic close to buying.
+            Compare speaking tools in a cleaner, more practical way.
           </h1>
           <p>
-            These pages target visitors who are already comparing tools, which makes them closer to
-            converting than a broad awareness article.
+            Use these pages when you want to understand how SpeakAce compares with other speaking
+            apps, AI tools, and school-friendly products.
           </p>
         </div>
 

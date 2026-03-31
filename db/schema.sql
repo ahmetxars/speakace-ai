@@ -113,6 +113,49 @@ create table if not exists class_shared_study_items (
   created_at timestamptz not null default now()
 );
 
+create table if not exists study_list_folders (
+  id text primary key,
+  user_id text not null references users(id) on delete cascade,
+  name text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists study_list_items (
+  id text primary key,
+  folder_id text not null references study_list_folders(id) on delete cascade,
+  user_id text not null references users(id) on delete cascade,
+  prompt_id text not null,
+  exam_type text not null check (exam_type in ('IELTS', 'TOEFL')),
+  task_type text not null,
+  difficulty text not null,
+  title text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists study_list_tasks (
+  id text primary key,
+  folder_id text not null references study_list_folders(id) on delete cascade,
+  user_id text not null references users(id) on delete cascade,
+  title text not null,
+  note text,
+  due_at timestamptz,
+  completed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists study_task_reminders (
+  id text primary key,
+  task_id text not null references study_list_tasks(id) on delete cascade,
+  user_id text not null references users(id) on delete cascade,
+  milestone_percent integer not null check (milestone_percent in (25, 50, 75, 100)),
+  title text not null,
+  body text not null,
+  href text,
+  email_sent_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (task_id, milestone_percent)
+);
+
 create table if not exists analytics_events (
   id text primary key,
   user_id text not null references users(id) on delete cascade,
@@ -257,6 +300,18 @@ create index if not exists idx_homework_assignments_student_created
 
 create index if not exists idx_homework_assignments_teacher_created
   on homework_assignments(teacher_id, created_at desc);
+
+create index if not exists idx_study_list_folders_user_created
+  on study_list_folders(user_id, created_at desc);
+
+create index if not exists idx_study_list_items_folder_created
+  on study_list_items(folder_id, created_at desc);
+
+create index if not exists idx_study_list_tasks_folder_created
+  on study_list_tasks(folder_id, created_at desc);
+
+create index if not exists idx_study_task_reminders_user_created
+  on study_task_reminders(user_id, created_at desc);
 
 create index if not exists idx_homework_assignments_class_due
   on homework_assignments(class_id, due_at desc);

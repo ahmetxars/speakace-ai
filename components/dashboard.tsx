@@ -1,11 +1,13 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "@/components/providers";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { AnalyticsSummary } from "@/lib/analytics-store";
 import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
+import { dashboardRecommendations } from "@/lib/growth-pack";
 import { AnnouncementItem, HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership, StudentProfile } from "@/lib/types";
 
 const emptySummary: ProgressSummary = {
@@ -152,8 +154,17 @@ export function Dashboard() {
       return;
     }
 
+    if (profile?.targetScore != null) {
+      const profileValue = String(profile.targetScore);
+      setTargetScore(profileValue);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(storageKey, profileValue);
+      }
+      return;
+    }
+
     setTargetScore("");
-  }, [storageKey]);
+  }, [profile?.targetScore, storageKey]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -179,8 +190,26 @@ export function Dashboard() {
         window.localStorage.removeItem(storageKey);
       }
     }
+    setProfile((current) =>
+      current
+        ? {
+            ...current,
+            targetScore: value ? Number(value) : null
+          }
+        : current
+    );
     if (currentUser?.id) {
       void trackClientEvent({ userId: currentUser.id, event: "target_score_updated", path: "/app" });
+    }
+    if (currentUser?.id && profile) {
+      void fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...profile,
+          targetScore: value ? Number(value) : null
+        })
+      }).catch(() => undefined);
     }
   };
 
@@ -189,7 +218,7 @@ export function Dashboard() {
     return Math.max(...scoredSessions.map((session) => session.report?.overall ?? 0));
   }, [scoredSessions]);
 
-  const weakestSkill = useMemo(() => {
+  const skillProfile = useMemo(() => {
     const buckets = new Map<string, { total: number; count: number }>();
 
     scoredSessions.forEach((session) => {
@@ -207,9 +236,28 @@ export function Dashboard() {
       score: Number((stats.total / stats.count).toFixed(1))
     }));
 
-    if (!averaged.length) return null;
-    return averaged.sort((a, b) => a.score - b.score)[0];
+    if (!averaged.length) {
+      return {
+        weakestSkill: null as null | { label: string; score: number },
+        balanced: false,
+        spread: 0
+      };
+    }
+
+    const sorted = averaged.sort((a, b) => a.score - b.score);
+    const spread = Number((sorted.at(-1)!.score - sorted[0].score).toFixed(1));
+    const bottom = sorted[0];
+    const balanced = spread <= 0.4 || sorted.every((item) => item.score >= 6.5);
+
+    return {
+      weakestSkill: balanced ? null : bottom,
+      balanced,
+      spread
+    };
   }, [scoredSessions]);
+
+  const weakestSkill = skillProfile.weakestSkill;
+  const hasBalancedSkillProfile = skillProfile.balanced;
 
   const recentTrend = useMemo(() => scoredSessions.slice(0, 7).reverse(), [scoredSessions]);
   const numericTarget = Number(targetScore || 0);
@@ -217,6 +265,12 @@ export function Dashboard() {
   const targetLabel = latestExamType === "IELTS" ? (tr ? "hedef band" : "target band") : tr ? "hedef skor" : "target score";
 
   const nextStudyFocus = useMemo(() => {
+    if (hasBalancedSkillProfile) {
+      return tr
+        ? "Skor kategorilerin birbirine yakin gorunuyor. Simdi tek bir skill'i zorlamaktan cok daha olgun ornekler, daha dogal baglantilar ve daha temiz cevap ritmi uzerine gitmek daha mantikli."
+        : "Your category scores look fairly balanced. Instead of forcing one weak skill, it makes more sense to improve maturity of examples, natural linking, and overall response rhythm.";
+    }
+
     if (!weakestSkill) {
       return tr
         ? "Duzenli speaking yaptikca sistem hangi skill tarafinda daha cok calisman gerektigini daha net gosterecek. Once net, tamamlanmis ve dogal cevaplar vermeye odaklan."
@@ -257,7 +311,7 @@ export function Dashboard() {
     return tr
       ? focusMap[weakestSkill.label]?.tr ?? "Bir sonraki denemede en zayif skill'ine odaklan."
       : focusMap[weakestSkill.label]?.en ?? "Focus on your weakest skill in the next attempt.";
-  }, [tr, weakestSkill]);
+  }, [hasBalancedSkillProfile, tr, weakestSkill]);
 
   const roadmap = useMemo(() => {
     if (!summary.averageScore) {
@@ -322,7 +376,9 @@ export function Dashboard() {
   }, [latestExamType, tr]);
 
   const weeklyPlan = useMemo(() => {
-    const weakLabel = weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : tr ? "temel yapi" : "basic structure";
+    const weakLabel = hasBalancedSkillProfile
+      ? tr ? "daha olgun cevap kalitesi" : "overall answer maturity"
+      : weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : tr ? "temel yapi" : "basic structure";
 
     if (!summary.totalSessions) {
       return tr
@@ -363,10 +419,12 @@ export function Dashboard() {
           `Add a short daily ${weakLabel} drill.`,
           "Prefer flexible and natural linking phrases over memorized template blocks."
         ];
-  }, [numericTarget, scoreGap, summary.totalSessions, tr, weakestSkill]);
+  }, [hasBalancedSkillProfile, numericTarget, scoreGap, summary.totalSessions, tr, weakestSkill]);
 
   const dailyMission = useMemo(() => {
-    const focusLabel = weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : tr ? "temel speaking yapisi" : "basic speaking structure";
+    const focusLabel = hasBalancedSkillProfile
+      ? tr ? "cevap kalitesi" : "answer quality"
+      : weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : tr ? "temel speaking yapisi" : "basic speaking structure";
     const basePrompt = latestExamType === "IELTS"
       ? tr
         ? "Bir IELTS gorevi sec ve cevabini reason + example ile tamamla."
@@ -382,7 +440,7 @@ export function Dashboard() {
         ? `${focusLabel} tarafinda kisa bir tekrar yap ve improved answer ile kendi cevabini karsilastir.`
         : `Add a short ${focusLabel} drill and compare your response with the improved answer.`
     };
-  }, [latestExamType, tr, weakestSkill]);
+  }, [hasBalancedSkillProfile, latestExamType, tr, weakestSkill]);
 
   const weeklyChecklistItems = useMemo(
     () =>
@@ -504,9 +562,11 @@ export function Dashboard() {
     return {
       repeatedImprovements,
       repeatedFillers,
-      weakSkillLabel: weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : null
+      weakSkillLabel: hasBalancedSkillProfile
+        ? tr ? "dengeli profil" : "balanced profile"
+        : weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : null
     };
-  }, [scoredSessions, tr, weakestSkill]);
+  }, [hasBalancedSkillProfile, scoredSessions, tr, weakestSkill]);
 
   const troubleWords = useMemo(() => {
     const buckets = new Map<string, number>();
@@ -648,13 +708,25 @@ export function Dashboard() {
 
       <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
         <StatCard label={tr ? "Ortalama tahmin" : "Average estimate"} value={summary.averageScore ? String(summary.averageScore) : tr ? "Skor yok" : "No score"} note={tr ? "Son denemelerin genel ortalamasi" : "Across your recent attempts"} />
-        <StatCard label="Weakest skill" value={weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : "-"} note={tr ? "En cok calisman gereken alan" : "The area that needs the most work"} />
+        <StatCard
+          label={tr ? "Skill odagi" : "Skill focus"}
+          value={
+            hasBalancedSkillProfile
+              ? tr ? "Dengeli profil" : "Balanced profile"
+              : weakestSkill ? (tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label) : "-"
+          }
+          note={
+            hasBalancedSkillProfile
+              ? tr ? "Tek bir skill belirgin sekilde geride degil" : "No single category is clearly lagging behind"
+              : tr ? "En cok calisman gereken alan" : "The area that needs the most work"
+          }
+        />
         <StatCard label="Streak" value={String(summary.streakDays)} note={tr ? "Arka arkaya calisma gunlerin" : "Your current streak in practice days"} />
         <StatCard label={tr ? "Hedef farki" : "Target gap"} value={numericTarget && scoreGap !== null ? (scoreGap <= 0 ? "0" : String(scoreGap)) : "-"} note={targetGapNote} />
       </section>
 
       <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
-        <StatCard label={tr ? "Sayfa goruntuleme" : "Page views"} value={String(analytics.pageViews)} note={tr ? "Panel ve sonuc sayfasi ziyaretleri" : "Visits across dashboard and result pages"} />
+        <StatCard label={tr ? "Rapor inceleme" : "Result reviews"} value={String(analytics.mockReportViews)} note={tr ? "Result ve mock rapor ekranlari" : "How often you opened result and mock report views"} />
         <StatCard label={tr ? "Practice baslangici" : "Practice starts"} value={String(analytics.practiceStarts)} note={tr ? "Konusma denemesi baslatma sayin" : "How many times you started practice"} />
         <StatCard label={tr ? "Yuklenen kayit" : "Uploaded recordings"} value={String(analytics.uploads)} note={tr ? "Transcript icin giden ses kayitlari" : "Recordings sent for transcript"} />
         <StatCard label={tr ? "Tamamlanan simulasyon" : "Completed simulations"} value={String(analytics.simulationsCompleted)} note={tr ? "Bitirilen tam mock sinavlar" : "Full mock exams completed"} />
@@ -698,6 +770,52 @@ export function Dashboard() {
             {tr
               ? "Amac bunlari tamamen silmek degil; daha cesitli ve dogal kelime secimi kullanmak."
               : "The goal is not to remove them entirely, but to replace overused words with more varied and natural choices."}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Sonraki kaynak" : "Next resource"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Odagina uygun okuma" : "Read something aligned with your focus"}</h2>
+          </div>
+          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.75 }}>
+            {hasBalancedSkillProfile
+              ? tr
+                ? "Skill'lerin dengeli gidiyor. Bu noktada daha olgun cevaplar ve daha kaliteli ornekler icin genel bir rehber acmak daha mantikli."
+                : "Your skills look fairly balanced. At this point, a broader guide about answer maturity and better examples makes more sense."
+              : tr
+                ? "En zayif sinyalinle hizli eslesen tek bir guide acmak, sonraki practice denemeni daha verimli yapar."
+                : "Opening one guide that matches your weakest signal usually makes the next practice attempt much more efficient."}
+          </p>
+          <Link
+            className="button button-secondary"
+            href={((weakestSkill && dashboardRecommendations[weakestSkill.label]?.href) || "/resources") as Route}
+          >
+            {weakestSkill
+              ? (tr ? dashboardRecommendations[weakestSkill.label]?.trLabel : dashboardRecommendations[weakestSkill.label]?.label)
+              : tr ? "Kaynaklari ac" : "Open resources"}
+          </Link>
+        </div>
+
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Kolay geri donus" : "Easy return"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Bugun kisa bir giris yap" : "Make a lighter entry today"}</h2>
+          </div>
+          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.75 }}>
+            {tr
+              ? "Tam practice acmak istemedigin gunlerde bile daily prompt veya free test sayfasi uzerinden speaking ritmini koruyabilirsin."
+              : "Even on days when a full practice feels heavy, you can keep the habit alive through the daily prompt or free test pages."}
+          </p>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <Link className="button button-secondary" href="/daily-ielts-speaking-prompt">
+              {tr ? "Gunluk prompt" : "Daily prompt"}
+            </Link>
+            <Link className="button button-secondary" href="/free-ielts-speaking-test">
+              {tr ? "Ucretsiz test" : "Free test"}
+            </Link>
           </div>
         </div>
       </section>

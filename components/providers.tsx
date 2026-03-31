@@ -8,9 +8,13 @@ import { createGuestProfile } from "@/lib/membership";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { MemberProfile, SubscriptionPlan } from "@/lib/types";
 
+export type ThemeMode = "light" | "dark";
+
 interface AppContextValue {
   language: Language;
   setLanguage: (language: Language) => void;
+  theme: ThemeMode;
+  setTheme: (theme: ThemeMode) => void;
   signedIn: boolean;
   signOut: () => Promise<void>;
   currentUser: MemberProfile | null;
@@ -24,12 +28,19 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function Providers({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [language, setLanguageState] = useState<Language>("en");
+  const [theme, setThemeState] = useState<ThemeMode>("light");
   const [signedIn, setSignedInState] = useState(false);
   const [currentUser, setCurrentUser] = useState<MemberProfile | null>(null);
 
   const setLanguage = (nextLanguage: Language) => {
     setLanguageState(nextLanguage);
     window.localStorage.setItem("speakace-language", nextLanguage);
+  };
+
+  const setTheme = (nextTheme: ThemeMode) => {
+    setThemeState(nextTheme);
+    window.localStorage.setItem("speakace-theme", nextTheme);
+    document.body.dataset.theme = nextTheme;
   };
 
   const syncProfile = async (profile: MemberProfile) => {
@@ -79,10 +90,18 @@ export function Providers({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const storedLanguage = window.localStorage.getItem("speakace-language");
+    const storedTheme = window.localStorage.getItem("speakace-theme");
     const storedUser = window.localStorage.getItem("speakace-user");
 
     if (storedLanguage === "en" || storedLanguage === "tr") {
       setLanguageState(storedLanguage);
+    }
+
+    if (storedTheme === "light" || storedTheme === "dark") {
+      setThemeState(storedTheme);
+      document.body.dataset.theme = storedTheme;
+    } else {
+      document.body.dataset.theme = "light";
     }
 
     void initializeUser(storedUser);
@@ -150,7 +169,7 @@ export function Providers({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AppContext.Provider value={{ language, setLanguage, signedIn, signOut, currentUser, setGuestProfile, refreshSession, updatePlan }}>
+    <AppContext.Provider value={{ language, setLanguage, theme, setTheme, signedIn, signOut, currentUser, setGuestProfile, refreshSession, updatePlan }}>
       {children}
     </AppContext.Provider>
   );

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/study-task-reminders",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

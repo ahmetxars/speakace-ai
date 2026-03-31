@@ -696,5 +696,539 @@ export const blogPosts: BlogPost[] = [
         ]
       }
     ]
+  },
+  {
+    slug: "best-way-to-practice-ielts-speaking-alone",
+    title: "The Best Way to Practice IELTS Speaking Alone",
+    description: "Learn how to practice IELTS speaking alone with structure, timing, transcript review, and repeat attempts.",
+    keywords: ["practice IELTS speaking alone", "IELTS speaking practice", "IELTS speaking routine"],
+    intro: "Practicing alone can still work well if you use a structure that creates pressure, review, and repetition.",
+    sections: [
+      {
+        title: "Use a timer and a real prompt",
+        body: [
+          "Without time pressure, many answers feel better than they really are.",
+          "A timed prompt makes solo practice more realistic and more useful."
+        ]
+      },
+      {
+        title: "Review before you retry",
+        body: [
+          "The first answer shows your natural habit. The second answer shows whether you can improve it.",
+          "That is why solo practice works best when every attempt leads to a review and retry."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "how-to-answer-ielts-speaking-part-1-naturally",
+    title: "How to Answer IELTS Speaking Part 1 More Naturally",
+    description: "Use short, natural answers with one reason or detail to sound clearer in IELTS Speaking Part 1.",
+    keywords: ["IELTS speaking part 1", "natural IELTS speaking answers", "IELTS speaking practice"],
+    intro: "Part 1 answers do not need to be long. They need to sound direct, natural, and easy to follow.",
+    sections: [
+      {
+        title: "Give a direct answer first",
+        body: [
+          "Start with a simple yes, no, or short opinion before you explain.",
+          "This keeps the answer clear from the beginning."
+        ]
+      },
+      {
+        title: "Add one small detail",
+        body: [
+          "One reason or example is usually enough for a strong Part 1 answer.",
+          "Trying to say too much often hurts fluency."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "how-to-extend-ielts-speaking-part-2-answer",
+    title: "How to Extend an IELTS Speaking Part 2 Answer",
+    description: "Make your IELTS Part 2 answer longer and clearer with a simple story flow and better idea planning.",
+    keywords: ["IELTS part 2 answer", "IELTS cue card", "IELTS speaking practice"],
+    intro: "Part 2 becomes easier when you stop chasing perfect English and start building a simple story path.",
+    sections: [
+      {
+        title: "Use beginning, middle, end",
+        body: [
+          "A simple story structure gives you something to follow when nerves rise.",
+          "It also helps the listener follow your answer more easily."
+        ]
+      },
+      {
+        title: "Plan two support details",
+        body: [
+          "Before speaking, decide on two details you definitely want to include.",
+          "That small plan reduces blank moments."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "how-to-give-better-examples-in-ielts-speaking-part-3",
+    title: "How to Give Better Examples in IELTS Speaking Part 3",
+    description: "Stronger examples make IELTS Part 3 answers sound deeper, clearer, and more score-ready.",
+    keywords: ["IELTS part 3 examples", "IELTS speaking part 3", "improve IELTS speaking score"],
+    intro: "Part 3 answers often stay too abstract. A small, clear example can make the whole response stronger.",
+    sections: [
+      {
+        title: "Move from opinion to example",
+        body: [
+          "A good Part 3 pattern is opinion, reason, then a short example.",
+          "That makes the answer sound more complete."
+        ]
+      },
+      {
+        title: "Keep examples realistic",
+        body: [
+          "The example does not need to be impressive. It only needs to support your point clearly.",
+          "Simple examples often sound more natural than overbuilt ones."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-fillers-to-avoid",
+    title: "IELTS Speaking Fillers to Avoid and What to Say Instead",
+    description: "Reduce weak fillers in IELTS speaking and replace them with calmer pauses and cleaner transitions.",
+    keywords: ["IELTS fillers", "IELTS speaking fluency", "IELTS speaking practice"],
+    intro: "Small fillers can make a response sound less controlled. The goal is not zero pauses, but better pauses.",
+    sections: [
+      {
+        title: "Notice your repeated fillers",
+        body: [
+          "Many students say the same filler without realizing it.",
+          "Transcript review is one of the easiest ways to spot that habit."
+        ]
+      },
+      {
+        title: "Use silence better",
+        body: [
+          "A short calm pause is usually better than repeating weak filler words.",
+          "It sounds more confident and more organized."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "how-to-build-ielts-speaking-confidence-fast",
+    title: "How to Build IELTS Speaking Confidence Fast",
+    description: "Use repeat practice, clearer structures, and lower-pressure drills to build speaking confidence faster.",
+    keywords: ["IELTS speaking confidence", "build speaking confidence", "IELTS speaking practice"],
+    intro: "Confidence grows faster when the task feels repeatable. That means using a routine that reduces surprise.",
+    sections: [
+      {
+        title: "Repeat the same prompt twice",
+        body: [
+          "The second attempt usually feels calmer because the topic is no longer new.",
+          "That one change can quickly improve confidence."
+        ]
+      },
+      {
+        title: "Practice shorter before longer",
+        body: [
+          "Short tasks help you build control first.",
+          "Once you feel smoother there, longer speaking tasks become easier."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-band-6-vs-band-7",
+    title: "IELTS Speaking Band 6 vs Band 7: What Really Changes?",
+    description: "See the practical difference between Band 6 and Band 7 in fluency, examples, structure, and control.",
+    keywords: ["Band 6 vs Band 7 IELTS speaking", "IELTS band score speaking", "improve IELTS speaking score"],
+    intro: "The jump from Band 6 to Band 7 is usually not about sounding advanced. It is about sounding steadier and more complete.",
+    sections: [
+      {
+        title: "Band 7 sounds more stable",
+        body: [
+          "Band 7 answers usually feel easier to follow from beginning to end.",
+          "They have fewer breaks in structure and fewer repeated phrases."
+        ]
+      },
+      {
+        title: "Examples become more useful",
+        body: [
+          "Stronger answers use reasons and examples more naturally.",
+          "That creates the feeling of maturity in the response."
+        ]
+      }
+    ]
   }
 ];
+
+const extraBlogPosts: BlogPost[] = [
+  {
+    slug: "ielts-speaking-part-1-sample-answers",
+    title: "IELTS Speaking Part 1 Sample Answers You Can Learn From",
+    description: "Study simple IELTS Speaking Part 1 sample answers that sound natural, direct, and easy to adapt.",
+    keywords: ["IELTS Speaking Part 1 sample answers", "IELTS speaking practice", "IELTS Part 1 questions"],
+    intro: "Part 1 answers should feel quick, natural, and complete. A short answer is fine if it sounds direct and controlled.",
+    sections: [
+      {
+        title: "Keep your first sentence simple",
+        body: [
+          "A direct opening often sounds stronger than a long opening full of memorized phrases.",
+          "Part 1 rewards calm control more than complexity."
+        ]
+      },
+      {
+        title: "Add one useful reason",
+        body: [
+          "A short reason makes the answer feel more complete.",
+          "You do not need to overdevelop every Part 1 response."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-part-2-sample-answer",
+    title: "IELTS Speaking Part 2 Sample Answer and Structure Tips",
+    description: "See how a strong IELTS Speaking Part 2 sample answer uses simple structure, one clear story, and steady fluency.",
+    keywords: ["IELTS Part 2 sample answer", "IELTS cue card", "IELTS speaking practice"],
+    intro: "A good Part 2 answer usually feels like one clear story, not several half-finished ideas.",
+    sections: [
+      {
+        title: "Choose one usable memory",
+        body: [
+          "One believable example is often enough.",
+          "A simple memory makes the answer easier to control."
+        ]
+      },
+      {
+        title: "Use a beginning, middle, and close",
+        body: [
+          "Part 2 gets easier when the structure is predictable.",
+          "That simple arc helps fluency and reduces long pauses."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-part-3-sample-questions",
+    title: "IELTS Speaking Part 3 Sample Questions and Better Answers",
+    description: "Practice IELTS Speaking Part 3 sample questions with clearer opinions, stronger reasons, and short supporting examples.",
+    keywords: ["IELTS Part 3 sample questions", "IELTS speaking Part 3", "IELTS speaking practice"],
+    intro: "Part 3 answers sound better when they move beyond a simple opinion and include one reason plus one useful example.",
+    sections: [
+      {
+        title: "Start with a clear position",
+        body: [
+          "An unclear opinion creates a weak answer from the first sentence.",
+          "Say what you think first, then support it."
+        ]
+      },
+      {
+        title: "Do not overbuild the example",
+        body: [
+          "A short clear example is enough.",
+          "The example should support the idea, not take over the answer."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "best-daily-ielts-speaking-routine",
+    title: "The Best Daily IELTS Speaking Routine for Busy Students",
+    description: "Build a daily IELTS speaking routine that fits into real life and still improves fluency and confidence.",
+    keywords: ["daily IELTS speaking routine", "IELTS speaking practice", "improve IELTS speaking score"],
+    intro: "The best routine is not the longest one. It is the one you can repeat often enough to build real control.",
+    sections: [
+      {
+        title: "Use a short repeatable structure",
+        body: [
+          "One prompt, one review, and one retry is enough for many days.",
+          "A short routine is easier to keep than a large study block."
+        ]
+      },
+      {
+        title: "Mix new and repeat prompts",
+        body: [
+          "New prompts create flexibility, but repeat prompts create visible growth.",
+          "Both are useful in a good routine."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "how-to-practice-ielts-speaking-alone",
+    title: "How to Practice IELTS Speaking Alone Without Wasting Time",
+    description: "Use a smarter self-study loop for IELTS speaking when you do not have a tutor available every day.",
+    keywords: ["practice IELTS speaking alone", "IELTS self study", "IELTS speaking AI"],
+    intro: "Practicing alone works best when the learner can still see what went wrong and what to improve next.",
+    sections: [
+      {
+        title: "Record and review",
+        body: [
+          "If you only speak but never review, progress stays vague.",
+          "Transcript review turns solo practice into useful feedback."
+        ]
+      },
+      {
+        title: "Repeat weak answers",
+        body: [
+          "The second attempt is where many learners finally hear the improvement.",
+          "Repeating the same prompt saves time and shows progress faster."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-ideas-when-you-go-blank",
+    title: "What to Do When You Go Blank in IELTS Speaking",
+    description: "Use simple idea-recovery tricks when you go blank in IELTS speaking and need to keep the answer moving.",
+    keywords: ["go blank IELTS speaking", "IELTS speaking ideas", "IELTS speaking confidence"],
+    intro: "Going blank usually means the idea system broke down, not that your English disappeared.",
+    sections: [
+      {
+        title: "Return to one real example",
+        body: [
+          "A real memory is often easier to talk about than an invented perfect answer.",
+          "Simple examples help you restart faster."
+        ]
+      },
+      {
+        title: "Use a fallback structure",
+        body: [
+          "What, why, and one example is a reliable emergency frame.",
+          "Small structures reduce panic when the idea disappears."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "how-to-sound-more-natural-in-english-speaking",
+    title: "How to Sound More Natural in English Speaking Practice",
+    description: "Make your English speaking sound more natural with easier phrasing, steadier rhythm, and less memorized language.",
+    keywords: ["sound natural in English", "AI English speaking practice", "IELTS speaking fluency"],
+    intro: "Natural speaking rarely sounds complicated. It sounds clear, steady, and easy to follow.",
+    sections: [
+      {
+        title: "Avoid memorized openings",
+        body: [
+          "Long memorized intros often sound less natural than short direct openings.",
+          "Simple language can create a much stronger first impression."
+        ]
+      },
+      {
+        title: "Use fewer but better transitions",
+        body: [
+          "Natural transitions are short and useful.",
+          "Too many connectors can make the answer feel forced."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-checklist-before-answering",
+    title: "A Simple IELTS Speaking Checklist Before You Answer",
+    description: "Use this quick IELTS speaking checklist before each answer to improve structure, control, and confidence.",
+    keywords: ["IELTS speaking checklist", "IELTS speaking answer structure", "IELTS speaking practice"],
+    intro: "A small checklist can reduce random mistakes and make every practice session more consistent.",
+    sections: [
+      {
+        title: "Know your answer shape",
+        body: [
+          "A simple frame is better than hoping the answer will organize itself.",
+          "The right structure reduces hesitation."
+        ]
+      },
+      {
+        title: "Aim for one reason and one example",
+        body: [
+          "That alone can improve many answers quickly.",
+          "It creates more maturity without making the answer feel heavy."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "how-to-use-ai-for-ielts-speaking",
+    title: "How to Use AI for IELTS Speaking Practice the Smart Way",
+    description: "Use AI for IELTS speaking practice without turning your answers into scripts or robotic templates.",
+    keywords: ["IELTS speaking AI", "AI IELTS speaking practice", "AI English speaking practice"],
+    intro: "AI becomes useful when it shortens the feedback loop, not when it replaces the student’s voice.",
+    sections: [
+      {
+        title: "Use AI to review, not to memorize",
+        body: [
+          "Model answers are useful because they show direction, not because they should be copied.",
+          "The learner still needs a natural voice."
+        ]
+      },
+      {
+        title: "Keep the retry loop short",
+        body: [
+          "Good AI practice lets you try again quickly.",
+          "That is where a lot of real improvement happens."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-pronunciation-drills",
+    title: "IELTS Speaking Pronunciation Drills You Can Repeat Daily",
+    description: "Use short pronunciation drills to improve clarity, stress, and word endings in IELTS speaking.",
+    keywords: ["IELTS pronunciation drills", "IELTS speaking pronunciation", "AI speaking practice"],
+    intro: "Pronunciation improves faster when the drills are short and focused instead of long and exhausting.",
+    sections: [
+      {
+        title: "Work on endings and stress",
+        body: [
+          "Word endings and stress patterns often affect clarity more than accent does.",
+          "That makes them a better daily target."
+        ]
+      },
+      {
+        title: "Use shorter loops",
+        body: [
+          "Short drills are easier to repeat every day.",
+          "Consistency matters more than one very long session."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "best-ielts-speaking-topics-for-daily-practice",
+    title: "Best IELTS Speaking Topics for Daily Practice",
+    description: "Use these IELTS speaking topics for daily practice when you want low-friction speaking repetition.",
+    keywords: ["IELTS speaking topics", "daily IELTS speaking practice", "IELTS speaking practice"],
+    intro: "The best daily topics are easy to start, easy to repeat, and flexible enough for different levels.",
+    sections: [
+      {
+        title: "Pick familiar topics first",
+        body: [
+          "Familiar topics reduce idea pressure.",
+          "That makes daily practice easier to sustain."
+        ]
+      },
+      {
+        title: "Repeat strong topic families",
+        body: [
+          "Daily repetition works better when the topic family stays somewhat familiar.",
+          "That helps fluency become more automatic."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-retry-method",
+    title: "The IELTS Speaking Retry Method for Faster Improvement",
+    description: "Use a simple retry method to improve IELTS speaking faster with transcript review and stronger second attempts.",
+    keywords: ["IELTS speaking retry", "IELTS speaking feedback", "improve IELTS speaking score"],
+    intro: "A strong second attempt often teaches more than a completely new first attempt.",
+    sections: [
+      {
+        title: "Read the weak parts first",
+        body: [
+          "The transcript tells you where clarity, structure, or vocabulary broke down.",
+          "That gives the retry a clear target."
+        ]
+      },
+      {
+        title: "Do not change everything",
+        body: [
+          "Fixing one or two things is usually more realistic than trying to sound like a different person.",
+          "Small improvements compound over time."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-for-introverts",
+    title: "IELTS Speaking Tips for Introverted Students",
+    description: "Use calmer IELTS speaking routines if you are quieter by nature and need confidence without forced extroversion.",
+    keywords: ["IELTS speaking introverts", "IELTS speaking confidence", "IELTS speaking practice"],
+    intro: "You do not need to be loud or highly expressive to do well in speaking. You need clarity, control, and enough ideas.",
+    sections: [
+      {
+        title: "Build calm routines",
+        body: [
+          "A repeatable routine lowers pressure.",
+          "Introverted students often improve quickly when speaking feels predictable."
+        ]
+      },
+      {
+        title: "Focus on structure first",
+        body: [
+          "Structure can carry confidence when energy feels low.",
+          "A calm well-shaped answer is still a strong answer."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "toefl-speaking-practice-with-ai",
+    title: "Why TOEFL Speaking Practice with AI Can Work",
+    description: "See how AI TOEFL speaking practice helps with timing, summaries, and integrated response control.",
+    keywords: ["TOEFL speaking AI", "TOEFL speaking practice", "AI English speaking practice"],
+    intro: "TOEFL speaking improves when the learner can repeat the same integrated structure enough times to trust it.",
+    sections: [
+      {
+        title: "Integrated answers need structure",
+        body: [
+          "TOEFL tasks become easier when the note and summary pattern is stable.",
+          "AI feedback can reveal where that pattern is breaking."
+        ]
+      },
+      {
+        title: "Retries matter here too",
+        body: [
+          "Repeating a weak integrated answer quickly shows what was missing.",
+          "That can speed up improvement more than random new tasks."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-last-week-plan",
+    title: "A Last-Week IELTS Speaking Plan Before Your Exam",
+    description: "Use a simple last-week IELTS speaking plan to stay calm, keep rhythm, and avoid overloading yourself.",
+    keywords: ["last week IELTS speaking plan", "IELTS speaking exam", "IELTS speaking practice"],
+    intro: "The last week should feel lighter, clearer, and more controlled than the earlier weeks of preparation.",
+    sections: [
+      {
+        title: "Do not overload your brain",
+        body: [
+          "Small focused speaking loops are usually better than heavy last-minute study.",
+          "Confidence matters a lot in the final week."
+        ]
+      },
+      {
+        title: "Repeat what already works",
+        body: [
+          "The last week is a bad time to rebuild your whole system.",
+          "Use familiar prompts and mock flows instead."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-topic-development-tips",
+    title: "IELTS Speaking Topic Development Tips for Better Answers",
+    description: "Develop IELTS speaking answers better with clearer main points, reasons, and short supporting examples.",
+    keywords: ["IELTS topic development", "IELTS speaking answers", "improve IELTS speaking score"],
+    intro: "Weak topic development makes an answer sound empty even when grammar and vocabulary are fine.",
+    sections: [
+      {
+        title: "One idea is enough if you support it",
+        body: [
+          "Many answers feel weak because they mention several ideas without developing any of them.",
+          "One good point is usually stronger."
+        ]
+      },
+      {
+        title: "Support quickly",
+        body: [
+          "A short reason plus one example gives the answer shape.",
+          "That shape helps the examiner follow you more easily."
+        ]
+      }
+    ]
+  }
+];
+
+blogPosts.push(...extraBlogPosts);

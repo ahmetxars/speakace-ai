@@ -1,10 +1,11 @@
 "use client";
 
 import type { Route } from "next";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { copy } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
+import type { NotificationItem } from "@/lib/notifications";
 
 type NavLinkItem = {
   href: Route;
@@ -17,6 +18,9 @@ export function SiteHeader() {
   const { language, setLanguage, signedIn, currentUser, signOut } = useAppState();
   const content = copy[language];
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const bellRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
@@ -25,44 +29,62 @@ export function SiteHeader() {
     };
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (!signedIn || !currentUser?.id) {
+      setNotifications([]);
+      return;
+    }
+    fetch("/api/notifications")
+      .then((response) => response.json())
+      .then((data: { notifications?: NotificationItem[] }) => setNotifications((data.notifications ?? []).slice(0, 5)))
+      .catch(() => setNotifications([]));
+  }, [currentUser?.id, signedIn]);
+
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      if (!bellRef.current?.contains(event.target as Node)) {
+        setNotificationOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   const primaryLinks = useMemo<NavLinkItem[]>(
     () => [
       navItem("/app/practice", content.nav.practice),
       navItem(signedIn ? "/app" : "/pricing", signedIn ? content.nav.dashboard : content.nav.pricing),
-      navItem("/resources", language === "tr" ? "Kaynaklar" : "Resources"),
       navItem("/free-ielts-speaking-test", language === "tr" ? "Ucretsiz test" : "Free test"),
-      navItem("/tools", language === "tr" ? "Araclar" : "Tools"),
       navItem("/blog", "Blog"),
-      navItem("/reviews", language === "tr" ? "Yorumlar" : "Reviews")
+      navItem("/for-teachers", language === "tr" ? "Öğretmenler için" : "For teachers"),
+      navItem("/for-schools", language === "tr" ? "Kurumlar için" : "For schools")
     ],
     [content.nav.dashboard, content.nav.practice, content.nav.pricing, language, signedIn]
   );
 
-  const signedOutLinks = useMemo<NavLinkItem[]>(
+  const secondaryLinks = useMemo<NavLinkItem[]>(
     () => [
-      navItem("/for-teachers", language === "tr" ? "Öğretmenler için" : "For teachers"),
-      navItem("/for-schools", language === "tr" ? "Kurumlar için" : "For schools")
+      navItem("/resources", language === "tr" ? "Kaynaklar" : "Resources"),
+      navItem("/tools", language === "tr" ? "Araclar" : "Tools"),
+      navItem("/reviews", language === "tr" ? "Yorumlar" : "Reviews")
     ],
     [language]
   );
 
   const signedInLinks = useMemo<NavLinkItem[]>(
     () => [
+      navItem("/app/review", language === "tr" ? "Gözden geçir" : "Review"),
+      navItem("/app/study-lists", language === "tr" ? "Çalışma listeleri" : "Study lists"),
       ...(!currentUser?.isTeacher ? [navItem("/app/profile", language === "tr" ? "Profil" : "Profile")] : []),
-      navItem("/app/notifications", language === "tr" ? "Bildirimler" : "Notifications"),
-      navItem("/app/analytics", language === "tr" ? "Analitik" : "Analytics"),
       ...(currentUser?.isTeacher
         ? [
             navItem("/app/teacher", language === "tr" ? "Öğretmen" : "Teacher"),
-            navItem("/app/teacher/billing", language === "tr" ? "Kurum" : "Institution"),
-            navItem("/app/teacher/institution", language === "tr" ? "Kurum analitiği" : "Analytics")
+            navItem("/app/teacher/institution", language === "tr" ? "Kurum analitiği" : "Institution")
           ]
         : []),
       ...(currentUser?.isAdmin
         ? [navItem("/app/institution-admin", language === "tr" ? "Kurum yönetimi" : "Institution admin")]
         : []),
-      navItem("/app/study-lists", language === "tr" ? "Çalışma listeleri" : "Study lists"),
-      navItem("/app/review", language === "tr" ? "Gözden geçir" : "Review"),
       navItem("/app/billing", content.nav.billing),
       navItem("/app/settings", content.nav.settings)
     ],
@@ -87,36 +109,98 @@ export function SiteHeader() {
           ) : null}
         </div>
 
-        <nav className="site-header-nav desktop-nav">
-          {primaryLinks.map((item) => (
-            <Link key={item.href} href={item.href}>
-              {item.label}
-            </Link>
-          ))}
-          {!signedIn
-            ? signedOutLinks.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  {item.label}
-                </Link>
-              ))
-            : signedInLinks.map((item) => (
+        <div className="site-header-desktop desktop-nav">
+          <div className="site-header-utility">
+            <div className="site-header-subnav">
+              {secondaryLinks.map((item) => (
                 <Link key={item.href} href={item.href}>
                   {item.label}
                 </Link>
               ))}
-          {!signedIn ? (
-            <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_cta">
-              {language === "tr" ? "Plus al" : "Get Plus"}
-            </a>
-          ) : null}
-          {signedIn ? (
-            <button className="button button-secondary" type="button" onClick={() => void signOut()}>
-              {content.nav.signOut}
-            </button>
-          ) : (
-            <Link href="/auth">{content.nav.signIn}</Link>
-          )}
-          <div style={{ display: "inline-flex", border: "1px solid var(--line)", borderRadius: 999 }}>
+            </div>
+            <div className="site-header-actions">
+              {!signedIn ? (
+                <>
+                  <Link className="button button-secondary" href="/auth?mode=signup">
+                    {language === "tr" ? "Kayıt ol" : "Sign up"}
+                  </Link>
+                  <Link className="button button-ghost" href="/auth?mode=signin">
+                    {content.nav.signIn}
+                  </Link>
+                  <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_cta">
+                    {language === "tr" ? "Plus al" : "Get Plus"}
+                  </a>
+                </>
+              ) : (
+                <>
+                  <div className="notification-bell-wrap" ref={bellRef}>
+                    <button
+                      className="notification-bell"
+                      type="button"
+                      aria-label={language === "tr" ? "Bildirimleri aç" : "Open notifications"}
+                      aria-expanded={notificationOpen}
+                      onClick={() => setNotificationOpen((value) => !value)}
+                    >
+                      <span className="notification-bell-icon">🔔</span>
+                      {notifications.length ? <span className="notification-bell-count">{Math.min(notifications.length, 9)}</span> : null}
+                    </button>
+                    {notificationOpen ? (
+                      <div className="notification-dropdown card">
+                        <div className="notification-dropdown-head">
+                          <strong>{language === "tr" ? "Bildirimler" : "Notifications"}</strong>
+                          <Link href="/app/notifications" onClick={() => setNotificationOpen(false)}>
+                            {language === "tr" ? "Tumunu gor" : "View all"}
+                          </Link>
+                        </div>
+                        <div className="notification-dropdown-list">
+                          {notifications.length ? (
+                            notifications.map((item) => (
+                              <a
+                                key={item.id}
+                                href={item.href ?? "/app/notifications"}
+                                className={`notification-dropdown-item is-${item.level}`}
+                                onClick={() => setNotificationOpen(false)}
+                              >
+                                <strong>{item.title}</strong>
+                                <span>{item.body}</span>
+                              </a>
+                            ))
+                          ) : (
+                            <div className="notification-dropdown-empty">
+                              {language === "tr" ? "Su an yeni bildirim yok." : "No new notifications right now."}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                  <Link className="button button-ghost" href="/app/analytics">
+                    {language === "tr" ? "Analitik" : "Analytics"}
+                  </Link>
+                  <button className="button button-secondary" type="button" onClick={() => void signOut()}>
+                    {content.nav.signOut}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <nav className="site-header-nav">
+            {primaryLinks.map((item) => (
+              <Link key={item.href} href={item.href}>
+                {item.label}
+              </Link>
+            ))}
+            {signedIn
+              ? signedInLinks.map((item) => (
+                  <Link key={item.href} href={item.href}>
+                    {item.label}
+                  </Link>
+                ))
+              : null}
+          </nav>
+
+          <div className="site-header-locale">
             <button
               className="button"
               type="button"
@@ -142,7 +226,7 @@ export function SiteHeader() {
               TR
             </button>
           </div>
-        </nav>
+        </div>
 
         <button
           type="button"
@@ -178,41 +262,50 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
+            {secondaryLinks.map((item) => (
+              <Link key={item.href} href={item.href} onClick={closeMenu}>
+                {item.label}
+              </Link>
+            ))}
           </div>
         </div>
 
-        <div className="mobile-nav-section">
-          <span className="eyebrow">{signedIn ? (language === "tr" ? "Hesap" : "Account") : language === "tr" ? "Daha fazlası" : "More"}</span>
-          <div className="mobile-nav-links">
-            {!signedIn
-              ? signedOutLinks.map((item) => (
-                  <Link key={item.href} href={item.href} onClick={closeMenu}>
+          <div className="mobile-nav-section">
+            <span className="eyebrow">{signedIn ? (language === "tr" ? "Hesap" : "Account") : language === "tr" ? "Daha fazlası" : "More"}</span>
+            <div className="mobile-nav-links">
+              {signedIn ? (
+                <Link href="/app/notifications" onClick={closeMenu}>
+                  {language === "tr" ? "Bildirimler" : "Notifications"}
+                </Link>
+              ) : null}
+              {signedIn
+                ? signedInLinks.map((item) => (
+                    <Link key={item.href} href={item.href} onClick={closeMenu}>
                     {item.label}
                   </Link>
                 ))
-              : signedInLinks.map((item) => (
-                  <Link key={item.href} href={item.href} onClick={closeMenu}>
-                    {item.label}
-                  </Link>
-                ))}
+              : null}
           </div>
         </div>
 
         <div className="mobile-nav-actions">
           {!signedIn ? (
-            <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_mobile_cta">
-              {language === "tr" ? "Plus al" : "Get Plus"}
-            </a>
+            <>
+              <Link className="button button-secondary" href="/auth?mode=signup" onClick={closeMenu}>
+                {language === "tr" ? "Kayıt ol" : "Sign up"}
+              </Link>
+              <Link className="button button-ghost" href="/auth?mode=signin" onClick={closeMenu}>
+                {content.nav.signIn}
+              </Link>
+              <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_mobile_cta">
+                {language === "tr" ? "Plus al" : "Get Plus"}
+              </a>
+            </>
           ) : (
             <button className="button button-secondary" type="button" onClick={() => void signOut()}>
               {content.nav.signOut}
             </button>
           )}
-          {!signedIn ? (
-            <Link className="button button-secondary" href="/auth" onClick={closeMenu}>
-              {content.nav.signIn}
-            </Link>
-          ) : null}
         </div>
 
         <div className="mobile-language-switch">

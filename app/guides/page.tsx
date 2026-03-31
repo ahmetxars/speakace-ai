@@ -27,11 +27,11 @@ export default function GuidesHubPage() {
         <div className="section-head">
           <span className="eyebrow">Guides</span>
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.8rem)", lineHeight: 0.96 }}>
-            Practical IELTS speaking guides built to capture search intent and push visitors into action.
+            Practical IELTS speaking guides for clearer, stronger answers.
           </h1>
           <p>
-            Guide pages help the site rank for improvement-focused searches like fluency, answer
-            structure, pronunciation, and band score movement.
+            Read practical guides for fluency, answer structure, pronunciation, timing, and band
+            score improvement.
           </p>
         </div>
         <div className="marketing-grid">

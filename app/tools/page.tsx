@@ -27,11 +27,11 @@ export default function ToolsHubPage() {
         <div className="section-head">
           <span className="eyebrow">Tools</span>
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.8rem)", lineHeight: 0.96 }}>
-            Free tool-style pages that attract search traffic before a user is ready to buy.
+            Free speaking tools, planners, and generators.
           </h1>
           <p>
-            Tool pages are useful because many visitors want a quick answer first. If the page is
-            helpful, it can then pull them toward practice and eventually Plus.
+            Start with calculators, generators, and simple planners when you want a low-friction
+            way to move into speaking practice.
           </p>
         </div>
         <div className="marketing-grid">
@@ -40,7 +40,7 @@ export default function ToolsHubPage() {
               <h2 style={{ fontSize: "1.35rem" }}>{item.title}</h2>
               <p>{item.description}</p>
               <Link className="button button-secondary" href={`/tools/${item.slug}`}>
-                Open tool page
+                {item.actionLabel ?? "Open tool"}
               </Link>
             </article>
           ))}

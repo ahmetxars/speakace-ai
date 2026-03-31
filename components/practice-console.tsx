@@ -904,7 +904,13 @@ export function PracticeConsole() {
                 </span>
               ) : null}
             </div>
-            {currentUser ? <p className="practice-meta">{tr ? `Kullanici ID: ${currentUser.id} · Plan: ${humanizePlan(currentUser.plan, tr)}` : `User ID: ${currentUser.id} · Plan tag: ${currentUser.plan}`}</p> : null}
+            {currentUser ? (
+              <p className="practice-meta">
+                {tr
+                  ? `Aktif plan: ${humanizePlan(currentUser.plan, tr)}`
+                  : `Active plan: ${humanizePlan(currentUser.plan, tr)}`}
+              </p>
+            ) : null}
             {session?.transcriptStatus ? <p className="practice-meta">{session.transcriptStatus}</p> : null}
             {preferredPromptId && mode === "idle" ? (
               <p className="practice-meta">{tr ? "Bu sayfa ayni soruyu tekrar denemek icin hazirlandi." : "This session is preloaded to retry the same prompt."}</p>

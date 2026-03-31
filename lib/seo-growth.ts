@@ -5,6 +5,7 @@ export type SeoGrowthEntry = {
   intro: string;
   bullets: string[];
   cta: string;
+  actionLabel?: string;
 };
 
 export const comparisonPages: SeoGrowthEntry[] = [
@@ -93,7 +94,8 @@ export const toolPages: SeoGrowthEntry[] = [
       "Students usually need one next step, not only a score.",
       "The fastest improvement comes from score estimate plus retry."
     ],
-    cta: "Practice one answer in SpeakAce and see an estimated score with improvement guidance."
+    cta: "Practice one answer in SpeakAce and see an estimated score with improvement guidance.",
+    actionLabel: "Calculate score"
   },
   {
     slug: "ielts-cue-card-generator",
@@ -105,7 +107,8 @@ export const toolPages: SeoGrowthEntry[] = [
       "Part 2 improves quickly when you combine notes, transcript review, and retry.",
       "A generator page can pull search traffic and convert to active practice."
     ],
-    cta: "Open the Part 2 topic hub and turn a cue card into a real speaking attempt."
+    cta: "Open the Part 2 topic hub and turn a cue card into a real speaking attempt.",
+    actionLabel: "Generate cue card"
   },
   {
     slug: "ielts-part-1-question-generator",
@@ -117,7 +120,8 @@ export const toolPages: SeoGrowthEntry[] = [
       "Part 1 is perfect for consistency and natural opening sentences.",
       "A simple question generator helps learners come back more often."
     ],
-    cta: "Open Part 1 questions and start a short daily speaking drill."
+    cta: "Open Part 1 questions and start a short daily speaking drill.",
+    actionLabel: "Generate questions"
   },
   {
     slug: "ielts-follow-up-question-generator",
@@ -129,7 +133,8 @@ export const toolPages: SeoGrowthEntry[] = [
       "Follow-up style practice helps learners think under pressure.",
       "A question generator can turn blog traffic into real exam prep."
     ],
-    cta: "Open the Part 3 question guide and practice with a stronger answer structure."
+    cta: "Open the Part 3 question guide and practice with a stronger answer structure.",
+    actionLabel: "Generate follow-ups"
   },
   {
     slug: "english-speaking-topic-generator",
@@ -141,7 +146,8 @@ export const toolPages: SeoGrowthEntry[] = [
       "Topic hubs work well for organic discovery.",
       "Daily prompt content creates a return habit."
     ],
-    cta: "Open the IELTS topic hub and pick one prompt for today."
+    cta: "Open the IELTS topic hub and pick one prompt for today.",
+    actionLabel: "Generate topic"
   },
   {
     slug: "ielts-study-plan-generator",
@@ -153,7 +159,8 @@ export const toolPages: SeoGrowthEntry[] = [
       "The best study plans include repeat attempts, not only new questions.",
       "A daily minutes goal makes habit formation easier."
     ],
-    cta: "Use the onboarding flow and weekly challenge to build a stronger speaking plan."
+    cta: "Use the onboarding flow and weekly challenge to build a stronger speaking plan.",
+    actionLabel: "Build plan"
   }
 ];
 
@@ -231,3 +238,395 @@ export const guidePages: SeoGrowthEntry[] = [
     cta: "Check your transcript after each attempt and replace one weak repeated word."
   }
 ];
+
+const extraComparisonPages: SeoGrowthEntry[] = [
+  {
+    slug: "speakace-vs-loora",
+    title: "SpeakAce vs Loora",
+    description: "Compare SpeakAce vs Loora for IELTS-style speaking practice, transcript feedback, and score-focused repetition.",
+    intro: "Loora is useful for conversational speaking, but SpeakAce is more exam-shaped for students who want a score-focused daily workflow.",
+    bullets: [
+      "SpeakAce keeps the transcript and retry loop closer to exam preparation.",
+      "The product is stronger when the learner wants IELTS and TOEFL structure instead of free conversation.",
+      "Teacher and school workflows make SpeakAce easier to position for classes."
+    ],
+    cta: "Open a free speaking session and compare the learning loop yourself."
+  },
+  {
+    slug: "speakace-vs-speak-app",
+    title: "SpeakAce vs Speak App",
+    description: "See how SpeakAce compares with Speak for IELTS speaking practice, feedback loops, and exam-style confidence building.",
+    intro: "Speak is strong for conversational repetition, while SpeakAce is more directly organized around speaking-test preparation.",
+    bullets: [
+      "SpeakAce is easier to use when exam task types matter.",
+      "Transcript review, sample answers, and retry logic are more score-oriented.",
+      "Schools can use homework and reporting more explicitly."
+    ],
+    cta: "Use one free task and see whether exam focus matters more for your preparation."
+  },
+  {
+    slug: "speakace-vs-chatgpt-for-ielts-speaking",
+    title: "SpeakAce vs ChatGPT for IELTS Speaking",
+    description: "Compare SpeakAce with ChatGPT for IELTS speaking practice, test simulation, and transcript-based improvement.",
+    intro: "ChatGPT is flexible, but a dedicated speaking product can reduce setup friction and create a more repeatable test-prep loop.",
+    bullets: [
+      "SpeakAce removes prompt-writing friction for students.",
+      "The product keeps test timing, transcript review, and retry structure in one place.",
+      "Exam-focused UX often leads to more consistent daily use than a blank chat interface."
+    ],
+    cta: "Try one structured speaking flow before deciding if you need a general AI chat or a focused practice product."
+  },
+  {
+    slug: "speakace-vs-testglider-speaking",
+    title: "SpeakAce vs TestGlider Speaking",
+    description: "Compare SpeakAce vs TestGlider for IELTS speaking simulation, practice frequency, and speaking feedback.",
+    intro: "TestGlider is useful for broader test prep, while SpeakAce goes deeper into repeated speaking attempts, retries, and ongoing student practice.",
+    bullets: [
+      "SpeakAce is stronger when the goal is frequent speaking repetition.",
+      "Topic hubs and tools create more top-of-funnel entry points for learners.",
+      "Teacher workflows are easier to integrate into small-group course models."
+    ],
+    cta: "Use the free speaking test and see if the practice loop fits your style better."
+  },
+  {
+    slug: "speakace-vs-cambly-for-speaking-practice",
+    title: "SpeakAce vs Cambly for Speaking Practice",
+    description: "Compare SpeakAce vs Cambly for IELTS speaking practice, feedback speed, and cost-efficient daily speaking repetition.",
+    intro: "Cambly gives live tutoring, but SpeakAce is built for cheaper daily repetition, transcript review, and retry-based improvement between lessons.",
+    bullets: [
+      "AI practice is cheaper and easier to repeat every day.",
+      "Transcript review helps learners carry feedback into the next attempt immediately.",
+      "A mixed tutor + AI workflow often works better than tutor-only practice."
+    ],
+    cta: "Use SpeakAce for daily repetition and save human sessions for bigger corrections."
+  },
+  {
+    slug: "best-ielts-speaking-platform-for-self-study",
+    title: "Best IELTS Speaking Platform for Self Study",
+    description: "Find what makes the best IELTS speaking platform for self-study learners who want faster feedback and less friction.",
+    intro: "Self-study learners need a product that creates structure without adding complexity. The best platform is the one that gets them practicing again tomorrow.",
+    bullets: [
+      "Fast setup matters more than feature quantity.",
+      "Clear score signals and retry guidance reduce wasted effort.",
+      "Topic hubs, sample answers, and daily prompts support consistency."
+    ],
+    cta: "Try SpeakAce if you want a self-study speaking routine that feels repeatable."
+  },
+  {
+    slug: "best-toefl-speaking-practice-platform",
+    title: "Best TOEFL Speaking Practice Platform",
+    description: "Compare what makes the best TOEFL speaking practice platform for integrated tasks, timing, and transcript review.",
+    intro: "The best TOEFL speaking platform should help learners organize source material, speak under time pressure, and retry weak integrated answers.",
+    bullets: [
+      "Integrated task support matters more than generic speaking prompts.",
+      "A transcript can reveal where summary logic breaks down.",
+      "A stable retry loop helps learners improve source-transfer skill much faster."
+    ],
+    cta: "Open TOEFL speaking practice and see how the structure feels in SpeakAce."
+  },
+  {
+    slug: "best-ai-speaking-tool-for-language-schools",
+    title: "Best AI Speaking Tool for Language Schools",
+    description: "See what language schools should look for in an AI speaking tool with classes, homework, analytics, and student practice tracking.",
+    intro: "Schools need more than a learner-facing app. They need reporting, assignments, reminders, and a clear way to keep speaking active between lessons.",
+    bullets: [
+      "Analytics and homework matter as much as AI scoring.",
+      "Approval flows and study lists help schools operationalize the product.",
+      "A product becomes more valuable when students and teachers both use it regularly."
+    ],
+    cta: "Open the teacher and school pages to see how SpeakAce fits class workflows."
+  }
+];
+
+const extraToolPages: SeoGrowthEntry[] = [
+  {
+    slug: "ielts-speaking-opening-generator",
+    title: "IELTS Speaking Opening Generator",
+    description: "Generate cleaner IELTS speaking openings so your answers start more naturally and with less hesitation.",
+    intro: "Openings matter because the first sentence often controls the pace of the whole answer.",
+    bullets: [
+      "A cleaner first sentence reduces panic.",
+      "Openings should sound direct, not memorized.",
+      "Daily opening drills build confidence faster than random practice."
+    ],
+    cta: "Use one prompt inside SpeakAce and train your first sentence.",
+    actionLabel: "Generate opening"
+  },
+  {
+    slug: "ielts-speaking-idea-generator",
+    title: "IELTS Speaking Idea Generator",
+    description: "Find IELTS speaking answer ideas faster when you feel blocked or slow to start.",
+    intro: "Many learners do not struggle with English first. They struggle with finding a usable idea quickly.",
+    bullets: [
+      "Simple idea generation reduces long pauses.",
+      "Better idea planning often improves fluency more than vocabulary does.",
+      "Topic pages work best when paired with a real answer attempt."
+    ],
+    cta: "Open a topic page and turn one idea into a timed answer.",
+    actionLabel: "Generate ideas"
+  },
+  {
+    slug: "ielts-speaking-follow-up-answer-builder",
+    title: "IELTS Speaking Follow-up Answer Builder",
+    description: "Build stronger follow-up answers for IELTS Speaking Part 3 with clear reasons and examples.",
+    intro: "Part 3 feels hard because learners often answer too briefly or without a supporting example.",
+    bullets: [
+      "One opinion plus one reason is a strong starting shape.",
+      "A short supporting example usually beats a vague longer answer.",
+      "Repeated follow-up practice improves thinking speed under pressure."
+    ],
+    cta: "Use a Part 3 page and turn it into a cleaner discussion answer.",
+    actionLabel: "Build follow-up"
+  },
+  {
+    slug: "ielts-speaking-topic-of-the-day",
+    title: "IELTS Speaking Topic of the Day",
+    description: "Use a fresh IELTS speaking topic of the day to create a simple habit and speak every day.",
+    intro: "A daily topic gives learners one easy decision: open the prompt and record one answer.",
+    bullets: [
+      "Daily prompts reduce friction.",
+      "Small practice loops are easier to maintain than large study plans.",
+      "One topic a day can quietly create a strong speaking habit."
+    ],
+    cta: "Open the daily prompt page and keep your speaking streak alive.",
+    actionLabel: "Open daily topic"
+  },
+  {
+    slug: "ielts-speaking-checklist-generator",
+    title: "IELTS Speaking Checklist Generator",
+    description: "Create a speaking checklist you can use before every IELTS answer to sound more organized and complete.",
+    intro: "Checklists work because they turn improvement into a small repeatable system instead of a vague promise to 'speak better.'",
+    bullets: [
+      "A checklist reduces random mistakes.",
+      "It is easier to repeat a framework than to improvise under pressure.",
+      "Good checklists improve confidence because they narrow the focus."
+    ],
+    cta: "Use SpeakAce with a short checklist and compare your next answer.",
+    actionLabel: "Build checklist"
+  },
+  {
+    slug: "ielts-speaking-transition-phrase-builder",
+    title: "IELTS Speaking Transition Phrase Builder",
+    description: "Build simpler transition phrases for IELTS speaking so your answers sound smoother but not memorized.",
+    intro: "Transition phrases should help the listener follow the answer, not make the speaker sound scripted.",
+    bullets: [
+      "Natural linking beats long memorized connector lists.",
+      "Short transitions are easier to use in real-time speaking.",
+      "A cleaner answer rhythm often follows better transitions."
+    ],
+    cta: "Use one short set of natural transitions in your next answer.",
+    actionLabel: "Build transitions"
+  },
+  {
+    slug: "ielts-speaking-mock-schedule-builder",
+    title: "IELTS Speaking Mock Schedule Builder",
+    description: "Build a weekly IELTS speaking mock schedule with easy repetition and review blocks.",
+    intro: "Many students practice too randomly. A schedule page creates structure before the user commits to a full paid plan.",
+    bullets: [
+      "A good schedule includes repeat attempts, not only new tasks.",
+      "Short review blocks are as important as new recordings.",
+      "Mock rhythm matters more when the exam date is close."
+    ],
+    cta: "Use onboarding, study lists, and weekly challenge to structure your next week.",
+    actionLabel: "Build schedule"
+  },
+  {
+    slug: "toefl-speaking-note-template",
+    title: "TOEFL Speaking Note Template",
+    description: "Use a simple TOEFL speaking note template to organize integrated task answers faster and more clearly.",
+    intro: "TOEFL speaking often feels chaotic because note-taking is too loose. A small structure fixes that quickly.",
+    bullets: [
+      "Main point plus support notes are usually enough.",
+      "The best template is short enough to use under time pressure.",
+      "Clearer notes often lead to calmer delivery."
+    ],
+    cta: "Practice one TOEFL task and use a clearer note structure.",
+    actionLabel: "Open template"
+  }
+];
+
+const extraGuidePages: SeoGrowthEntry[] = [
+  {
+    slug: "ielts-speaking-common-mistakes",
+    title: "IELTS Speaking Common Mistakes",
+    description: "See the most common IELTS speaking mistakes that keep otherwise good students stuck at the same band score.",
+    intro: "Students usually repeat a small set of habits: weak openings, rushed structure, vague examples, and repeated filler language.",
+    bullets: [
+      "Most mistakes are pattern mistakes, not intelligence problems.",
+      "Transcript review is the fastest way to spot repeated habits.",
+      "One corrected habit can improve multiple future answers."
+    ],
+    cta: "Review one transcript today and fix just one repeated speaking pattern."
+  },
+  {
+    slug: "ielts-speaking-part-2-ideas",
+    title: "IELTS Speaking Part 2 Ideas",
+    description: "Learn how to find IELTS Speaking Part 2 ideas faster and turn them into stronger stories with less hesitation.",
+    intro: "Part 2 gets easier when the learner stops chasing a perfect story and starts building one simple, believable example.",
+    bullets: [
+      "One clear memory usually beats several weak ideas.",
+      "Simple timelines help the answer feel more organized.",
+      "A cleaner story arc often improves fluency too."
+    ],
+    cta: "Open a cue card and build a shorter, clearer Part 2 plan."
+  },
+  {
+    slug: "ielts-speaking-part-3-examples",
+    title: "IELTS Speaking Part 3 Examples",
+    description: "Use Part 3 examples better so your IELTS discussion answers sound deeper and more complete.",
+    intro: "Part 3 answers improve quickly when the speaker adds one reason and one usable example instead of speaking in general terms.",
+    bullets: [
+      "Examples make opinions easier to trust.",
+      "A short example is enough if it supports the point clearly.",
+      "Good examples reduce the feeling of emptiness in longer answers."
+    ],
+    cta: "Use one Part 3 question and add a cleaner supporting example."
+  },
+  {
+    slug: "how-to-sound-natural-in-ielts-speaking",
+    title: "How to Sound Natural in IELTS Speaking",
+    description: "Sound more natural in IELTS speaking with steadier rhythm, simpler linking, and less scripted language.",
+    intro: "Natural speaking rarely sounds fancy. It usually sounds clear, steady, and easy to follow.",
+    bullets: [
+      "Simple language often sounds more natural than forced advanced language.",
+      "Memorized templates can make good English sound unnatural.",
+      "Recording yourself helps you hear what feels scripted."
+    ],
+    cta: "Record one answer and compare it with a more natural improved version."
+  },
+  {
+    slug: "ielts-speaking-part-1-tips",
+    title: "IELTS Speaking Part 1 Tips",
+    description: "Use practical IELTS Speaking Part 1 tips to answer faster, more directly, and with cleaner openings.",
+    intro: "Part 1 is one of the best places to improve quickly because the answers are short, direct, and easy to repeat.",
+    bullets: [
+      "Direct answers create better first impressions.",
+      "One small reason is often enough in Part 1.",
+      "Part 1 practice is ideal for building confidence every day."
+    ],
+    cta: "Use Part 1 prompts as your low-friction daily speaking warm-up."
+  },
+  {
+    slug: "toefl-speaking-integrated-tips",
+    title: "TOEFL Speaking Integrated Tips",
+    description: "Improve TOEFL integrated speaking with cleaner note transfer, stronger summaries, and calmer timing control.",
+    intro: "Integrated speaking gets easier when the learner simplifies what to carry from the source instead of trying to repeat everything.",
+    bullets: [
+      "Main point plus one support detail is often enough.",
+      "Timing pressure becomes easier when note structure is simple.",
+      "Retrying the same task reveals summary problems quickly."
+    ],
+    cta: "Try one TOEFL integrated task and focus on a cleaner summary structure."
+  },
+  {
+    slug: "ielts-speaking-self-study-plan",
+    title: "IELTS Speaking Self Study Plan",
+    description: "Build an IELTS speaking self-study plan that is realistic, repeatable, and focused on score growth.",
+    intro: "A good self-study plan is short enough to repeat and strong enough to improve fluency, examples, and confidence over time.",
+    bullets: [
+      "Short daily speaking beats occasional heavy study.",
+      "Study plans should mix new prompts with repeat prompts.",
+      "Feedback review is part of practice, not separate from it."
+    ],
+    cta: "Use SpeakAce to turn a simple self-study plan into daily speaking action."
+  },
+  {
+    slug: "ielts-speaking-exam-day-tips",
+    title: "IELTS Speaking Exam Day Tips",
+    description: "Use simple IELTS speaking exam day tips to stay calmer, start faster, and keep better control over your answers.",
+    intro: "Exam day performance improves when the student has already repeated a familiar practice loop enough times to trust it.",
+    bullets: [
+      "Calm starts matter more than perfect starts.",
+      "A direct first sentence can lower nerves quickly.",
+      "The best exam-day confidence comes from repeated realistic practice."
+    ],
+    cta: "Use a mock session this week so exam-day pressure feels less new."
+  }
+];
+
+comparisonPages.push(...extraComparisonPages);
+toolPages.push(...extraToolPages);
+guidePages.push(...extraGuidePages);
+
+comparisonPages.push(
+  {
+    slug: "best-ielts-speaking-ai-for-beginners",
+    title: "Best IELTS Speaking AI for Beginners",
+    description: "Find what makes the best IELTS speaking AI for beginners who need simpler structure and lower-pressure practice.",
+    intro: "Beginners need a speaking product that lowers friction instead of raising it. Simpler task entry and clearer feedback usually matter most.",
+    bullets: [
+      "The best product is easy to start even on a low-energy day.",
+      "Transcript review helps beginners understand what they actually said.",
+      "Small daily loops are more useful than heavy one-time practice."
+    ],
+    cta: "Use the free test and daily prompt pages if you want an easier first step."
+  },
+  {
+    slug: "speakace-vs-ielteasy-speaking",
+    title: "SpeakAce vs IELTS-specific Speaking Tools",
+    description: "Compare SpeakAce with more niche IELTS-specific speaking tools for structure, retries, and daily use.",
+    intro: "Niche products win when they remove setup friction and guide the learner into the right task quickly.",
+    bullets: [
+      "Task clarity improves consistency.",
+      "Retry loops often matter more than one-off model answers.",
+      "A stronger content ecosystem helps search visitors become users."
+    ],
+    cta: "Open a real task inside SpeakAce and compare the daily flow yourself."
+  }
+);
+
+toolPages.push(
+  {
+    slug: "ielts-speaking-answer-checker",
+    title: "IELTS Speaking Answer Checker",
+    description: "Use a simple IELTS speaking answer checker workflow to spot structure, clarity, and repetition issues faster.",
+    intro: "Many learners search for an answer checker because they want a quick signal before they commit to deeper practice.",
+    bullets: [
+      "A checker is more useful when it points to one next action.",
+      "Transcript review turns a generic checker into a learning loop.",
+      "Short answer-check pages are strong top-of-funnel assets."
+    ],
+    cta: "Run one answer through SpeakAce and see the transcript plus feedback.",
+    actionLabel: "Check answer"
+  },
+  {
+    slug: "ielts-speaking-daily-goal-builder",
+    title: "IELTS Speaking Daily Goal Builder",
+    description: "Build a small daily IELTS speaking goal that is realistic enough to repeat and strong enough to improve fluency.",
+    intro: "Daily goal pages work because most students need a smaller commitment, not a larger promise.",
+    bullets: [
+      "A 10 to 15 minute goal is easier to keep.",
+      "Good goals mix one prompt with one review action.",
+      "Visible goals create a better return habit."
+    ],
+    cta: "Use onboarding and daily prompt pages to build a realistic practice habit.",
+    actionLabel: "Build daily goal"
+  }
+);
+
+guidePages.push(
+  {
+    slug: "ielts-speaking-time-management",
+    title: "IELTS Speaking Time Management",
+    description: "Manage speaking time better in IELTS so your answers feel complete instead of rushed or empty.",
+    intro: "Time control is often a hidden problem in speaking because students either overtalk or stop too early.",
+    bullets: [
+      "Simple answer shapes make timing easier.",
+      "Mock drills help you feel how long a complete answer really is.",
+      "A calmer pace often improves both timing and pronunciation."
+    ],
+    cta: "Use timed practice inside SpeakAce to feel answer length more naturally."
+  },
+  {
+    slug: "ielts-speaking-confidence-routine",
+    title: "IELTS Speaking Confidence Routine",
+    description: "Build a confidence routine for IELTS speaking with easy warm-ups, repeat prompts, and calm review loops.",
+    intro: "Confidence often grows from familiarity. A good routine makes the process feel known before the exam arrives.",
+    bullets: [
+      "Short warm-ups lower entry friction.",
+      "Repeat prompts reduce surprise and panic.",
+      "A calm review loop helps the learner trust improvement."
+    ],
+    cta: "Use the weekly challenge and daily prompt pages to create a confidence routine."
+  }
+);

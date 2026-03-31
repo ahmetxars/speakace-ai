@@ -6,6 +6,7 @@ import { useAppState } from "@/components/providers";
 import { LeadCaptureForm } from "@/components/lead-capture-form";
 import { MarketingDemoShowcase } from "@/components/marketing-demo-showcase";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
+import { freePacks, roadmapCards, studyTracks } from "@/lib/growth-pack";
 import {
   blogPosts,
   coreKeywords,
@@ -187,6 +188,42 @@ const dailyPrompts = {
   ]
 };
 
+const answerUpgrade = {
+  en: {
+    weakTitle: "A weaker answer",
+    strongTitle: "A stronger retry",
+    weak:
+      "I use my phone every day. It is useful because I can message people and check information. I think it is important and I like using it.",
+    strong:
+      "One useful object I use every day is my phone. I rely on it for messaging, maps, and quick study tasks, so it saves me a lot of time. For example, when I travel to university, I use it to check directions and review English notes at the same time. That is why it feels practical rather than just entertaining.",
+    note: "The stronger version gives one clear use case, one example, and a more mature closing idea."
+  },
+  tr: {
+    weakTitle: "Daha zayıf cevap",
+    strongTitle: "Daha güçlü tekrar denemesi",
+    weak:
+      "Telefonumu her gün kullanırım. Faydalıdır çünkü insanlara mesaj atabilirim ve bilgi bakabilirim. Bence önemlidir ve kullanmayı seviyorum.",
+    strong:
+      "Her gün kullandığım faydalı eşyalardan biri telefonum. Mesajlaşma, harita ve kısa çalışma işleri için ona güveniyorum, bu yüzden bana ciddi zaman kazandırıyor. Mesela üniversiteye giderken hem yol tarifi kontrol ediyor hem de İngilizce notlarıma hızlıca bakıyorum. Bu nedenle benim için sadece eğlenceli değil, gerçekten pratik bir araç.",
+    note: "Daha güçlü versiyon tek bir net kullanım alanı, bir örnek ve daha olgun bir kapanış fikri veriyor."
+  }
+};
+
+const examWeekChecklist = {
+  en: [
+    "Repeat two familiar prompts instead of chasing ten new ones.",
+    "Use one mock speaking session to calm exam-day pressure.",
+    "Review one transcript and fix one repeated weak habit.",
+    "Sleep and routine matter more than one last heavy study block."
+  ],
+  tr: [
+    "On yeni soru kovalamak yerine iki tanıdık prompt’u tekrar çöz.",
+    "Sınav günü baskısını azaltmak için bir mock speaking oturumu yap.",
+    "Bir transcript incele ve tekrar eden tek bir zayıf alışkanlığı düzelt.",
+    "Son bir ağır çalışma yerine uyku ve düzen daha çok önemlidir."
+  ]
+};
+
 const howItWorks = {
   en: [
     {
@@ -282,6 +319,11 @@ export function MarketingPage({
   const localizedUseCases = tr ? useCases.tr : useCases.en;
   const localizedComparisonPoints = tr ? comparisonPoints.tr : comparisonPoints.en;
   const localizedDailyPrompt = tr ? dailyPrompts.tr : dailyPrompts.en;
+  const localizedStudyTracks = tr ? studyTracks.tr : studyTracks.en;
+  const localizedFreePacks = tr ? freePacks.tr : freePacks.en;
+  const localizedRoadmap = tr ? roadmapCards.tr : roadmapCards.en;
+  const localizedAnswerUpgrade = tr ? answerUpgrade.tr : answerUpgrade.en;
+  const localizedExamWeekChecklist = tr ? examWeekChecklist.tr : examWeekChecklist.en;
   const planComparison = getPlanComparison(tr);
 
   const faqJsonLd = {
@@ -487,6 +529,42 @@ export function MarketingPage({
 
       <section className="page-shell section">
         <div className="section-head">
+          <span className="eyebrow">{tr ? "Güven" : "Proof"}</span>
+          <h2>{tr ? "Ürünü kullanan kişilerden kısa sinyaller" : "Short signals from the kind of users this product is built for"}</h2>
+          <p>
+            {tr
+              ? "Sosyal kanıt tek başına satış yaratmaz, ama ziyaretçinin ürünü zihninde daha gerçek bir yere koymasına yardım eder."
+              : "Social proof does not close the sale alone, but it helps visitors place the product in a more real and trustworthy category."}
+          </p>
+        </div>
+        <TestimonialTicker items={localizedTestimonials} />
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
+          <span className="eyebrow">{tr ? "Çalışma yolları" : "Study tracks"}</span>
+          <h2>{tr ? "Farklı hedefler için farklı giriş noktaları" : "Different entry points for different improvement goals"}</h2>
+          <p>
+            {tr
+              ? "Herkes aynı yerden başlamaz. Bu yüzden SpeakAce, ziyaretçiyi daha doğru sayfaya taşıyan farklı çalışma yolları sunar."
+              : "Not every learner starts from the same place. SpeakAce uses different tracks to pull visitors into the most relevant next step."}
+          </p>
+        </div>
+        <div className="marketing-grid">
+          {localizedStudyTracks.map((item) => (
+            <article key={item.title} className="card feature-card">
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+              <Link href={item.href as Route} className="button button-secondary">
+                {item.cta}
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
           <span className="eyebrow">{tr ? "Nasıl çalışır" : "How it works"}</span>
           <h2>
             {tr
@@ -503,6 +581,25 @@ export function MarketingPage({
               description={item.description}
             />
           ))}
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
+          <span className="eyebrow">{tr ? "Önce / sonra" : "Before / after"}</span>
+          <h2>{tr ? "Daha güçlü cevap hissi nasıl oluşuyor?" : "What does a stronger IELTS answer actually look like?"}</h2>
+        </div>
+        <div className="marketing-grid">
+          <article className="card feature-card">
+            <div className="pill" style={{ marginBottom: "0.8rem" }}>{localizedAnswerUpgrade.weakTitle}</div>
+            <p style={{ marginBottom: "1rem" }}>{localizedAnswerUpgrade.weak}</p>
+            <div className="practice-meta">{tr ? "Daha kısa, daha genel ve daha az destekli." : "Shorter, more general, and less supported."}</div>
+          </article>
+          <article className="card feature-card">
+            <div className="pill" style={{ marginBottom: "0.8rem" }}>{localizedAnswerUpgrade.strongTitle}</div>
+            <p style={{ marginBottom: "1rem" }}>{localizedAnswerUpgrade.strong}</p>
+            <div className="practice-meta">{localizedAnswerUpgrade.note}</div>
+          </article>
         </div>
       </section>
 
@@ -560,6 +657,24 @@ export function MarketingPage({
 
       <section className="page-shell section">
         <div className="section-head">
+          <span className="eyebrow">{tr ? "Ücretsiz paketler" : "Free packs"}</span>
+          <h2>{tr ? "Önce ücretsiz gir, sonra düzen kur" : "Enter through a free pack, then build a real study rhythm"}</h2>
+        </div>
+        <div className="marketing-grid">
+          {localizedFreePacks.map((item) => (
+            <article key={item.title} className="card feature-card">
+              <h3>{item.title}</h3>
+              <p>{item.description}</p>
+              <Link href={item.href as Route} className="button button-primary">
+                {item.cta}
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
           <span className="eyebrow">{tr ? "Hızlı versiyon" : "Short landing page version"}</span>
           <h2>
             {tr
@@ -591,6 +706,24 @@ export function MarketingPage({
               </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
+          <span className="eyebrow">{tr ? "Yol haritası" : "Roadmap"}</span>
+          <h2>{tr ? "Ziyaretçiyi kullanıcılığa taşıyan üç adım" : "Three steps that move a visitor toward active usage"}</h2>
+        </div>
+        <div className="marketing-grid">
+          {localizedRoadmap.map((item) => (
+            <article key={item.title} className="card feature-card">
+              <div className="pill" style={{ marginBottom: "0.8rem" }}>{item.title}</div>
+              <p>{item.description}</p>
+              <Link href={item.href as Route} className="button button-secondary">
+                {item.cta}
+              </Link>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -639,6 +772,21 @@ export function MarketingPage({
               {tr ? "Yorumlari oku" : "Read reviews"}
             </Link>
           </article>
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
+          <span className="eyebrow">{tr ? "Sınav haftası" : "Exam week"}</span>
+          <h2>{tr ? "Sınava yakın dönemde neye odaklanmalı?" : "What should learners focus on in the final stretch?"}</h2>
+        </div>
+        <div className="marketing-grid">
+          {localizedExamWeekChecklist.map((item) => (
+            <article key={item} className="card feature-card">
+              <h3>{tr ? "Checklist item" : "Checklist item"}</h3>
+              <p>{item}</p>
+            </article>
+          ))}
         </div>
       </section>
 
