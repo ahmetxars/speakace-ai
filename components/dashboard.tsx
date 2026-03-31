@@ -764,6 +764,37 @@ export function Dashboard() {
         )}
       </section>
 
+      {shouldUpsellPlus ? (
+        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem" }}>
+          {[
+            {
+              title: tr ? "Daha derin transcript düzeltmesi" : "Deeper transcript cleanup",
+              body: tr
+                ? "Free akışı fikri gösterir. Plus ise cevaptaki yapısal kırılmaları ve yeniden deneme fırsatını daha güçlü hissettirir."
+                : "Free shows the workflow. Plus makes structure breaks, transcript cleanup, and retry opportunities much clearer."
+            },
+            {
+              title: tr ? "Daha yüksek günlük hacim" : "Higher daily volume",
+              body: tr
+                ? "Skor artışı çoğu zaman tek denemeden değil, aynı gün içindeki ikinci ve üçüncü daha temiz denemeden gelir."
+                : "Score growth rarely comes from one attempt alone. It usually comes from cleaner second and third tries in the same day."
+            },
+            {
+              title: tr ? "Gerçek çalışma ritmi" : "A real study rhythm",
+              body: tr
+                ? "Daily mission, study list ve retry queue daha yüksek limitlerle birlikte gerçek bir çalışma sistemine dönüşür."
+                : "Daily mission, study lists, and retry queues become a real study system when the daily cap is no longer tight."
+            }
+          ].map((item) => (
+            <article key={item.title} className="card feature-card">
+              <span className="pill">{tr ? "Plus'ta açılır" : "Unlocked in Plus"}</span>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </section>
+      ) : null}
+
       <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
         <StatCard label={tr ? "Ortalama tahmin" : "Average estimate"} value={summary.averageScore ? String(summary.averageScore) : tr ? "Skor yok" : "No score"} note={tr ? "Son denemelerin genel ortalamasi" : "Across your recent attempts"} />
         <StatCard

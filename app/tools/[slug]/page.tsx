@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
+import { ToolWorkbench } from "@/components/tool-workbench";
 import { siteConfig } from "@/lib/site";
 import { toolPages } from "@/lib/seo-growth";
 
@@ -49,6 +50,7 @@ export default async function ToolDetailPage({
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.6rem)", lineHeight: 0.96 }}>{page.title}</h1>
           <p>{page.intro}</p>
         </div>
+        <ToolWorkbench slug={page.slug} title={page.title} />
         <div className="marketing-grid">
           {page.bullets.map((bullet) => (
             <article key={bullet} className="card feature-card">

@@ -13,8 +13,15 @@ export const metadata: Metadata = {
     template: "%s | SpeakAce AI"
   },
   description: siteConfig.description,
+  keywords: siteConfig.keywords,
   category: "education",
   applicationName: "SpeakAce AI",
+  alternates: {
+    canonical: siteConfig.domain
+  },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION
+  },
   openGraph: {
     title: "SpeakAce AI",
     description: siteConfig.description,
@@ -27,7 +34,8 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SpeakAce AI",
     description: siteConfig.description
-  }
+  },
+  manifest: "/manifest.webmanifest"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -35,6 +43,19 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     <html lang="en">
       <body>
         <Providers>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                name: siteConfig.name,
+                url: siteConfig.domain,
+                sameAs: [],
+                description: siteConfig.description
+              })
+            }}
+          />
           {children}
           <MarketingStickyCta />
           <SiteFooter />

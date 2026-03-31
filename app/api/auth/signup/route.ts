@@ -6,6 +6,7 @@ import {
   getSessionCookieOptions,
   signUpWithPassword
 } from "@/lib/server/auth";
+import { sendWelcomePracticeEmail } from "@/lib/server/email";
 import { isAdminEmail } from "@/lib/admin";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 
@@ -29,6 +30,11 @@ export async function POST(request: Request) {
     });
     const autoVerified = isAdminEmail(profile.email);
     const verification = await createEmailVerificationFlow(profile.email);
+    try {
+      await sendWelcomePracticeEmail({ to: profile.email, name: profile.name });
+    } catch {
+      // non-blocking
+    }
     const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), "", getSessionCookieOptions(new Date(0)));
     return NextResponse.json({

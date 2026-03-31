@@ -1,12 +1,44 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { useAppState } from "@/components/providers";
 import { buildPlanCheckoutPath } from "@/lib/commerce";
 
 export function SiteFooter() {
   const { language } = useAppState();
   const tr = language === "tr";
+
+  const productLinks = [
+    { href: "/pricing" as Route, label: tr ? "Pricing" : "Pricing" },
+    { href: "/app/practice" as Route, label: tr ? "Practice" : "Practice" },
+    { href: "/app/billing" as Route, label: tr ? "Ödeme" : "Billing" },
+    { href: "/auth" as Route, label: tr ? "Giriş" : "Sign in" },
+  ];
+
+  const resourceLinks = [
+    { href: "/resources" as Route, label: "Resources" },
+    { href: "/free-ielts-speaking-test" as Route, label: tr ? "Ucretsiz test" : "Free test" },
+    { href: "/daily-ielts-speaking-prompt" as Route, label: tr ? "Gunluk prompt" : "Daily prompt" },
+    { href: "/weekly-ielts-speaking-challenge" as Route, label: tr ? "Haftalik challenge" : "Weekly challenge" },
+    { href: "/ielts-speaking-topics" as Route, label: "IELTS topics" },
+    { href: "/tools" as Route, label: tr ? "Araclar" : "Tools" },
+    { href: "/compare" as Route, label: tr ? "Karsilastirmalar" : "Compare" },
+    { href: "/guides" as Route, label: tr ? "Rehberler" : "Guides" },
+    { href: "/blog" as Route, label: "Blog" },
+    { href: "/reviews" as Route, label: tr ? "Yorumlar" : "Reviews" },
+    { href: "/case-studies" as Route, label: tr ? "Ornekler" : "Case studies" },
+    { href: "/ielts-band-score-guide" as Route, label: "Band score guide" },
+  ];
+
+  const useCaseLinks = [
+    { href: "/for-teachers" as Route, label: tr ? "Öğretmenler için" : "For teachers" },
+    { href: "/for-schools" as Route, label: tr ? "Kurumlar için" : "For schools" },
+    { href: "/teacher-demo" as Route, label: tr ? "Demo sinif" : "Demo class" },
+    { href: "/success-stories" as Route, label: tr ? "Basari hikayeleri" : "Success stories" },
+    { href: "/ai-english-speaking-practice" as Route, label: "AI speaking" },
+    { href: "/speaking-test-simulator-ielts" as Route, label: "Simulator" },
+  ];
 
   return (
     <footer className="site-footer">
@@ -29,40 +61,41 @@ export function SiteFooter() {
               {tr ? "Plus aç" : "Unlock Plus"}
             </a>
           </div>
+          <div className="site-footer-mini-links">
+            {productLinks.map((item) => (
+              <Link key={item.href} href={item.href}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
 
-        <div className="card site-footer-links">
-          <strong>{tr ? "Ürün" : "Product"}</strong>
-          <Link href="/pricing">Pricing</Link>
-          <Link href="/app/practice">Practice</Link>
-          <Link href="/app/billing">{tr ? "Ödeme" : "Billing"}</Link>
-          <Link href="/auth">{tr ? "Giriş" : "Sign in"}</Link>
+        <div className="card site-footer-panel">
+          <div className="site-footer-panel-header">
+            <strong>{tr ? "Kaynaklar" : "Resources"}</strong>
+            <span>{tr ? "Pratik, rehber ve ücretsiz giriş kapıları" : "Practice, guides, and free entry points"}</span>
+          </div>
+          <div className="site-footer-link-columns">
+            {resourceLinks.map((item) => (
+              <Link key={item.href} href={item.href}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
 
-        <div className="card site-footer-links">
-          <strong>{tr ? "Kaynaklar" : "Resources"}</strong>
-          <Link href="/resources">Resources</Link>
-          <Link href="/free-ielts-speaking-test">{tr ? "Ucretsiz test" : "Free test"}</Link>
-          <Link href="/daily-ielts-speaking-prompt">{tr ? "Gunluk prompt" : "Daily prompt"}</Link>
-          <Link href="/weekly-ielts-speaking-challenge">{tr ? "Haftalik challenge" : "Weekly challenge"}</Link>
-          <Link href="/ielts-speaking-topics">IELTS topics</Link>
-          <Link href="/tools">{tr ? "Araclar" : "Tools"}</Link>
-          <Link href="/compare">{tr ? "Karsilastirmalar" : "Compare"}</Link>
-          <Link href="/guides">{tr ? "Rehberler" : "Guides"}</Link>
-          <Link href="/blog">Blog</Link>
-          <Link href="/reviews">{tr ? "Yorumlar" : "Reviews"}</Link>
-          <Link href="/case-studies">{tr ? "Ornekler" : "Case studies"}</Link>
-          <Link href="/ielts-band-score-guide">Band score guide</Link>
-        </div>
-
-        <div className="card site-footer-links">
-          <strong>{tr ? "Kullanım alanları" : "Use cases"}</strong>
-          <Link href="/for-teachers">{tr ? "Öğretmenler için" : "For teachers"}</Link>
-          <Link href="/for-schools">{tr ? "Kurumlar için" : "For schools"}</Link>
-          <Link href="/teacher-demo">{tr ? "Demo sinif" : "Demo class"}</Link>
-          <Link href="/success-stories">{tr ? "Basari hikayeleri" : "Success stories"}</Link>
-          <Link href="/ai-english-speaking-practice">AI speaking</Link>
-          <Link href="/speaking-test-simulator-ielts">Simulator</Link>
+        <div className="card site-footer-panel">
+          <div className="site-footer-panel-header">
+            <strong>{tr ? "Kullanim alanlari" : "Use cases"}</strong>
+            <span>{tr ? "Öğretmenler, kurumlar ve yoğun çalışan öğrenciler için" : "For teachers, schools, and focused learners"}</span>
+          </div>
+          <div className="site-footer-link-columns site-footer-link-columns-compact">
+            {useCaseLinks.map((item) => (
+              <Link key={item.href} href={item.href}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </footer>

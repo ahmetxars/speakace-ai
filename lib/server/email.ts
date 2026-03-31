@@ -120,6 +120,62 @@ export async function sendLeadMagnetEmail(input: { to: string; name?: string }) 
   });
 }
 
+export async function sendWelcomePracticeEmail(input: { to: string; name?: string }) {
+  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const appUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app`;
+  const practiceUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app/practice`;
+
+  return sendEmail({
+    to: input.to,
+    subject: "Welcome to SpeakAce",
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
+        <h2 style="margin:0 0 12px">Welcome to SpeakAce</h2>
+        <p>Hi ${greeting},</p>
+        <p>Your account is ready. The fastest way to feel improvement is to record one timed answer, read the transcript, and retry the same prompt once.</p>
+        <ul>
+          <li>Start with one short speaking attempt</li>
+          <li>Check the transcript and weak points</li>
+          <li>Retry the same idea with one stronger example</li>
+        </ul>
+        <p style="margin:24px 0">
+          <a href="${practiceUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Start your first practice</a>
+        </p>
+        <p>You can also open your dashboard here: <a href="${appUrl}">${appUrl}</a></p>
+      </div>
+    `,
+    text: `Hi ${greeting}, welcome to SpeakAce. Start your first practice here: ${practiceUrl}`
+  });
+}
+
+export async function sendLaunchOfferEmail(input: { to: string; name?: string; couponCode: string }) {
+  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const pricingUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/pricing`;
+  const checkoutUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/api/payments/lemon/checkout?plan=plus&coupon=${encodeURIComponent(input.couponCode)}&campaign=email_coupon`;
+
+  return sendEmail({
+    to: input.to,
+    subject: `${input.couponCode} is active for SpeakAce Plus`,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
+        <h2 style="margin:0 0 12px">Your SpeakAce offer is ready</h2>
+        <p>Hi ${greeting},</p>
+        <p>You can use <strong>${input.couponCode}</strong> to unlock SpeakAce Plus at a lower launch price.</p>
+        <ul>
+          <li>More daily speaking minutes</li>
+          <li>Deeper transcript and score review</li>
+          <li>Stronger retry and progress workflow</li>
+        </ul>
+        <p style="margin:24px 0">
+          <a href="${checkoutUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Use ${input.couponCode}</a>
+        </p>
+        <p>If you want to compare plans first, open <a href="${pricingUrl}">${pricingUrl}</a>.</p>
+      </div>
+    `,
+    text: `Hi ${greeting}, your SpeakAce offer is ready. Use ${input.couponCode} here: ${checkoutUrl}`
+  });
+}
+
 export async function sendStudyTaskReminderEmail(input: {
   to: string;
   name?: string;

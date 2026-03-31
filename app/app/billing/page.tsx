@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { commerceConfig, getPlanComparison } from "@/lib/commerce";
+import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
 
 export default function BillingPage() {
@@ -82,7 +82,7 @@ export default function BillingPage() {
         </div>
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
           {currentUser?.plan === "free" ? (
-            <a className="button button-primary" href={commerceConfig.plusCheckoutPath}>
+            <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "billing_buy_plus" })}>
               {tr ? "Plus planını satın al" : "Buy Plus"}
             </a>
           ) : (
@@ -117,6 +117,21 @@ export default function BillingPage() {
             </article>
           ))}
         </div>
+
+        {currentUser?.plan === "free" ? (
+          <div className="marketing-grid">
+            {Object.values(couponCatalog).map((coupon) => (
+              <article key={coupon.code} className="card feature-card">
+                <span className="pill">{tr ? "Kupon" : "Coupon"}</span>
+                <h3>{coupon.code}</h3>
+                <p>{coupon.description}</p>
+                <a className="button button-secondary" href={buildPlanCheckoutPath({ coupon: coupon.code, campaign: "billing_coupon" })}>
+                  {tr ? "Bu kuponla aç" : `Use ${coupon.code}`}
+                </a>
+              </article>
+            ))}
+          </div>
+        ) : null}
       </div>
     </main>
   );

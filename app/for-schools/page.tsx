@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LeadCaptureForm } from "@/components/lead-capture-form";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 
@@ -66,6 +67,35 @@ export default function SchoolsPage() {
           </article>
         </div>
 
+        <div className="comparison-card card">
+          <h2 style={{ marginBottom: "0.9rem" }}>School-ready package options</h2>
+          <div className="marketing-grid">
+            {[
+              {
+                title: "Starter cohort",
+                body: "Best for a small IELTS class that wants speaking homework, retry loops, and teacher review between lessons.",
+                meta: "1 teacher · 1-2 classes · core reporting"
+              },
+              {
+                title: "Growth program",
+                body: "Built for schools that want class approvals, shared study lists, analytics, and more structured speaking follow-up.",
+                meta: "Multiple classes · analytics · study workflows"
+              },
+              {
+                title: "Institution rollout",
+                body: "For schools turning SpeakAce into a digital speaking lab with demos, exports, and institution-wide visibility.",
+                meta: "Institution admin · exports · school-wide tracking"
+              }
+            ].map((item) => (
+              <article key={item.title} className="card feature-card">
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+                <div className="practice-meta">{item.meta}</div>
+              </article>
+            ))}
+          </div>
+        </div>
+
         <div className="card comparison-card">
           <h2 style={{ marginBottom: "0.9rem" }}>Why schools can position SpeakAce well</h2>
           <div className="comparison-table">
@@ -76,6 +106,17 @@ export default function SchoolsPage() {
             <div className="comparison-cell">Teacher oversight without heavy admin</div>
             <div className="comparison-cell">Class dashboards, homework, risk signals, and institution analytics.</div>
           </div>
+        </div>
+
+        <div className="card lead-capture-card">
+          <div>
+            <span className="eyebrow">School demo</span>
+            <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Request a school demo follow-up</h2>
+            <p className="practice-copy">
+              Leave an email and SpeakAce will send a quick school-focused follow-up plus the best next pages to review.
+            </p>
+          </div>
+          <LeadCaptureForm source="schools_demo" />
         </div>
 
         <div className="card institution-cta">

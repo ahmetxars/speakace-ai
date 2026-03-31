@@ -7,19 +7,28 @@ const stories = [
     title: "From short answers to structured speaking",
     profile: "Self-study IELTS learner",
     result: "Used transcript review and retry history to stop giving one-line answers.",
-    takeaway: "The strongest change came from adding one reason and one example to every response."
+    takeaway: "The strongest change came from adding one reason and one example to every response.",
+    before: "Band 5.5 style answers with weak expansion",
+    after: "Band 6.0-6.5 style answers with clearer shape",
+    timeline: "3 weeks of repeat practice"
   },
   {
     title: "A teacher workflow for between-lesson practice",
     profile: "Small-group language coach",
     result: "Used class tracking, homework, and teacher notes to keep students active between classes.",
-    takeaway: "Homework visibility and repeat prompts gave the class a cleaner practice routine."
+    takeaway: "Homework visibility and repeat prompts gave the class a cleaner practice routine.",
+    before: "Students practiced irregularly between lessons",
+    after: "Homework and retries became visible and easier to track",
+    timeline: "First month of class usage"
   },
   {
     title: "Mock-style repetition before the real test",
     profile: "TOEFL retake student",
     result: "Used simulation mode and improved answers to create a more exam-like speaking rhythm.",
-    takeaway: "The biggest lift came from building calmer delivery under time pressure."
+    takeaway: "The biggest lift came from building calmer delivery under time pressure.",
+    before: "Panicked delivery and rushed summaries",
+    after: "More stable timing and clearer structure",
+    timeline: "2 weeks before retake"
   }
 ];
 
@@ -51,6 +60,15 @@ export default function CaseStudiesPage() {
               <span className="eyebrow">{story.profile}</span>
               <h2>{story.title}</h2>
               <p>{story.result}</p>
+              <p>
+                <strong>Before:</strong> {story.before}
+              </p>
+              <p>
+                <strong>After:</strong> {story.after}
+              </p>
+              <p>
+                <strong>Timeline:</strong> {story.timeline}
+              </p>
               <p>
                 <strong>What changed:</strong> {story.takeaway}
               </p>

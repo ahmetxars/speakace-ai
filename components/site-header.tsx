@@ -92,6 +92,38 @@ export function SiteHeader() {
   );
 
   const closeMenu = () => setMenuOpen(false);
+  const desktopPrimaryLinks = signedIn
+    ? [
+        navItem("/app/practice", content.nav.practice),
+        navItem("/app", content.nav.dashboard),
+        navItem("/app/study-lists", language === "tr" ? "Calisma listeleri" : "Study lists"),
+        navItem("/app/review", language === "tr" ? "Gozden gecir" : "Review")
+      ]
+    : [
+        navItem("/app/practice", content.nav.practice),
+        navItem("/pricing", content.nav.pricing),
+        navItem("/free-ielts-speaking-test", language === "tr" ? "Ucretsiz test" : "Free test"),
+        navItem("/blog", "Blog"),
+        navItem("/for-teachers", language === "tr" ? "Teachers" : "Teachers"),
+        navItem("/for-schools", language === "tr" ? "Schools" : "Schools")
+      ];
+  const desktopExploreLinks = signedIn
+    ? [
+        navItem("/resources", language === "tr" ? "Kaynaklar" : "Resources"),
+        navItem("/tools", language === "tr" ? "Araclar" : "Tools"),
+        navItem("/reviews", language === "tr" ? "Yorumlar" : "Reviews"),
+        ...(!currentUser?.isTeacher ? [navItem("/app/profile", language === "tr" ? "Profil" : "Profile")] : []),
+        ...(currentUser?.isTeacher
+          ? [
+              navItem("/app/teacher", language === "tr" ? "Ogretmen paneli" : "Teacher"),
+              navItem("/app/teacher/institution", language === "tr" ? "Kurum analitigi" : "Institution")
+            ]
+          : []),
+        ...(currentUser?.isAdmin ? [navItem("/app/institution-admin", language === "tr" ? "Kurum yonetimi" : "Institution admin")] : []),
+        navItem("/app/billing", content.nav.billing),
+        navItem("/app/settings", content.nav.settings)
+      ]
+    : secondaryLinks;
 
   return (
     <header className="page-shell site-header-shell">
@@ -100,7 +132,9 @@ export function SiteHeader() {
           <Link href="/" className="site-header-logo" onClick={closeMenu}>
             {content.brand}
           </Link>
-          <div className="site-header-tagline">{content.tagline}</div>
+          <div className="site-header-tagline">
+            {language === "tr" ? "AI coach for IELTS ve TOEFL speaking." : "AI coach for IELTS and TOEFL speaking."}
+          </div>
           {currentUser ? (
             <div className="site-header-userline">
               {currentUser.name} · {currentUser.plan.toUpperCase()}
@@ -110,25 +144,38 @@ export function SiteHeader() {
         </div>
 
         <div className="site-header-desktop desktop-nav">
-          <div className="site-header-utility">
-            <div className="site-header-subnav">
-              {secondaryLinks.map((item) => (
-                <Link key={item.href} href={item.href}>
-                  {item.label}
-                </Link>
-              ))}
+          <nav className="site-header-nav">
+            {desktopPrimaryLinks.map((item) => (
+              <Link key={item.href} href={item.href}>
+                {item.label}
+              </Link>
+            ))}
+            <div className="site-header-dropdown">
+              <button type="button" className="site-header-dropdown-trigger">
+                {language === "tr" ? "Kesfet" : "Explore"}
+              </button>
+              <div className="site-header-dropdown-menu card">
+                {desktopExploreLinks.map((item) => (
+                  <Link key={item.href} href={item.href}>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             </div>
+          </nav>
+
+          <div className="site-header-utility">
             <div className="site-header-actions">
               {!signedIn ? (
                 <>
                   <Link className="button button-secondary" href="/auth?mode=signup">
-                    {language === "tr" ? "Kayıt ol" : "Sign up"}
+                    {language === "tr" ? "Sign up" : "Sign up"}
                   </Link>
                   <Link className="button button-ghost" href="/auth?mode=signin">
                     {content.nav.signIn}
                   </Link>
                   <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_cta">
-                    {language === "tr" ? "Plus al" : "Get Plus"}
+                    {language === "tr" ? "Get Plus" : "Get Plus"}
                   </a>
                 </>
               ) : (
@@ -174,57 +221,38 @@ export function SiteHeader() {
                       </div>
                     ) : null}
                   </div>
-                  <Link className="button button-ghost" href="/app/analytics">
-                    {language === "tr" ? "Analitik" : "Analytics"}
-                  </Link>
                   <button className="button button-secondary" type="button" onClick={() => void signOut()}>
                     {content.nav.signOut}
                   </button>
                 </>
               )}
             </div>
-          </div>
-
-          <nav className="site-header-nav">
-            {primaryLinks.map((item) => (
-              <Link key={item.href} href={item.href}>
-                {item.label}
-              </Link>
-            ))}
-            {signedIn
-              ? signedInLinks.map((item) => (
-                  <Link key={item.href} href={item.href}>
-                    {item.label}
-                  </Link>
-                ))
-              : null}
-          </nav>
-
-          <div className="site-header-locale">
-            <button
-              className="button"
-              type="button"
-              onClick={() => setLanguage("en")}
-              style={{
-                padding: "0.45rem 0.7rem",
-                background: language === "en" ? "var(--accent)" : "transparent",
-                color: language === "en" ? "white" : "inherit"
-              }}
-            >
-              EN
-            </button>
-            <button
-              className="button"
-              type="button"
-              onClick={() => setLanguage("tr")}
-              style={{
-                padding: "0.45rem 0.7rem",
-                background: language === "tr" ? "var(--accent)" : "transparent",
-                color: language === "tr" ? "white" : "inherit"
-              }}
-            >
-              TR
-            </button>
+            <div className="site-header-locale">
+              <button
+                className="button"
+                type="button"
+                onClick={() => setLanguage("en")}
+                style={{
+                  padding: "0.45rem 0.7rem",
+                  background: language === "en" ? "var(--accent)" : "transparent",
+                  color: language === "en" ? "white" : "inherit"
+                }}
+              >
+                EN
+              </button>
+              <button
+                className="button"
+                type="button"
+                onClick={() => setLanguage("tr")}
+                style={{
+                  padding: "0.45rem 0.7rem",
+                  background: language === "tr" ? "var(--accent)" : "transparent",
+                  color: language === "tr" ? "white" : "inherit"
+                }}
+              >
+                TR
+              </button>
+            </div>
           </div>
         </div>
 

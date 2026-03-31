@@ -984,6 +984,31 @@ export function PracticeConsole() {
               </div>
             </div>
           ) : null}
+
+          {currentUser?.plan === "free" ? (
+            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.85rem", marginTop: "1rem" }}>
+              {[
+                {
+                  title: tr ? "Daha uzun günlük speaking" : "Longer daily speaking time",
+                  body: tr ? "Free planda ritmi kurarsın. Plus tarafında aynı gün içinde daha fazla tekrar açılır." : "Free is enough to start the habit. Plus opens enough room for multiple retries in the same day."
+                },
+                {
+                  title: tr ? "Daha güçlü review döngüsü" : "Stronger review loop",
+                  body: tr ? "Transcript, score ladder ve retry mantığı daha yoğun kullanıldığında gerçek fark yaratır." : "Transcript review, score ladders, and retries make a much stronger difference when you can use them more often."
+                },
+                {
+                  title: tr ? "Haftalık mock ritmi" : "Weekly mock rhythm",
+                  body: tr ? "Gerçek ilerleme için tek bir kısa denemeden çok düzenli speaking hacmi gerekir." : "Real improvement comes from a repeatable weekly speaking rhythm, not only from a single short attempt."
+                }
+              ].map((item) => (
+                <article key={item.title} className="card feature-card" style={{ padding: "1rem" }}>
+                  <span className="pill">{tr ? "Kilitli avantaj" : "Locked benefit"}</span>
+                  <h3 style={{ fontSize: "1.15rem" }}>{item.title}</h3>
+                  <p>{item.body}</p>
+                </article>
+              ))}
+            </div>
+          ) : null}
         </section>
 
         <section className="card practice-panel practice-sidebar">
