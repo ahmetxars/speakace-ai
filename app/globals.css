@@ -327,6 +327,86 @@ img {
   margin-top: 0.45rem;
 }
 
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.9rem;
+}
+
+.stat-strip-card {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.stat-strip-card strong {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.testimonial-card {
+  padding: 1.2rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.institution-cta {
+  padding: 1.4rem;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  align-items: center;
+  background: linear-gradient(180deg, rgba(29, 111, 117, 0.08), rgba(255, 249, 242, 0.94));
+}
+
+.comparison-card {
+  padding: 1.2rem;
+  margin-top: 1rem;
+}
+
+.comparison-table {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) repeat(2, minmax(120px, 0.8fr));
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.comparison-head,
+.comparison-cell {
+  padding: 0.9rem 1rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid var(--line);
+}
+
+.comparison-head {
+  font-weight: 800;
+  background: rgba(29, 111, 117, 0.08);
+}
+
+.comparison-label {
+  font-weight: 700;
+}
+
+.quick-action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8rem;
+}
+
+.quick-action-card {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.74);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.upgrade-card {
+  padding: 1.2rem;
+  display: grid;
+  gap: 0.9rem;
+  background: linear-gradient(180deg, rgba(217, 93, 57, 0.12), rgba(255, 249, 242, 0.94));
+}
+
 .mini-metric {
   text-align: center;
 }

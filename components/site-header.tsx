@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { copy } from "@/lib/copy";
+import { commerceConfig } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
 
 export function SiteHeader() {
@@ -35,8 +36,10 @@ export function SiteHeader() {
 
         <nav style={{ display: "flex", gap: "0.9rem", alignItems: "center", flexWrap: "wrap" }}>
           <Link href="/app/practice">{content.nav.practice}</Link>
-          {signedIn ? <Link href="/app">{content.nav.dashboard}</Link> : <Link href="/#pricing">{content.nav.pricing}</Link>}
+          {signedIn ? <Link href="/app">{content.nav.dashboard}</Link> : <Link href="/pricing">{content.nav.pricing}</Link>}
           <Link href="/blog">{language === "tr" ? "Blog" : "Blog"}</Link>
+          {!signedIn ? <Link href="/for-teachers">{language === "tr" ? "Öğretmenler için" : "For teachers"}</Link> : null}
+          {!signedIn ? <Link href="/for-schools">{language === "tr" ? "Kurumlar için" : "For schools"}</Link> : null}
           {signedIn && !currentUser?.isTeacher ? <Link href="/app/profile">{language === "tr" ? "Profil" : "Profile"}</Link> : null}
           {signedIn ? <Link href="/app/notifications">{language === "tr" ? "Bildirimler" : "Notifications"}</Link> : null}
           {signedIn ? <Link href="/app/analytics">{language === "tr" ? "Analitik" : "Analytics"}</Link> : null}
@@ -48,6 +51,11 @@ export function SiteHeader() {
           {signedIn ? <Link href="/app/review">{language === "tr" ? "Gözden geçir" : "Review"}</Link> : null}
           {signedIn ? <Link href="/app/billing">{content.nav.billing}</Link> : null}
           <Link href="/app/settings">{content.nav.settings}</Link>
+          {!signedIn ? (
+            <a className="button button-primary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer" style={{ padding: "0.55rem 0.9rem" }}>
+              {language === "tr" ? "Plus al" : "Get Plus"}
+            </a>
+          ) : null}
           {signedIn ? (
             <button className="button button-secondary" type="button" onClick={() => void signOut()} style={{ padding: "0.55rem 0.9rem" }}>
               {content.nav.signOut}

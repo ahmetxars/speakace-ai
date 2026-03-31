@@ -130,6 +130,47 @@ export function TeacherHub() {
     () => filteredStudents.filter((item) => (item.riskFlags?.length ?? 0) > 0).slice(0, 6),
     [filteredStudents]
   );
+  const priorityActions = useMemo(() => {
+    const items: Array<{ title: string; description: string }> = [];
+
+    if ((selectedClass?.pendingCount ?? 0) > 0) {
+      items.push({
+        title: tr ? "Bekleyen katılımları onayla" : "Review pending join requests",
+        description: tr
+          ? `${selectedClass?.pendingCount ?? 0} öğrenci sınıfa girmek için onay bekliyor.`
+          : `${selectedClass?.pendingCount ?? 0} students are waiting for teacher approval.`
+      });
+    }
+
+    if (homeworkSummary.overdue > 0) {
+      items.push({
+        title: tr ? "Geciken ödevleri toparla" : "Recover overdue homework",
+        description: tr
+          ? `${homeworkSummary.overdue} homework teslim tarihi geçti; sınıfa kısa bir hatırlatma göndermek iyi olabilir.`
+          : `${homeworkSummary.overdue} homework items are overdue; a class reminder could help.`
+      });
+    }
+
+    if (atRiskStudents.length > 0) {
+      items.push({
+        title: tr ? "Riskli öğrencileri incele" : "Inspect at-risk students",
+        description: tr
+          ? `${atRiskStudents.length} öğrencide düşüş veya pasiflik sinyali var.`
+          : `${atRiskStudents.length} students show decline or inactivity risk signals.`
+      });
+    }
+
+    if (!items.length) {
+      items.push({
+        title: tr ? "Sınıf akışı dengede" : "Class flow looks healthy",
+        description: tr
+          ? "Şu an kritik uyarı yok; yeni prompt paylaşımı veya toplu homework ile momentumu koruyabilirsin."
+          : "No urgent alerts right now; keep momentum with a shared prompt or a fresh class assignment."
+      });
+    }
+
+    return items.slice(0, 3);
+  }, [atRiskStudents.length, homeworkSummary.overdue, selectedClass?.pendingCount, tr]);
 
   useEffect(() => {
     if (!currentUser?.isTeacher && !currentUser?.isAdmin) return;
@@ -475,6 +516,70 @@ export function TeacherHub() {
           <TeacherStat label={tr ? "Tamamlanan" : "Completed"} value={String(homeworkSummary.completed)} />
           <TeacherStat label={tr ? "Bekleyen" : "Pending"} value={String(homeworkSummary.pending)} />
           <TeacherStat label={tr ? "Geciken" : "Overdue"} value={String(homeworkSummary.overdue)} />
+        </div>
+      </section>
+
+      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1.25fr) minmax(280px, 0.75fr)", gap: "1rem", alignItems: "start" }}>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Hızlı aksiyonlar" : "Quick actions"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Önce ne yapmalısın?" : "What should you do first?"}</h2>
+          </div>
+          <div className="quick-action-grid">
+            <button type="button" className="card quick-action-card" onClick={createClass}>
+              <strong>{tr ? "Yeni sınıf aç" : "Create class"}</strong>
+              <div className="practice-meta">{tr ? "Yeni speaking grubu ekle" : "Open a new speaking class group"}</div>
+            </button>
+            <button type="button" className="card quick-action-card" onClick={copyInviteMessage} disabled={!selectedClass}>
+              <strong>{tr ? "Davet mesajını kopyala" : "Copy invite message"}</strong>
+              <div className="practice-meta">{tr ? "Öğrenci katılımını hızlandır" : "Speed up student onboarding"}</div>
+            </button>
+            <button type="button" className="card quick-action-card" onClick={runAutoAssignNow} disabled={!selectedClassId}>
+              <strong>{tr ? "Otomatik ödevi çalıştır" : "Run auto homework"}</strong>
+              <div className="practice-meta">{tr ? "Düşük skorları hemen göreve çevir" : "Turn weak scores into tasks instantly"}</div>
+            </button>
+            <Link className="card quick-action-card" href="/app/teacher/institution">
+              <strong>{tr ? "Kurum analitiğini aç" : "Open institution analytics"}</strong>
+              <div className="practice-meta">{tr ? "Genel kullanım ve risk görünümü" : "See usage, risk, and class performance"}</div>
+            </Link>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem", background: "rgba(29, 111, 117, 0.08)" }}>
+          <span className="eyebrow">{tr ? "Kontrol merkezi" : "Control center"}</span>
+          <h2 style={{ fontSize: "1.9rem", margin: "0.6rem 0 0.2rem" }}>{selectedClass ? selectedClass.name : tr ? "Bir sınıf seç" : "Select a class"}</h2>
+          <p className="practice-copy">
+            {selectedClass
+              ? (tr
+                ? `Kod ${selectedClass.joinCode} ile öğrenci ekleyebilir, bekleyen onayları yönetebilir ve sınıfın weak skill desenini izleyebilirsin.`
+                : `Use code ${selectedClass.joinCode} to bring students in, manage approvals, and monitor weak skill patterns.`)
+              : (tr
+                ? "Soldan bir sınıf seçtiğinde davet, onay, öğrenci listesi ve homework akışı burada odaklanır."
+                : "Once you select a class, invites, approvals, roster, and homework controls will focus here.")}
+          </p>
+          {selectedClass ? (
+            <div className="grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.7rem" }}>
+              <TeacherStat label={tr ? "Öğrenci" : "Students"} value={String(selectedClass.studentCount)} />
+              <TeacherStat label={tr ? "Bekleyen" : "Pending"} value={String(selectedClass.pendingCount ?? 0)} />
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+        <div>
+          <span className="eyebrow">{tr ? "Öncelik panosu" : "Priority board"}</span>
+          <h2 style={{ fontSize: "1.8rem", margin: "0.6rem 0 0.2rem" }}>
+            {tr ? "Bugün en çok etkisi olacak 3 iş" : "The 3 highest-impact actions for today"}
+          </h2>
+        </div>
+        <div className="quick-action-grid">
+          {priorityActions.map((item) => (
+            <article key={item.title} className="card quick-action-card" style={{ textAlign: "left" }}>
+              <strong>{item.title}</strong>
+              <div className="practice-meta">{item.description}</div>
+            </article>
+          ))}
         </div>
       </section>
 

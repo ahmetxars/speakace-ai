@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "@/components/providers";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { AnalyticsSummary } from "@/lib/analytics-store";
+import { commerceConfig } from "@/lib/commerce";
 import { AnnouncementItem, HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership, StudentProfile } from "@/lib/types";
 
 const emptySummary: ProgressSummary = {
@@ -424,6 +425,7 @@ export function Dashboard() {
     [homework]
   );
   const needsOnboarding = Boolean(signedIn && currentUser && !currentUser.isTeacher && profile && !profile.onboardingComplete);
+  const shouldUpsellPlus = Boolean(signedIn && currentUser && !currentUser.isTeacher && currentUser.plan === "free");
 
   const toggleChecklistItem = (id: string) => {
     setWeeklyChecklist((current) => {
@@ -580,6 +582,62 @@ export function Dashboard() {
         <StatCard label={tr ? "Toplam deneme" : "Total attempts"} value={String(summary.totalSessions)} note={tr ? "Tum speaking sessionlarin" : "All speaking sessions so far"} />
         <StatCard label="Best score" value={bestScore === null ? "-" : String(bestScore)} note={tr ? "Son denemelerdeki en iyi sonucun" : "Your best result across recent attempts"} />
         <TargetCard examType={latestExamType} targetScore={targetScore} onChange={handleTargetScoreChange} tr={tr} />
+      </section>
+
+      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1.2fr) minmax(260px, 0.8fr)", gap: "1rem", alignItems: "start" }}>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Hızlı aksiyonlar" : "Quick actions"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Bugün ne yapmalısın?" : "What should you do today?"}</h2>
+          </div>
+          <div className="quick-action-grid">
+            <Link className="card quick-action-card" href="/app/practice">
+              <strong>{tr ? "Yeni practice başlat" : "Start a new practice"}</strong>
+              <div className="practice-meta">{tr ? "Günün ana speaking denemesi" : "Open your main speaking attempt for today"}</div>
+            </Link>
+            <Link className="card quick-action-card" href="/app/review">
+              <strong>{tr ? "Hataları gözden geçir" : "Review your mistakes"}</strong>
+              <div className="practice-meta">{tr ? "Tekrar eden zayıf noktalarını gör" : "See repeated weak patterns and notes"}</div>
+            </Link>
+            <Link className="card quick-action-card" href="/app/study-lists">
+              <strong>{tr ? "Çalışma listelerini aç" : "Open study lists"}</strong>
+              <div className="practice-meta">{tr ? "Kaydettiğin sorularla tekrar çalış" : "Return to saved prompts and retry queue"}</div>
+            </Link>
+            <Link className="card quick-action-card" href="/app/profile">
+              <strong>{tr ? "Profil ve hedefler" : "Profile and goals"}</strong>
+              <div className="practice-meta">{tr ? "Hedef skorunu ve çalışma profilini güncelle" : "Update your target score and study profile"}</div>
+            </Link>
+          </div>
+        </div>
+
+        {shouldUpsellPlus ? (
+          <div className="card upgrade-card">
+            <span className="eyebrow">{tr ? "Plus önerisi" : "Plus upgrade"}</span>
+            <h2 style={{ fontSize: "1.9rem", margin: "0.7rem 0 0.4rem" }}>{tr ? "Daha fazla speaking hacmi aç" : "Unlock more speaking volume"}</h2>
+            <p className="practice-copy">
+              {tr
+                ? "Free plan ile düzen kurmak kolay, ama daha hızlı gelişim için daha fazla günlük süre ve daha derin geri bildirim gerekir."
+                : "Free is enough to build the habit, but faster score growth comes from more daily volume and deeper feedback."}
+            </p>
+            <ul className="compact-list" style={{ margin: 0 }}>
+              <li>{tr ? "18 günlük oturum" : "18 daily sessions"}</li>
+              <li>{tr ? "35 dakika günlük speaking" : "35 daily speaking minutes"}</li>
+              <li>{tr ? "Daha güçlü transcript ve skor içgörüleri" : "Stronger transcript and score insight"}</li>
+            </ul>
+            <a className="button button-primary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+              {tr ? "Plus'a geç" : "Upgrade to Plus"}
+            </a>
+          </div>
+        ) : (
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem", background: "rgba(29, 111, 117, 0.08)" }}>
+            <span className="eyebrow">{tr ? "Hazırlık seviyesi" : "Readiness"}</span>
+            <h2 style={{ fontSize: "1.9rem", margin: "0.7rem 0 0.4rem" }}>{tr ? "Bugünkü odak net" : "Today's focus is clear"}</h2>
+            <p className="practice-copy">{nextStudyFocus}</p>
+            <Link className="button button-secondary" href="/app/practice">
+              {tr ? "Şimdi pratiğe dön" : "Go back to practice"}
+            </Link>
+          </div>
+        )}
       </section>
 
       <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>

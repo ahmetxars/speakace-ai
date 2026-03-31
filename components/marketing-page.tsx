@@ -3,6 +3,7 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { useAppState } from "@/components/providers";
+import { commerceConfig, getPlanComparison } from "@/lib/commerce";
 import {
   blogPosts,
   coreKeywords,
@@ -11,6 +12,126 @@ import {
   whySpeakAce
 } from "@/lib/marketing-content";
 import { siteConfig } from "@/lib/site";
+
+const trustSignals = {
+  en: [
+    { label: "Targeted use case", value: "IELTS + TOEFL speaking" },
+    { label: "Core promise", value: "AI feedback in minutes" },
+    { label: "Best for", value: "Students, teachers, schools" },
+    { label: "Focus", value: "Score growth and confidence" }
+  ],
+  tr: [
+    { label: "Odak kullanım", value: "IELTS + TOEFL speaking" },
+    { label: "Ana vaat", value: "Dakikalar içinde AI feedback" },
+    { label: "En uygun kitle", value: "Öğrenci, öğretmen, kurum" },
+    { label: "Temel hedef", value: "Skor artışı ve özgüven" }
+  ]
+};
+
+const testimonials = {
+  en: [
+    {
+      quote:
+        "It gave me the fastest feedback loop I had during IELTS preparation. I could see my weak answers immediately and retry them the same day.",
+      author: "IELTS student",
+      role: "Band 6.0 target learner"
+    },
+    {
+      quote:
+        "The transcript and stronger sample answer made it obvious why my speaking score was stuck.",
+      author: "Self-study user",
+      role: "Preparing for speaking retake"
+    },
+    {
+      quote:
+        "The class and homework tools make it much easier to monitor student speaking practice between lessons.",
+      author: "Language teacher",
+      role: "Uses SpeakAce with small groups"
+    }
+  ],
+  tr: [
+    {
+      quote:
+        "IELTS hazırlığında gördüğüm en hızlı geri bildirim döngüsünü verdi. Zayıf cevaplarımı aynı gün içinde görüp tekrar çalışabildim.",
+      author: "IELTS öğrencisi",
+      role: "Band 6.0 hedefi"
+    },
+    {
+      quote:
+        "Transcript ve geliştirilmiş örnek cevap, speaking skorunun neden takıldığını çok daha net gösterdi.",
+      author: "Bireysel kullanıcı",
+      role: "Speaking retake hazırlığı"
+    },
+    {
+      quote:
+        "Sınıf ve ödev araçları, speaking pratiğini ders aralarında takip etmeyi öğretmen için çok daha kolaylaştırıyor.",
+      author: "Dil öğretmeni",
+      role: "Küçük gruplarla kullanıyor"
+    }
+  ]
+};
+
+const useCases = {
+  en: [
+    {
+      title: "For IELTS students",
+      description: "Practice Part 1, Part 2, and Part 3 with score-focused AI feedback instead of random speaking prompts."
+    },
+    {
+      title: "For self-study learners",
+      description: "Build a daily speaking habit without needing a tutor every time you want feedback."
+    },
+    {
+      title: "For teachers and schools",
+      description: "Track class progress, assign homework, review attempts, and keep student speaking practice active between lessons."
+    }
+  ],
+  tr: [
+    {
+      title: "IELTS öğrencileri için",
+      description: "Rastgele speaking soruları yerine Part 1, Part 2 ve Part 3 için skor odaklı AI geri bildirimle çalış."
+    },
+    {
+      title: "Kendi başına çalışan öğrenciler için",
+      description: "Her geri bildirim için öğretmene ihtiyaç duymadan günlük speaking düzeni kur."
+    },
+    {
+      title: "Öğretmenler ve kurslar için",
+      description: "Sınıf gelişimini izle, ödev ata, denemeleri incele ve speaking pratiğini ders aralarında da canlı tut."
+    }
+  ]
+};
+
+const comparisonPoints = {
+  en: [
+    {
+      title: "More focused than generic AI chat",
+      description: "SpeakAce is built around exam speaking tasks, estimated score signals, and retry-based improvement."
+    },
+    {
+      title: "Faster than waiting for manual review",
+      description: "Students can record, review, and retry in one session instead of waiting days for feedback."
+    },
+    {
+      title: "More practical than memorizing templates",
+      description: "The product pushes learners toward clearer structure, better examples, and more natural speaking control."
+    }
+  ],
+  tr: [
+    {
+      title: "Genel AI chat araçlarından daha odaklı",
+      description: "SpeakAce; sınav speaking görevleri, tahmini skor sinyalleri ve tekrar denemeleri üzerinden gelişim için tasarlandı."
+    },
+    {
+      title: "Manuel geri bildirim beklemekten daha hızlı",
+      description: "Öğrenci tek oturum içinde kaydedip inceleyebilir ve yeniden deneyebilir; günlerce geri bildirim beklemez."
+    },
+    {
+      title: "Ezber kalıplardan daha faydalı",
+      description: "Ürün öğrenciyi daha net yapı, daha iyi örnek ve daha doğal konuşma kontrolüne iter."
+    }
+  ]
+};
 
 const faqs = {
   en: [
@@ -139,6 +260,11 @@ export function MarketingPage({
   const localizedHow = tr ? howItWorks.tr : howItWorks.en;
   const localizedPricingReasons = tr ? pricingReasons.tr : pricingReasons.en;
   const shortCopy = tr ? shortLandingCopy.tr : shortLandingCopy.en;
+  const localizedTrustSignals = tr ? trustSignals.tr : trustSignals.en;
+  const localizedTestimonials = tr ? testimonials.tr : testimonials.en;
+  const localizedUseCases = tr ? useCases.tr : useCases.en;
+  const localizedComparisonPoints = tr ? comparisonPoints.tr : comparisonPoints.en;
+  const planComparison = getPlanComparison(tr);
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -186,9 +312,9 @@ export function MarketingPage({
             <Link className="button button-primary" href={ctaHref}>
               {tr ? "Ücretsiz speaking denemesi başlat" : "Start free speaking practice"}
             </Link>
-            <Link className="button button-secondary" href="/auth">
-              {tr ? "Ücretsiz hesap oluştur" : "Create free account"}
-            </Link>
+            <a className="button button-secondary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+              {tr ? "Plus planını aç" : "Unlock Plus"}
+            </a>
           </div>
           <div className="hero-outcomes">
             {coreKeywords.slice(0, 5).map((keyword) => (
@@ -241,6 +367,17 @@ export function MarketingPage({
         </aside>
       </section>
 
+      <section className="page-shell section" style={{ paddingTop: 0 }}>
+        <div className="stats-strip">
+          {localizedTrustSignals.map((item) => (
+            <div key={item.label} className="card stat-strip-card">
+              <div className="practice-meta">{item.label}</div>
+              <strong>{item.value}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="page-shell section">
         <div className="section-head">
           <span className="eyebrow">{tr ? "Neden SpeakAce" : "Why SpeakAce"}</span>
@@ -268,6 +405,27 @@ export function MarketingPage({
 
       <section className="page-shell section">
         <div className="section-head">
+          <span className="eyebrow">{tr ? "Kime uygun" : "Use cases"}</span>
+          <h2>
+            {tr
+              ? "Aynı ürün içinde hem bireysel öğrenci hem de kurs kullanımı"
+              : "One product for individual learners, teachers, and schools"}
+          </h2>
+          <p>
+            {tr
+              ? "Rakiplerde öne çıkan en güçlü şeylerden biri tek bir kullanım alanına sıkışmamak. SpeakAce bu yüzden hem bireysel practice hem de sınıf yönetimini aynı yapı içinde sunuyor."
+              : "A big conversion advantage in this space is serving more than one use case well. SpeakAce is built for both solo practice and class workflows."}
+          </p>
+        </div>
+        <div className="marketing-grid">
+          {localizedUseCases.map((item) => (
+            <FeatureCard key={item.title} title={item.title} description={item.description} />
+          ))}
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
           <span className="eyebrow">{tr ? "30 güçlü özellik" : "30 high-value features"}</span>
           <h2>
             {tr
@@ -287,6 +445,22 @@ export function MarketingPage({
               title={tr ? item.title.tr : item.title.en}
               description={tr ? item.description.tr : item.description.en}
             />
+          ))}
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
+          <span className="eyebrow">{tr ? "Neden şimdi" : "Why now"}</span>
+          <h2>
+            {tr
+              ? "İnsanlar neden böyle bir ürüne para öder?"
+              : "Why would someone pay for SpeakAce instead of using generic tools?"}
+          </h2>
+        </div>
+        <div className="marketing-grid">
+          {localizedComparisonPoints.map((item) => (
+            <FeatureCard key={item.title} title={item.title} description={item.description} />
           ))}
         </div>
       </section>
@@ -331,9 +505,9 @@ export function MarketingPage({
             <FeatureCard key={item} title={tr ? "Neden değerli?" : "Why it matters"} description={item} />
           ))}
           <PricingCard
-            ctaLabel={tr ? "Plus ile başla" : "Start with Plus"}
-            name="Plus"
-            price="$9.99"
+            ctaLabel={tr ? "Plus ile şimdi başla" : "Start Plus now"}
+            name={commerceConfig.plusPlanName.replace(" Monthly", "")}
+            price={commerceConfig.plusMonthlyPrice}
             features={
               tr
                 ? [
@@ -345,10 +519,22 @@ export function MarketingPage({
                     "More daily speaking time",
                     "Deeper transcript and score analysis",
                     "Faster improvement through repeat attempts"
-                  ]
+                ]
             }
+            href={commerceConfig.plusMonthlyCheckout}
             featured
           />
+        </div>
+        <div className="card comparison-card">
+          <h3 style={{ marginBottom: "0.9rem" }}>{tr ? "Free ve Plus karşılaştırması" : "Free vs Plus"}</h3>
+          <div className="comparison-table">
+            <div className="comparison-head">{tr ? "Özellik" : "Feature"}</div>
+            <div className="comparison-head">Free</div>
+            <div className="comparison-head">Plus</div>
+            {planComparison.map((item) => (
+              <FragmentRow key={item.label} label={item.label} free={item.free} plus={item.plus} />
+            ))}
+          </div>
         </div>
       </section>
 
@@ -377,10 +563,59 @@ export function MarketingPage({
                   ? "IELTS speaking practice, AI speaking feedback, tahmini band skorları ve speaking simulator deneyimini tek web uygulamasında birleştiriyoruz."
                   : "We combine IELTS speaking practice, AI speaking feedback, estimated band score support, and a speaking test simulator in one web product."}
               </p>
-              <Link className="button button-primary" href={ctaHref}>
+              <a className="button button-primary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+                {tr ? "Plus planını al" : "Get Plus"}
+              </a>
+              <Link className="button button-secondary" href={ctaHref} style={{ marginLeft: "0.7rem" }}>
                 {shortCopy.cta}
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
+          <span className="eyebrow">{tr ? "Sosyal kanıt" : "Social proof"}</span>
+          <h2>
+            {tr
+              ? "Ziyaretçi neden güven duymalı?"
+              : "Why this can feel worth paying for"}
+          </h2>
+        </div>
+        <div className="marketing-grid">
+          {localizedTestimonials.map((item) => (
+            <article key={item.quote} className="card testimonial-card">
+              <p style={{ lineHeight: 1.8, marginBottom: "1rem" }}>&ldquo;{item.quote}&rdquo;</p>
+              <strong>{item.author}</strong>
+              <div className="practice-meta">{item.role}</div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="card institution-cta">
+          <div>
+            <span className="eyebrow">{tr ? "Kurslar için" : "For schools"}</span>
+            <h2 style={{ margin: "0.8rem 0 0.5rem" }}>
+              {tr
+                ? "Kurslara satılabilecek bir speaking practice altyapısı"
+                : "A speaking practice platform that also works for schools and teachers"}
+            </h2>
+            <p className="practice-copy">
+              {tr
+                ? "Öğretmen paneli, sınıf kodları, ödev atama, riskli öğrenci uyarıları ve kurum analitiği ile SpeakAce sadece öğrenci aracı değil, aynı zamanda eğitim kurumu ürünü de olabilir."
+                : "With teacher dashboards, class codes, homework assignment, risk alerts, and institution analytics, SpeakAce is not only a student tool but a school-ready product."}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <Link className="button button-secondary" href="/app/teacher">
+              {tr ? "Öğretmen akışını gör" : "See teacher workflow"}
+            </Link>
+            <a className="button button-primary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+              {tr ? "Ödeme akışını test et" : "Test checkout"}
+            </a>
           </div>
         </div>
       </section>
@@ -466,12 +701,14 @@ function PricingCard({
   price,
   features,
   ctaLabel,
+  href,
   featured = false
 }: {
   name: string;
   price: string;
   features: string[];
   ctaLabel: string;
+  href: string;
   featured?: boolean;
 }) {
   return (
@@ -483,9 +720,19 @@ function PricingCard({
           <li key={feature}>{feature}</li>
         ))}
       </ul>
-      <Link className={`button ${featured ? "button-primary" : "button-secondary"}`} href="/auth">
+      <a className={`button ${featured ? "button-primary" : "button-secondary"}`} href={href} target="_blank" rel="noreferrer">
         {ctaLabel}
-      </Link>
+      </a>
     </article>
+  );
+}
+
+function FragmentRow({ label, free, plus }: { label: string; free: string; plus: string }) {
+  return (
+    <>
+      <div className="comparison-cell comparison-label">{label}</div>
+      <div className="comparison-cell">{free}</div>
+      <div className="comparison-cell">{plus}</div>
+    </>
   );
 }

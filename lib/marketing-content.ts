@@ -305,5 +305,166 @@ export const blogPosts: BlogPost[] = [
         ]
       }
     ]
+  },
+  {
+    slug: "ielts-speaking-part-2-tips",
+    title: "IELTS Speaking Part 2 Tips That Help You Speak Longer",
+    description: "Use these simple IELTS Speaking Part 2 tips to build longer, clearer cue-card answers with less stress.",
+    keywords: ["IELTS Speaking Part 2", "cue card tips", "IELTS speaking practice"],
+    intro: "Part 2 becomes much easier when you stop trying to sound perfect and start using a simple speaking structure.",
+    sections: [
+      {
+        title: "Use a 3-part answer shape",
+        body: [
+          "Open with what the thing is, continue with why it matters, and close with how it affected you.",
+          "This keeps your answer moving and reduces awkward silence."
+        ]
+      },
+      {
+        title: "Prepare example details",
+        body: [
+          "A short, concrete example makes you sound more natural and improves topic development.",
+          "Even one clear detail is better than repeating the same idea three times."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-part-3-answers",
+    title: "How to Give Better IELTS Speaking Part 3 Answers",
+    description: "Learn how to answer IELTS Speaking Part 3 with stronger opinions, reasons, and examples.",
+    keywords: ["IELTS Speaking Part 3", "IELTS speaking answers", "improve IELTS speaking score"],
+    intro: "Part 3 is where many learners lose control because their ideas become too short or too vague.",
+    sections: [
+      {
+        title: "Give a position first",
+        body: [
+          "Start by making your opinion clear. This gives the rest of the answer direction.",
+          "Then support it with a reason and one small example."
+        ]
+      },
+      {
+        title: "Avoid empty general statements",
+        body: [
+          "Short statements without explanation do not help your score much.",
+          "A better Part 3 answer sounds thoughtful, not rushed."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-pronunciation-practice",
+    title: "IELTS Speaking Pronunciation Practice That Actually Helps",
+    description: "Improve IELTS speaking pronunciation with simple daily practice focused on clarity, endings, and rhythm.",
+    keywords: ["IELTS pronunciation practice", "IELTS speaking pronunciation", "AI English speaking practice"],
+    intro: "Pronunciation improvement does not always mean sounding more native. It means sounding clearer and easier to understand.",
+    sections: [
+      {
+        title: "Work on clarity first",
+        body: [
+          "The goal is not to copy an accent. It is to make your sounds clear enough for the examiner to follow comfortably.",
+          "Word endings, stress, and rhythm often matter more than one perfect vowel."
+        ]
+      },
+      {
+        title: "Listen and replay",
+        body: [
+          "Hearing your own recording helps you notice problems that are invisible while speaking.",
+          "Replay plus transcript review is one of the fastest ways to improve speaking clarity."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ai-english-speaking-practice-daily-plan",
+    title: "A Daily AI English Speaking Practice Plan for Busy Students",
+    description: "Use this short AI English speaking practice plan to build fluency and confidence even with a busy schedule.",
+    keywords: ["AI English speaking practice", "daily speaking plan", "IELTS speaking practice"],
+    intro: "A 15-minute routine is often more useful than long, inconsistent study sessions.",
+    sections: [
+      {
+        title: "Use a 3-step daily loop",
+        body: [
+          "Record one answer, review the transcript, then retry the same prompt.",
+          "This loop gives fast learning without overwhelming your day."
+        ]
+      },
+      {
+        title: "Track one weak area",
+        body: [
+          "Do not fix everything at once. Pick one main focus such as fluency or pronunciation.",
+          "Small repeated wins build much faster than scattered practice."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-band-score-speaking-guide",
+    title: "IELTS Band Score Speaking Guide for Real Improvement",
+    description: "Understand how IELTS speaking band scores improve with better fluency, vocabulary, grammar, and pronunciation.",
+    keywords: ["IELTS band score speaking", "IELTS speaking score", "improve IELTS speaking score"],
+    intro: "Students often chase a higher score without understanding which part of their speaking performance is holding them back.",
+    sections: [
+      {
+        title: "Band growth is usually uneven",
+        body: [
+          "You may have strong ideas but weak pronunciation, or good fluency but limited vocabulary.",
+          "A better score comes from seeing which category needs attention first."
+        ]
+      },
+      {
+        title: "Score awareness changes practice quality",
+        body: [
+          "When you know where your current answer sits, your next practice session becomes more strategic.",
+          "Score estimation helps you work with a clearer target."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-common-mistakes",
+    title: "Common IELTS Speaking Mistakes and How to Fix Them",
+    description: "Avoid common IELTS speaking mistakes like short answers, repeated words, weak examples, and unclear structure.",
+    keywords: ["IELTS speaking mistakes", "IELTS speaking tips", "IELTS speaking practice"],
+    intro: "Small repeated mistakes can quietly keep your score lower than it should be.",
+    sections: [
+      {
+        title: "Speaking too briefly",
+        body: [
+          "Very short answers often sound underdeveloped, especially when the question gives room for expansion.",
+          "Adding one reason and one example usually makes a clear difference."
+        ]
+      },
+      {
+        title: "Repeating the same words",
+        body: [
+          "Frequent word repetition makes answers sound limited and less flexible.",
+          "Transcript review helps you catch this pattern quickly."
+        ]
+      }
+    ]
+  },
+  {
+    slug: "ielts-speaking-fluency-practice",
+    title: "IELTS Speaking Fluency Practice Without Sounding Scripted",
+    description: "Improve IELTS speaking fluency with natural, repeatable practice that does not make you sound memorized.",
+    keywords: ["IELTS speaking fluency", "fluency practice", "IELTS speaking AI"],
+    intro: "Good fluency is not fast speaking. It is steady speaking with fewer broken moments.",
+    sections: [
+      {
+        title: "Practice natural linking",
+        body: [
+          "Use simple connectors that help your ideas move forward without making the answer sound memorized.",
+          "Fluency improves when structure and delivery support each other."
+        ]
+      },
+      {
+        title: "Repeat the same prompt with small upgrades",
+        body: [
+          "Fluency training works well when you retry a prompt after feedback instead of always jumping to a new one.",
+          "Small upgrades build smoother speaking faster."
+        ]
+      }
+    ]
   }
 ];

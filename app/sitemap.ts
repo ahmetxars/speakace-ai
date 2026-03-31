@@ -3,7 +3,17 @@ import { blogPosts } from "@/lib/marketing-content";
 import { siteConfig } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const routes = ["", "/ielts-speaking-practice", "/toefl-speaking-practice", "/blog", "/auth", "/app"];
+  const routes = [
+    "",
+    "/pricing",
+    "/for-teachers",
+    "/for-schools",
+    "/ielts-speaking-practice",
+    "/toefl-speaking-practice",
+    "/blog",
+    "/auth",
+    "/app"
+  ];
   const blogRoutes = blogPosts.map((post) => `/blog/${post.slug}`);
   const allRoutes = [...routes, ...blogRoutes];
 

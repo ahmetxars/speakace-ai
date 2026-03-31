@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { commerceConfig, getPlanComparison } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
 
 export default function BillingPage() {
   const { currentUser, signedIn, language } = useAppState();
   const tr = language === "tr";
+  const comparison = getPlanComparison(tr);
 
   if (!signedIn) {
     return (
@@ -20,7 +22,10 @@ export default function BillingPage() {
             <Link className="button button-primary" href="/auth">
               {tr ? "Giriş yap" : "Sign in"}
             </Link>
-            <Link className="button button-secondary" href="/#pricing">
+            <a className="button button-secondary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+              {tr ? "Plus planını gör" : "View Plus plan"}
+            </a>
+            <Link className="button button-secondary" href="/pricing">
               {tr ? "Fiyatlara dön" : "Back to pricing"}
             </Link>
           </div>
@@ -33,9 +38,9 @@ export default function BillingPage() {
     <main className="page-shell section">
       <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
         <span className="eyebrow">{tr ? "Ödeme" : "Billing"}</span>
-        <h1 style={{ margin: 0 }}>{tr ? "Ücretli planlar ödeme sonrasında açılır" : "Paid plans unlock after checkout"}</h1>
+        <h1 style={{ margin: 0 }}>{tr ? "SpeakAce Plus ile daha fazla speaking pratiği aç" : "Unlock more speaking practice with SpeakAce Plus"}</h1>
         <p style={{ color: "var(--muted)", maxWidth: 720 }}>
-          {tr ? "Plus ve Pro planları tek tuşla açılmaz. Ödeme sistemi bağlandığında ödeme akışı tamamlandıktan sonra aktifleşir." : "Plus and Pro should not unlock from a simple click. They will activate through checkout once payments are wired."}
+          {tr ? "Ücretli planı satın alan kullanıcılar daha yüksek günlük speaking limiti, daha derin AI geri bildirimi ve daha güçlü ilerleme takibi alır." : "Paid users unlock more daily speaking volume, deeper AI feedback, and stronger progress tracking."}
         </p>
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
           <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
@@ -43,24 +48,32 @@ export default function BillingPage() {
             <p>{currentUser?.plan?.toUpperCase() ?? "FREE"}</p>
           </div>
           <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
-            <strong>Plus · $9</strong>
+            <strong>{commerceConfig.plusPlanName} · {commerceConfig.plusMonthlyPrice}</strong>
             <p>{tr ? "Günde 18 oturum, 35 dakika speaking süresi, daha ayrıntılı puan dökümü ve ilerleme takibi." : "18 daily sessions, 35 speaking minutes, score breakdowns, and stronger progress support."}</p>
           </div>
-          <div className="card" style={{ padding: "1rem", background: "rgba(217, 93, 57, 0.08)" }}>
-            <strong>Pro · $12</strong>
-            <p>{tr ? "Günde 40 oturum, 90 dakika speaking süresi, daha derin geri bildirim ve en yüksek çalışma hacmi." : "40 daily sessions, 90 speaking minutes, deeper feedback, and the strongest study allowance."}</p>
+        </div>
+        <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.6)" }}>
+          <strong>{tr ? "Free ve Plus karşılaştırması" : "Free vs Plus"}</strong>
+          <div style={{ display: "grid", gap: "0.65rem", marginTop: "0.8rem" }}>
+            {comparison.map((item) => (
+              <div key={item.label} style={{ display: "grid", gridTemplateColumns: "minmax(160px, 1fr) 110px 110px", gap: "0.7rem" }}>
+                <span>{item.label}</span>
+                <span className="practice-meta">{item.free}</span>
+                <strong>{item.plus}</strong>
+              </div>
+            ))}
           </div>
         </div>
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-          <button className="button button-secondary" type="button" disabled>
-            {tr ? "Plus ödeme akışı yakında" : "Plus checkout soon"}
-          </button>
-          <button className="button button-primary" type="button" disabled>
-            {tr ? "Pro ödeme akışı yakında" : "Pro checkout soon"}
-          </button>
+          <a className="button button-primary" href={commerceConfig.plusMonthlyCheckout} target="_blank" rel="noreferrer">
+            {tr ? "Plus planını satın al" : "Buy Plus"}
+          </a>
+          <Link className="button button-secondary" href="/pricing">
+            {tr ? "Fiyat sayfasını aç" : "Open pricing page"}
+          </Link>
         </div>
         <p style={{ color: "var(--muted)" }}>
-          {tr ? `Şu anki planın: ${currentUser?.plan ?? "free"}. Gerçek ödeme entegrasyonu bir sonraki adımda Stripe ile bağlanacak.` : `Current plan: ${currentUser?.plan ?? "free"}. Real payment wiring will come next with Stripe.`}
+          {tr ? `Şu anki planın: ${currentUser?.plan ?? "free"}. Checkout aktif; bir sonraki adım satın alma sonrası plan yükseltmesini webhook ile otomatik hale getirmek.` : `Current plan: ${currentUser?.plan ?? "free"}. Checkout is live; the next step is automatic plan upgrade after purchase through a webhook.`}
         </p>
       </div>
     </main>
