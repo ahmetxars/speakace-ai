@@ -60,6 +60,7 @@ type PromptBookmark = {
 };
 
 type DrillGoal = "balanced" | "fluency" | "pronunciation" | "topicDevelopment";
+type AnswerMode = "safe" | "natural" | "bold";
 
 const emptySummary: ProgressSummary = {
   totalSessions: 0,
@@ -95,6 +96,7 @@ export function PracticeConsole() {
   const [simulationState, setSimulationState] = useState<SimulationState | null>(null);
   const [retryQueue, setRetryQueue] = useState<RetryQueueItem[]>([]);
   const [drillGoal, setDrillGoal] = useState<DrillGoal>("balanced");
+  const [answerMode, setAnswerMode] = useState<AnswerMode>("natural");
   const [bookmarks, setBookmarks] = useState<PromptBookmark[]>([]);
 
   const sessionRef = useRef<SpeakingSession | null>(null);
@@ -626,6 +628,10 @@ export function PracticeConsole() {
   const simulationIdle = runMode === "simulation" && mode === "idle";
   const mockReportStorageKey = currentUser ? `speakace-mock-report-${currentUser.id}` : "speakace-mock-report-guest";
   const pronunciationGuide = useMemo(() => buildPronunciationGuide(session?.prompt.prompt ?? activeTaskLayout.overlayPrompt, tr), [activeTaskLayout.overlayPrompt, session?.prompt.prompt, tr]);
+  const answerModeGuide = useMemo(
+    () => buildAnswerModeGuide({ mode: answerMode, taskType: effectiveTaskType, tr }),
+    [answerMode, effectiveTaskType, tr]
+  );
 
   const removeRetryItem = (promptId: string) => {
     if (typeof window === "undefined") return;
@@ -799,6 +805,26 @@ export function PracticeConsole() {
               ]}
               disabled={runMode === "simulation"}
             />
+            <SelectField
+              label={tr ? "Cevap modu" : "Answer mode"}
+              value={answerMode}
+              onChange={(value) => setAnswerMode(value as AnswerMode)}
+              options={[
+                { value: "safe", label: tr ? "Guvenli" : "Safe" },
+                { value: "natural", label: tr ? "Dogal" : "Natural" },
+                { value: "bold", label: tr ? "Cesur" : "Bold" }
+              ]}
+              disabled={runMode === "simulation"}
+            />
+          </div>
+
+          <div className="card" style={{ padding: "1rem", background: "rgba(217, 93, 57, 0.08)", display: "grid", gap: "0.55rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
+              <strong>{tr ? "Cevap modu rehberi" : "Answer mode guide"}</strong>
+              <span className="pill">{answerModeGuide.badge}</span>
+            </div>
+            <p style={{ margin: 0, lineHeight: 1.7 }}>{answerModeGuide.primary}</p>
+            <p className="practice-meta" style={{ margin: 0 }}>{answerModeGuide.secondary}</p>
           </div>
 
           {runMode !== "simulation" && adaptivePlanPreview ? (
@@ -919,6 +945,18 @@ export function PracticeConsole() {
               <p className="practice-meta">{tr ? "Bu modda asıl hedefin kelime sonlarini, vurgu noktalarini ve ritmi daha temiz vermek." : "In this mode, your main goal is clearer word endings, stronger stress, and steadier rhythm."}</p>
             ) : null}
             {error ? <p className="practice-error">{error}</p> : null}
+          </div>
+
+          <div className="card practice-simulation-card" style={{ marginTop: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
+              <strong>{tr ? "Bu deneme icin taslak" : "Blueprint for this attempt"}</strong>
+              <span className="pill">{tr ? "3 hareket" : "3 moves"}</span>
+            </div>
+            <div className="simulation-queue" style={{ marginTop: "0.8rem" }}>
+              {answerModeGuide.moves.map((move) => (
+                <span key={move} className="simulation-step is-active">{move}</span>
+              ))}
+            </div>
           </div>
           {currentUser?.plan === "free" ? (
             <div className="card practice-simulation-card" style={{ marginTop: "1rem" }}>
@@ -1921,6 +1959,61 @@ function buildAdaptiveDrillPlan({
     promptId: prompt?.id,
     title: prompt?.title ?? humanizeTaskType(taskType, false),
     reason
+  };
+}
+
+function buildAnswerModeGuide({
+  mode,
+  taskType,
+  tr
+}: {
+  mode: AnswerMode;
+  taskType: TaskType;
+  tr: boolean;
+}) {
+  const partTwo = taskType === "ielts-part-2";
+
+  if (mode === "safe") {
+    return {
+      badge: tr ? "daha kontrollu" : "more controlled",
+      primary: tr
+        ? "Guvenli mod, riski azaltir: kisa ama temiz cumleler, tek ana fikir ve net bir ornek kullan."
+        : "Safe mode lowers risk: use shorter clean sentences, one main idea, and one clear example.",
+      secondary: tr
+        ? "Bu mod gramer hatasi ve daginik yapi yasayan ogrenciler icin iyi calisir."
+        : "This mode works well when grammar slips and messy structure are the main problem.",
+      moves: partTwo
+        ? [tr ? "konuyu tanit" : "introduce the topic", tr ? "tek bir net hikaye ver" : "give one clear story", tr ? "kisa kapanis yap" : "end cleanly"]
+        : [tr ? "direkt cevap ver" : "answer directly", tr ? "bir neden ekle" : "add one reason", tr ? "kisa bitir" : "close briefly"]
+    };
+  }
+
+  if (mode === "bold") {
+    return {
+      badge: tr ? "daha etkili" : "more expressive",
+      primary: tr
+        ? "Cesur mod, cevabi daha yukari tasimayi dener: daha guclu kelime secimi, daha canli ornek ve daha belirgin bir durus kullan."
+        : "Bold mode tries to lift the answer higher: stronger word choice, a more vivid example, and a clearer stance.",
+      secondary: tr
+        ? "Bu mod ancak temel yapin cok dagilmiyorsa faydali olur."
+        : "This mode helps only when your base structure is already fairly stable.",
+      moves: partTwo
+        ? [tr ? "daha canli bir acilis kur" : "use a more vivid opening", tr ? "detayli bir an ekle" : "add one lived-in detail", tr ? "guclu bitir" : "finish with impact"]
+        : [tr ? "net gorus belirt" : "state a clear position", tr ? "daha guclu bir ifade kullan" : "use a stronger phrase", tr ? "ornekle destekle" : "support it with an example"]
+    };
+  }
+
+  return {
+    badge: tr ? "daha dogal" : "more natural",
+    primary: tr
+      ? "Dogal mod, fazla kasmadan iyi duyulan cevaplar uretir: net fikir, rahat baglanti ve yasayan bir ornek."
+      : "Natural mode aims for answers that sound good without overpushing: clear idea, relaxed linking, and one lived-in example.",
+    secondary: tr
+      ? "Cogu ogrenci icin en dengeli mod budur; ne fazla guvenli ne de gereksiz agresif."
+      : "This is the most balanced mode for most learners; not too safe and not unnecessarily aggressive.",
+    moves: partTwo
+      ? [tr ? "konuyu dogal ac" : "open naturally", tr ? "tek bir iyi ornek sec" : "pick one good example", tr ? "neden onemli oldugunu bagla" : "connect why it matters"]
+      : [tr ? "soruyu dogrudan al" : "take the question directly", tr ? "tek bir neden ver" : "give one reason", tr ? "dogal bir ornekle bagla" : "link it to a natural example"]
   };
 }
 

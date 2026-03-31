@@ -589,6 +589,64 @@ export function Dashboard() {
       .map(([word, count]) => ({ word, count }));
   }, [mistakeNotebook.repeatedFillers, scoredSessions]);
 
+  const momentumProfile = useMemo(() => {
+    const consistency = Math.min(100, summary.streakDays * 12 + Math.min(summary.totalSessions, 8) * 4);
+    const control = Math.min(100, Math.round((summary.averageScore || 0) * 12));
+    const courage = Math.min(100, Math.min(summary.totalSessions, 12) * 7 + analytics.practiceStarts * 2);
+    const refinement = Math.min(100, analytics.mockReportViews * 12 + analytics.uploads * 8);
+
+    const strongest = [
+      { label: tr ? "istikrar" : "consistency", value: consistency },
+      { label: tr ? "kontrol" : "control", value: control },
+      { label: tr ? "cesaret" : "courage", value: courage },
+      { label: tr ? "ince ayar" : "refinement", value: refinement }
+    ].sort((a, b) => b.value - a.value)[0];
+
+    return {
+      consistency,
+      control,
+      courage,
+      refinement,
+      strongest
+    };
+  }, [analytics.mockReportViews, analytics.practiceStarts, analytics.uploads, summary.averageScore, summary.streakDays, summary.totalSessions, tr]);
+
+  const coachSignature = useMemo(() => {
+    if (hasBalancedSkillProfile && momentumProfile.consistency >= 55) {
+      return {
+        title: tr ? "Sabit yukselen profil" : "Steady rising profile",
+        body: tr
+          ? "Tek bir skill seni asagi cekmiyor. Bundan sonraki farki daha olgun ornekler ve baski altinda temiz kalmak yaratacak."
+          : "No single skill is dragging you down. The next jump will come from more mature examples and cleaner control under pressure."
+      };
+    }
+
+    if ((weakestSkill?.label === "Fluency and Coherence" || weakestSkill?.label === "Delivery") && momentumProfile.courage >= 45) {
+      return {
+        title: tr ? "Enerji var, sekil verilmeli" : "Strong energy, needs shaping",
+        body: tr
+          ? "Deneme cesaretin iyi. Simdi cevaplarini daha temiz baglayip ritmini kontrol etmek seni hizla yukari tasir."
+          : "You already show practice courage. Cleaner linking and better pacing will move you upward quickly."
+      };
+    }
+
+    if (weakestSkill?.label === "Topic Development") {
+      return {
+        title: tr ? "Fikir var, derinlik eksik" : "Ideas exist, depth is missing",
+        body: tr
+          ? "Bir ana fikir veriyorsun ama cevabi buyutmuyorsun. Bir neden ve bir gercek hayat detayi bu profilde en hizli farki yaratir."
+          : "You usually have a main point, but the answer does not fully open up. One reason and one lived-in detail will change this profile fastest."
+      };
+    }
+
+    return {
+      title: tr ? "Temel duzen kuruluyor" : "The base is forming",
+      body: tr
+        ? "Sistem seni taniyor. Birkac tutarli deneme daha geldikce hangi calisma stilinin sana en iyi gittigi cok daha netlesecek."
+        : "The system is still learning your pattern. A few more consistent attempts will make your best study style much clearer."
+    };
+  }, [hasBalancedSkillProfile, momentumProfile.consistency, momentumProfile.courage, tr, weakestSkill]);
+
   return (
     <div className="page-shell section" style={{ display: "grid", gap: "1.4rem" }}>
       {needsOnboarding ? (
@@ -730,6 +788,45 @@ export function Dashboard() {
         <StatCard label={tr ? "Practice baslangici" : "Practice starts"} value={String(analytics.practiceStarts)} note={tr ? "Konusma denemesi baslatma sayin" : "How many times you started practice"} />
         <StatCard label={tr ? "Yuklenen kayit" : "Uploaded recordings"} value={String(analytics.uploads)} note={tr ? "Transcript icin giden ses kayitlari" : "Recordings sent for transcript"} />
         <StatCard label={tr ? "Tamamlanan simulasyon" : "Completed simulations"} value={String(analytics.simulationsCompleted)} note={tr ? "Bitirilen tam mock sinavlar" : "Full mock exams completed"} />
+      </section>
+
+      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1.15fr) minmax(320px, 0.85fr)", gap: "1rem", alignItems: "start" }}>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Momentum profili" : "Momentum profile"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Skorun kadar calisma karakterin de var" : "You have a study character, not just a score"}</h2>
+          </div>
+          <div className="dashboard-momentum-grid">
+            {[
+              { label: tr ? "Istikrar" : "Consistency", value: momentumProfile.consistency },
+              { label: tr ? "Kontrol" : "Control", value: momentumProfile.control },
+              { label: tr ? "Cesaret" : "Courage", value: momentumProfile.courage },
+              { label: tr ? "Ince ayar" : "Refinement", value: momentumProfile.refinement }
+            ].map((item) => (
+              <div key={item.label} className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)" }}>
+                <div className="practice-meta">{item.label}</div>
+                <strong style={{ fontSize: "1.8rem" }}>{item.value}</strong>
+                <div className="dashboard-meter" aria-hidden="true">
+                  <span style={{ width: `${item.value}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="practice-meta">
+            {tr ? "Su an en guclu sinyal:" : "Your strongest signal right now:"} <strong>{momentumProfile.strongest.label}</strong>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem", background: "rgba(29, 111, 117, 0.08)" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Koç imzasi" : "Coach signature"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{coachSignature.title}</h2>
+          </div>
+          <p className="practice-copy">{coachSignature.body}</p>
+          <Link className="button button-secondary" href="/app/practice">
+            {tr ? "Bu profile gore practice ac" : "Practice with this profile"}
+          </Link>
+        </div>
       </section>
 
       <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>

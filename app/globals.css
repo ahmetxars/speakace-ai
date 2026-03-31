@@ -722,6 +722,27 @@ body[data-theme="dark"] .notification-dropdown-item.is-success {
   gap: 0.9rem;
 }
 
+.dashboard-momentum-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.dashboard-meter {
+  margin-top: 0.7rem;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(29, 111, 117, 0.12);
+  overflow: hidden;
+}
+
+.dashboard-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-cool));
+}
+
 .stat-strip-card {
   padding: 1rem;
   background: rgba(255, 255, 255, 0.72);
@@ -1513,6 +1534,10 @@ body[data-theme="dark"] .notification-dropdown-item.is-success {
   }
 
   .practice-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-momentum-grid {
     grid-template-columns: 1fr;
   }
 

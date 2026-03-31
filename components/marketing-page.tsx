@@ -224,6 +224,74 @@ const examWeekChecklist = {
   ]
 };
 
+const speakingIdentities = {
+  en: [
+    {
+      title: "Fast but thin",
+      signal: "You answer quickly but your ideas stay too shallow.",
+      move: "Use one reason plus one concrete example before you stop.",
+      badge: "Band lift comes from depth"
+    },
+    {
+      title: "Careful but slow",
+      signal: "Your grammar feels controlled, but pauses break your rhythm.",
+      move: "Shorter sentence patterns and lighter linking improve flow.",
+      badge: "Band lift comes from rhythm"
+    },
+    {
+      title: "Natural but repetitive",
+      signal: "You sound comfortable, but key words repeat too often.",
+      move: "Swap one repeated phrase for a stronger topic-specific expression.",
+      badge: "Band lift comes from range"
+    },
+    {
+      title: "Structured but flat",
+      signal: "Your answer is organized, but it lacks vivid examples.",
+      move: "Add one real-life detail that makes the answer feel lived-in.",
+      badge: "Band lift comes from specificity"
+    }
+  ],
+  tr: [
+    {
+      title: "Hizli ama ince",
+      signal: "Cevabi hizli veriyorsun ama fikirlerin fazla yuzeyde kaliyor.",
+      move: "Bitirmeden once bir neden ve bir somut ornek ekle.",
+      badge: "Band artisi derinlikten gelir"
+    },
+    {
+      title: "Dikkatli ama yavas",
+      signal: "Dilbilgisi kontrollu ama duraksamalar ritmi bozuyor.",
+      move: "Daha kisa cumle kaliplari ve daha hafif baglaclar akisi iyilestirir.",
+      badge: "Band artisi ritimden gelir"
+    },
+    {
+      title: "Dogal ama tekrarci",
+      signal: "Konusman rahat ama ana kelimeleri fazla tekrar ediyorsun.",
+      move: "Tekrar eden bir ifadeyi konuya uygun daha guclu bir kelimeyle degistir.",
+      badge: "Band artisi kelime cesidinden gelir"
+    },
+    {
+      title: "Yapili ama duz",
+      signal: "Cevabin duzenli ama guclu bir ornek eksik kaliyor.",
+      move: "Cevabi daha canli yapmak icin tek bir gercek hayat detayi ekle.",
+      badge: "Band artisi ozgullukten gelir"
+    }
+  ]
+};
+
+const scoreLadders = {
+  en: [
+    { label: "5.5 -> 6.0", note: "Stop fragment answers and finish your idea cleanly." },
+    { label: "6.0 -> 6.5", note: "Add clearer examples and smoother links between points." },
+    { label: "6.5 -> 7.0", note: "Sound more natural, less repetitive, and more controlled under pressure." }
+  ],
+  tr: [
+    { label: "5.5 -> 6.0", note: "Parcali cevaplari birak ve fikrini temiz sekilde tamamla." },
+    { label: "6.0 -> 6.5", note: "Daha net ornekler ve daha akici baglantilar ekle." },
+    { label: "6.5 -> 7.0", note: "Baski altinda daha dogal, daha az tekrarli ve daha kontrollu konus." }
+  ]
+};
+
 const howItWorks = {
   en: [
     {
@@ -324,6 +392,8 @@ export function MarketingPage({
   const localizedRoadmap = tr ? roadmapCards.tr : roadmapCards.en;
   const localizedAnswerUpgrade = tr ? answerUpgrade.tr : answerUpgrade.en;
   const localizedExamWeekChecklist = tr ? examWeekChecklist.tr : examWeekChecklist.en;
+  const localizedSpeakingIdentities = tr ? speakingIdentities.tr : speakingIdentities.en;
+  const localizedScoreLadders = tr ? scoreLadders.tr : scoreLadders.en;
   const planComparison = getPlanComparison(tr);
 
   const faqJsonLd = {
@@ -439,6 +509,51 @@ export function MarketingPage({
       </section>
 
       <MarketingDemoShowcase tr={tr} />
+
+      <section className="page-shell section">
+        <div className="section-head">
+          <span className="eyebrow">{tr ? "Speaking DNA" : "Speaking DNA"}</span>
+          <h2>{tr ? "Kendi speaking tipini hemen tani" : "Recognize your speaking pattern immediately"}</h2>
+          <p>
+            {tr
+              ? "Cogu urun sadece puan verir. SpeakAce ise ogrencinin nasil cevap verdigini adlandirip dogru sonraki hamleyi gosterir."
+              : "Most products stop at a score. SpeakAce also names the learner pattern and points to the smartest next move."}
+          </p>
+        </div>
+        <div className="marketing-grid">
+          {localizedSpeakingIdentities.map((item) => (
+            <article key={item.title} className="card feature-card">
+              <div className="pill" style={{ marginBottom: "0.8rem" }}>{item.badge}</div>
+              <h3>{item.title}</h3>
+              <p style={{ marginBottom: "0.8rem" }}>{item.signal}</p>
+              <div className="practice-meta">{item.move}</div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
+          <span className="eyebrow">{tr ? "Skor merdiveni" : "Score ladder"}</span>
+          <h2>{tr ? "Skor yukselirken ne degismeli?" : "What should change as the score rises?"}</h2>
+          <p>
+            {tr
+              ? "Skor artisi tek bir numarayla gelmez. Her aralikta fark yaratan davranis biraz degisir."
+              : "Score growth does not come from one trick. The behavior that matters changes slightly at each band range."}
+          </p>
+        </div>
+        <div className="marketing-grid">
+          {localizedScoreLadders.map((item) => (
+            <article key={item.label} className="card feature-card">
+              <h3>{item.label}</h3>
+              <p>{item.note}</p>
+              <Link href="/pricing" className="button button-secondary">
+                {tr ? "Bu araligi calis" : "Train this jump"}
+              </Link>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className="page-shell section">
         <div className="section-head">
