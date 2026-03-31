@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { blogPosts } from "@/lib/marketing-content";
+import { comparisonPages, guidePages, toolPages } from "@/lib/seo-growth";
 import { siteConfig } from "@/lib/site";
 import { seoTopicPages } from "@/lib/seo-topics";
 
@@ -13,8 +14,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/success-stories",
     "/resources",
     "/free-ielts-speaking-test",
+    "/daily-ielts-speaking-prompt",
+    "/case-studies",
     "/weekly-ielts-speaking-challenge",
     "/ielts-speaking-sample-answers",
+    "/compare",
+    "/tools",
+    "/guides",
     "/ielts-speaking-ai",
     "/improve-ielts-speaking-score",
     "/ai-english-speaking-practice",
@@ -33,7 +39,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
   const blogRoutes = blogPosts.map((post) => `/blog/${post.slug}`);
   const topicRoutes = seoTopicPages.map((topic) => `/ielts-speaking-topics/${topic.slug}`);
-  const allRoutes = [...routes, ...blogRoutes, ...topicRoutes];
+  const comparisonRoutes = comparisonPages.map((item) => `/compare/${item.slug}`);
+  const toolRoutes = toolPages.map((item) => `/tools/${item.slug}`);
+  const guideRoutes = guidePages.map((item) => `/guides/${item.slug}`);
+  const allRoutes = [...routes, ...blogRoutes, ...topicRoutes, ...comparisonRoutes, ...toolRoutes, ...guideRoutes];
 
   return allRoutes.map((route) => ({
     url: `${siteConfig.domain}${route}`,

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AppMobileNav } from "@/components/app-mobile-nav";
 import { SiteHeader } from "@/components/site-header";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -6,6 +7,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <>
       <SiteHeader />
       {children}
+      <AppMobileNav />
     </>
   );
 }

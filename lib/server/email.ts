@@ -89,3 +89,33 @@ export async function sendPasswordResetEmail(input: { to: string; name?: string;
     text: `Hi ${greeting}, reset your SpeakAce password here: ${input.resetUrl}`
   });
 }
+
+export async function sendLeadMagnetEmail(input: { to: string; name?: string }) {
+  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const resourcesUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/resources`;
+  const practiceUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app/practice`;
+
+  return sendEmail({
+    to: input.to,
+    subject: "Your SpeakAce IELTS speaking checklist",
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
+        <h2 style="margin:0 0 12px">Your free speaking checklist is ready</h2>
+        <p>Hi ${greeting},</p>
+        <p>Here is the simple routine we recommend for faster IELTS speaking improvement:</p>
+        <ul>
+          <li>Answer one timed speaking prompt every day</li>
+          <li>Review the transcript before you retry</li>
+          <li>Add one clear reason and one example to each answer</li>
+          <li>Repeat weak prompts instead of always switching topics</li>
+        </ul>
+        <p style="margin:24px 0">
+          <a href="${practiceUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Start free practice</a>
+        </p>
+        <p>You can also open the full resource hub here:</p>
+        <p><a href="${resourcesUrl}">${resourcesUrl}</a></p>
+      </div>
+    `,
+    text: `Hi ${greeting}, your free speaking checklist is ready. Start free practice here: ${practiceUrl} or open the resource hub: ${resourcesUrl}`
+  });
+}

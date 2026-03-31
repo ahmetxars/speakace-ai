@@ -46,8 +46,8 @@ export default function HomePage() {
       <SiteHeader />
       <MarketingPage
         eyebrow="AI coach for speaking"
-        title="IELTS speaking practice with AI feedback, transcript review, and score-focused speaking drills."
-        description="Improve your IELTS speaking score with AI English speaking practice, IELTS-style questions, speaking test simulation, and fast score-focused feedback."
+        title="Practice IELTS speaking with AI feedback that helps you improve faster."
+        description="Get transcript review, score-focused speaking drills, and IELTS-style practice that makes your next answer clearer and more confident."
         focus="SpeakAce targets high-intent search terms like IELTS speaking practice, IELTS speaking AI, improve IELTS speaking score, and speaking test simulator IELTS with a product built around real exam preparation."
         ctaHref="/app/practice"
       />

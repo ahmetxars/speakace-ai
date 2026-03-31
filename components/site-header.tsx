@@ -1,65 +1,116 @@
 "use client";
 
+import type { Route } from "next";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { copy } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
 
+type NavLinkItem = {
+  href: Route;
+  label: string;
+};
+
+const navItem = (href: Route, label: string): NavLinkItem => ({ href, label });
+
 export function SiteHeader() {
   const { language, setLanguage, signedIn, currentUser, signOut } = useAppState();
   const content = copy[language];
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
+  const primaryLinks = useMemo<NavLinkItem[]>(
+    () => [
+      navItem("/app/practice", content.nav.practice),
+      navItem(signedIn ? "/app" : "/pricing", signedIn ? content.nav.dashboard : content.nav.pricing),
+      navItem("/resources", language === "tr" ? "Kaynaklar" : "Resources"),
+      navItem("/free-ielts-speaking-test", language === "tr" ? "Ucretsiz test" : "Free test"),
+      navItem("/tools", language === "tr" ? "Araclar" : "Tools"),
+      navItem("/blog", "Blog"),
+      navItem("/reviews", language === "tr" ? "Yorumlar" : "Reviews")
+    ],
+    [content.nav.dashboard, content.nav.practice, content.nav.pricing, language, signedIn]
+  );
+
+  const signedOutLinks = useMemo<NavLinkItem[]>(
+    () => [
+      navItem("/for-teachers", language === "tr" ? "Öğretmenler için" : "For teachers"),
+      navItem("/for-schools", language === "tr" ? "Kurumlar için" : "For schools")
+    ],
+    [language]
+  );
+
+  const signedInLinks = useMemo<NavLinkItem[]>(
+    () => [
+      ...(!currentUser?.isTeacher ? [navItem("/app/profile", language === "tr" ? "Profil" : "Profile")] : []),
+      navItem("/app/notifications", language === "tr" ? "Bildirimler" : "Notifications"),
+      navItem("/app/analytics", language === "tr" ? "Analitik" : "Analytics"),
+      ...(currentUser?.isTeacher
+        ? [
+            navItem("/app/teacher", language === "tr" ? "Öğretmen" : "Teacher"),
+            navItem("/app/teacher/billing", language === "tr" ? "Kurum" : "Institution"),
+            navItem("/app/teacher/institution", language === "tr" ? "Kurum analitiği" : "Analytics")
+          ]
+        : []),
+      ...(currentUser?.isAdmin
+        ? [navItem("/app/institution-admin", language === "tr" ? "Kurum yönetimi" : "Institution admin")]
+        : []),
+      navItem("/app/study-lists", language === "tr" ? "Çalışma listeleri" : "Study lists"),
+      navItem("/app/review", language === "tr" ? "Gözden geçir" : "Review"),
+      navItem("/app/billing", content.nav.billing),
+      navItem("/app/settings", content.nav.settings)
+    ],
+    [content.nav.billing, content.nav.settings, currentUser?.isAdmin, currentUser?.isTeacher, language]
+  );
+
+  const closeMenu = () => setMenuOpen(false);
 
   return (
-    <header className="page-shell" style={{ padding: "1.2rem 0 0.5rem" }}>
-      <div
-        className="card"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "1rem",
-          padding: "1rem 1.2rem",
-          flexWrap: "wrap"
-        }}
-      >
-        <div>
-          <Link href="/" style={{ fontWeight: 800, fontSize: "1.2rem" }}>
+    <header className="page-shell site-header-shell">
+      <div className="card site-header-card">
+        <div className="site-header-brand">
+          <Link href="/" className="site-header-logo" onClick={closeMenu}>
             {content.brand}
           </Link>
-          <div style={{ color: "var(--muted)", fontSize: "0.95rem", marginTop: "0.2rem" }}>{content.tagline}</div>
+          <div className="site-header-tagline">{content.tagline}</div>
           {currentUser ? (
-            <div style={{ color: "var(--accent-cool)", fontSize: "0.85rem", marginTop: "0.35rem" }}>
-              {currentUser.name} · {currentUser.plan.toUpperCase()}{currentUser.isTeacher ? language === "tr" ? " · ÖĞRETMEN" : " · TEACHER" : ""}
+            <div className="site-header-userline">
+              {currentUser.name} · {currentUser.plan.toUpperCase()}
+              {currentUser.isTeacher ? (language === "tr" ? " · ÖĞRETMEN" : " · TEACHER") : ""}
             </div>
           ) : null}
         </div>
 
-        <nav style={{ display: "flex", gap: "0.9rem", alignItems: "center", flexWrap: "wrap" }}>
-          <Link href="/app/practice">{content.nav.practice}</Link>
-          {signedIn ? <Link href="/app">{content.nav.dashboard}</Link> : <Link href="/pricing">{content.nav.pricing}</Link>}
-          <Link href="/resources">{language === "tr" ? "Kaynaklar" : "Resources"}</Link>
-          <Link href="/free-ielts-speaking-test">{language === "tr" ? "Ucretsiz test" : "Free test"}</Link>
-          <Link href="/blog">{language === "tr" ? "Blog" : "Blog"}</Link>
-          <Link href="/reviews">{language === "tr" ? "Yorumlar" : "Reviews"}</Link>
-          {!signedIn ? <Link href="/for-teachers">{language === "tr" ? "Öğretmenler için" : "For teachers"}</Link> : null}
-          {!signedIn ? <Link href="/for-schools">{language === "tr" ? "Kurumlar için" : "For schools"}</Link> : null}
-          {signedIn && !currentUser?.isTeacher ? <Link href="/app/profile">{language === "tr" ? "Profil" : "Profile"}</Link> : null}
-          {signedIn ? <Link href="/app/notifications">{language === "tr" ? "Bildirimler" : "Notifications"}</Link> : null}
-          {signedIn ? <Link href="/app/analytics">{language === "tr" ? "Analitik" : "Analytics"}</Link> : null}
-          {signedIn && currentUser?.isTeacher ? <Link href="/app/teacher">{language === "tr" ? "Öğretmen" : "Teacher"}</Link> : null}
-          {signedIn && currentUser?.isTeacher ? <Link href="/app/teacher/billing">{language === "tr" ? "Kurum" : "Institution"}</Link> : null}
-          {signedIn && currentUser?.isTeacher ? <Link href="/app/teacher/institution">{language === "tr" ? "Kurum analitiği" : "Analytics"}</Link> : null}
-          {signedIn && currentUser?.isAdmin ? <Link href="/app/institution-admin">{language === "tr" ? "Kurum yönetimi" : "Institution admin"}</Link> : null}
-          {signedIn ? <Link href="/app/study-lists">{language === "tr" ? "Çalışma listeleri" : "Study lists"}</Link> : null}
-          {signedIn ? <Link href="/app/review">{language === "tr" ? "Gözden geçir" : "Review"}</Link> : null}
-          {signedIn ? <Link href="/app/billing">{content.nav.billing}</Link> : null}
-          <Link href="/app/settings">{content.nav.settings}</Link>
+        <nav className="site-header-nav desktop-nav">
+          {primaryLinks.map((item) => (
+            <Link key={item.href} href={item.href}>
+              {item.label}
+            </Link>
+          ))}
+          {!signedIn
+            ? signedOutLinks.map((item) => (
+                <Link key={item.href} href={item.href}>
+                  {item.label}
+                </Link>
+              ))
+            : signedInLinks.map((item) => (
+                <Link key={item.href} href={item.href}>
+                  {item.label}
+                </Link>
+              ))}
           {!signedIn ? (
-            <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_cta" style={{ padding: "0.55rem 0.9rem" }}>
+            <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_cta">
               {language === "tr" ? "Plus al" : "Get Plus"}
             </a>
           ) : null}
           {signedIn ? (
-            <button className="button button-secondary" type="button" onClick={() => void signOut()} style={{ padding: "0.55rem 0.9rem" }}>
+            <button className="button button-secondary" type="button" onClick={() => void signOut()}>
               {content.nav.signOut}
             </button>
           ) : (
@@ -92,7 +143,105 @@ export function SiteHeader() {
             </button>
           </div>
         </nav>
+
+        <button
+          type="button"
+          className="site-header-menu-button"
+          aria-label={menuOpen ? (language === "tr" ? "Menüyü kapat" : "Close menu") : language === "tr" ? "Menüyü aç" : "Open menu"}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((value) => !value)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
       </div>
+
+      <div className={`mobile-nav-overlay ${menuOpen ? "is-open" : ""}`} onClick={closeMenu} />
+      <aside className={`mobile-nav-panel ${menuOpen ? "is-open" : ""}`} aria-hidden={!menuOpen}>
+        <div className="mobile-nav-panel-head">
+          <div>
+            <strong>{content.brand}</strong>
+            <div className="site-header-tagline">{content.tagline}</div>
+          </div>
+          <button type="button" className="site-header-menu-button is-close" aria-label={language === "tr" ? "Menüyü kapat" : "Close menu"} onClick={closeMenu}>
+            <span />
+            <span />
+          </button>
+        </div>
+
+        <div className="mobile-nav-section">
+          <span className="eyebrow">{language === "tr" ? "Gezinme" : "Navigation"}</span>
+          <div className="mobile-nav-links">
+            {primaryLinks.map((item) => (
+              <Link key={item.href} href={item.href} onClick={closeMenu}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="mobile-nav-section">
+          <span className="eyebrow">{signedIn ? (language === "tr" ? "Hesap" : "Account") : language === "tr" ? "Daha fazlası" : "More"}</span>
+          <div className="mobile-nav-links">
+            {!signedIn
+              ? signedOutLinks.map((item) => (
+                  <Link key={item.href} href={item.href} onClick={closeMenu}>
+                    {item.label}
+                  </Link>
+                ))
+              : signedInLinks.map((item) => (
+                  <Link key={item.href} href={item.href} onClick={closeMenu}>
+                    {item.label}
+                  </Link>
+                ))}
+          </div>
+        </div>
+
+        <div className="mobile-nav-actions">
+          {!signedIn ? (
+            <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_mobile_cta">
+              {language === "tr" ? "Plus al" : "Get Plus"}
+            </a>
+          ) : (
+            <button className="button button-secondary" type="button" onClick={() => void signOut()}>
+              {content.nav.signOut}
+            </button>
+          )}
+          {!signedIn ? (
+            <Link className="button button-secondary" href="/auth" onClick={closeMenu}>
+              {content.nav.signIn}
+            </Link>
+          ) : null}
+        </div>
+
+        <div className="mobile-language-switch">
+          <button
+            className="button"
+            type="button"
+            onClick={() => setLanguage("en")}
+            style={{
+              padding: "0.55rem 0.85rem",
+              background: language === "en" ? "var(--accent)" : "transparent",
+              color: language === "en" ? "white" : "inherit"
+            }}
+          >
+            EN
+          </button>
+          <button
+            className="button"
+            type="button"
+            onClick={() => setLanguage("tr")}
+            style={{
+              padding: "0.55rem 0.85rem",
+              background: language === "tr" ? "var(--accent)" : "transparent",
+              color: language === "tr" ? "white" : "inherit"
+            }}
+          >
+            TR
+          </button>
+        </div>
+      </aside>
     </header>
   );
 }

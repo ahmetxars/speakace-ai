@@ -3,6 +3,8 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { useAppState } from "@/components/providers";
+import { LeadCaptureForm } from "@/components/lead-capture-form";
+import { MarketingDemoShowcase } from "@/components/marketing-demo-showcase";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
 import {
   blogPosts,
@@ -170,6 +172,21 @@ const faqs = {
   ]
 };
 
+const dailyPrompts = {
+  en: [
+    "Describe a useful object you use every day and explain why it matters to you.",
+    "Talk about a person who helped you improve your English speaking confidence.",
+    "Describe a place where you feel relaxed and explain why it is special.",
+    "Do you think people communicate better online or face to face? Why?"
+  ],
+  tr: [
+    "Her gün kullandığın faydalı bir nesneyi anlat ve neden önemli olduğunu açıkla.",
+    "İngilizce konuşma özgüvenini geliştirmene yardımcı olan bir kişiyi anlat.",
+    "Kendini rahat hissettiğin bir yeri anlat ve neden özel olduğunu açıkla.",
+    "Sence insanlar çevrim içi mi yoksa yüz yüze mi daha iyi iletişim kuruyor? Neden?"
+  ]
+};
+
 const howItWorks = {
   en: [
     {
@@ -264,6 +281,7 @@ export function MarketingPage({
   const localizedTestimonials = tr ? testimonials.tr : testimonials.en;
   const localizedUseCases = tr ? useCases.tr : useCases.en;
   const localizedComparisonPoints = tr ? comparisonPoints.tr : comparisonPoints.en;
+  const localizedDailyPrompt = tr ? dailyPrompts.tr : dailyPrompts.en;
   const planComparison = getPlanComparison(tr);
 
   const faqJsonLd = {
@@ -377,6 +395,8 @@ export function MarketingPage({
           ))}
         </div>
       </section>
+
+      <MarketingDemoShowcase tr={tr} />
 
       <section className="page-shell section">
         <div className="section-head">
@@ -624,6 +644,48 @@ export function MarketingPage({
 
       <section className="page-shell section">
         <div className="section-head">
+          <span className="eyebrow">{tr ? "Günün speaking sorusu" : "Prompt of the day"}</span>
+          <h2>
+            {tr
+              ? "Ziyaretçiyi anında speaking moduna sokan günlük soru bandı"
+              : "A daily IELTS speaking prompt that moves visitors into practice fast"}
+          </h2>
+          <p>
+            {tr
+              ? "Aramadan gelen ziyaretçi, tek bir iyi soru ve net bir CTA görünce ürünü daha hızlı dener."
+              : "Search visitors are more likely to try the product when they see one useful prompt and one clear next step."}
+          </p>
+        </div>
+        <div className="card daily-prompt-card">
+          <div>
+            <span className="eyebrow">{tr ? "Bugünün görevi" : "Today’s task"}</span>
+            <h3 style={{ margin: "0.75rem 0 0.6rem" }}>{localizedDailyPrompt[0]}</h3>
+            <p className="practice-copy">
+              {tr
+                ? "Bunu 45-60 saniyede cevapla, transcript’ini incele ve aynı soruyu daha güçlü yapıyla tekrar dene."
+                : "Answer this in 45-60 seconds, review the transcript, and retry the same prompt with a stronger structure."}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <Link className="button button-primary" href="/app/practice">
+              {tr ? "Bu soruyla başla" : "Practice this prompt"}
+            </Link>
+            <Link className="button button-secondary" href="/weekly-ielts-speaking-challenge">
+              {tr ? "Haftalık challenge" : "Weekly challenge"}
+            </Link>
+          </div>
+        </div>
+        <div className="daily-prompt-list">
+          {localizedDailyPrompt.slice(1).map((prompt) => (
+            <article key={prompt} className="card daily-prompt-item">
+              <strong>{prompt}</strong>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
           <span className="eyebrow">{tr ? "Sosyal kanıt" : "Social proof"}</span>
           <h2>
             {tr
@@ -645,6 +707,7 @@ export function MarketingPage({
             {tr ? "Tum yorumlari ac" : "Open all reviews"}
           </Link>
         </div>
+        <TestimonialTicker items={localizedTestimonials} />
       </section>
 
       <section className="page-shell section">
@@ -753,6 +816,50 @@ export function MarketingPage({
       </section>
 
       <section className="page-shell section">
+        <div className="card lead-capture-card">
+          <div>
+            <span className="eyebrow">{tr ? "Ücretsiz lead magnet" : "Free lead magnet"}</span>
+            <h2 style={{ margin: "0.8rem 0 0.5rem" }}>
+              {tr
+                ? "Ücretsiz speaking checklist ve challenge akışını aç"
+                : "Unlock the free speaking checklist and challenge flow"}
+            </h2>
+            <p className="practice-copy">
+              {tr
+                ? "Ziyaretçiyi önce ücretsiz test, sonra challenge ve ardından Plus teklifine taşıyan daha net bir email yakalama akışı."
+                : "A cleaner lead-capture path that moves visitors from a free test to a challenge and then toward the Plus offer."}
+            </p>
+          </div>
+          <div className="lead-capture-actions">
+            <LeadCaptureForm source="home_lead" />
+            <Link className="button button-secondary" href="/free-ielts-speaking-test">
+              {tr ? "Ücretsiz testi gör" : "Open free test"}
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
+          <span className="eyebrow">{tr ? "Gunluk giris" : "Daily entry point"}</span>
+          <h2>{tr ? "Her gun yeni bir speaking girisiyle geri don" : "Come back through a fresh daily speaking entry point"}</h2>
+          <p>
+            {tr
+              ? "Gunluk prompt ve case study sayfalari, organik trafikten gelen kullaniciyi tekrar practice ve Plus akisina tasiyor."
+              : "The daily prompt and case study pages create repeatable traffic entry points that guide visitors back into practice and Plus."}
+          </p>
+        </div>
+        <div className="lead-capture-actions">
+          <Link className="button button-secondary" href="/daily-ielts-speaking-prompt">
+            {tr ? "Gunluk prompt sayfasini ac" : "Open daily prompt page"}
+          </Link>
+          <Link className="button button-ghost" href="/case-studies">
+            {tr ? "Case study'leri gor" : "See case studies"}
+          </Link>
+        </div>
+      </section>
+
+      <section className="page-shell section">
         <div className="section-head">
           <span className="eyebrow">FAQ</span>
           <h2>{tr ? "Sık sorulan sorular" : "Frequently asked questions"}</h2>
@@ -809,6 +916,28 @@ function FaqTicker({
             <span className="eyebrow">FAQ</span>
             <h3>{faq.question}</h3>
             <p>{faq.answer}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TestimonialTicker({
+  items
+}: {
+  items: Array<{ quote: string; author: string; role: string }>;
+}) {
+  const loopItems = [...items, ...items];
+
+  return (
+    <div className="testimonial-ticker-shell">
+      <div className="testimonial-ticker-track">
+        {loopItems.map((item, index) => (
+          <article key={`${item.author}-${index}`} className="card testimonial-ticker-card">
+            <p>&ldquo;{item.quote}&rdquo;</p>
+            <strong>{item.author}</strong>
+            <div className="practice-meta">{item.role}</div>
           </article>
         ))}
       </div>

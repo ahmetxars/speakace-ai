@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
+import { LeadCaptureForm } from "@/components/lead-capture-form";
 import { SiteHeader } from "@/components/site-header";
 import { blogPosts } from "@/lib/marketing-content";
 import { siteConfig } from "@/lib/site";
@@ -54,6 +55,21 @@ const resourceCards: Array<{
     href: "/ielts-speaking-sample-answers",
     title: "IELTS speaking sample answers",
     description: "A conversion-friendly bridge between search traffic, answer examples, and live speaking practice."
+  },
+  {
+    href: "/compare",
+    title: "Compare speaking tools",
+    description: "Comparison pages that target visitors who are already evaluating products."
+  },
+  {
+    href: "/tools",
+    title: "Free IELTS speaking tools",
+    description: "Tool-style SEO pages that attract top-of-funnel traffic and move it toward practice."
+  },
+  {
+    href: "/guides",
+    title: "IELTS speaking guides",
+    description: "Improvement-focused guide pages for fluency, structure, vocabulary, and pronunciation."
   }
 ];
 
@@ -130,6 +146,21 @@ export default function ResourcesPage() {
               <Link className="button button-secondary" href="/app/practice">
                 Start free practice
               </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="section" style={{ paddingBottom: 0 }}>
+          <div className="card lead-capture-card">
+            <div>
+              <span className="eyebrow">Free checklist</span>
+              <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Capture search visitors before they leave</h2>
+              <p className="practice-copy">
+                A free checklist and welcome email create a softer first conversion for visitors who are not ready to buy yet.
+              </p>
+            </div>
+            <div className="lead-capture-actions">
+              <LeadCaptureForm source="resources_lead" />
             </div>
           </div>
         </section>

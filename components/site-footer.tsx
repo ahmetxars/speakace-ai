@@ -43,10 +43,15 @@ export function SiteFooter() {
           <strong>{tr ? "Kaynaklar" : "Resources"}</strong>
           <Link href="/resources">Resources</Link>
           <Link href="/free-ielts-speaking-test">{tr ? "Ucretsiz test" : "Free test"}</Link>
+          <Link href="/daily-ielts-speaking-prompt">{tr ? "Gunluk prompt" : "Daily prompt"}</Link>
           <Link href="/weekly-ielts-speaking-challenge">{tr ? "Haftalik challenge" : "Weekly challenge"}</Link>
           <Link href="/ielts-speaking-topics">IELTS topics</Link>
+          <Link href="/tools">{tr ? "Araclar" : "Tools"}</Link>
+          <Link href="/compare">{tr ? "Karsilastirmalar" : "Compare"}</Link>
+          <Link href="/guides">{tr ? "Rehberler" : "Guides"}</Link>
           <Link href="/blog">Blog</Link>
           <Link href="/reviews">{tr ? "Yorumlar" : "Reviews"}</Link>
+          <Link href="/case-studies">{tr ? "Ornekler" : "Case studies"}</Link>
           <Link href="/ielts-band-score-guide">Band score guide</Link>
         </div>
 

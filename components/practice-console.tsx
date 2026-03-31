@@ -700,6 +700,28 @@ export function PracticeConsole() {
 
   return (
     <div className="page-shell section">
+      {currentUser?.plan === "free" ? (
+        <section className="card free-plan-banner">
+          <div>
+            <span className="eyebrow">{tr ? "Free plan" : "Free plan"}</span>
+            <h2 style={{ margin: "0.7rem 0 0.35rem" }}>{tr ? "Daha fazla deneme için Plus görünürlüğü açık" : "Plus is visible whenever you want more volume"}</h2>
+            <p className="practice-copy">
+              {tr
+                ? "Free plan günlük alışkanlığı kurmak için iyi. Daha fazla speaking süresi, daha fazla tekrar ve daha derin review için Plus'a geçebilirsin."
+                : "Free is great for building the habit. Move to Plus when you want more daily speaking time, retries, and deeper review."}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "practice_banner" })}>
+              {tr ? "Plus'i aç" : "Unlock Plus"}
+            </a>
+            <Link className="button button-secondary" href="/pricing">
+              {tr ? "Planlari gor" : "See plans"}
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       <div className="practice-shell">
         <section className="card practice-panel">
           <div>

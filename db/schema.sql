@@ -145,6 +145,14 @@ create table if not exists announcements (
   created_at timestamptz not null default now()
 );
 
+create table if not exists marketing_leads (
+  id text primary key,
+  email text not null unique,
+  name text,
+  source text not null default 'site',
+  created_at timestamptz not null default now()
+);
+
 create table if not exists usage_daily (
   user_id text not null references users(id) on delete cascade,
   usage_date date not null,
@@ -270,6 +278,9 @@ create index if not exists idx_billing_events_subscription_created
 
 create index if not exists idx_announcements_audience_created
   on announcements(audience_type, created_at desc);
+
+create index if not exists idx_marketing_leads_created
+  on marketing_leads(created_at desc);
 
 alter table users drop constraint if exists users_plan_check;
 alter table users drop constraint if exists users_role_check;
