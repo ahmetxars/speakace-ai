@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MarketingSchema } from "@/components/marketing-schema";
 import { SiteHeader } from "@/components/site-header";
 import { MarketingPage } from "@/components/marketing-page";
 import { siteConfig } from "@/lib/site";
@@ -41,6 +42,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      <MarketingSchema />
       <SiteHeader />
       <MarketingPage
         eyebrow="AI coach for speaking"

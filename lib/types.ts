@@ -267,9 +267,13 @@ export interface StudentProfile {
   preferredExamType: ExamType;
   targetScore: number | null;
   weeklyGoal: number;
+  dailyMinutesGoal?: number;
   studyDays: string[];
   currentLevel: string;
   focusSkill: string;
+  examDate?: string | null;
+  targetReason?: string;
+  discoverySource?: string;
   bio?: string;
   onboardingComplete?: boolean;
   updatedAt: string;

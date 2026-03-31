@@ -52,9 +52,13 @@ create table if not exists student_profiles (
   preferred_exam_type text not null check (preferred_exam_type in ('IELTS', 'TOEFL')) default 'IELTS',
   target_score numeric(4,1),
   weekly_goal integer not null default 4,
+  daily_minutes_goal integer not null default 15,
   study_days_json jsonb not null default '[]'::jsonb,
   current_level text not null default 'Building basics',
   focus_skill text not null default 'Balanced practice',
+  exam_date text,
+  target_reason text,
+  discovery_source text,
   bio text,
   updated_at timestamptz not null default now()
 );
@@ -208,6 +212,10 @@ alter table teacher_class_enrollments add column if not exists approved_at times
 alter table feedback_reports add column if not exists improved_answer text;
 alter table teacher_notes add column if not exists tags_json jsonb not null default '[]'::jsonb;
 alter table student_profiles add column if not exists onboarding_complete boolean not null default false;
+alter table student_profiles add column if not exists daily_minutes_goal integer not null default 15;
+alter table student_profiles add column if not exists exam_date text;
+alter table student_profiles add column if not exists target_reason text;
+alter table student_profiles add column if not exists discovery_source text;
 alter table homework_auto_assign_rules add column if not exists exam_type text;
 alter table homework_auto_assign_rules add column if not exists task_type text;
 alter table homework_auto_assign_rules add column if not exists focus_skill text;

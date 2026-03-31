@@ -32,9 +32,13 @@ export async function POST(request: Request) {
       preferredExamType: body.preferredExamType === "TOEFL" ? "TOEFL" : "IELTS",
       targetScore: typeof body.targetScore === "number" ? body.targetScore : body.targetScore ? Number(body.targetScore) : null,
       weeklyGoal: Number(body.weeklyGoal ?? 4),
+      dailyMinutesGoal: Number(body.dailyMinutesGoal ?? 15),
       studyDays: Array.isArray(body.studyDays) ? body.studyDays.map(String) : [],
       currentLevel: String(body.currentLevel ?? ""),
       focusSkill: String(body.focusSkill ?? ""),
+      examDate: body.examDate ? String(body.examDate) : null,
+      targetReason: body.targetReason ? String(body.targetReason) : "",
+      discoverySource: body.discoverySource ? String(body.discoverySource) : "",
       bio: body.bio ? String(body.bio) : "",
       onboardingComplete: Boolean(body.onboardingComplete)
     });

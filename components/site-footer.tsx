@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useAppState } from "@/components/providers";
-import { commerceConfig } from "@/lib/commerce";
+import { buildPlanCheckoutPath } from "@/lib/commerce";
 
 export function SiteFooter() {
   const { language } = useAppState();
@@ -25,7 +25,7 @@ export function SiteFooter() {
             <Link className="button button-secondary" href="/app/practice">
               {tr ? "Practice başlat" : "Start practice"}
             </Link>
-            <a className="button button-primary" href={commerceConfig.plusCheckoutPath}>
+            <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: "LAUNCH20", campaign: "footer_cta" })}>
               {tr ? "Plus aç" : "Unlock Plus"}
             </a>
           </div>
@@ -42,8 +42,11 @@ export function SiteFooter() {
         <div className="card site-footer-links">
           <strong>{tr ? "Kaynaklar" : "Resources"}</strong>
           <Link href="/resources">Resources</Link>
+          <Link href="/free-ielts-speaking-test">{tr ? "Ucretsiz test" : "Free test"}</Link>
+          <Link href="/weekly-ielts-speaking-challenge">{tr ? "Haftalik challenge" : "Weekly challenge"}</Link>
           <Link href="/ielts-speaking-topics">IELTS topics</Link>
           <Link href="/blog">Blog</Link>
+          <Link href="/reviews">{tr ? "Yorumlar" : "Reviews"}</Link>
           <Link href="/ielts-band-score-guide">Band score guide</Link>
         </div>
 
@@ -51,6 +54,8 @@ export function SiteFooter() {
           <strong>{tr ? "Kullanım alanları" : "Use cases"}</strong>
           <Link href="/for-teachers">{tr ? "Öğretmenler için" : "For teachers"}</Link>
           <Link href="/for-schools">{tr ? "Kurumlar için" : "For schools"}</Link>
+          <Link href="/teacher-demo">{tr ? "Demo sinif" : "Demo class"}</Link>
+          <Link href="/success-stories">{tr ? "Basari hikayeleri" : "Success stories"}</Link>
           <Link href="/ai-english-speaking-practice">AI speaking</Link>
           <Link href="/speaking-test-simulator-ielts">Simulator</Link>
         </div>

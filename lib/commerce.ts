@@ -4,10 +4,42 @@ export const commerceConfig = {
   plusMonthlyPrice: "$9.99",
   plusPlanName: "SpeakAce Plus Monthly",
   plusCheckoutPath: "/api/payments/lemon/checkout?plan=plus",
-  customerPortalUrl: "https://speakace.lemonsqueezy.com/billing"
+  customerPortalUrl: "https://speakace.lemonsqueezy.com/billing",
+  launchOfferLabel: "Launch offer",
+  launchOfferCopy: "Use LAUNCH20 for an early supporter discount."
 } as const;
 
-export function buildLemonCheckoutUrl(input?: { email?: string; name?: string; userId?: string }) {
+export const couponCatalog = {
+  LAUNCH20: {
+    code: "LAUNCH20",
+    label: "Launch 20% off",
+    description: "For first buyers during the launch phase."
+  },
+  SPEAKACE10: {
+    code: "SPEAKACE10",
+    label: "Starter 10% off",
+    description: "For visitors who want a smaller first step into Plus."
+  }
+} as const;
+
+export function buildPlanCheckoutPath(input?: { coupon?: string; campaign?: string }) {
+  const params = new URLSearchParams({ plan: "plus" });
+  if (input?.coupon) {
+    params.set("coupon", input.coupon);
+  }
+  if (input?.campaign) {
+    params.set("campaign", input.campaign);
+  }
+  return `/api/payments/lemon/checkout?${params.toString()}`;
+}
+
+export function buildLemonCheckoutUrl(input?: {
+  email?: string;
+  name?: string;
+  userId?: string;
+  coupon?: string;
+  campaign?: string;
+}) {
   const url = new URL(commerceConfig.plusMonthlyCheckout);
   if (input?.email) {
     url.searchParams.set("checkout[email]", input.email);
@@ -17,6 +49,13 @@ export function buildLemonCheckoutUrl(input?: { email?: string; name?: string; u
   }
   if (input?.userId) {
     url.searchParams.set("checkout[custom][user_id]", input.userId);
+  }
+  if (input?.coupon) {
+    url.searchParams.set("discount_code", input.coupon);
+    url.searchParams.set("checkout[discount_code]", input.coupon);
+  }
+  if (input?.campaign) {
+    url.searchParams.set("checkout[custom][campaign]", input.campaign);
   }
   return url.toString();
 }

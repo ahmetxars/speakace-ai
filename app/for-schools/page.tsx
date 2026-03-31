@@ -51,6 +51,33 @@ export default function SchoolsPage() {
           </article>
         </div>
 
+        <div className="marketing-grid">
+          <article className="card feature-card">
+            <h3>Demo class workflow</h3>
+            <p>Use a public demo class page to show buyers what the teacher side looks like before any real onboarding.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Student engagement signals</h3>
+            <p>At-risk alerts, progress summaries, and assignment completion help schools spot churn early.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Ready for add-on sales</h3>
+            <p>Use SpeakAce as a digital speaking lab, premium add-on, or internal coaching workflow for IELTS programs.</p>
+          </article>
+        </div>
+
+        <div className="card comparison-card">
+          <h2 style={{ marginBottom: "0.9rem" }}>Why schools can position SpeakAce well</h2>
+          <div className="comparison-table">
+            <div className="comparison-head">Need</div>
+            <div className="comparison-head">SpeakAce fit</div>
+            <div className="comparison-cell">Speaking practice outside live lessons</div>
+            <div className="comparison-cell">Students can practice independently with transcript review and AI coaching.</div>
+            <div className="comparison-cell">Teacher oversight without heavy admin</div>
+            <div className="comparison-cell">Class dashboards, homework, risk signals, and institution analytics.</div>
+          </div>
+        </div>
+
         <div className="card institution-cta">
           <div>
             <span className="eyebrow">Institution fit</span>
@@ -61,6 +88,9 @@ export default function SchoolsPage() {
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <Link className="button button-secondary" href="/teacher-demo">
+              Open demo class
+            </Link>
             <Link className="button button-primary" href="/app/teacher/institution">
               View institution portal
             </Link>

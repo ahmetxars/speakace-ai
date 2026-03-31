@@ -1,13 +1,29 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import { commerceConfig, getPlanComparison } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
 
 export default function BillingPage() {
-  const { currentUser, signedIn, language } = useAppState();
+  const { currentUser, signedIn, language, refreshSession } = useAppState();
   const tr = language === "tr";
   const comparison = getPlanComparison(tr);
+  const planOutcome = useMemo(
+    () =>
+      tr
+        ? [
+            "Daha fazla gunluk speaking hacmi",
+            "Daha guclu transcript ve skor icgorusu",
+            "Daha hizli retry ve ilerleme dongusu"
+          ]
+        : [
+            "More daily speaking volume",
+            "Stronger transcript and score insight",
+            "Faster retry and improvement loops"
+          ],
+    [tr]
+  );
 
   if (!signedIn) {
     return (
@@ -74,6 +90,12 @@ export default function BillingPage() {
               {tr ? "Faturayı yönet" : "Manage billing"}
             </a>
           )}
+          <button className="button button-secondary" type="button" onClick={() => void refreshSession()}>
+            {tr ? "Plani yenile" : "Refresh plan"}
+          </button>
+          <Link className="button button-secondary" href="/app/billing/success">
+            {tr ? "Odeme durumunu kontrol et" : "Check payment status"}
+          </Link>
           <Link className="button button-secondary" href="/pricing">
             {tr ? "Fiyat sayfasını aç" : "Open pricing page"}
           </Link>
@@ -83,6 +105,18 @@ export default function BillingPage() {
             ? `Şu anki planın: ${currentUser?.plan ?? "free"}. Checkout ve webhook akışı artık aynı hesabı kullanarak planı otomatik yükseltmek için hazır.`
             : `Current plan: ${currentUser?.plan ?? "free"}. The checkout and webhook flow is now wired to upgrade the same account automatically.`}
         </p>
+        <div className="marketing-grid">
+          {planOutcome.map((item) => (
+            <article key={item} className="card feature-card">
+              <h3>{item}</h3>
+              <p>
+                {tr
+                  ? "Bu avantaj daha siki practice, daha net geri bildirim ve daha hizli skor gelisimi icin eklendi."
+                  : "This advantage is built to support more practice, clearer feedback, and faster score growth."}
+              </p>
+            </article>
+          ))}
+        </div>
       </div>
     </main>
   );

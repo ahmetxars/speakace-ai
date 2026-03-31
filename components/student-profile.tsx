@@ -99,8 +99,12 @@ export function StudentProfile() {
           </select>
           <input value={profile.targetScore ?? ""} type="number" min="1" max={profile.preferredExamType === "IELTS" ? "9" : "30"} step="0.1" onChange={(event) => setProfile((current) => current ? { ...current, targetScore: event.target.value ? Number(event.target.value) : null } : current)} placeholder={tr ? "Hedef skorun" : "Target score"} style={inputStyle} />
           <input value={profile.weeklyGoal} type="number" min="1" max="14" onChange={(event) => setProfile((current) => current ? { ...current, weeklyGoal: Number(event.target.value) || 4 } : current)} placeholder={tr ? "Haftalık hedef" : "Weekly goal"} style={inputStyle} />
+          <input value={profile.dailyMinutesGoal ?? 15} type="number" min="5" max="60" onChange={(event) => setProfile((current) => current ? { ...current, dailyMinutesGoal: Number(event.target.value) || 15 } : current)} placeholder={tr ? "Gunluk speaking dakikasi" : "Daily speaking minutes"} style={inputStyle} />
           <input value={profile.currentLevel} onChange={(event) => setProfile((current) => current ? { ...current, currentLevel: event.target.value } : current)} placeholder={tr ? "Mevcut seviyen" : "Current level"} style={inputStyle} />
           <input value={profile.focusSkill} onChange={(event) => setProfile((current) => current ? { ...current, focusSkill: event.target.value } : current)} placeholder={tr ? "Ana çalışma odağın" : "Main focus skill"} style={inputStyle} />
+          <input value={profile.examDate ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, examDate: event.target.value } : current)} placeholder={tr ? "Sinav tarihi" : "Exam date"} style={inputStyle} />
+          <input value={profile.targetReason ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, targetReason: event.target.value } : current)} placeholder={tr ? "Skor hedefinin nedeni" : "Reason for target score"} style={inputStyle} />
+          <input value={profile.discoverySource ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, discoverySource: event.target.value } : current)} placeholder={tr ? "SpeakAce'i nereden buldun?" : "How did you find SpeakAce?"} style={inputStyle} />
           <textarea value={profile.bio ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, bio: event.target.value } : current)} rows={4} placeholder={tr ? "Kısa bir çalışma notu ekle..." : "Short study note..."} style={{ ...inputStyle, resize: "vertical" }} />
           <div style={{ display: "grid", gap: "0.45rem" }}>
             <span className="practice-meta">{tr ? "Çalışma günleri" : "Study days"}</span>
@@ -143,14 +147,16 @@ export function StudentProfile() {
             <div className="practice-meta">{profile.focusSkill}</div>
             <div style={{ color: "var(--muted)", lineHeight: 1.7 }}>
               {tr
-                ? `Bu hafta için ${profile.weeklyGoal} speaking hedefi belirledin. ${profile.studyDays.join(", ")} günlerinde kısa ama düzenli denemeler yapman iyi olur.`
-                : `You set a ${profile.weeklyGoal}-session weekly goal. Use ${profile.studyDays.join(", ")} for short but consistent practice blocks.`}
+                ? `Bu hafta için ${profile.weeklyGoal} speaking hedefi ve gunde ${profile.dailyMinutesGoal ?? 15} dakika ritmi belirledin. ${profile.studyDays.join(", ")} gunlerinde kisa ama duzenli denemeler yapman iyi olur.`
+                : `You set a ${profile.weeklyGoal}-session weekly goal and ${profile.dailyMinutesGoal ?? 15} daily speaking minutes. Use ${profile.studyDays.join(", ")} for short but consistent practice blocks.`}
             </div>
           </div>
           <div className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)", display: "grid", gap: "0.45rem" }}>
             <strong>{tr ? "Sınav tercihi" : "Preferred exam"}</strong>
             <div>{profile.preferredExamType}</div>
             <div className="practice-meta">{profile.currentLevel}</div>
+            {profile.examDate ? <div className="practice-meta">{tr ? `Sinav tarihi: ${profile.examDate}` : `Exam date: ${profile.examDate}`}</div> : null}
+            {profile.targetReason ? <div className="practice-meta">{profile.targetReason}</div> : null}
           </div>
         </div>
       </section>

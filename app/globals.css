@@ -348,6 +348,56 @@ img {
   background: rgba(255, 255, 255, 0.72);
 }
 
+.faq-ticker-shell {
+  position: relative;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+.faq-ticker-track {
+  display: flex;
+  gap: 1rem;
+  width: max-content;
+  animation: faqTickerScroll 45s linear infinite;
+  will-change: transform;
+}
+
+.faq-ticker-shell:hover .faq-ticker-track {
+  animation-play-state: paused;
+}
+
+.faq-ticker-card {
+  width: min(22rem, 78vw);
+  min-height: 15rem;
+  padding: 1.2rem;
+  background: rgba(255, 255, 255, 0.76);
+  display: grid;
+  align-content: start;
+  gap: 0.7rem;
+}
+
+.faq-ticker-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.faq-ticker-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+@keyframes faqTickerScroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 0.5rem));
+  }
+}
+
 .institution-cta {
   padding: 1.4rem;
   display: grid;
@@ -880,6 +930,35 @@ img {
   color: var(--text);
 }
 
+.marketing-sticky-cta {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  width: min(calc(100% - 1.2rem), 880px);
+  z-index: 40;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1.4rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 249, 242, 0.94);
+  box-shadow: 0 18px 40px rgba(53, 33, 20, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.marketing-sticky-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.marketing-sticky-copy span {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
 @keyframes mic-pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(217, 93, 57, 0.34);
@@ -931,5 +1010,20 @@ img {
 
   .site-footer-grid {
     grid-template-columns: 1fr;
+  }
+
+  .faq-ticker-card {
+    width: min(19rem, 82vw);
+    min-height: 16rem;
+  }
+
+  .marketing-sticky-cta {
+    width: min(calc(100% - 1rem), 100%);
+    align-items: start;
+    flex-direction: column;
+    left: auto;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    transform: none;
   }
 }

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { blogPosts } from "@/lib/marketing-content";
 import { siteConfig } from "@/lib/site";
+import { seoTopicPages } from "@/lib/seo-topics";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = [
@@ -8,7 +9,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/pricing",
     "/for-teachers",
     "/for-schools",
+    "/teacher-demo",
+    "/success-stories",
     "/resources",
+    "/free-ielts-speaking-test",
+    "/weekly-ielts-speaking-challenge",
+    "/ielts-speaking-sample-answers",
     "/ielts-speaking-ai",
     "/improve-ielts-speaking-score",
     "/ai-english-speaking-practice",
@@ -26,7 +32,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/app"
   ];
   const blogRoutes = blogPosts.map((post) => `/blog/${post.slug}`);
-  const allRoutes = [...routes, ...blogRoutes];
+  const topicRoutes = seoTopicPages.map((topic) => `/ielts-speaking-topics/${topic.slug}`);
+  const allRoutes = [...routes, ...blogRoutes, ...topicRoutes];
 
   return allRoutes.map((route) => ({
     url: `${siteConfig.domain}${route}`,

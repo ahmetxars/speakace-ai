@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { copy } from "@/lib/copy";
-import { commerceConfig } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
 
 export function SiteHeader() {
@@ -38,7 +37,9 @@ export function SiteHeader() {
           <Link href="/app/practice">{content.nav.practice}</Link>
           {signedIn ? <Link href="/app">{content.nav.dashboard}</Link> : <Link href="/pricing">{content.nav.pricing}</Link>}
           <Link href="/resources">{language === "tr" ? "Kaynaklar" : "Resources"}</Link>
+          <Link href="/free-ielts-speaking-test">{language === "tr" ? "Ucretsiz test" : "Free test"}</Link>
           <Link href="/blog">{language === "tr" ? "Blog" : "Blog"}</Link>
+          <Link href="/reviews">{language === "tr" ? "Yorumlar" : "Reviews"}</Link>
           {!signedIn ? <Link href="/for-teachers">{language === "tr" ? "Öğretmenler için" : "For teachers"}</Link> : null}
           {!signedIn ? <Link href="/for-schools">{language === "tr" ? "Kurumlar için" : "For schools"}</Link> : null}
           {signedIn && !currentUser?.isTeacher ? <Link href="/app/profile">{language === "tr" ? "Profil" : "Profile"}</Link> : null}
@@ -53,7 +54,7 @@ export function SiteHeader() {
           {signedIn ? <Link href="/app/billing">{content.nav.billing}</Link> : null}
           <Link href="/app/settings">{content.nav.settings}</Link>
           {!signedIn ? (
-            <a className="button button-primary" href={commerceConfig.plusCheckoutPath} style={{ padding: "0.55rem 0.9rem" }}>
+            <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_cta" style={{ padding: "0.55rem 0.9rem" }}>
               {language === "tr" ? "Plus al" : "Get Plus"}
             </a>
           ) : null}

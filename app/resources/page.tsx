@@ -39,6 +39,21 @@ const resourceCards: Array<{
     href: "/english-speaking-confidence",
     title: "Speaking confidence",
     description: "Confidence-building guidance for learners who want calmer, clearer speaking."
+  },
+  {
+    href: "/free-ielts-speaking-test",
+    title: "Free IELTS speaking test",
+    description: "A strong top-of-funnel page for visitors who want to try the product before paying."
+  },
+  {
+    href: "/weekly-ielts-speaking-challenge",
+    title: "Weekly IELTS speaking challenge",
+    description: "A habit-based challenge page that gives visitors a repeatable reason to return."
+  },
+  {
+    href: "/ielts-speaking-sample-answers",
+    title: "IELTS speaking sample answers",
+    description: "A conversion-friendly bridge between search traffic, answer examples, and live speaking practice."
   }
 ];
 
@@ -97,6 +112,30 @@ export default function ResourcesPage() {
 
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="section-head">
+            <span className="eyebrow">Topic of the day</span>
+            <h2>One easy prompt to pull visitors into practice</h2>
+          </div>
+          <div className="card institution-cta">
+            <div>
+              <h2 style={{ margin: "0 0 0.5rem" }}>Describe a useful object you use often</h2>
+              <p className="practice-copy">
+                A simple daily topic works well because it gives people a low-friction reason to
+                record one answer and see the transcript.
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+              <Link className="button button-primary" href="/ielts-speaking-topics/describe-a-useful-object">
+                Open topic page
+              </Link>
+              <Link className="button button-secondary" href="/app/practice">
+                Start free practice
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="section" style={{ paddingBottom: 0 }}>
+          <div className="section-head">
             <span className="eyebrow">Blog</span>
             <h2>More articles that support conversion</h2>
           </div>
@@ -105,9 +144,9 @@ export default function ResourcesPage() {
               <article key={post.slug} className="card feature-card">
                 <h3>{post.title}</h3>
                 <p>{post.description}</p>
-                <Link className="button button-secondary" href={`/blog/${post.slug}`}>
-                  Read article
-                </Link>
+              <Link className="button button-secondary" href={`/blog/${post.slug}`}>
+                Read article
+              </Link>
               </article>
             ))}
           </div>

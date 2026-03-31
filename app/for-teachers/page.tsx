@@ -51,6 +51,21 @@ export default function TeachersPage() {
           </article>
         </div>
 
+        <div className="marketing-grid">
+          <article className="card feature-card">
+            <h3>Share prompt sets</h3>
+            <p>Use shared study lists to guide what students should repeat before the next live lesson.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Faster teacher notes</h3>
+            <p>Session comments, templates, and replay views reduce feedback time while keeping quality high.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Demo before rollout</h3>
+            <p>Use the teacher demo page to show the workflow to coordinators or decision makers before onboarding real classes.</p>
+          </article>
+        </div>
+
         <div className="card institution-cta">
           <div>
             <span className="eyebrow">Teacher workflow</span>
@@ -61,6 +76,9 @@ export default function TeachersPage() {
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <Link className="button button-secondary" href="/teacher-demo">
+              View demo class
+            </Link>
             <Link className="button button-primary" href="/app/teacher">
               Open teacher portal
             </Link>

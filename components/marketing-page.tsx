@@ -3,7 +3,7 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { useAppState } from "@/components/providers";
-import { commerceConfig, getPlanComparison } from "@/lib/commerce";
+import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
 import {
   blogPosts,
   coreKeywords,
@@ -312,7 +312,7 @@ export function MarketingPage({
             <Link className="button button-primary" href={ctaHref}>
               {tr ? "Ücretsiz speaking denemesi başlat" : "Start free speaking practice"}
             </Link>
-            <a className="button button-secondary" href={commerceConfig.plusCheckoutPath}>
+            <a className="button button-secondary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "home_hero" })}>
               {tr ? "Plus planını aç" : "Unlock Plus"}
             </a>
           </div>
@@ -576,6 +576,54 @@ export function MarketingPage({
 
       <section className="page-shell section">
         <div className="section-head">
+          <span className="eyebrow">{tr ? "Demo feedback" : "Demo feedback"}</span>
+          <h2>
+            {tr
+              ? "Öğrenci ne söyledi, sistem ne önerdi?"
+              : "What the student said, and how SpeakAce makes the next answer stronger"}
+          </h2>
+          <p>
+            {tr
+              ? "Rakip ürünlerde öne çıkan en güçlü dönüşüm anlarından biri somut önce-sonra farkıdır. SpeakAce bunu transcript ve stronger answer akışıyla gösterir."
+              : "One of the strongest conversion patterns in this category is a clear before-and-after example. SpeakAce shows that through transcript review and stronger sample answers."}
+          </p>
+        </div>
+        <div className="marketing-grid">
+          <article className="card testimonial-card">
+            <span className="eyebrow">{tr ? "Ham cevap" : "Raw answer"}</span>
+            <h3>{tr ? "Önce" : "Before"}</h3>
+            <p>
+              {tr
+                ? "I think phone is useful because I use every day and it helps my communication and studying."
+                : "I think phone is useful because I use every day and it helps my communication and studying."}
+            </p>
+          </article>
+          <article className="card testimonial-card">
+            <span className="eyebrow">{tr ? "Daha güçlü versiyon" : "Stronger version"}</span>
+            <h3>{tr ? "Sonra" : "After"}</h3>
+            <p>
+              {tr
+                ? "My phone is one of the most useful objects in my daily life because it helps me stay in touch with people, organise my study routine, and access information quickly."
+                : "My phone is one of the most useful objects in my daily life because it helps me stay in touch with people, organise my study routine, and access information quickly."}
+            </p>
+          </article>
+          <article className="card testimonial-card">
+            <span className="eyebrow">{tr ? "Neden fark yaratır" : "Why it matters"}</span>
+            <h3>{tr ? "Skor etkisi" : "Score impact"}</h3>
+            <p>
+              {tr
+                ? "Daha net yapı, daha güçlü kelime seçimi ve daha olgun fikir geliştirme daha yüksek band potansiyeli yaratır."
+                : "Clearer structure, stronger vocabulary, and more developed ideas create higher band potential."}
+            </p>
+            <Link className="button button-secondary" href="/reviews">
+              {tr ? "Yorumlari oku" : "Read reviews"}
+            </Link>
+          </article>
+        </div>
+      </section>
+
+      <section className="page-shell section">
+        <div className="section-head">
           <span className="eyebrow">{tr ? "Sosyal kanıt" : "Social proof"}</span>
           <h2>
             {tr
@@ -591,6 +639,11 @@ export function MarketingPage({
               <div className="practice-meta">{item.role}</div>
             </article>
           ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
+          <Link className="button button-secondary" href="/reviews">
+            {tr ? "Tum yorumlari ac" : "Open all reviews"}
+          </Link>
         </div>
       </section>
 
@@ -613,7 +666,7 @@ export function MarketingPage({
             <Link className="button button-secondary" href="/app/teacher">
               {tr ? "Öğretmen akışını gör" : "See teacher workflow"}
             </Link>
-            <a className="button button-primary" href={commerceConfig.plusCheckoutPath}>
+            <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "schools_cta" })}>
               {tr ? "Ödeme akışını test et" : "Test checkout"}
             </a>
           </div>
@@ -704,11 +757,7 @@ export function MarketingPage({
           <span className="eyebrow">FAQ</span>
           <h2>{tr ? "Sık sorulan sorular" : "Frequently asked questions"}</h2>
         </div>
-        <div className="marketing-grid">
-          {localizedFaqs.map((faq) => (
-            <FeatureCard key={faq.question} title={faq.question} description={faq.answer} />
-          ))}
-        </div>
+        <FaqTicker items={localizedFaqs} />
       </section>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
@@ -741,6 +790,28 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
     <div className="card mini-metric">
       <div>{label}</div>
       <strong>{value}</strong>
+    </div>
+  );
+}
+
+function FaqTicker({
+  items
+}: {
+  items: Array<{ question: string; answer: string }>;
+}) {
+  const loopItems = [...items, ...items];
+
+  return (
+    <div className="faq-ticker-shell">
+      <div className="faq-ticker-track">
+        {loopItems.map((faq, index) => (
+          <article key={`${faq.question}-${index}`} className="card faq-ticker-card">
+            <span className="eyebrow">FAQ</span>
+            <h3>{faq.question}</h3>
+            <p>{faq.answer}</p>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }

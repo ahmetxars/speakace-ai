@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
+import type { Route } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
-
-const topics = [
-  "Describe a person who inspires you",
-  "Talk about a useful object you use often",
-  "Describe a place you enjoy going to",
-  "Talk about a skill you want to improve",
-  "Describe a memorable event",
-  "Talk about a city you would like to visit"
-];
+import { seoTopicPages } from "@/lib/seo-topics";
 
 export const metadata: Metadata = {
   title: "IELTS Speaking Topics",
@@ -44,13 +37,15 @@ export default function IeltsSpeakingTopicsPage() {
         </div>
 
         <div className="marketing-grid">
-          {topics.map((topic) => (
-            <article key={topic} className="card feature-card">
-              <h2 style={{ fontSize: "1.35rem" }}>{topic}</h2>
+          {seoTopicPages.map((topic) => (
+            <article key={topic.slug} className="card feature-card">
+              <h2 style={{ fontSize: "1.35rem" }}>{topic.title}</h2>
               <p>
-                Use this topic to train stronger structure, clearer examples, and more natural
-                speaking confidence.
+                {topic.tip}
               </p>
+              <Link className="button button-secondary" href={`/ielts-speaking-topics/${topic.slug}` as Route}>
+                Open topic page
+              </Link>
             </article>
           ))}
         </div>

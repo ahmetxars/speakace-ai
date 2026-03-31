@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "@/components/providers";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { AnalyticsSummary } from "@/lib/analytics-store";
-import { commerceConfig } from "@/lib/commerce";
+import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
 import { AnnouncementItem, HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership, StudentProfile } from "@/lib/types";
 
 const emptySummary: ProgressSummary = {
@@ -624,9 +624,15 @@ export function Dashboard() {
               <li>{tr ? "35 dakika günlük speaking" : "35 daily speaking minutes"}</li>
               <li>{tr ? "Daha güçlü transcript ve skor içgörüleri" : "Stronger transcript and score insight"}</li>
             </ul>
-            <a className="button button-primary" href={commerceConfig.plusCheckoutPath}>
+            <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "dashboard_upgrade" })}>
               {tr ? "Plus'a geç" : "Upgrade to Plus"}
             </a>
+            <div className="practice-meta">
+              {tr ? `${couponCatalog.LAUNCH20.code} ile lansman indirimi aktif.` : `Launch discount available with ${couponCatalog.LAUNCH20.code}.`}
+            </div>
+            <Link className="button button-secondary" href="/pricing">
+              {tr ? "Plan detaylarini ac" : "Open plan details"}
+            </Link>
           </div>
         ) : (
           <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem", background: "rgba(29, 111, 117, 0.08)" }}>

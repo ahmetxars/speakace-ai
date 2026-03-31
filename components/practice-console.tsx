@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
+import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
 import { Difficulty, ExamType, ProgressSummary, SpeakingSession, TaskType } from "@/lib/types";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { listPromptsForTask } from "@/lib/prompts";
@@ -891,6 +892,32 @@ export function PracticeConsole() {
             ) : null}
             {error ? <p className="practice-error">{error}</p> : null}
           </div>
+          {currentUser?.plan === "free" ? (
+            <div className="card practice-simulation-card" style={{ marginTop: "1rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "center", flexWrap: "wrap" }}>
+                <strong>{tr ? "Plus ile daha guclu practice" : "Practice harder with Plus"}</strong>
+                <span className="pill">{couponCatalog.LAUNCH20.code}</span>
+              </div>
+              <p className="practice-meta" style={{ margin: "0.45rem 0 0.8rem" }}>
+                {tr
+                  ? "Daha fazla gunluk speaking suresi, daha fazla oturum ve daha derin transcript analizi ile skor gelisimi hizlanir."
+                  : "More daily minutes, more attempts, and deeper transcript review make score growth easier to sustain."}
+              </p>
+              <div className="simulation-queue">
+                <span className="simulation-step is-active">{tr ? "35 dk speaking" : "35 min speaking"}</span>
+                <span className="simulation-step is-active">{tr ? "18 oturum" : "18 sessions"}</span>
+                <span className="simulation-step is-active">{tr ? "derin feedback" : "deeper feedback"}</span>
+              </div>
+              <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginTop: "0.8rem" }}>
+                <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "practice_paywall" })}>
+                  {tr ? "Plus ac" : "Unlock Plus"}
+                </a>
+                <Link className="button button-secondary" href="/pricing">
+                  {tr ? "Fiyatlari gor" : "See pricing"}
+                </Link>
+              </div>
+            </div>
+          ) : null}
         </section>
 
         <section className="card practice-panel practice-sidebar">

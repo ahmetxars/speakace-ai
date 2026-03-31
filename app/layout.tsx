@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { SiteFooter } from "@/components/site-footer";
+import { MarketingStickyCta } from "@/components/marketing-sticky-cta";
 import { Providers } from "@/components/providers";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <body>
         <Providers>
           {children}
+          <MarketingStickyCta />
           <SiteFooter />
         </Providers>
       </body>
