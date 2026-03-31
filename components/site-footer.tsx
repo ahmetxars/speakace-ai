@@ -45,15 +45,15 @@ export function SiteFooter() {
       <div className="page-shell site-footer-grid">
         <div className="card site-footer-brand">
           <span className="eyebrow">{tr ? "SpeakAce AI" : "SpeakAce AI"}</span>
-          <h2 style={{ margin: "0.8rem 0 0.4rem" }}>
-            {tr ? "IELTS ve TOEFL speaking pratiği için daha akıllı çalışma alanı." : "A smarter place to practice IELTS and TOEFL speaking."}
+          <h2 className="site-footer-brand-title">
+            {tr ? "IELTS ve TOEFL speaking pratiği için daha sakin ve net bir çalışma alanı." : "A calmer, clearer place to practice IELTS and TOEFL speaking."}
           </h2>
-          <p className="practice-copy" style={{ marginBottom: "1rem" }}>
+          <p className="practice-copy site-footer-brand-copy">
             {tr
               ? "SEO odaklı kaynaklar, speaking practice akışı, transcript incelemesi ve Plus planıyla daha güçlü günlük gelişim."
               : "Built with SEO-focused resources, speaking practice flows, transcript review, and a paid plan for stronger daily progress."}
           </p>
-          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+          <div className="site-footer-brand-actions">
             <Link className="button button-secondary" href="/app/practice">
               {tr ? "Practice başlat" : "Start practice"}
             </Link>
@@ -61,26 +61,34 @@ export function SiteFooter() {
               {tr ? "Plus aç" : "Unlock Plus"}
             </a>
           </div>
-          <div className="site-footer-mini-links">
-            {productLinks.map((item) => (
-              <Link key={item.href} href={item.href}>
-                {item.label}
-              </Link>
-            ))}
-          </div>
         </div>
 
         <div className="card site-footer-panel">
           <div className="site-footer-panel-header">
-            <strong>{tr ? "Kaynaklar" : "Resources"}</strong>
-            <span>{tr ? "Pratik, rehber ve ücretsiz giriş kapıları" : "Practice, guides, and free entry points"}</span>
+            <strong>{tr ? "Ürün ve kaynaklar" : "Product and resources"}</strong>
+            <span>{tr ? "Ana sayfalar, ücretsiz giriş kapıları ve rehberler" : "Core pages, free entry points, and study guides"}</span>
           </div>
-          <div className="site-footer-link-columns">
-            {resourceLinks.map((item) => (
-              <Link key={item.href} href={item.href}>
-                {item.label}
-              </Link>
-            ))}
+          <div className="site-footer-panel-groups">
+            <div className="site-footer-link-group">
+              <span className="site-footer-group-title">{tr ? "Ürün" : "Product"}</span>
+              <div className="site-footer-link-columns site-footer-link-columns-compact">
+                {productLinks.map((item) => (
+                  <Link key={item.href} href={item.href}>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+            <div className="site-footer-link-group">
+              <span className="site-footer-group-title">{tr ? "Kaynaklar" : "Resources"}</span>
+              <div className="site-footer-link-columns">
+                {resourceLinks.map((item) => (
+                  <Link key={item.href} href={item.href}>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
