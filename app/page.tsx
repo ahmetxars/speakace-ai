@@ -50,6 +50,7 @@ export default function HomePage() {
         description="Get transcript review, score-focused speaking drills, and IELTS-style practice that makes your next answer clearer and more confident."
         focus="SpeakAce targets high-intent search terms like IELTS speaking practice, IELTS speaking AI, improve IELTS speaking score, and speaking test simulator IELTS with a product built around real exam preparation."
         ctaHref="/app/practice"
+        variant="minimal"
       />
     </>
   );

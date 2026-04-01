@@ -48,6 +48,11 @@ function buildAppUrl(path: string) {
   return `${baseUrl}${path}`;
 }
 
+function isStrongEnoughPassword(password: string) {
+  const trimmed = password.trim();
+  return trimmed.length >= 8 && /\d/.test(trimmed);
+}
+
 export function getSessionCookieName() {
   return SESSION_COOKIE;
 }
@@ -67,8 +72,8 @@ export async function signUpWithPassword(input: { email: string; password: strin
   if (!normalizedEmail || !input.password.trim()) {
     throw new Error("Email and password are required.");
   }
-  if (input.password.trim().length < 8) {
-    throw new Error("Password must be at least 8 characters long.");
+  if (!isStrongEnoughPassword(input.password)) {
+    throw new Error("Password must be at least 8 characters long and include at least 1 number.");
   }
 
   const passwordHash = await hash(input.password, 12);
@@ -430,8 +435,8 @@ export async function createPasswordResetFlow(email: string) {
 }
 
 export async function resetPasswordWithToken(input: { token: string; password: string }) {
-  if (!input.password.trim() || input.password.trim().length < 8) {
-    throw new Error("Password must be at least 8 characters long.");
+  if (!isStrongEnoughPassword(input.password)) {
+    throw new Error("Password must be at least 8 characters long and include at least 1 number.");
   }
 
   const userId = await consumeAuthToken(input.token, "reset_password");

@@ -7,12 +7,18 @@ import { copy } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
 import type { NotificationItem } from "@/lib/notifications";
 
-type NavLinkItem = {
+type NavMenuItem = {
   href: Route;
   label: string;
+  description: string;
 };
 
-const navItem = (href: Route, label: string): NavLinkItem => ({ href, label });
+type NavGroup = {
+  label: string;
+  items: NavMenuItem[];
+};
+
+const menuItem = (href: Route, label: string, description: string): NavMenuItem => ({ href, label, description });
 
 export function SiteHeader() {
   const { language, setLanguage, signedIn, currentUser, signOut } = useAppState();
@@ -34,6 +40,7 @@ export function SiteHeader() {
       setNotifications([]);
       return;
     }
+
     fetch("/api/notifications")
       .then((response) => response.json())
       .then((data: { notifications?: NotificationItem[] }) => setNotifications((data.notifications ?? []).slice(0, 5)))
@@ -50,80 +57,64 @@ export function SiteHeader() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const primaryLinks = useMemo<NavLinkItem[]>(
-    () => [
-      navItem("/app/practice", content.nav.practice),
-      navItem(signedIn ? "/app" : "/pricing", signedIn ? content.nav.dashboard : content.nav.pricing),
-      navItem("/free-ielts-speaking-test", language === "tr" ? "Ucretsiz test" : "Free test"),
-      navItem("/blog", "Blog"),
-      navItem("/for-teachers", language === "tr" ? "Öğretmenler için" : "For teachers"),
-      navItem("/for-schools", language === "tr" ? "Kurumlar için" : "For schools")
-    ],
-    [content.nav.dashboard, content.nav.practice, content.nav.pricing, language, signedIn]
-  );
-
-  const secondaryLinks = useMemo<NavLinkItem[]>(
-    () => [
-      navItem("/resources", language === "tr" ? "Kaynaklar" : "Resources"),
-      navItem("/tools", language === "tr" ? "Araclar" : "Tools"),
-      navItem("/reviews", language === "tr" ? "Yorumlar" : "Reviews")
-    ],
+  const practiceGroup = useMemo<NavGroup>(
+    () => ({
+      label: language === "tr" ? "Pratik" : "Practice",
+      items: [
+        menuItem("/app/practice", language === "tr" ? "Speaking practice" : "Speaking practice", language === "tr" ? "Gerçek speaking denemesi başlat." : "Start a real speaking session."),
+        menuItem("/tools", language === "tr" ? "Araçlar" : "Tools", language === "tr" ? "Hızlı hesaplayıcılar ve üreticiler." : "Quick calculators and generators."),
+        menuItem("/free-ielts-speaking-test", language === "tr" ? "Ücretsiz test" : "Free test", language === "tr" ? "Kayıt olmadan kısa deneme yap." : "Try a short test before signing up."),
+        menuItem("/daily-ielts-speaking-prompt", language === "tr" ? "Günlük prompt" : "Daily prompt", language === "tr" ? "Her gün tek prompt ile geri dön." : "Come back daily with one prompt.")
+      ]
+    }),
     [language]
   );
 
-  const signedInLinks = useMemo<NavLinkItem[]>(
-    () => [
-      navItem("/app/review", language === "tr" ? "Gözden geçir" : "Review"),
-      navItem("/app/study-lists", language === "tr" ? "Çalışma listeleri" : "Study lists"),
-      ...(!currentUser?.isTeacher ? [navItem("/app/profile", language === "tr" ? "Profil" : "Profile")] : []),
-      ...(currentUser?.isTeacher
-        ? [
-            navItem("/app/teacher", language === "tr" ? "Öğretmen" : "Teacher"),
-            navItem("/app/teacher/institution", language === "tr" ? "Kurum analitiği" : "Institution")
-          ]
-        : []),
-      ...(currentUser?.isAdmin
-        ? [navItem("/app/institution-admin", language === "tr" ? "Kurum yönetimi" : "Institution admin")]
-        : []),
-      navItem("/app/billing", content.nav.billing),
-      navItem("/app/settings", content.nav.settings)
-    ],
-    [content.nav.billing, content.nav.settings, currentUser?.isAdmin, currentUser?.isTeacher, language]
+  const exploreGroup = useMemo<NavGroup>(
+    () => ({
+      label: language === "tr" ? "Keşfet" : "Explore",
+      items: [
+        menuItem("/resources", language === "tr" ? "Kaynaklar" : "Resources", language === "tr" ? "Rehberler, hub’lar ve çalışma akışları." : "Guides, hubs, and study flows."),
+        menuItem("/blog", "Blog", language === "tr" ? "Daha fazla trafik çeken speaking yazıları." : "Search-friendly articles for speaking learners."),
+        menuItem("/reviews", language === "tr" ? "Yorumlar" : "Reviews", language === "tr" ? "Kısa kullanıcı yorumları ve güven sinyalleri." : "Quick social proof and learner feedback."),
+        menuItem("/pricing", language === "tr" ? "Fiyatlar" : "Pricing", language === "tr" ? "Free ve Plus farkını gör." : "See the difference between Free and Plus.")
+      ]
+    }),
+    [language]
+  );
+
+  const programsGroup = useMemo<NavGroup>(
+    () => ({
+      label: language === "tr" ? "Kime uygun" : "Programs",
+      items: [
+        menuItem("/for-students", language === "tr" ? "Students" : "Students", language === "tr" ? "Bireysel çalışma yapan öğrenciler için." : "For individual learners building speaking confidence."),
+        menuItem("/for-teachers", language === "tr" ? "Teachers" : "Teachers", language === "tr" ? "Öğretmen paneli ve takip akışı." : "Teacher workflows, notes, and class tracking."),
+        menuItem("/for-schools", language === "tr" ? "Schools" : "Schools", language === "tr" ? "Kurslar ve dil okulları için kurum paketi." : "Institution workflows for schools and language programs."),
+        menuItem("/teacher-demo", language === "tr" ? "Demo class" : "Demo class", language === "tr" ? "Örnek sınıf görünümüyle sistemi incele." : "Open a demo class and see the workflow.")
+      ]
+    }),
+    [language]
+  );
+
+  const aboutGroup = useMemo<NavGroup>(
+    () => ({
+      label: language === "tr" ? "Hakkımızda" : "About",
+      items: [
+        menuItem("/about", language === "tr" ? "SpeakAce kimdir?" : "Who is SpeakAce?", language === "tr" ? "Misyon, yaklaşım ve ürün amacı." : "Mission, approach, and product vision."),
+        menuItem("/case-studies", language === "tr" ? "Case studies" : "Case studies", language === "tr" ? "Önce-sonra örnek ilerleme akışları." : "Before-and-after learner improvement stories."),
+        menuItem("/success-stories", language === "tr" ? "Başarı hikayeleri" : "Success stories", language === "tr" ? "Gerçek kullanım senaryoları ve sonuçlar." : "Outcome-focused stories and proof points."),
+        menuItem("/compare", language === "tr" ? "Karşılaştırmalar" : "Compare", language === "tr" ? "SpeakAce’i diğer çözümlerle kıyasla." : "See how SpeakAce compares to alternatives.")
+      ]
+    }),
+    [language]
+  );
+
+  const mobileGroups = useMemo(
+    () => [practiceGroup, exploreGroup, programsGroup, aboutGroup],
+    [aboutGroup, exploreGroup, practiceGroup, programsGroup]
   );
 
   const closeMenu = () => setMenuOpen(false);
-  const desktopPrimaryLinks = signedIn
-    ? [
-        navItem("/app/practice", content.nav.practice),
-        navItem("/app", content.nav.dashboard),
-        navItem("/app/study-lists", language === "tr" ? "Calisma listeleri" : "Study lists"),
-        navItem("/app/review", language === "tr" ? "Gozden gecir" : "Review")
-      ]
-    : [
-        navItem("/app/practice", content.nav.practice),
-        navItem("/pricing", content.nav.pricing),
-        navItem("/free-ielts-speaking-test", language === "tr" ? "Ucretsiz test" : "Free test"),
-        navItem("/blog", "Blog"),
-        navItem("/for-teachers", language === "tr" ? "Teachers" : "Teachers"),
-        navItem("/for-schools", language === "tr" ? "Schools" : "Schools")
-      ];
-  const desktopExploreLinks = signedIn
-    ? [
-        navItem("/resources", language === "tr" ? "Kaynaklar" : "Resources"),
-        navItem("/tools", language === "tr" ? "Araclar" : "Tools"),
-        navItem("/reviews", language === "tr" ? "Yorumlar" : "Reviews"),
-        ...(!currentUser?.isTeacher ? [navItem("/app/profile", language === "tr" ? "Profil" : "Profile")] : []),
-        ...(currentUser?.isTeacher
-          ? [
-              navItem("/app/teacher", language === "tr" ? "Ogretmen paneli" : "Teacher"),
-              navItem("/app/teacher/institution", language === "tr" ? "Kurum analitigi" : "Institution")
-            ]
-          : []),
-        ...(currentUser?.isAdmin ? [navItem("/app/institution-admin", language === "tr" ? "Kurum yonetimi" : "Institution admin")] : []),
-        navItem("/app/billing", content.nav.billing),
-        navItem("/app/settings", content.nav.settings)
-      ]
-    : secondaryLinks;
 
   return (
     <header className="page-shell site-header-shell">
@@ -133,7 +124,7 @@ export function SiteHeader() {
             {content.brand}
           </Link>
           <div className="site-header-tagline">
-            {language === "tr" ? "AI coach for IELTS ve TOEFL speaking." : "AI coach for IELTS and TOEFL speaking."}
+            {language === "tr" ? "IELTS ve TOEFL speaking için yeni nesil AI koçu." : "A next-generation AI coach for IELTS and TOEFL speaking."}
           </div>
           {currentUser ? (
             <div className="site-header-userline">
@@ -144,34 +135,40 @@ export function SiteHeader() {
         </div>
 
         <div className="site-header-desktop desktop-nav">
-          <nav className="site-header-nav">
-            {desktopPrimaryLinks.map((item) => (
-              <Link key={item.href} href={item.href}>
-                {item.label}
+          <nav className="site-header-nav site-header-nav-groups">
+            {signedIn ? (
+              <Link className="site-header-toplink" href="/app">
+                {language === "tr" ? "Panel" : "Dashboard"}
               </Link>
-            ))}
-            <div className="site-header-dropdown">
-              <button type="button" className="site-header-dropdown-trigger">
-                {language === "tr" ? "Kesfet" : "Explore"}
-              </button>
-              <div className="site-header-dropdown-menu card">
-                {desktopExploreLinks.map((item) => (
-                  <Link key={item.href} href={item.href}>
-                    {item.label}
-                  </Link>
-                ))}
+            ) : null}
+
+            {[practiceGroup, exploreGroup, programsGroup, aboutGroup].map((group) => (
+              <div key={group.label} className="site-header-dropdown site-header-mega">
+                <button type="button" className="site-header-dropdown-trigger">
+                  {group.label}
+                </button>
+                <div className="site-header-dropdown-menu card site-header-mega-menu">
+                  <div className="site-header-mega-grid">
+                    {group.items.map((item) => (
+                      <Link key={item.href} href={item.href} className="site-header-mega-link">
+                        <strong>{item.label}</strong>
+                        <span>{item.description}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </nav>
 
           <div className="site-header-utility">
             <div className="site-header-actions">
               {!signedIn ? (
                 <>
-                  <Link className="button button-secondary" href="/auth?mode=signup">
+                  <Link className="button button-secondary button-header-minor" href="/auth?mode=signup">
                     {language === "tr" ? "Sign up" : "Sign up"}
                   </Link>
-                  <Link className="button button-ghost" href="/auth?mode=signin">
+                  <Link className="button button-ghost button-header-minor" href="/auth?mode=signin">
                     {content.nav.signIn}
                   </Link>
                   <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_cta">
@@ -196,7 +193,7 @@ export function SiteHeader() {
                         <div className="notification-dropdown-head">
                           <strong>{language === "tr" ? "Bildirimler" : "Notifications"}</strong>
                           <Link href="/app/notifications" onClick={() => setNotificationOpen(false)}>
-                            {language === "tr" ? "Tumunu gor" : "View all"}
+                            {language === "tr" ? "Tümünü gör" : "View all"}
                           </Link>
                         </div>
                         <div className="notification-dropdown-list">
@@ -214,14 +211,41 @@ export function SiteHeader() {
                             ))
                           ) : (
                             <div className="notification-dropdown-empty">
-                              {language === "tr" ? "Su an yeni bildirim yok." : "No new notifications right now."}
+                              {language === "tr" ? "Şu an yeni bildirim yok." : "No new notifications right now."}
                             </div>
                           )}
                         </div>
                       </div>
                     ) : null}
                   </div>
-                  <button className="button button-secondary" type="button" onClick={() => void signOut()}>
+                  <div className="site-header-dropdown site-header-mega">
+                    <button type="button" className="button button-secondary button-header-minor">
+                      {language === "tr" ? "Hesap" : "Account"}
+                    </button>
+                    <div className="site-header-dropdown-menu card site-header-mega-menu site-header-account-menu">
+                      <div className="site-header-mega-grid">
+                        <Link href="/app/profile" className="site-header-mega-link">
+                          <strong>{language === "tr" ? "Profil" : "Profile"}</strong>
+                          <span>{language === "tr" ? "Hedeflerini ve tercihlerini yönet." : "Manage your goals and preferences."}</span>
+                        </Link>
+                        <Link href="/app/billing" className="site-header-mega-link">
+                          <strong>{content.nav.billing}</strong>
+                          <span>{language === "tr" ? "Plan ve ödeme durumunu gör." : "Check plan and billing details."}</span>
+                        </Link>
+                        <Link href="/app/settings" className="site-header-mega-link">
+                          <strong>{content.nav.settings}</strong>
+                          <span>{language === "tr" ? "Tema, dil ve hesap ayarları." : "Theme, language, and account settings."}</span>
+                        </Link>
+                        {currentUser?.isTeacher ? (
+                          <Link href="/app/teacher" className="site-header-mega-link">
+                            <strong>{language === "tr" ? "Teacher" : "Teacher"}</strong>
+                            <span>{language === "tr" ? "Öğrenci ve sınıf paneline git." : "Open class and student tools."}</span>
+                          </Link>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                  <button className="button button-ghost button-header-minor" type="button" onClick={() => void signOut()}>
                     {content.nav.signOut}
                   </button>
                 </>
@@ -229,26 +253,18 @@ export function SiteHeader() {
             </div>
             <div className="site-header-locale">
               <button
-                className="button"
+                className="button button-locale"
                 type="button"
                 onClick={() => setLanguage("en")}
-                style={{
-                  padding: "0.45rem 0.7rem",
-                  background: language === "en" ? "var(--accent)" : "transparent",
-                  color: language === "en" ? "white" : "inherit"
-                }}
+                data-active={language === "en"}
               >
                 EN
               </button>
               <button
-                className="button"
+                className="button button-locale"
                 type="button"
                 onClick={() => setLanguage("tr")}
-                style={{
-                  padding: "0.45rem 0.7rem",
-                  background: language === "tr" ? "var(--accent)" : "transparent",
-                  color: language === "tr" ? "white" : "inherit"
-                }}
+                data-active={language === "tr"}
               >
                 TR
               </button>
@@ -282,39 +298,55 @@ export function SiteHeader() {
           </button>
         </div>
 
-        <div className="mobile-nav-section">
-          <span className="eyebrow">{language === "tr" ? "Gezinme" : "Navigation"}</span>
-          <div className="mobile-nav-links">
-            {primaryLinks.map((item) => (
-              <Link key={item.href} href={item.href} onClick={closeMenu}>
-                {item.label}
-              </Link>
-            ))}
-            {secondaryLinks.map((item) => (
-              <Link key={item.href} href={item.href} onClick={closeMenu}>
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-
+        {signedIn ? (
           <div className="mobile-nav-section">
-            <span className="eyebrow">{signedIn ? (language === "tr" ? "Hesap" : "Account") : language === "tr" ? "Daha fazlası" : "More"}</span>
+            <span className="eyebrow">{language === "tr" ? "Hızlı giriş" : "Quick access"}</span>
             <div className="mobile-nav-links">
-              {signedIn ? (
-                <Link href="/app/notifications" onClick={closeMenu}>
-                  {language === "tr" ? "Bildirimler" : "Notifications"}
+              <Link href="/app" onClick={closeMenu}>
+                {language === "tr" ? "Panel" : "Dashboard"}
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
+        {mobileGroups.map((group) => (
+          <div key={group.label} className="mobile-nav-section">
+            <span className="eyebrow">{group.label}</span>
+            <div className="mobile-nav-links">
+              {group.items.map((item) => (
+                <Link key={item.href} href={item.href} onClick={closeMenu}>
+                  <strong>{item.label}</strong>
+                  <span className="mobile-nav-link-copy">{item.description}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {signedIn ? (
+          <div className="mobile-nav-section">
+            <span className="eyebrow">{language === "tr" ? "Hesap" : "Account"}</span>
+            <div className="mobile-nav-links">
+              <Link href="/app/profile" onClick={closeMenu}>
+                {language === "tr" ? "Profil" : "Profile"}
+              </Link>
+              <Link href="/app/billing" onClick={closeMenu}>
+                {content.nav.billing}
+              </Link>
+              <Link href="/app/settings" onClick={closeMenu}>
+                {content.nav.settings}
+              </Link>
+              <Link href="/app/notifications" onClick={closeMenu}>
+                {language === "tr" ? "Bildirimler" : "Notifications"}
+              </Link>
+              {currentUser?.isTeacher ? (
+                <Link href="/app/teacher" onClick={closeMenu}>
+                  {language === "tr" ? "Öğretmen paneli" : "Teacher panel"}
                 </Link>
               ) : null}
-              {signedIn
-                ? signedInLinks.map((item) => (
-                    <Link key={item.href} href={item.href} onClick={closeMenu}>
-                    {item.label}
-                  </Link>
-                ))
-              : null}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div className="mobile-nav-actions">
           {!signedIn ? (
@@ -338,26 +370,18 @@ export function SiteHeader() {
 
         <div className="mobile-language-switch">
           <button
-            className="button"
+            className="button button-locale"
             type="button"
             onClick={() => setLanguage("en")}
-            style={{
-              padding: "0.55rem 0.85rem",
-              background: language === "en" ? "var(--accent)" : "transparent",
-              color: language === "en" ? "white" : "inherit"
-            }}
+            data-active={language === "en"}
           >
             EN
           </button>
           <button
-            className="button"
+            className="button button-locale"
             type="button"
             onClick={() => setLanguage("tr")}
-            style={{
-              padding: "0.55rem 0.85rem",
-              background: language === "tr" ? "var(--accent)" : "transparent",
-              color: language === "tr" ? "white" : "inherit"
-            }}
+            data-active={language === "tr"}
           >
             TR
           </button>

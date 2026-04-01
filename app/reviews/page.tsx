@@ -30,6 +30,34 @@ const reviewGroups = [
   }
 ];
 
+const reviewTickerItems = [
+  {
+    quote: "The retry loop helps me hear the difference between a weak answer and a more direct one.",
+    author: "IELTS self-study learner",
+    role: "Band score improvement focus"
+  },
+  {
+    quote: "I can finally see what to fix next instead of repeating random speaking practice.",
+    author: "Daily practice student",
+    role: "Fluency and structure"
+  },
+  {
+    quote: "The class workflow makes more sense for schools than using disconnected speaking tools.",
+    author: "Language school teacher",
+    role: "Homework and follow-up"
+  },
+  {
+    quote: "The transcript review is the part that makes the product feel useful after every attempt.",
+    author: "TOEFL learner",
+    role: "Transcript and feedback loop"
+  },
+  {
+    quote: "It feels more motivating when I can retry the same topic with a clearer plan.",
+    author: "Independent learner",
+    role: "Confidence and repetition"
+  }
+];
+
 export const metadata: Metadata = {
   title: "SpeakAce Reviews",
   description:
@@ -77,6 +105,11 @@ export default function ReviewsPage() {
           </p>
         </div>
 
+        <div>
+          <span className="eyebrow">Live review flow</span>
+          <ReviewTicker items={reviewTickerItems} />
+        </div>
+
         <div className="marketing-grid">
           {reviewGroups.map((group) => (
             <article key={group.title} className="card testimonial-card">
@@ -112,5 +145,27 @@ export default function ReviewsPage() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd) }} />
       </main>
     </>
+  );
+}
+
+function ReviewTicker({
+  items
+}: {
+  items: Array<{ quote: string; author: string; role: string }>;
+}) {
+  const loopItems = [...items, ...items];
+
+  return (
+    <div className="testimonial-ticker-shell">
+      <div className="testimonial-ticker-track">
+        {loopItems.map((item, index) => (
+          <article key={`${item.author}-${index}`} className="card testimonial-ticker-card">
+            <p>&ldquo;{item.quote}&rdquo;</p>
+            <strong>{item.author}</strong>
+            <div className="practice-meta">{item.role}</div>
+          </article>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -25,7 +25,7 @@ function AuthPageInner() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [actionUrl, setActionUrl] = useState("");
+  const [successToast, setSuccessToast] = useState("");
   const [forgotMode, setForgotMode] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [handledVerifyToken, setHandledVerifyToken] = useState("");
@@ -37,10 +37,16 @@ function AuthPageInner() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    if (!successToast) return;
+    const timer = window.setTimeout(() => setSuccessToast(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [successToast]);
+
   const submit = async () => {
     setError("");
     setNotice("");
-    setActionUrl("");
+    setSuccessToast("");
     const response = await fetch(mode === "signup" ? "/api/auth/signup" : "/api/auth/signin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -61,12 +67,11 @@ function AuthPageInner() {
     }
 
     if (mode === "signup" && data.verificationRequired) {
-      setNotice(
+      setSuccessToast(
         data.emailSent
-          ? tr ? "Hesabın oluşturuldu. Doğrulama maili gönderildi, lütfen gelen kutunu kontrol et." : "Your account was created. A verification email has been sent, so please check your inbox."
-          : tr ? "Hesabın oluşturuldu. Giriş yapmadan önce e-posta doğrulaması gerekiyor." : "Your account was created. Email verification is required before signing in."
+          ? tr ? "Hesabın oluşturuldu. Doğrulama maili gönderildi." : "Your account was created. Verification email sent."
+          : tr ? "Hesabın oluşturuldu. Giris yapmadan once e-posta dogrulamasi gerekiyor." : "Your account was created. Email verification is required."
       );
-      setActionUrl(data.emailSent ? "" : data.verificationUrl ?? "");
       return;
     }
 
@@ -82,6 +87,7 @@ function AuthPageInner() {
     setHandledVerifyToken(verifyToken);
     setError("");
     setNotice("");
+    setSuccessToast("");
     fetch(`/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`)
       .then(async (response) => {
         const data = (await response.json()) as { error?: string };
@@ -89,7 +95,7 @@ function AuthPageInner() {
           setError(data.error ?? (tr ? "Doğrulama işlemi başarısız oldu." : "Verification failed."));
           return;
         }
-        setNotice(tr ? "E-posta adresin doğrulandı. Artık giriş yapabilirsin." : "Your email address has been verified. You can sign in now.");
+        setSuccessToast(tr ? "E-posta adresin doğrulandı. Artik giris yapabilirsin." : "Your email address has been verified. You can now sign in.");
         setMode("signin");
       })
       .finally(() => setVerifying(false));
@@ -98,7 +104,7 @@ function AuthPageInner() {
   const requestPasswordReset = async () => {
     setError("");
     setNotice("");
-    setActionUrl("");
+    setSuccessToast("");
     const response = await fetch("/api/auth/request-password-reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -109,18 +115,17 @@ function AuthPageInner() {
       setError(data.error ?? (tr ? "Şifre sıfırlama bağlantısı oluşturulamadı." : "Could not create a password reset link."));
       return;
     }
-    setNotice(
+    setSuccessToast(
       data.emailSent
-        ? tr ? "Eğer bu e-postaya ait bir hesap varsa, şifre sıfırlama maili gönderildi." : "If the account exists, a password reset email has been sent."
-        : tr ? "Eğer bu e-postaya ait bir hesap varsa, şifre sıfırlama bağlantısı hazır." : "If the account exists, a password reset link is ready."
+        ? tr ? "Sifre sifirlama maili gonderildi." : "Password reset email sent."
+        : tr ? "Sifre sifirlama baglantisi hazirlandi." : "Password reset link prepared."
     );
-    setActionUrl(data.emailSent ? "" : data.resetUrl ?? "");
   };
 
   const resendVerification = async () => {
     setError("");
     setNotice("");
-    setActionUrl("");
+    setSuccessToast("");
     const response = await fetch("/api/auth/resend-verification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -131,12 +136,11 @@ function AuthPageInner() {
       setError(data.error ?? (tr ? "Doğrulama maili yeniden gönderilemedi." : "Could not resend verification link."));
       return;
     }
-    setNotice(
+    setSuccessToast(
       data.emailSent
-        ? tr ? "Hesap henüz doğrulanmadıysa yeni bir doğrulama maili gönderildi." : "If the account is still unverified, a new verification email has been sent."
-        : tr ? "Hesap henüz doğrulanmadıysa yeni doğrulama bağlantısı hazır." : "If the account is still unverified, a new link is ready."
+        ? tr ? "Yeni dogrulama maili gonderildi." : "New verification email sent."
+        : tr ? "Yeni dogrulama baglantisi hazirlandi." : "New verification link prepared."
     );
-    setActionUrl(data.emailSent ? "" : data.verificationUrl ?? "");
   };
 
   const resetPassword = async () => {
@@ -144,6 +148,7 @@ function AuthPageInner() {
     if (!resetToken) return;
     setError("");
     setNotice("");
+    setSuccessToast("");
     const response = await fetch("/api/auth/reset-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -154,7 +159,7 @@ function AuthPageInner() {
       setError(data.error ?? (tr ? "Şifre sıfırlanamadı." : "Password could not be reset."));
       return;
     }
-    setNotice(tr ? "Şifren güncellendi. Artık yeni şifrenle giriş yapabilirsin." : "Your password has been updated. You can now sign in with the new password.");
+    setSuccessToast(tr ? "Sifren guncellendi. Yeni sifrenle giris yapabilirsin." : "Your password has been updated. You can now sign in.");
     setMode("signin");
     setPassword("");
   };
@@ -166,6 +171,27 @@ function AuthPageInner() {
       <SiteHeader />
       <main className="page-shell section">
         <div className="card" style={{ padding: "1.5rem", maxWidth: 620, margin: "0 auto", display: "grid", gap: "1rem" }}>
+          {successToast ? (
+            <div
+              className="card"
+              style={{
+                padding: "1rem 1.1rem",
+                background: "rgba(47, 125, 75, 0.12)",
+                borderColor: "rgba(47, 125, 75, 0.24)",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.8rem"
+              }}
+            >
+              <span style={{ fontSize: "1.35rem", lineHeight: 1 }} aria-hidden="true">
+                ✓
+              </span>
+              <div style={{ display: "grid", gap: "0.18rem" }}>
+                <strong>{tr ? "Mail gonderildi" : "Email sent"}</strong>
+                <span style={{ color: "var(--muted)", lineHeight: 1.55 }}>{successToast}</span>
+              </div>
+            </div>
+          ) : null}
           <span className="eyebrow">{tr ? "Güvenli giriş" : "Secure auth"}</span>
           <h1 style={{ margin: 0 }}>{mode === "signup" ? (tr ? "Speaking hesabını oluştur" : "Create your speaking dashboard") : tr ? "Tekrar hoş geldin" : "Welcome back"}</h1>
           <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
@@ -187,17 +213,18 @@ function AuthPageInner() {
               {tr ? "Giriş yap" : "Sign in"}
             </button>
           </div>
-          <label style={{ display: "grid", gap: "0.4rem" }}>
-            <span>{tr ? "İsim" : "Name"}</span>
-            <input
-              type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={tr ? "Ahmet" : "Ahmet"}
-              style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
-              disabled={mode === "signin"}
-            />
-          </label>
+          {mode === "signup" ? (
+            <label style={{ display: "grid", gap: "0.4rem" }}>
+              <span>{tr ? "İsim" : "Name"}</span>
+              <input
+                type="text"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder={tr ? "Ahmet" : "Ahmet"}
+                style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
+              />
+            </label>
+          ) : null}
           <label style={{ display: "grid", gap: "0.4rem" }}>
             <span>Email</span>
             <input
@@ -214,21 +241,17 @@ function AuthPageInner() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder={tr ? "En az 8 karakter" : "At least 8 characters"}
+              placeholder={tr ? "En az 8 karakter ve 1 sayi" : "At least 8 characters and 1 number"}
               style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
             />
+            <span style={{ color: "var(--muted)", fontSize: "0.9rem", lineHeight: 1.55 }}>
+              {tr
+                ? "Sifren en az 8 karakter olmali ve en az 1 sayi icermeli."
+                : "Your password must be at least 8 characters long and include at least 1 number."}
+            </span>
           </label>
           {error ? <p style={{ color: "var(--accent-deep)", margin: 0 }}>{error}</p> : null}
           {notice ? <p style={{ color: "var(--success)", margin: 0, lineHeight: 1.65 }}>{notice}</p> : null}
-          {actionUrl ? (
-            <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.6)" }}>
-              <strong>{tr ? "Yedek bağlantı" : "Fallback link"}</strong>
-              <p style={{ margin: "0.55rem 0 0.6rem", lineHeight: 1.65, color: "var(--muted)" }}>
-                {tr ? "Mail servisi henüz tam bağlanmadıysa, bu bağlantı ile akışı elle de test edebilirsin." : "Until the email provider is fully connected, you can still test the flow manually with this link."}
-              </p>
-              <a href={actionUrl} style={{ color: "var(--accent-deep)", fontWeight: 700, wordBreak: "break-all" }}>{actionUrl}</a>
-            </div>
-          ) : null}
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
             {resetToken ? (
               <button className="button button-primary" type="button" onClick={resetPassword}>
@@ -253,11 +276,11 @@ function AuthPageInner() {
               </div>
               <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
                 <button className="button button-secondary" type="button" onClick={resendVerification}>
-                  {tr ? "Doğrulama mailini yeniden gönder" : "Prepare a new verification link"}
+                  {tr ? "Dogrulama mailini yeniden gonder" : "Send verification email again"}
                 </button>
                 {forgotMode ? (
                   <button className="button button-secondary" type="button" onClick={requestPasswordReset}>
-                    {tr ? "Şifre sıfırlama maili gönder" : "Prepare password reset link"}
+                    {tr ? "Sifre sifirlama maili gonder" : "Send password reset email"}
                   </button>
                 ) : null}
               </div>

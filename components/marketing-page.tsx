@@ -368,13 +368,15 @@ export function MarketingPage({
   title,
   description,
   focus,
-  ctaHref
+  ctaHref,
+  variant = "full"
 }: {
   eyebrow: string;
   title: string;
   description: string;
   focus: string;
   ctaHref: Route;
+  variant?: "full" | "minimal";
 }) {
   const { language } = useAppState();
   const tr = language === "tr";
@@ -422,6 +424,121 @@ export function MarketingPage({
     },
     description: siteConfig.description
   };
+
+  if (variant === "minimal") {
+    return (
+      <main>
+        <section className="page-shell section home-hero">
+          <div className="hero-copy">
+            <span className="eyebrow">{eyebrow}</span>
+            <h1>
+              {tr
+                ? "IELTS ve TOEFL speaking pratiğini daha sakin, daha net ve daha odaklı bir AI koçla geliştir."
+                : "Practice IELTS and TOEFL speaking with calmer, clearer AI feedback."}
+            </h1>
+            <p className="hero-description">
+              {tr
+                ? "Cevabını kaydet, transcript’ini incele ve bir sonraki denemeyi nasıl daha iyi kuracağını tek ekranda gör."
+                : "Record one answer, review the transcript, and see exactly how to make the next attempt stronger."}
+            </p>
+            <div className="hero-actions">
+              <Link className="button button-primary" href={ctaHref}>
+                {tr ? "Ücretsiz speaking denemesi" : "Start free practice"}
+              </Link>
+              <a className="button button-secondary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "home_minimal" })}>
+                {tr ? "Plus'i ac" : "Get Plus"}
+              </a>
+            </div>
+          </div>
+
+          <aside className="card hero-result">
+            <div className="pill">{tr ? "Ornek geri bildirim" : "Sample feedback"}</div>
+            <div className="score-showcase">
+              <div className="score-value">7.0</div>
+              <div className="score-label">
+                {tr ? "Tahmini speaking skoru" : "Estimated speaking score"}
+              </div>
+            </div>
+            <div className="card spotlight-card">
+              <strong>{tr ? "Bu neden daha iyi?" : "Why this works better"}</strong>
+              <p>
+                {tr
+                  ? "Soruya daha net girer, tek bir iyi ornek verir ve daha kontrollu kapanir."
+                  : "It answers the prompt more directly, adds one useful example, and finishes with more control."}
+              </p>
+            </div>
+            <div className="metrics-grid">
+              <MiniMetric label={tr ? "Akicilik" : "Fluency"} value="7.0" />
+              <MiniMetric label={tr ? "Telaffuz" : "Pronunciation"} value="6.5" />
+              <MiniMetric label={tr ? "Yapi" : "Structure"} value="7.5" />
+            </div>
+          </aside>
+        </section>
+
+        <section className="page-shell section" style={{ paddingTop: 0 }}>
+          <div className="marketing-grid">
+            {whySpeakAce.map((item) => (
+              <FeatureCard
+                key={item.title.en}
+                title={tr ? item.title.tr : item.title.en}
+                description={tr ? item.description.tr : item.description.en}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className="page-shell section">
+          <div className="section-head">
+            <span className="eyebrow">{tr ? "Nasil calisir" : "How it works"}</span>
+            <h2>{tr ? "Kisa ve net bir speaking calisma akisi" : "A simple speaking workflow"}</h2>
+            <p>
+              {tr
+                ? "Ana sayfa sadece baslangic icin var. Daha derin tum sayfalar menu ve footer icinde seni bekliyor."
+                : "The homepage stays focused. Deeper guides, tools, and study pages are waiting in the navigation and footer."}
+            </p>
+          </div>
+          <div className="steps-grid">
+            {localizedHow.slice(0, 3).map((item, index) => (
+              <StepCard
+                key={item.title}
+                index={`0${index + 1}`}
+                title={item.title}
+                description={item.description}
+              />
+            ))}
+          </div>
+        </section>
+
+        <section className="page-shell section">
+          <div className="card quick-pitch">
+            <div className="quick-pitch-grid">
+              <div>
+                <h2 style={{ marginBottom: "0.8rem" }}>
+                  {tr ? "Daha fazlasi icin nav ve footer'i kullan" : "Use the nav and footer to explore the rest"}
+                </h2>
+                <p className="practice-copy">
+                  {tr
+                    ? "Practice, free test, tools, blog, teachers ve schools gibi tum detayli alanlar artik ana sayfaya yigilmiyor."
+                    : "Practice, free test, tools, blog, teachers, and schools are no longer stacked into one long homepage."}
+                </p>
+              </div>
+              <div className="lead-capture-actions">
+                <Link className="button button-primary" href="/pricing">
+                  {tr ? "Planlari gor" : "See pricing"}
+                </Link>
+                <Link className="button button-secondary" href="/resources">
+                  {tr ? "Kaynaklari ac" : "Open resources"}
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareJsonLd) }} />
+      </main>
+    );
+  }
 
   return (
     <main>
