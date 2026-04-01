@@ -93,7 +93,7 @@ export default function ReviewsPage() {
   return (
     <>
       <SiteHeader />
-      <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
+      <main className="page-shell section reviews-page">
         <div className="section-head">
           <span className="eyebrow">Reviews</span>
           <h1 style={{ fontSize: "clamp(2.5rem, 5vw, 4.5rem)", lineHeight: 0.95 }}>
@@ -110,7 +110,7 @@ export default function ReviewsPage() {
           <ReviewTicker items={reviewTickerItems} />
         </div>
 
-        <div className="marketing-grid">
+        <div className="reviews-grid">
           {reviewGroups.map((group) => (
             <article key={group.title} className="card testimonial-card">
               <h2 style={{ marginTop: 0 }}>{group.title}</h2>

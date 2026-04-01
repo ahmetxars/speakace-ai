@@ -1182,6 +1182,8 @@ body[data-theme="dark"] .daily-prompt-item {
 }
 
 .testimonial-ticker-shell {
+  width: 100%;
+  max-width: 100%;
   overflow: hidden;
   margin-top: 1.2rem;
   padding-bottom: 0.4rem;
@@ -1207,6 +1209,20 @@ body[data-theme="dark"] .daily-prompt-item {
   margin: 0 0 1rem;
   line-height: 1.8;
   color: var(--muted);
+}
+
+.reviews-page {
+  display: grid;
+  gap: 1.2rem;
+  overflow-x: clip;
+  padding-bottom: 8.5rem;
+}
+
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  align-items: stretch;
 }
 
 .tool-workbench {
