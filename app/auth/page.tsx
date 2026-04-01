@@ -26,7 +26,6 @@ function AuthPageInner() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [successToast, setSuccessToast] = useState("");
-  const [forgotMode, setForgotMode] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [handledVerifyToken, setHandledVerifyToken] = useState("");
 
@@ -100,48 +99,6 @@ function AuthPageInner() {
       })
       .finally(() => setVerifying(false));
   }, [handledVerifyToken, searchParams, tr, verifying]);
-
-  const requestPasswordReset = async () => {
-    setError("");
-    setNotice("");
-    setSuccessToast("");
-    const response = await fetch("/api/auth/request-password-reset", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
-    });
-    const data = (await response.json()) as { error?: string; message?: string; resetUrl?: string; emailSent?: boolean };
-    if (!response.ok) {
-      setError(data.error ?? (tr ? "Şifre sıfırlama bağlantısı oluşturulamadı." : "Could not create a password reset link."));
-      return;
-    }
-    setSuccessToast(
-      data.emailSent
-        ? tr ? "Sifre sifirlama maili gonderildi." : "Password reset email sent."
-        : tr ? "Sifre sifirlama baglantisi hazirlandi." : "Password reset link prepared."
-    );
-  };
-
-  const resendVerification = async () => {
-    setError("");
-    setNotice("");
-    setSuccessToast("");
-    const response = await fetch("/api/auth/resend-verification", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
-    });
-    const data = (await response.json()) as { error?: string; verificationUrl?: string; emailSent?: boolean };
-    if (!response.ok) {
-      setError(data.error ?? (tr ? "Doğrulama maili yeniden gönderilemedi." : "Could not resend verification link."));
-      return;
-    }
-    setSuccessToast(
-      data.emailSent
-        ? tr ? "Yeni dogrulama maili gonderildi." : "New verification email sent."
-        : tr ? "Yeni dogrulama baglantisi hazirlandi." : "New verification link prepared."
-    );
-  };
 
   const resetPassword = async () => {
     const resetToken = searchParams.get("reset");
@@ -220,7 +177,7 @@ function AuthPageInner() {
                 type="text"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder={tr ? "Ahmet" : "Ahmet"}
+                placeholder={tr ? "Name" : "Name"}
                 style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
               />
             </label>
@@ -266,26 +223,6 @@ function AuthPageInner() {
               {tr ? "Misafir olarak devam et" : "Continue as guest"}
             </Link>
           </div>
-          {!resetToken ? (
-            <div className="card" style={{ padding: "1rem", display: "grid", gap: "0.8rem", background: "rgba(255,255,255,0.58)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-                <strong>{tr ? "Doğrulama ve şifre yardımı" : "Verification and password help"}</strong>
-                <button className="button button-secondary" type="button" style={{ padding: "0.55rem 0.9rem" }} onClick={() => setForgotMode((current) => !current)}>
-                  {forgotMode ? (tr ? "Kapat" : "Hide") : tr ? "Şifre yardımı" : "Password help"}
-                </button>
-              </div>
-              <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
-                <button className="button button-secondary" type="button" onClick={resendVerification}>
-                  {tr ? "Dogrulama mailini yeniden gonder" : "Send verification email again"}
-                </button>
-                {forgotMode ? (
-                  <button className="button button-secondary" type="button" onClick={requestPasswordReset}>
-                    {tr ? "Sifre sifirlama maili gonder" : "Send password reset email"}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
         </div>
       </main>
     </>

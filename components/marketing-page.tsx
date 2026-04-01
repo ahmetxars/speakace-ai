@@ -1121,8 +1121,8 @@ export function MarketingPage({
           <span className="eyebrow">{tr ? "Kaynak merkezi" : "Resource hub"}</span>
           <h2>
             {tr
-              ? "Arama niyeti yuksek sayfalarla daha fazla organik trafik ve daha net donusum yolu"
-              : "High-intent resource pages designed to pull search traffic and convert it"}
+              ? "Dogru kaynak sayfalariyla daha fazla kesif ve daha net donusum yolu"
+              : "Resource pages designed to attract the right learners and guide them into practice"}
           </h2>
           <p>
             {tr
@@ -1136,8 +1136,8 @@ export function MarketingPage({
               href: "/resources",
               title: tr ? "Kaynak merkezi" : "Resource hub",
               description: tr
-                ? "Tum IELTS speaking rehberlerini ve yuksek niyetli SEO sayfalarini tek yerde topla."
-                : "Collect all IELTS speaking guides and high-intent SEO pages in one place."
+                ? "Tum IELTS speaking rehberlerini, konu sayfalarini ve faydali giris noktalarini tek yerde topla."
+                : "Collect all IELTS speaking guides, topic pages, and useful entry points in one place."
             },
             {
               href: "/ielts-speaking-topics",
@@ -1175,8 +1175,8 @@ export function MarketingPage({
           </h2>
           <p>
             {tr
-              ? "Google’dan organik trafik çekecek yüksek niyetli aramaları hedefleyen içerik sayfaları."
-              : "SEO-focused content pages targeting real search intent around IELTS speaking practice and AI speaking tools."}
+              ? "IELTS speaking pratiğini daha iyi anlamak isteyen öğrenciler için hazırlanmış faydalı içerikler."
+              : "Useful articles for learners who want clearer IELTS speaking practice, stronger answers, and better scores."}
           </p>
         </div>
         <div className="marketing-grid">

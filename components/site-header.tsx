@@ -152,7 +152,6 @@ export function SiteHeader() {
                     {group.items.map((item) => (
                       <Link key={item.href} href={item.href} className="site-header-mega-link">
                         <strong>{item.label}</strong>
-                        <span>{item.description}</span>
                       </Link>
                     ))}
                   </div>
@@ -226,20 +225,16 @@ export function SiteHeader() {
                       <div className="site-header-mega-grid">
                         <Link href="/app/profile" className="site-header-mega-link">
                           <strong>{language === "tr" ? "Profil" : "Profile"}</strong>
-                          <span>{language === "tr" ? "Hedeflerini ve tercihlerini yönet." : "Manage your goals and preferences."}</span>
                         </Link>
                         <Link href="/app/billing" className="site-header-mega-link">
                           <strong>{content.nav.billing}</strong>
-                          <span>{language === "tr" ? "Plan ve ödeme durumunu gör." : "Check plan and billing details."}</span>
                         </Link>
                         <Link href="/app/settings" className="site-header-mega-link">
                           <strong>{content.nav.settings}</strong>
-                          <span>{language === "tr" ? "Tema, dil ve hesap ayarları." : "Theme, language, and account settings."}</span>
                         </Link>
                         {currentUser?.isTeacher ? (
                           <Link href="/app/teacher" className="site-header-mega-link">
                             <strong>{language === "tr" ? "Teacher" : "Teacher"}</strong>
-                            <span>{language === "tr" ? "Öğrenci ve sınıf paneline git." : "Open class and student tools."}</span>
                           </Link>
                         ) : null}
                       </div>
@@ -316,7 +311,6 @@ export function SiteHeader() {
               {group.items.map((item) => (
                 <Link key={item.href} href={item.href} onClick={closeMenu}>
                   <strong>{item.label}</strong>
-                  <span className="mobile-nav-link-copy">{item.description}</span>
                 </Link>
               ))}
             </div>

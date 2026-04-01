@@ -58,8 +58,8 @@ export function SiteFooter() {
             </h2>
             <p className="practice-copy site-footer-brand-copy">
               {tr
-                ? "SEO odaklı kaynaklar, speaking practice akışı, transcript incelemesi ve Plus planıyla daha güçlü günlük gelişim."
-                : "Built with SEO-focused resources, speaking practice flows, transcript review, and a paid plan for stronger daily progress."}
+                ? "Speaking practice akisi, transcript incelemesi ve duzenli calisma ritmiyle daha guclu gunluk gelisim."
+                : "Built around speaking practice, transcript review, and a calmer daily study rhythm."}
             </p>
           </div>
 
