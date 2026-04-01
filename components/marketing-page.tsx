@@ -1144,7 +1144,7 @@ export function MarketingPage({
               title: tr ? "IELTS speaking topics" : "IELTS speaking topics",
               description: tr
                 ? "Konu bazli arama yapan ogrencileri practice akisina tasiyan sayfa."
-                : "A search-friendly topic page that turns topic visitors into practice users."
+                : "A topic page that helps curious visitors move into real practice."
             },
             {
               href: "/ielts-band-score-guide",

@@ -44,7 +44,7 @@ const resourceCards: Array<{
   {
     href: "/free-ielts-speaking-test",
     title: "Free IELTS speaking test",
-    description: "A strong top-of-funnel page for visitors who want to try the product before paying."
+    description: "A simple entry point for visitors who want to try the product before paying."
   },
   {
     href: "/weekly-ielts-speaking-challenge",
@@ -54,7 +54,7 @@ const resourceCards: Array<{
   {
     href: "/ielts-speaking-sample-answers",
     title: "IELTS speaking sample answers",
-    description: "A conversion-friendly bridge between search traffic, answer examples, and live speaking practice."
+    description: "A practical bridge between answer examples and real speaking practice."
   },
   {
     href: "/compare",
@@ -64,7 +64,7 @@ const resourceCards: Array<{
   {
     href: "/tools",
     title: "Free IELTS speaking tools",
-    description: "Tool-style SEO pages that attract top-of-funnel traffic and move it toward practice."
+    description: "Simple calculators, generators, and practice helpers learners can use before full speaking sessions."
   },
   {
     href: "/guides",
@@ -219,7 +219,7 @@ export default function ResourcesPage() {
           <div className="card lead-capture-card">
             <div>
               <span className="eyebrow">Free checklist</span>
-              <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Capture search visitors before they leave</h2>
+              <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Give new visitors one easy reason to stay</h2>
               <p className="practice-copy">
                 A free checklist and welcome email create a softer first conversion for visitors who are not ready to buy yet.
               </p>
