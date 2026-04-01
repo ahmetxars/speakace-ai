@@ -747,7 +747,7 @@ export function PracticeConsole() {
             {retryMode ? <span className="pill">{tr ? "Ayni soru secildi" : "Same prompt selected"}</span> : null}
           </div>
 
-          <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)", display: "grid", gap: "0.55rem" }}>
+          <div className="card practice-tone-card practice-tone-card-cool">
             <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
               <strong>{tr ? "Bugunku odak" : "Today's focus"}</strong>
               <span className="pill">{focusInsight.badge}</span>
@@ -818,7 +818,7 @@ export function PracticeConsole() {
             />
           </div>
 
-          <div className="card" style={{ padding: "1rem", background: "rgba(217, 93, 57, 0.08)", display: "grid", gap: "0.55rem" }}>
+          <div className="card practice-tone-card practice-tone-card-warm">
             <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
               <strong>{tr ? "Cevap modu rehberi" : "Answer mode guide"}</strong>
               <span className="pill">{answerModeGuide.badge}</span>
@@ -1067,7 +1067,7 @@ export function PracticeConsole() {
                       </div>
                     </div>
                     <p style={{ margin: 0, lineHeight: 1.7 }}>{simulationSummary.body}</p>
-                    <div className="card" style={{ padding: "0.95rem 1rem", background: "rgba(29, 111, 117, 0.08)" }}>
+                    <div className="card practice-tone-card practice-tone-card-cool practice-tone-card-inline">
                       <strong style={{ display: "block", marginBottom: "0.35rem" }}>{tr ? "Bir sonraki net odak" : "One clear next focus"}</strong>
                       <p style={{ margin: 0, lineHeight: 1.65 }}>{simulationSummary.nextStep}</p>
                     </div>
@@ -1182,7 +1182,7 @@ export function PracticeConsole() {
               </div>
               <div className="grid" style={{ gap: "0.65rem", marginTop: "0.75rem" }}>
                 {bookmarks.slice(0, 6).map((item) => (
-                  <div key={item.promptId} className="card" style={{ padding: "0.85rem", background: "rgba(255,255,255,0.6)", display: "grid", gap: "0.45rem" }}>
+                  <div key={item.promptId} className="card practice-bookmark-card">
                     <strong>{item.title}</strong>
                     <div className="practice-meta">{item.examType} · {humanizeTaskType(item.taskType, tr)}</div>
                     <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
@@ -1244,7 +1244,7 @@ export function PracticeConsole() {
                     : tr ? "Mikrofon bekleniyor" : "Waiting for mic"}
               </span>
               {(mode === "prep" || mode === "speak") ? (
-                <div className="card" style={{ padding: "0.9rem 1rem", maxWidth: 560, background: "rgba(29, 111, 117, 0.08)", textAlign: "left" }}>
+                <div className="card practice-tone-card practice-tone-card-cool practice-overlay-focus-card">
                   <strong style={{ display: "block", marginBottom: "0.35rem" }}>{tr ? "Bu denemedeki tek odak" : "One focus for this attempt"}</strong>
                   <p style={{ margin: 0, lineHeight: 1.65 }}>{runMode === "pronunciation" ? pronunciationGuide.overlayFocus : focusInsight.primary}</p>
                 </div>
@@ -1381,7 +1381,7 @@ type TaskBriefing = {
 
 function TaskBriefCard({ briefing, compact = false }: { briefing: TaskBriefing; compact?: boolean }) {
   return (
-    <div className="card" style={{ padding: compact ? "0.9rem" : "1rem", background: "rgba(255,255,255,0.58)" }}>
+    <div className={`card practice-brief-card ${compact ? "is-compact" : ""}`}>
       <strong>{briefing.title}</strong>
       <p className="practice-meta" style={{ marginTop: "0.55rem" }}>{briefing.focus}</p>
       <ul style={{ margin: "0.7rem 0 0", paddingLeft: "1.15rem" }}>

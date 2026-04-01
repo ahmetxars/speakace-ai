@@ -1436,9 +1436,91 @@ body[data-theme="dark"] .comparison-head {
   background: rgba(255, 255, 255, 0.55);
 }
 
+.practice-tone-card {
+  padding: 1rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.practice-tone-card-cool {
+  background: rgba(29, 111, 117, 0.08);
+}
+
+.practice-tone-card-warm {
+  background: rgba(217, 93, 57, 0.08);
+}
+
+.practice-tone-card-inline {
+  padding: 0.95rem 1rem;
+}
+
+.practice-bookmark-card {
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.6);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.practice-brief-card {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.practice-brief-card.is-compact {
+  padding: 0.9rem;
+}
+
+.practice-overlay-focus-card {
+  padding: 0.9rem 1rem;
+  max-width: 560px;
+  text-align: left;
+}
+
 .practice-result-preview {
   padding: 1rem;
   background: rgba(29, 111, 117, 0.08);
+}
+
+body[data-theme="dark"] .practice-metric-card {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body[data-theme="dark"] .practice-tone-card-cool {
+  background: rgba(115, 193, 199, 0.12);
+}
+
+body[data-theme="dark"] .practice-tone-card-warm {
+  background: rgba(217, 93, 57, 0.14);
+}
+
+body[data-theme="dark"] .practice-bookmark-card,
+body[data-theme="dark"] .practice-brief-card {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+body[data-theme="dark"] .practice-brief-card strong,
+body[data-theme="dark"] .practice-bookmark-card strong,
+body[data-theme="dark"] .practice-tone-card strong,
+body[data-theme="dark"] .practice-tone-card p,
+body[data-theme="dark"] .practice-result-preview strong,
+body[data-theme="dark"] .practice-result-preview a,
+body[data-theme="dark"] .practice-result-preview div,
+body[data-theme="dark"] .task-source-card p,
+body[data-theme="dark"] .task-note-card,
+body[data-theme="dark"] .practice-empty-state strong {
+  color: #f5efe8;
+}
+
+body[data-theme="dark"] .practice-tone-card .practice-meta,
+body[data-theme="dark"] .practice-bookmark-card .practice-meta,
+body[data-theme="dark"] .practice-brief-card .practice-meta,
+body[data-theme="dark"] .task-source-list li,
+body[data-theme="dark"] .practice-empty-state p {
+  color: rgba(245, 239, 232, 0.72);
+}
+
+body[data-theme="dark"] .practice-result-preview {
+  background: rgba(115, 193, 199, 0.1);
 }
 
 .practice-task-title {
@@ -1474,6 +1556,23 @@ body[data-theme="dark"] .comparison-head {
 
 .task-cue-card {
   background: linear-gradient(180deg, rgba(255, 252, 247, 0.92), rgba(255, 245, 235, 0.82));
+}
+
+body[data-theme="dark"] .task-cue-card,
+body[data-theme="dark"] .task-source-card {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body[data-theme="dark"] .task-cue-card {
+  background: linear-gradient(180deg, rgba(29, 36, 44, 0.98), rgba(22, 29, 36, 0.98));
+}
+
+body[data-theme="dark"] .task-cue-card-label,
+body[data-theme="dark"] .task-source-label {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: #8fd2d7;
 }
 
 .task-cue-card-label,
@@ -1553,6 +1652,16 @@ body[data-theme="dark"] .comparison-head {
   color: var(--text);
 }
 
+body[data-theme="dark"] .task-note-card {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body[data-theme="dark"] .task-note-input {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .task-note-input:focus {
   outline: none;
   border-color: rgba(29, 111, 117, 0.5);
@@ -1572,6 +1681,10 @@ body[data-theme="dark"] .comparison-head {
   background: rgba(255, 255, 255, 0.68);
 }
 
+body[data-theme="dark"] .practice-simulation-card {
+  background: rgba(255, 255, 255, 0.07);
+}
+
 .simulation-queue {
   display: flex;
   flex-wrap: wrap;
@@ -1589,6 +1702,12 @@ body[data-theme="dark"] .comparison-head {
   color: var(--muted);
   font-size: 0.92rem;
   font-weight: 600;
+}
+
+body[data-theme="dark"] .simulation-step {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(245, 239, 232, 0.78);
 }
 
 .simulation-step.is-active {
@@ -1620,6 +1739,12 @@ body[data-theme="dark"] .comparison-head {
   font-weight: 600;
 }
 
+body[data-theme="dark"] .simulation-result-row {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f5efe8;
+}
+
 .simulation-summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1635,11 +1760,20 @@ body[data-theme="dark"] .comparison-head {
   border: 1px solid rgba(64, 36, 18, 0.08);
 }
 
+body[data-theme="dark"] .simulation-summary-tile {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .practice-empty-state {
   border: 1px dashed var(--line);
   border-radius: var(--radius-lg);
   padding: 1.2rem;
   background: rgba(255, 255, 255, 0.4);
+}
+
+body[data-theme="dark"] .practice-empty-state {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .practice-empty-state p {
@@ -1666,6 +1800,10 @@ body[data-theme="dark"] .comparison-head {
   justify-items: center;
   text-align: center;
   background: linear-gradient(180deg, rgba(255, 250, 244, 0.98), rgba(255, 244, 231, 0.96));
+}
+
+body[data-theme="dark"] .practice-overlay-card {
+  background: linear-gradient(180deg, rgba(24, 30, 37, 0.98), rgba(18, 24, 30, 0.98));
 }
 
 .practice-overlay-number {
