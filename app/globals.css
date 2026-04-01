@@ -1451,6 +1451,28 @@ body[data-theme="dark"] .compare-table-cell-accent {
   background: rgba(29, 111, 117, 0.08);
 }
 
+.comparison-table > :nth-last-child(-n + 2) {
+  border-bottom: none;
+}
+
+body[data-theme="dark"] .comparison-table {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+body[data-theme="dark"] .comparison-head,
+body[data-theme="dark"] .comparison-cell {
+  color: #f5efe8;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+body[data-theme="dark"] .comparison-head {
+  background: rgba(115, 193, 199, 0.1);
+}
+
+body[data-theme="dark"] .comparison-cell {
+  background: rgba(255, 255, 255, 0.04);
+}
+
 body[data-theme="dark"] .comparison-head,
 body[data-theme="dark"] .comparison-cell {
   background: rgba(255, 255, 255, 0.06);
