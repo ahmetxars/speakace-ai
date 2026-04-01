@@ -1273,6 +1273,98 @@ body[data-theme="dark"] .lead-capture-card .pill {
   margin-top: 1rem;
 }
 
+.compare-hub-shell {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.compare-overview-card,
+.compare-table-card,
+.compare-summary-card {
+  padding: 1.4rem;
+}
+
+.compare-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.compare-overview-block {
+  display: grid;
+  gap: 0.8rem;
+  align-content: start;
+}
+
+.compare-overview-block h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  line-height: 1.08;
+}
+
+.compare-overview-block p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.compare-table-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) minmax(0, 1fr) minmax(0, 1fr);
+  border: 1px solid var(--line);
+  border-radius: 1.2rem;
+  overflow: hidden;
+}
+
+.compare-table-head,
+.compare-table-cell {
+  padding: 1rem 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.compare-table-head {
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.compare-table-head-accent {
+  color: var(--accent-deep);
+}
+
+.compare-table-cell {
+  line-height: 1.65;
+  background: rgba(255, 255, 255, 0.42);
+}
+
+.compare-table-cell-label {
+  font-weight: 700;
+}
+
+.compare-table-cell-accent {
+  background: rgba(29, 111, 117, 0.08);
+}
+
+.compare-table-grid > :nth-last-child(-n + 3) {
+  border-bottom: none;
+}
+
+body[data-theme="dark"] .compare-table-grid {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+body[data-theme="dark"] .compare-table-head {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body[data-theme="dark"] .compare-table-cell {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+body[data-theme="dark"] .compare-table-cell-accent {
+  background: rgba(115, 193, 199, 0.08);
+}
+
 .comparison-table {
   display: grid;
   grid-template-columns: minmax(180px, 1.2fr) repeat(2, minmax(120px, 0.8fr));
@@ -2171,6 +2263,24 @@ body[data-theme="dark"] .marketing-sticky-copy span {
 
   .simulation-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .compare-overview-grid,
+  .compare-table-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .compare-table-head {
+    display: none;
+  }
+
+  .compare-table-cell {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .compare-table-cell-label {
+    padding-bottom: 0.35rem;
+    background: transparent;
   }
 
   .site-footer-grid {

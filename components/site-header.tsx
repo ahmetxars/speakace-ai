@@ -103,7 +103,7 @@ export function SiteHeader() {
         menuItem("/about", language === "tr" ? "SpeakAce kimdir?" : "Who is SpeakAce?", language === "tr" ? "Misyon, yaklaşım ve ürün amacı." : "Mission, approach, and product vision."),
         menuItem("/case-studies", language === "tr" ? "Case studies" : "Case studies", language === "tr" ? "Önce-sonra örnek ilerleme akışları." : "Before-and-after learner improvement stories."),
         menuItem("/success-stories", language === "tr" ? "Başarı hikayeleri" : "Success stories", language === "tr" ? "Gerçek kullanım senaryoları ve sonuçlar." : "Outcome-focused stories and proof points."),
-        menuItem("/compare", language === "tr" ? "Karşılaştırmalar" : "Compare", language === "tr" ? "SpeakAce’i diğer çözümlerle kıyasla." : "See how SpeakAce compares to alternatives.")
+        menuItem("/compare", language === "tr" ? "Karşılaştır" : "Compare", language === "tr" ? "SpeakAce ile diğer araçları karşılaştır." : "See how SpeakAce compares to alternatives.")
       ]
     }),
     [language]

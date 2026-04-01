@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
-import { comparisonPages } from "@/lib/seo-growth";
+import { CompareHub } from "@/components/compare-hub";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Compare IELTS Speaking Tools",
+  title: "SpeakAce vs Other Speaking Tools",
   description:
-    "Compare SpeakAce with other AI speaking tools and see which product fits IELTS speaking practice best.",
+    "See the practical difference between SpeakAce and other speaking tools for IELTS and TOEFL preparation.",
   alternates: { canonical: "/compare" },
   openGraph: {
-    title: "Compare IELTS Speaking Tools | SpeakAce",
+    title: "SpeakAce vs Other Speaking Tools",
     description:
-      "Comparison pages for IELTS speaking apps, AI feedback tools, and school-ready speaking platforms.",
+      "A simple comparison page showing how SpeakAce differs from generic speaking tools and apps.",
     url: `${siteConfig.domain}/compare`,
     siteName: siteConfig.name,
     type: "website"
@@ -23,30 +22,7 @@ export default function CompareHubPage() {
   return (
     <>
       <SiteHeader />
-      <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
-        <div className="section-head">
-          <span className="eyebrow">Compare</span>
-          <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.8rem)", lineHeight: 0.96 }}>
-            Compare speaking tools in a cleaner, more practical way.
-          </h1>
-          <p>
-            Use these pages when you want to understand how SpeakAce compares with other speaking
-            apps, AI tools, and school-friendly products.
-          </p>
-        </div>
-
-        <div className="marketing-grid">
-          {comparisonPages.map((item) => (
-            <article key={item.slug} className="card feature-card">
-              <h2 style={{ fontSize: "1.35rem" }}>{item.title}</h2>
-              <p>{item.description}</p>
-              <Link className="button button-secondary" href={`/compare/${item.slug}`}>
-                Open comparison
-              </Link>
-            </article>
-          ))}
-        </div>
-      </main>
+      <CompareHub />
     </>
   );
 }
