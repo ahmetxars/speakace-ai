@@ -876,6 +876,12 @@ body[data-theme="dark"] .notification-dropdown-item.is-success {
   padding: 1.3rem;
 }
 
+body[data-theme="dark"] .feature-card,
+body[data-theme="dark"] .step-card,
+body[data-theme="dark"] .mini-metric {
+  background: rgba(24, 31, 39, 0.94);
+}
+
 .feature-card h3,
 .step-card h3,
 .pricing-card h3 {
@@ -1107,6 +1113,14 @@ body[data-theme="dark"] .testimonial-card {
   background: rgba(29, 111, 117, 0.06);
 }
 
+.daily-prompt-item p {
+  color: var(--muted);
+}
+
+body[data-theme="dark"] .daily-prompt-item {
+  background: rgba(115, 193, 199, 0.09);
+}
+
 .daily-prompt-item strong {
   line-height: 1.6;
 }
@@ -1225,6 +1239,33 @@ body[data-theme="dark"] .tool-chip {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   align-items: center;
   background: linear-gradient(180deg, rgba(29, 111, 117, 0.08), rgba(255, 249, 242, 0.94));
+}
+
+body[data-theme="dark"] .institution-cta {
+  background: linear-gradient(180deg, rgba(115, 193, 199, 0.14), rgba(24, 31, 39, 0.98));
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+body[data-theme="dark"] .institution-cta h2,
+body[data-theme="dark"] .institution-cta h3,
+body[data-theme="dark"] .institution-cta strong {
+  color: #f5efe8;
+}
+
+body[data-theme="dark"] .institution-cta p,
+body[data-theme="dark"] .institution-cta .practice-copy,
+body[data-theme="dark"] .lead-capture-card p,
+body[data-theme="dark"] .feature-card p,
+body[data-theme="dark"] .daily-prompt-item p {
+  color: rgba(245, 239, 232, 0.76);
+}
+
+body[data-theme="dark"] .institution-cta .eyebrow,
+body[data-theme="dark"] .feature-card .pill,
+body[data-theme="dark"] .lead-capture-card .pill {
+  background: rgba(255, 255, 255, 0.06);
+  color: #8fd2d7;
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .comparison-card {
