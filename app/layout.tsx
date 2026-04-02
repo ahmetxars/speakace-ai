@@ -46,8 +46,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <head>
         <Script
           id="google-adsense"
-          async
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3403105676925789"
           crossOrigin="anonymous"
         />
