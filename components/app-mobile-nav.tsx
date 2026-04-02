@@ -11,13 +11,31 @@ export function AppMobileNav() {
   const pathname = usePathname();
   const { language, currentUser } = useAppState();
   const tr = language === "tr";
+  const accountHref =
+    currentUser?.memberType === "school"
+      ? "/app/institution-admin"
+      : currentUser?.isTeacher || currentUser?.memberType === "teacher"
+        ? "/app/teacher"
+        : "/app/profile";
+  const accountLabelEn =
+    currentUser?.memberType === "school"
+      ? "School"
+      : currentUser?.isTeacher || currentUser?.memberType === "teacher"
+        ? "Teacher"
+        : "Profile";
+  const accountLabelTr =
+    currentUser?.memberType === "school"
+      ? "Kurum"
+      : currentUser?.isTeacher || currentUser?.memberType === "teacher"
+        ? "Öğretmen"
+        : "Profil";
 
   const items = [
     navItem("/app", "Home", "Ana sayfa", "•"),
     navItem("/app/practice", "Practice", "Practice", "◦"),
     navItem("/app/review", "Review", "Gözden geçir", "△"),
     navItem("/app/billing", "Plan", "Plan", "◇"),
-    navItem(currentUser?.isTeacher ? "/app/teacher" : "/app/profile", currentUser?.isTeacher ? "Teacher" : "Profile", currentUser?.isTeacher ? "Öğretmen" : "Profil", "☰")
+    navItem(accountHref, accountLabelEn, accountLabelTr, "☰")
   ];
 
   return (

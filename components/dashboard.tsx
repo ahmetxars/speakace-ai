@@ -3,7 +3,9 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { InstitutionAdminPanel } from "@/components/institution-admin-panel";
 import { useAppState } from "@/components/providers";
+import { TeacherHub } from "@/components/teacher-hub";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { AnalyticsSummary } from "@/lib/analytics-store";
 import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
@@ -45,6 +47,9 @@ export function Dashboard() {
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
 
+  const isSchoolMember = Boolean(signedIn && currentUser?.memberType === "school");
+  const isTeacherMember = Boolean(signedIn && currentUser?.memberType === "teacher");
+
   useEffect(() => {
     if (!currentUser) {
       return;
@@ -57,7 +62,7 @@ export function Dashboard() {
   }, [currentUser]);
 
   useEffect(() => {
-    if (!signedIn || !currentUser || currentUser.isTeacher) {
+    if (!signedIn || !currentUser || isTeacherMember || isSchoolMember) {
       setJoinedClasses([]);
       return;
     }
@@ -66,10 +71,10 @@ export function Dashboard() {
       .then((response) => response.json())
       .then((data: { classes?: StudentClassMembership[] }) => setJoinedClasses(data.classes ?? []))
       .catch(() => setJoinedClasses([]));
-  }, [currentUser, signedIn]);
+  }, [currentUser, isSchoolMember, isTeacherMember, signedIn]);
 
   useEffect(() => {
-    if (!signedIn || !currentUser || currentUser.isTeacher) {
+    if (!signedIn || !currentUser || isTeacherMember || isSchoolMember) {
       setHomework([]);
       return;
     }
@@ -77,10 +82,10 @@ export function Dashboard() {
       .then((response) => response.json())
       .then((data: { assignments?: HomeworkAssignment[] }) => setHomework(data.assignments ?? []))
       .catch(() => setHomework([]));
-  }, [currentUser, signedIn]);
+  }, [currentUser, isSchoolMember, isTeacherMember, signedIn]);
 
   useEffect(() => {
-    if (!signedIn || !currentUser || currentUser.isTeacher) {
+    if (!signedIn || !currentUser || isTeacherMember || isSchoolMember) {
       setSharedStudyClasses([]);
       return;
     }
@@ -90,7 +95,7 @@ export function Dashboard() {
         setSharedStudyClasses(data.classes ?? [])
       )
       .catch(() => setSharedStudyClasses([]));
-  }, [currentUser, signedIn]);
+  }, [currentUser, isSchoolMember, isTeacherMember, signedIn]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -482,8 +487,8 @@ export function Dashboard() {
       }).length,
     [homework]
   );
-  const needsOnboarding = Boolean(signedIn && currentUser && !currentUser.isTeacher && profile && !profile.onboardingComplete);
-  const shouldUpsellPlus = Boolean(signedIn && currentUser && !currentUser.isTeacher && currentUser.plan === "free");
+  const needsOnboarding = Boolean(signedIn && currentUser && !isTeacherMember && !isSchoolMember && profile && !profile.onboardingComplete);
+  const shouldUpsellPlus = Boolean(signedIn && currentUser && !isTeacherMember && !isSchoolMember && currentUser.plan === "free");
 
   const toggleChecklistItem = (id: string) => {
     setWeeklyChecklist((current) => {
@@ -646,6 +651,14 @@ export function Dashboard() {
         : "The system is still learning your pattern. A few more consistent attempts will make your best study style much clearer."
     };
   }, [hasBalancedSkillProfile, momentumProfile.consistency, momentumProfile.courage, tr, weakestSkill]);
+
+  if (isSchoolMember) {
+    return <InstitutionAdminPanel />;
+  }
+
+  if (isTeacherMember) {
+    return <TeacherHub />;
+  }
 
   return (
     <div className="page-shell section" style={{ display: "grid", gap: "1.4rem" }}>

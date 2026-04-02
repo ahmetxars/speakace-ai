@@ -27,13 +27,18 @@ export function createGuestProfile(): MemberProfile {
     email: "guest@speakace.local",
     name: "Guest learner",
     role: "guest",
+    memberType: "student",
     plan: "free",
     emailVerified: true,
     createdAt: new Date().toISOString()
   };
 }
 
-export function createMemberProfile(email: string, name?: string): MemberProfile {
+export function createMemberProfile(
+  email: string,
+  name?: string,
+  options?: { memberType?: MemberProfile["memberType"]; organizationName?: string | null }
+): MemberProfile {
   const normalizedName = name?.trim() || email.split("@")[0] || "Learner";
 
   return {
@@ -41,6 +46,8 @@ export function createMemberProfile(email: string, name?: string): MemberProfile
     email,
     name: normalizedName,
     role: "member",
+    memberType: options?.memberType ?? "student",
+    organizationName: options?.organizationName ?? null,
     plan: "free",
     emailVerified: false,
     createdAt: new Date().toISOString()

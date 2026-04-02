@@ -67,7 +67,13 @@ export function getSessionCookieOptions(expires: Date) {
   };
 }
 
-export async function signUpWithPassword(input: { email: string; password: string; name: string }) {
+export async function signUpWithPassword(input: {
+  email: string;
+  password: string;
+  name: string;
+  memberType?: MemberProfile["memberType"];
+  organizationName?: string | null;
+}) {
   const normalizedEmail = input.email.trim().toLowerCase();
   if (!normalizedEmail || !input.password.trim()) {
     throw new Error("Email and password are required.");
@@ -76,10 +82,17 @@ export async function signUpWithPassword(input: { email: string; password: strin
     throw new Error("Password must be at least 8 characters long and include at least 1 number.");
   }
 
+  const requestedMemberType =
+    input.memberType === "teacher" || input.memberType === "school" ? input.memberType : "student";
   const passwordHash = await hash(input.password, 12);
   const purchasedPlan = await getActiveBillingPlanForEmail(normalizedEmail);
   const profile = withAdminPrivileges({
-    ...createMemberProfile(normalizedEmail, input.name),
+    ...createMemberProfile(normalizedEmail, input.name, {
+      memberType: requestedMemberType,
+      organizationName: input.organizationName?.trim() || null
+    }),
+    teacherAccess: requestedMemberType === "teacher" || requestedMemberType === "school",
+    adminAccess: requestedMemberType === "school",
     plan: purchasedPlan ?? "free"
   });
   const autoVerified = isAdminEmail(normalizedEmail);
@@ -94,9 +107,9 @@ export async function signUpWithPassword(input: { email: string; password: strin
     }
 
     const rows = await sql<MemberProfile[]>`
-      insert into users (id, email, name, role, plan, password_hash, email_verified, admin_access, teacher_access, created_at)
-      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.plan}, ${passwordHash}, ${autoVerified}, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false}, ${profile.createdAt})
-      returning id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      insert into users (id, email, name, role, member_type, organization_name, plan, password_hash, email_verified, admin_access, teacher_access, created_at)
+      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.memberType}, ${profile.organizationName ?? null}, ${profile.plan}, ${passwordHash}, ${autoVerified}, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false}, ${profile.createdAt})
+      returning id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
     `;
 
     return withAdminPrivileges(rows[0]);
@@ -115,7 +128,7 @@ export async function signInWithPassword(input: { email: string; password: strin
     const rows = await sql<
       Array<MemberProfile & { password_hash: string | null; emailVerified?: boolean }>
     >`
-      select id, email, name, role, plan, password_hash, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      select id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, password_hash, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where email = ${normalizedEmail}
       limit 1
@@ -142,6 +155,8 @@ export async function signInWithPassword(input: { email: string; password: strin
       email: user.email,
       name: user.name,
       role: user.role,
+      memberType: user.memberType,
+      organizationName: user.organizationName,
       plan: user.plan,
       adminAccess: user.adminAccess,
       teacherAccess: user.teacherAccess,
@@ -206,7 +221,7 @@ export async function getAuthenticatedUser(sessionToken: string | undefined) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select u.id, u.email, u.name, u.role, u.plan, u.email_verified as "emailVerified", u.admin_access as "adminAccess", u.teacher_access as "teacherAccess", u.created_at as "createdAt"
+      select u.id, u.email, u.name, u.role, u.member_type as "memberType", u.organization_name as "organizationName", u.plan, u.email_verified as "emailVerified", u.admin_access as "adminAccess", u.teacher_access as "teacherAccess", u.created_at as "createdAt"
       from auth_sessions s
       inner join users u on u.id = s.user_id
       where s.token_hash = ${tokenHash} and s.expires_at > now()

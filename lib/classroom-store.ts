@@ -47,7 +47,7 @@ async function findMemberByEmail(email: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      select id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where email = ${normalizedEmail}
       limit 1
@@ -545,7 +545,7 @@ export async function listInstitutionTeacherSummaries() {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      select id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       order by created_at asc
     `;
@@ -712,6 +712,8 @@ export async function listInstitutionUsers(search?: string) {
         email,
         name,
         role,
+        member_type as "memberType",
+        organization_name as "organizationName",
         plan,
         email_verified as "emailVerified",
         admin_access as "adminAccess",
@@ -734,6 +736,8 @@ export async function listInstitutionUsers(search?: string) {
       email: item.email,
       name: item.name,
       role: item.role,
+      memberType: item.memberType ?? (item.teacherAccess || item.isTeacher ? "teacher" : item.adminAccess || item.isAdmin ? "school" : "student"),
+      organizationName: item.organizationName ?? null,
       plan: item.plan,
       emailVerified: item.emailVerified,
       adminAccess: item.adminAccess ?? item.isAdmin ?? false,
@@ -763,6 +767,8 @@ export async function updateInstitutionUserAccess(input: {
           email,
           name,
           role,
+          member_type as "memberType",
+          organization_name as "organizationName",
           plan,
           email_verified as "emailVerified",
           admin_access as "adminAccess",
@@ -779,6 +785,8 @@ export async function updateInstitutionUserAccess(input: {
           email,
           name,
           role,
+          member_type as "memberType",
+          organization_name as "organizationName",
           plan,
           email_verified as "emailVerified",
           admin_access as "adminAccess",
@@ -795,6 +803,8 @@ export async function updateInstitutionUserAccess(input: {
           email,
           name,
           role,
+          member_type as "memberType",
+          organization_name as "organizationName",
           plan,
           email_verified as "emailVerified",
           admin_access as "adminAccess",
@@ -808,6 +818,8 @@ export async function updateInstitutionUserAccess(input: {
           email,
           name,
           role,
+          member_type as "memberType",
+          organization_name as "organizationName",
           plan,
           email_verified as "emailVerified",
           admin_access as "adminAccess",

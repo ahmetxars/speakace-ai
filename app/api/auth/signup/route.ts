@@ -6,6 +6,7 @@ import {
   getSessionCookieOptions,
   signUpWithPassword
 } from "@/lib/server/auth";
+import { joinTeacherClassByCode } from "@/lib/classroom-store";
 import { sendWelcomePracticeEmail } from "@/lib/server/email";
 import { isAdminEmail } from "@/lib/admin";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
@@ -26,8 +27,25 @@ export async function POST(request: Request) {
     const profile = await signUpWithPassword({
       email: body.email ?? "",
       password: body.password ?? "",
-      name: body.name ?? ""
+      name: body.name ?? "",
+      memberType: body.memberType ?? "student",
+      organizationName: body.organizationName ?? null
     });
+    let classJoinMessage: string | undefined;
+    if (profile.memberType === "student" && typeof body.classCode === "string" && body.classCode.trim()) {
+      try {
+        const joinResult = await joinTeacherClassByCode({
+          studentId: profile.id,
+          joinCode: body.classCode.trim()
+        });
+        classJoinMessage =
+          joinResult.status === "pending"
+            ? "Class request sent. Your teacher will approve you soon."
+            : `Joined ${joinResult.classroom.name}.`;
+      } catch (error) {
+        classJoinMessage = error instanceof Error ? error.message : "Class code could not be applied.";
+      }
+    }
     const autoVerified = isAdminEmail(profile.email);
     const verification = await createEmailVerificationFlow(profile.email);
     try {
@@ -41,7 +59,8 @@ export async function POST(request: Request) {
       profile,
       verificationRequired: !autoVerified,
       emailSent: "emailSent" in verification ? verification.emailSent : false,
-      verificationUrl: "verificationUrl" in verification ? verification.verificationUrl : undefined
+      verificationUrl: "verificationUrl" in verification ? verification.verificationUrl : undefined,
+      classJoinMessage
     });
   } catch (error) {
     return NextResponse.json(

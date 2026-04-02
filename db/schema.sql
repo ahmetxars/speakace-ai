@@ -250,6 +250,8 @@ alter table speaking_sessions add column if not exists cleaned_transcript text;
 alter table speaking_sessions add column if not exists transcript_quality_score numeric(5,2);
 alter table speaking_sessions add column if not exists transcript_quality_label text;
 alter table users add column if not exists email_verified boolean not null default false;
+alter table users add column if not exists member_type text not null default 'student';
+alter table users add column if not exists organization_name text;
 alter table users add column if not exists admin_access boolean not null default false;
 alter table users add column if not exists teacher_access boolean not null default false;
 alter table users add column if not exists billing_status text not null default 'free';
@@ -353,6 +355,20 @@ begin
     alter table users
       add constraint users_role_check
       check (role in ('guest', 'member'));
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'users_member_type_check'
+      and conrelid = 'users'::regclass
+  ) then
+    alter table users
+      add constraint users_member_type_check
+      check (member_type in ('student', 'teacher', 'school'));
   end if;
 end $$;
 

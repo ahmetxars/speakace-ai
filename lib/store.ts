@@ -613,18 +613,20 @@ export async function upsertMember(profile: MemberProfile) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      insert into users (id, email, name, role, plan, email_verified, admin_access, teacher_access, created_at)
-      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.plan}, ${profile.emailVerified ?? false}, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false}, ${profile.createdAt})
+      insert into users (id, email, name, role, member_type, organization_name, plan, email_verified, admin_access, teacher_access, created_at)
+      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.memberType}, ${profile.organizationName ?? null}, ${profile.plan}, ${profile.emailVerified ?? false}, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false}, ${profile.createdAt})
       on conflict (id)
       do update set
         email = excluded.email,
         name = excluded.name,
         role = excluded.role,
+        member_type = excluded.member_type,
+        organization_name = excluded.organization_name,
         plan = excluded.plan,
         email_verified = excluded.email_verified,
         admin_access = excluded.admin_access,
         teacher_access = excluded.teacher_access
-      returning id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      returning id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
     `;
 
     return withAdminPrivileges(rows[0]);
@@ -640,7 +642,7 @@ export async function getMember(userId: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      select id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where id = ${userId}
       limit 1
@@ -659,7 +661,7 @@ export async function getMemberByEmail(email: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      select id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where lower(email) = ${normalizedEmail}
       limit 1
@@ -741,7 +743,7 @@ export async function applyBillingPlanByEmail(input: {
         lemon_customer_id = coalesce(${input.providerCustomerId ?? null}, lemon_customer_id),
         lemon_subscription_id = coalesce(${input.providerSubscriptionId ?? null}, lemon_subscription_id)
       where lower(email) = ${normalizedEmail}
-      returning id, email, name, role, plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      returning id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
     `;
 
     return rows[0] ? withAdminPrivileges(rows[0]) : null;

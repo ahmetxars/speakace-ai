@@ -25,6 +25,7 @@ export type BillingStatus =
   | "refunded";
 export type UserRole = "guest" | "member";
 export type EnrollmentStatus = "pending" | "approved";
+export type MemberType = "student" | "teacher" | "school";
 
 export type FeedbackCategory =
   | "fluency"
@@ -89,6 +90,8 @@ export interface MemberProfile {
   email: string;
   name: string;
   role: UserRole;
+  memberType: MemberType;
+  organizationName?: string | null;
   plan: SubscriptionPlan;
   billingStatus?: BillingStatus;
   lemonCustomerId?: string | null;
@@ -316,6 +319,8 @@ export interface InstitutionUserSummary {
   email: string;
   name: string;
   role: UserRole;
+  memberType: MemberType;
+  organizationName?: string | null;
   plan: SubscriptionPlan;
   emailVerified?: boolean;
   adminAccess?: boolean;

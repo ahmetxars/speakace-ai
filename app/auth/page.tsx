@@ -23,6 +23,9 @@ function AuthPageInner() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const [memberType, setMemberType] = useState<"student" | "teacher" | "school">("student");
+  const [classCode, setClassCode] = useState("");
+  const [organizationName, setOrganizationName] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [successToast, setSuccessToast] = useState("");
@@ -52,11 +55,14 @@ function AuthPageInner() {
       body: JSON.stringify({
         email,
         password,
-        name
+        name,
+        memberType,
+        classCode,
+        organizationName
       })
     });
 
-    const data = (await response.json()) as { error?: string; verificationRequired?: boolean; verificationUrl?: string; needsEmailVerification?: boolean; emailSent?: boolean };
+    const data = (await response.json()) as { error?: string; verificationRequired?: boolean; verificationUrl?: string; needsEmailVerification?: boolean; emailSent?: boolean; classJoinMessage?: string };
     if (!response.ok) {
       setError(data.error ?? (tr ? "Kimlik doğrulama işlemi tamamlanamadı." : "Authentication failed."));
       if (data.needsEmailVerification) {
@@ -71,6 +77,9 @@ function AuthPageInner() {
           ? tr ? "Hesabın oluşturuldu. Doğrulama maili gönderildi." : "Your account was created. Verification email sent."
           : tr ? "Hesabın oluşturuldu. Giris yapmadan once e-posta dogrulamasi gerekiyor." : "Your account was created. Email verification is required."
       );
+      if (data.classJoinMessage) {
+        setNotice(data.classJoinMessage);
+      }
       return;
     }
 
@@ -171,16 +180,66 @@ function AuthPageInner() {
             </button>
           </div>
           {mode === "signup" ? (
-            <label style={{ display: "grid", gap: "0.4rem" }}>
-              <span>{tr ? "İsim" : "Name"}</span>
-              <input
-                type="text"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder={tr ? "Name" : "Name"}
-                style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
-              />
-            </label>
+            <>
+              <div style={{ display: "grid", gap: "0.55rem" }}>
+                <span>{tr ? "Hesap türü" : "Account type"}</span>
+                <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
+                  {[
+                    { key: "student", en: "Student", tr: "Öğrenci" },
+                    { key: "teacher", en: "Teacher", tr: "Öğretmen" },
+                    { key: "school", en: "School", tr: "Kurum" }
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={`button ${memberType === item.key ? "button-primary" : "button-secondary"}`}
+                      onClick={() => setMemberType(item.key as typeof memberType)}
+                    >
+                      {tr ? item.tr : item.en}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <label style={{ display: "grid", gap: "0.4rem" }}>
+                <span>{tr ? "İsim" : "Name"}</span>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder={tr ? "Name" : "Name"}
+                  style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
+                />
+              </label>
+              {memberType === "student" ? (
+                <label style={{ display: "grid", gap: "0.4rem" }}>
+                  <span>{tr ? "Sınıf kodu (opsiyonel)" : "Class code (optional)"}</span>
+                  <input
+                    type="text"
+                    value={classCode}
+                    onChange={(event) => setClassCode(event.target.value)}
+                    placeholder={tr ? "Öğretmenin verdiyse ekle" : "Add it if your teacher gave you one"}
+                    style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
+                  />
+                  <span style={{ color: "var(--muted)", fontSize: "0.9rem", lineHeight: 1.55 }}>
+                    {tr
+                      ? "Kod girersen hesabın kayıt sonrası doğrudan öğretmenin sınıfına bağlanır."
+                      : "If you enter a class code, your account will connect to your teacher's class right after signup."}
+                  </span>
+                </label>
+              ) : null}
+              {memberType === "school" ? (
+                <label style={{ display: "grid", gap: "0.4rem" }}>
+                  <span>{tr ? "Kurum adı" : "School or organization name"}</span>
+                  <input
+                    type="text"
+                    value={organizationName}
+                    onChange={(event) => setOrganizationName(event.target.value)}
+                    placeholder={tr ? "Örn. SpeakAce Academy" : "Example: SpeakAce Academy"}
+                    style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
+                  />
+                </label>
+              ) : null}
+            </>
           ) : null}
           <label style={{ display: "grid", gap: "0.4rem" }}>
             <span>Email</span>

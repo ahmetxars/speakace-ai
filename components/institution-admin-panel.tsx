@@ -194,6 +194,16 @@ export function InstitutionAdminPanel() {
                   <div>
                     <strong>{user.name}</strong>
                     <div className="practice-meta">{user.email}</div>
+                    <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap", marginTop: "0.45rem" }}>
+                      <span className="pill">
+                        {user.memberType === "teacher"
+                          ? tr ? "Öğretmen" : "Teacher"
+                          : user.memberType === "school"
+                            ? tr ? "Kurum" : "School"
+                            : tr ? "Öğrenci" : "Student"}
+                      </span>
+                      {user.organizationName ? <span className="pill">{user.organizationName}</span> : null}
+                    </div>
                   </div>
                   <span className="pill">{user.plan.toUpperCase()}</span>
                 </div>
