@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import Script from "next/script";
 import { FloatingThemeToggle } from "@/components/floating-theme-toggle";
 import { SiteFooter } from "@/components/site-footer";
 import { MarketingStickyCta } from "@/components/marketing-sticky-cta";
@@ -44,9 +43,8 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en">
       <head>
-        <Script
-          id="google-adsense"
-          strategy="beforeInteractive"
+        <script
+          async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3403105676925789"
           crossOrigin="anonymous"
         />
