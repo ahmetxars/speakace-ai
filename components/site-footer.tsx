@@ -42,6 +42,9 @@ export function SiteFooter() {
 
   const companyLinks = [
     { href: "/about" as Route, label: tr ? "Hakkımızda" : "About" },
+    { href: "/contact" as Route, label: tr ? "İletişim" : "Contact" },
+    { href: "/privacy-policy" as Route, label: tr ? "Gizlilik" : "Privacy Policy" },
+    { href: "/terms" as Route, label: tr ? "Kullanım Koşulları" : "Terms of Use" },
     { href: "/blog" as Route, label: "Blog" },
     { href: "/reviews" as Route, label: tr ? "Yorumlar" : "Reviews" },
     { href: "/case-studies" as Route, label: tr ? "Case studies" : "Case studies" },
