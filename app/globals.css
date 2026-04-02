@@ -427,6 +427,15 @@ body[data-theme="dark"] .mobile-nav-links a {
   align-items: center;
 }
 
+.site-header-dropdown::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: -0.4rem;
+  right: -0.4rem;
+  height: 1rem;
+}
+
 .site-header-mega {
   position: relative;
 }
@@ -440,7 +449,7 @@ body[data-theme="dark"] .mobile-nav-links a {
 
 .site-header-dropdown-menu {
   position: absolute;
-  top: calc(100% + 0.8rem);
+  top: calc(100% + 0.15rem);
   right: 0;
   min-width: 13rem;
   padding: 0.55rem;
