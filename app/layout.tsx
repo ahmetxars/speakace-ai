@@ -43,8 +43,15 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en">
       <head>
+        <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
+        <link rel="dns-prefetch" href="https://googleads.g.doubleclick.net" />
+        <link rel="dns-prefetch" href="https://fundingchoicesmessages.google.com" />
+        <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://googleads.g.doubleclick.net" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fundingchoicesmessages.google.com" crossOrigin="anonymous" />
         <script
           async
+          fetchPriority="low"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3403105676925789"
           crossOrigin="anonymous"
         />
