@@ -61,10 +61,10 @@ export function SiteHeader() {
     () => ({
       label: language === "tr" ? "Pratik" : "Practice",
       items: [
-        menuItem("/app/practice", language === "tr" ? "Speaking practice" : "Speaking practice", language === "tr" ? "Gerçek speaking denemesi başlat." : "Start a real speaking session."),
-        menuItem("/tools", language === "tr" ? "Araçlar" : "Tools", language === "tr" ? "Hızlı hesaplayıcılar ve üreticiler." : "Quick calculators and generators."),
-        menuItem("/free-ielts-speaking-test", language === "tr" ? "Ücretsiz test" : "Free test", language === "tr" ? "Kayıt olmadan kısa deneme yap." : "Try a short test before signing up."),
-        menuItem("/daily-ielts-speaking-prompt", language === "tr" ? "Günlük prompt" : "Daily prompt", language === "tr" ? "Her gün tek prompt ile geri dön." : "Come back daily with one prompt.")
+        menuItem("/app/practice", language === "tr" ? "Speaking practice" : "Speaking practice", ""),
+        menuItem("/tools", language === "tr" ? "Araçlar" : "Tools", ""),
+        menuItem("/free-ielts-speaking-test", language === "tr" ? "Ücretsiz test" : "Free test", ""),
+        menuItem("/daily-ielts-speaking-prompt", language === "tr" ? "Günlük prompt" : "Daily prompt", "")
       ]
     }),
     [language]
@@ -74,10 +74,10 @@ export function SiteHeader() {
     () => ({
       label: language === "tr" ? "Keşfet" : "Explore",
       items: [
-        menuItem("/resources", language === "tr" ? "Kaynaklar" : "Resources", language === "tr" ? "Rehberler, hub’lar ve çalışma akışları." : "Guides, hubs, and study flows."),
-        menuItem("/blog", "Blog", language === "tr" ? "Daha fazla trafik çeken speaking yazıları." : "Search-friendly articles for speaking learners."),
-        menuItem("/reviews", language === "tr" ? "Yorumlar" : "Reviews", language === "tr" ? "Kısa kullanıcı yorumları ve güven sinyalleri." : "Quick social proof and learner feedback."),
-        menuItem("/pricing", language === "tr" ? "Fiyatlar" : "Pricing", language === "tr" ? "Free ve Plus farkını gör." : "See the difference between Free and Plus.")
+        menuItem("/resources", language === "tr" ? "Kaynaklar" : "Resources", ""),
+        menuItem("/blog", "Blog", ""),
+        menuItem("/reviews", language === "tr" ? "Yorumlar" : "Reviews", ""),
+        menuItem("/pricing", language === "tr" ? "Fiyatlar" : "Pricing", "")
       ]
     }),
     [language]
@@ -87,10 +87,10 @@ export function SiteHeader() {
     () => ({
       label: language === "tr" ? "Kime uygun" : "Programs",
       items: [
-        menuItem("/for-students", language === "tr" ? "Students" : "Students", language === "tr" ? "Bireysel çalışma yapan öğrenciler için." : "For individual learners building speaking confidence."),
-        menuItem("/for-teachers", language === "tr" ? "Teachers" : "Teachers", language === "tr" ? "Öğretmen paneli ve takip akışı." : "Teacher workflows, notes, and class tracking."),
-        menuItem("/for-schools", language === "tr" ? "Schools" : "Schools", language === "tr" ? "Kurslar ve dil okulları için kurum paketi." : "Institution workflows for schools and language programs."),
-        menuItem("/teacher-demo", language === "tr" ? "Demo class" : "Demo class", language === "tr" ? "Örnek sınıf görünümüyle sistemi incele." : "Open a demo class and see the workflow.")
+        menuItem("/for-students", language === "tr" ? "Students" : "Students", ""),
+        menuItem("/for-teachers", language === "tr" ? "Teachers" : "Teachers", ""),
+        menuItem("/for-schools", language === "tr" ? "Schools" : "Schools", ""),
+        menuItem("/teacher-demo", language === "tr" ? "Demo class" : "Demo class", "")
       ]
     }),
     [language]
@@ -100,10 +100,10 @@ export function SiteHeader() {
     () => ({
       label: language === "tr" ? "Hakkımızda" : "About",
       items: [
-        menuItem("/about", language === "tr" ? "SpeakAce kimdir?" : "Who is SpeakAce?", language === "tr" ? "Misyon, yaklaşım ve ürün amacı." : "Mission, approach, and product vision."),
-        menuItem("/case-studies", language === "tr" ? "Case studies" : "Case studies", language === "tr" ? "Önce-sonra örnek ilerleme akışları." : "Before-and-after learner improvement stories."),
-        menuItem("/success-stories", language === "tr" ? "Başarı hikayeleri" : "Success stories", language === "tr" ? "Gerçek kullanım senaryoları ve sonuçlar." : "Outcome-focused stories and proof points."),
-        menuItem("/compare", language === "tr" ? "Karşılaştır" : "Compare", language === "tr" ? "SpeakAce ile diğer araçları karşılaştır." : "See how SpeakAce compares to alternatives.")
+        menuItem("/about", language === "tr" ? "SpeakAce kimdir?" : "Who is SpeakAce?", ""),
+        menuItem("/case-studies", language === "tr" ? "Case studies" : "Case studies", ""),
+        menuItem("/success-stories", language === "tr" ? "Başarı hikayeleri" : "Success stories", ""),
+        menuItem("/compare", language === "tr" ? "Karşılaştır" : "Compare", "")
       ]
     }),
     [language]
@@ -280,8 +280,9 @@ export function SiteHeader() {
         </button>
       </div>
 
-      <div className={`mobile-nav-overlay ${menuOpen ? "is-open" : ""}`} onClick={closeMenu} />
-      <aside className={`mobile-nav-panel ${menuOpen ? "is-open" : ""}`} aria-hidden={!menuOpen}>
+      {menuOpen ? <div className="mobile-nav-overlay is-open" onClick={closeMenu} /> : null}
+      {menuOpen ? (
+      <aside className="mobile-nav-panel is-open">
         <div className="mobile-nav-panel-head">
           <div>
             <strong>{content.brand}</strong>
@@ -381,6 +382,7 @@ export function SiteHeader() {
           </button>
         </div>
       </aside>
+      ) : null}
     </header>
   );
 }

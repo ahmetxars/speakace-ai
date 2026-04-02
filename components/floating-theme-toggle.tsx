@@ -28,7 +28,7 @@ export function FloatingThemeToggle() {
   }, [theme, tr]);
 
   return (
-    <div className="theme-fab-shell" aria-label={tr ? "Tema degistirici" : "Theme switcher"}>
+    <div className="theme-fab-shell">
       <div className="theme-fab-stack">
         <button
           type="button"
@@ -39,11 +39,7 @@ export function FloatingThemeToggle() {
         >
           <span aria-hidden="true">{content.nextEmoji}</span>
         </button>
-        <div
-          className="theme-fab-button theme-fab-button-current"
-          aria-label={content.activeLabel}
-          title={content.activeLabel}
-        >
+        <div className="theme-fab-button theme-fab-button-current" title={content.activeLabel}>
           <span aria-hidden="true">{content.activeEmoji}</span>
         </div>
       </div>

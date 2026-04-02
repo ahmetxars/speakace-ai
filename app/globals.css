@@ -64,6 +64,18 @@ body[data-theme="dark"] .theme-fab-button {
   border-color: rgba(255, 255, 255, 0.08);
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 h1,
 h2,
 h3,
@@ -539,7 +551,8 @@ body[data-theme="dark"] .mobile-nav-links a {
 
 .button-locale[data-active="true"] {
   background: var(--accent);
-  color: white;
+  color: #241914;
+  border-color: transparent;
 }
 
 .site-header-menu-button {
@@ -641,6 +654,10 @@ body[data-theme="dark"] .mobile-nav-panel {
   background: rgba(255, 255, 255, 0.66);
   display: grid;
   gap: 0.2rem;
+}
+
+body[data-theme="dark"] .mobile-nav-links a {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .mobile-nav-link-copy {
@@ -756,7 +773,7 @@ body[data-theme="dark"] .card {
 
 .button-primary {
   background: var(--accent);
-  color: #fff8f2;
+  color: #241914;
 }
 
 .button-secondary {
@@ -774,7 +791,7 @@ body[data-theme="dark"] .button-secondary:hover {
 }
 
 body[data-theme="dark"] .button-primary {
-  color: #fff7f1;
+  color: #20140d;
 }
 
 .grid {

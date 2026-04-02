@@ -43,14 +43,6 @@ export function Providers({ children }: { children: ReactNode }) {
     document.body.dataset.theme = nextTheme;
   };
 
-  const syncProfile = async (profile: MemberProfile) => {
-    await fetch("/api/account/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profile)
-    });
-  };
-
   const initializeUser = useCallback(async (storedUser: string | null) => {
     const sessionResponse = await fetch("/api/auth/session");
     const sessionData = (await sessionResponse.json()) as { profile: MemberProfile | null };
@@ -67,7 +59,6 @@ export function Providers({ children }: { children: ReactNode }) {
       if (parsedUser.role === "guest") {
         setCurrentUser(parsedUser);
         setSignedInState(false);
-        await syncProfile(parsedUser);
         return;
       }
     }
@@ -76,17 +67,17 @@ export function Providers({ children }: { children: ReactNode }) {
     setCurrentUser(guest);
     setSignedInState(false);
     window.localStorage.setItem("speakace-user", JSON.stringify(guest));
-    await syncProfile(guest);
   }, []);
 
   useEffect(() => {
     if (!currentUser?.id || !pathname) return;
+    if (!signedIn && !pathname.startsWith("/app")) return;
     void trackClientEvent({
       userId: currentUser.id,
       event: "page_view",
       path: pathname
     });
-  }, [currentUser?.id, pathname]);
+  }, [currentUser?.id, pathname, signedIn]);
 
   useEffect(() => {
     const storedLanguage = window.localStorage.getItem("speakace-language");
@@ -111,7 +102,6 @@ export function Providers({ children }: { children: ReactNode }) {
     setCurrentUser(profile);
     setSignedInState(false);
     window.localStorage.setItem("speakace-user", JSON.stringify(profile));
-    await syncProfile(profile);
   };
 
   const refreshSession = async () => {
@@ -134,7 +124,6 @@ export function Providers({ children }: { children: ReactNode }) {
     setCurrentUser(guest);
     setSignedInState(false);
     window.localStorage.setItem("speakace-user", JSON.stringify(guest));
-    await syncProfile(guest);
   };
 
   const updatePlan = async (plan: SubscriptionPlan) => {
@@ -165,7 +154,6 @@ export function Providers({ children }: { children: ReactNode }) {
     const nextUser = { ...currentUser, plan };
     setCurrentUser(nextUser);
     window.localStorage.setItem("speakace-user", JSON.stringify(nextUser));
-    await syncProfile(nextUser);
   };
 
   return (
