@@ -3,7 +3,7 @@
 import type { Route } from "next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { copy } from "@/lib/copy";
+import { copy, languageMeta, localeOptions } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
 import type { NotificationItem } from "@/lib/notifications";
 
@@ -23,6 +23,7 @@ const menuItem = (href: Route, label: string, description: string): NavMenuItem 
 export function SiteHeader() {
   const { language, setLanguage, signedIn, currentUser, signOut } = useAppState();
   const content = copy[language];
+  const currentLocale = languageMeta[language];
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -246,23 +247,25 @@ export function SiteHeader() {
                 </>
               )}
             </div>
-            <div className="site-header-locale">
-              <button
-                className="button button-locale"
-                type="button"
-                onClick={() => setLanguage("en")}
-                data-active={language === "en"}
-              >
-                EN
+            <div className="site-header-dropdown site-header-locale-dropdown">
+              <button className="button button-locale button-locale-trigger" type="button" aria-label="Change language">
+                <span className="button-locale-flag" aria-hidden="true">{currentLocale.flag}</span>
+                <span>{currentLocale.code.toUpperCase()}</span>
               </button>
-              <button
-                className="button button-locale"
-                type="button"
-                onClick={() => setLanguage("tr")}
-                data-active={language === "tr"}
-              >
-                TR
-              </button>
+              <div className="site-header-dropdown-menu card site-header-locale-menu">
+                {localeOptions.map((locale) => (
+                  <button
+                    key={locale.code}
+                    className="site-header-locale-option"
+                    type="button"
+                    onClick={() => setLanguage(locale.code)}
+                    data-active={language === locale.code}
+                  >
+                    <span aria-hidden="true">{locale.flag}</span>
+                    <span>{locale.nativeLabel}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -363,23 +366,19 @@ export function SiteHeader() {
           )}
         </div>
 
-        <div className="mobile-language-switch">
-          <button
-            className="button button-locale"
-            type="button"
-            onClick={() => setLanguage("en")}
-            data-active={language === "en"}
-          >
-            EN
-          </button>
-          <button
-            className="button button-locale"
-            type="button"
-            onClick={() => setLanguage("tr")}
-            data-active={language === "tr"}
-          >
-            TR
-          </button>
+        <div className="mobile-language-switch mobile-language-grid">
+          {localeOptions.map((locale) => (
+            <button
+              key={locale.code}
+              className="button button-locale mobile-language-option"
+              type="button"
+              onClick={() => setLanguage(locale.code)}
+              data-active={language === locale.code}
+            >
+              <span aria-hidden="true">{locale.flag}</span>
+              <span>{locale.code.toUpperCase()}</span>
+            </button>
+          ))}
         </div>
       </aside>
       ) : null}

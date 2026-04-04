@@ -2,17 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
-import { blogPosts } from "@/lib/marketing-content";
-import { commerceConfig } from "@/lib/commerce";
+import { getAllBlogSlugs, getBlogChromeCopy, getLocalizedBlogPost, getLocalizedBlogPosts } from "@/lib/blog-content";
+import { getServerLanguage } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
 
 export function generateStaticParams() {
-  return blogPosts.map((post) => ({ slug: post.slug }));
+  return getAllBlogSlugs().map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const post = blogPosts.find((item) => item.slug === slug);
+  const post = getLocalizedBlogPost("en", slug);
   if (!post) {
     return {};
   }
@@ -36,12 +36,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = blogPosts.find((item) => item.slug === slug);
+  const language = await getServerLanguage();
+  const chrome = getBlogChromeCopy(language);
+  const post = getLocalizedBlogPost(language, slug);
   if (!post) {
     notFound();
   }
 
-  const relatedPosts = blogPosts.filter((item) => item.slug !== post.slug).slice(0, 3);
+  const relatedPosts = getLocalizedBlogPosts(language).filter((item) => item.slug !== post.slug).slice(0, 3);
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -74,16 +76,16 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <SiteHeader />
       <main className="page-shell section">
         <div className="section-head">
-          <span className="eyebrow">Blog</span>
+          <span className="eyebrow">{chrome.cta.blog}</span>
           <h1 style={{ fontSize: "clamp(2.6rem, 6vw, 4.5rem)", lineHeight: 0.98 }}>{post.title}</h1>
           <p>{post.description}</p>
         </div>
 
         <article className="card" style={{ padding: "1.5rem" }}>
           <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-            <Link href="/blog" className="pill">Blog</Link>
-            <Link href="/pricing" className="pill">Pricing</Link>
-            <Link href="/app/practice" className="pill">Practice</Link>
+            <Link href="/blog" className="pill">{chrome.cta.blog}</Link>
+            <Link href="/resources" className="pill">{language === "tr" ? "Kaynaklar" : "Resources"}</Link>
+            <Link href="/guides" className="pill">{language === "tr" ? "Rehberler" : "Guides"}</Link>
           </div>
           <p style={{ color: "var(--muted)", lineHeight: 1.85 }}>{post.intro}</p>
           {post.sections.map((section) => (
@@ -99,23 +101,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         </article>
 
         <section className="section" style={{ paddingBottom: 0 }}>
-          <div className="card quick-pitch" style={{ padding: "1.4rem" }}>
-            <h2 style={{ marginBottom: "0.7rem" }}>Practice with SpeakAce</h2>
-            <p className="practice-copy" style={{ marginBottom: "1rem" }}>
-              Use AI feedback, transcript review, pronunciation analysis, and speaking test
-              simulation to build better IELTS speaking answers.
-            </p>
-            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-              <a className="button button-primary" href="/app/practice">Start speaking practice</a>
-              <a className="button button-secondary" href={commerceConfig.plusCheckoutPath}>Unlock Plus</a>
-            </div>
-          </div>
-        </section>
-
-        <section className="section" style={{ paddingBottom: 0 }}>
           <div className="section-head">
-            <span className="eyebrow">Read next</span>
-            <h2>More IELTS speaking practice guides</h2>
+            <span className="eyebrow">{chrome.cta.latest}</span>
+            <h2>{language === "tr" ? "Sıradaki okunacak yazılar" : "Read next"}</h2>
           </div>
           <div className="marketing-grid">
             {relatedPosts.map((item) => (
@@ -123,30 +111,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
                 <Link className="button button-secondary" href={`/blog/${item.slug}`}>
-                  Read article
+                  {chrome.cta.read}
                 </Link>
               </article>
             ))}
-          </div>
-        </section>
-        <section className="section" style={{ paddingBottom: 0 }}>
-          <div className="card quick-pitch">
-            <h2 style={{ marginBottom: "0.7rem" }}>Keep the visitor moving forward</h2>
-            <p className="practice-copy" style={{ marginBottom: "1rem" }}>
-              If this article matched the search intent, the next best step is a focused resource
-              page or a real speaking task inside the product.
-            </p>
-            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-              <Link className="button button-primary" href="/resources">
-                Open resources
-              </Link>
-              <Link className="button button-secondary" href="/ielts-band-score-guide">
-                Band score guide
-              </Link>
-              <Link className="button button-secondary" href="/ielts-speaking-topics">
-                IELTS topics
-              </Link>
-            </div>
           </div>
         </section>
 

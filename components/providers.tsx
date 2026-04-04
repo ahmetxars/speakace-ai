@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Language } from "@/lib/copy";
+import { defaultLanguage, isSupportedLanguage, Language } from "@/lib/copy";
 import { createGuestProfile } from "@/lib/membership";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { MemberProfile, SubscriptionPlan } from "@/lib/types";
@@ -35,6 +35,7 @@ export function Providers({ children }: { children: ReactNode }) {
   const setLanguage = (nextLanguage: Language) => {
     setLanguageState(nextLanguage);
     window.localStorage.setItem("speakace-language", nextLanguage);
+    document.cookie = `speakace-language=${nextLanguage}; path=/; max-age=31536000; samesite=lax`;
   };
 
   const setTheme = (nextTheme: ThemeMode) => {
@@ -84,8 +85,11 @@ export function Providers({ children }: { children: ReactNode }) {
     const storedTheme = window.localStorage.getItem("speakace-theme");
     const storedUser = window.localStorage.getItem("speakace-user");
 
-    if (storedLanguage === "en" || storedLanguage === "tr") {
+    if (isSupportedLanguage(storedLanguage)) {
       setLanguageState(storedLanguage);
+      document.cookie = `speakace-language=${storedLanguage}; path=/; max-age=31536000; samesite=lax`;
+    } else {
+      document.cookie = `speakace-language=${defaultLanguage}; path=/; max-age=31536000; samesite=lax`;
     }
 
     if (storedTheme === "light" || storedTheme === "dark") {

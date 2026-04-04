@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { blogPosts } from "@/lib/marketing-content";
+import { getAllBlogSlugs } from "@/lib/blog-content";
 import { comparisonPages, guidePages, toolPages } from "@/lib/seo-growth";
 import { siteConfig } from "@/lib/site";
 import { seoTopicPages } from "@/lib/seo-topics";
@@ -42,7 +42,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/auth",
     "/app"
   ];
-  const blogRoutes = blogPosts.map((post) => `/blog/${post.slug}`);
+  const blogRoutes = getAllBlogSlugs().map((slug) => `/blog/${slug}`);
   const topicRoutes = seoTopicPages.map((topic) => `/ielts-speaking-topics/${topic.slug}`);
   const comparisonRoutes = comparisonPages.map((item) => `/compare/${item.slug}`);
   const toolRoutes = toolPages.map((item) => `/tools/${item.slug}`);

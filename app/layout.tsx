@@ -5,6 +5,7 @@ import { FloatingThemeToggle } from "@/components/floating-theme-toggle";
 import { SiteFooter } from "@/components/site-footer";
 import { MarketingStickyCta } from "@/components/marketing-sticky-cta";
 import { Providers } from "@/components/providers";
+import { getServerDirection, getServerLanguage } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
 
@@ -40,9 +41,12 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest"
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const language = await getServerLanguage();
+  const direction = await getServerDirection();
+
   return (
-    <html lang="en">
+    <html lang={language} dir={direction}>
       <head>
         <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
         <link rel="dns-prefetch" href="https://googleads.g.doubleclick.net" />

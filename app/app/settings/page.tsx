@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { localeOptions } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
 
 export default function SettingsPage() {
@@ -44,13 +45,19 @@ export default function SettingsPage() {
           <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
             <strong>{tr ? "Arayüz dili" : "Interface language"}</strong>
             <p>{tr ? `Seçili dil: ${language.toUpperCase()}` : `Current selection: ${language.toUpperCase()}`}</p>
-            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-              <button className="button button-secondary" type="button" onClick={() => setLanguage("en")}>
-                English
-              </button>
-              <button className="button button-secondary" type="button" onClick={() => setLanguage("tr")}>
-                Türkçe
-              </button>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.6rem" }}>
+              {localeOptions.map((locale) => (
+                <button
+                  key={locale.code}
+                  className="button button-secondary"
+                  type="button"
+                  onClick={() => setLanguage(locale.code)}
+                  style={{ justifyContent: "center", gap: "0.45rem" }}
+                >
+                  <span aria-hidden="true">{locale.flag}</span>
+                  <span>{locale.nativeLabel}</span>
+                </button>
+              ))}
             </div>
           </div>
           <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>

@@ -3,7 +3,8 @@ import type { Route } from "next";
 import Link from "next/link";
 import { LeadCaptureForm } from "@/components/lead-capture-form";
 import { SiteHeader } from "@/components/site-header";
-import { blogPosts } from "@/lib/marketing-content";
+import { getBlogChromeCopy, getLocalizedBlogPosts } from "@/lib/blog-content";
+import { getServerLanguage } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
 
 const resourceCards: Array<{
@@ -117,7 +118,10 @@ export const metadata: Metadata = {
   }
 };
 
-export default function ResourcesPage() {
+export default async function ResourcesPage() {
+  const language = await getServerLanguage();
+  const chrome = getBlogChromeCopy(language);
+  const blogPosts = getLocalizedBlogPosts(language);
   const featuredArticle = blogPosts[0];
   const popularArticles = blogPosts.slice(1, 7);
   const collectionJsonLd = {
@@ -163,16 +167,16 @@ export default function ResourcesPage() {
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="card institution-cta">
             <div>
-              <span className="eyebrow">Featured article</span>
+              <span className="eyebrow">{chrome.cta.featured}</span>
               <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{featuredArticle.title}</h2>
               <p className="practice-copy">{featuredArticle.description}</p>
             </div>
             <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
               <Link className="button button-primary" href={`/blog/${featuredArticle.slug}`}>
-                Read featured article
+                {chrome.cta.read}
               </Link>
               <Link className="button button-secondary" href="/blog">
-                Open blog
+                {chrome.cta.blog}
               </Link>
             </div>
           </div>
@@ -245,7 +249,7 @@ export default function ResourcesPage() {
                 <h3>{post.title}</h3>
                 <p>{post.description}</p>
                 <Link className="button button-secondary" href={`/blog/${post.slug}`}>
-                  Read article
+                  {chrome.cta.read}
                 </Link>
               </article>
             ))}
