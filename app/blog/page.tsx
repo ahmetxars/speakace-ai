@@ -5,6 +5,8 @@ import { getBlogChromeCopy, getFeaturedBlogPosts } from "@/lib/blog-content";
 import { getServerLanguage } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "IELTS and TOEFL Speaking Blog",
   description:
@@ -26,6 +28,21 @@ export default async function BlogIndexPage() {
   const language = await getServerLanguage();
   const chrome = getBlogChromeCopy(language);
   const { featured, firstPath, secondPath, all } = getFeaturedBlogPosts(language);
+  const pageLabels = {
+    en: { count: "articles", latestIntro: "Read structured IELTS and TOEFL guides by topic, exam section, and study goal." },
+    tr: { count: "yazı", latestIntro: "Konulara, sınav bölümlerine ve çalışma hedeflerine göre düzenlenmiş IELTS ve TOEFL yazılarını incele." },
+    de: { count: "Artikel", latestIntro: "Lies strukturierte IELTS- und TOEFL-Leitfäden nach Thema, Prüfungsteil und Lernziel." },
+    es: { count: "artículos", latestIntro: "Lee guías estructuradas de IELTS y TOEFL por tema, sección del examen y objetivo de estudio." },
+    fr: { count: "articles", latestIntro: "Lisez des guides IELTS et TOEFL organisés par sujet, partie de l’examen et objectif d’étude." },
+    it: { count: "articoli", latestIntro: "Leggi guide IELTS e TOEFL organizzate per argomento, sezione d’esame e obiettivo di studio." },
+    pt: { count: "artigos", latestIntro: "Leia guias de IELTS e TOEFL organizados por tema, parte da prova e objetivo de estudo." },
+    nl: { count: "artikelen", latestIntro: "Lees gestructureerde IELTS- en TOEFL-gidsen per onderwerp, examendeel en studiedoel." },
+    pl: { count: "artykułów", latestIntro: "Czytaj uporządkowane materiały IELTS i TOEFL według tematu, części egzaminu i celu nauki." },
+    ru: { count: "статей", latestIntro: "Читайте структурированные материалы по IELTS и TOEFL по теме, части экзамена и учебной цели." },
+    ar: { count: "مقالًا", latestIntro: "اقرأ مقالات IELTS وTOEFL المرتبة حسب الموضوع وجزء الاختبار وهدف الدراسة." },
+    ja: { count: "記事", latestIntro: "テーマ、試験パート、学習目的ごとに整理されたIELTS・TOEFLガイドを読めます。" },
+    ko: { count: "개 글", latestIntro: "주제, 시험 파트, 학습 목표별로 정리된 IELTS·TOEFL 가이드를 읽어보세요." }
+  }[language];
 
   const blogJsonLd = {
     "@context": "https://schema.org",
@@ -71,6 +88,7 @@ export default async function BlogIndexPage() {
           <div className="section-head">
             <span className="eyebrow">{chrome.cta.readingTracks}</span>
             <h2>{chrome.labels.latestDescription}</h2>
+            <p>{pageLabels.latestIntro}</p>
           </div>
           <div className="marketing-grid">
             <article className="card feature-card">
@@ -103,7 +121,7 @@ export default async function BlogIndexPage() {
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="section-head">
             <span className="eyebrow">{chrome.cta.latest}</span>
-            <h2>{all.length} articles</h2>
+            <h2>{all.length} {pageLabels.count}</h2>
           </div>
           <div className="marketing-grid">
             {all.map((post) => (

@@ -1001,6 +1001,7 @@ body[data-theme="dark"] .notification-dropdown-item.is-success {
 .pricing-card,
 .mini-metric {
   padding: 1.3rem;
+  min-width: 0;
 }
 
 body[data-theme="dark"] .feature-card,
@@ -1019,21 +1020,31 @@ body[data-theme="dark"] .mini-metric {
   display: grid;
   gap: 0.7rem;
   margin-top: 0.25rem;
+  min-width: 0;
 }
 
 .blog-reading-link {
   display: block;
+  width: 100%;
+  min-width: 0;
   padding: 0.9rem 1rem;
   border-radius: 1rem;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--text);
   line-height: 1.45;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .blog-reading-link strong {
+  display: block;
   font-size: 0.98rem;
   font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .blog-reading-link:hover {
