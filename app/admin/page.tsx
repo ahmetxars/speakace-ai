@@ -27,24 +27,66 @@ export default async function AdminPage() {
   }
 
   try {
-    const [overview, members, billingEvents, authActivity, referralCodes, institutions] = await Promise.all([
-      getAdminOverview(),
-      listAdminMembers(),
-      listAdminBillingEvents(),
-      listAdminAuthActivity(),
-      listReferralCodes(),
-      listInstitutionBreakdown()
-    ]);
+    const [overviewResult, membersResult, billingEventsResult, authActivityResult, referralCodesResult, institutionsResult] =
+      await Promise.allSettled([
+        getAdminOverview(),
+        listAdminMembers(),
+        listAdminBillingEvents(),
+        listAdminAuthActivity(),
+        listReferralCodes(),
+        listInstitutionBreakdown()
+      ]);
+
+    const overview =
+      overviewResult.status === "fulfilled"
+        ? overviewResult.value
+        : {
+            totalUsers: 0,
+            totalStudents: 0,
+            totalTeachers: 0,
+            totalSchools: 0,
+            paidMembers: 0,
+            trialMembers: 0,
+            activeSessions: 0,
+            recentSignIns24h: 0,
+            classesCount: 0,
+            monthlyRevenueEstimate: 0
+          };
+    const members = membersResult.status === "fulfilled" ? membersResult.value : [];
+    const billingEvents = billingEventsResult.status === "fulfilled" ? billingEventsResult.value : [];
+    const authActivity = authActivityResult.status === "fulfilled" ? authActivityResult.value : [];
+    const referralCodes = referralCodesResult.status === "fulfilled" ? referralCodesResult.value : [];
+    const institutions = institutionsResult.status === "fulfilled" ? institutionsResult.value : [];
+
+    const payload = JSON.parse(
+      JSON.stringify({
+        sessionLabel: session.adminLabel,
+        overview,
+        members,
+        billingEvents,
+        authActivity,
+        referralCodes,
+        institutions
+      })
+    ) as {
+      sessionLabel: string;
+      overview: typeof overview;
+      members: typeof members;
+      billingEvents: typeof billingEvents;
+      authActivity: typeof authActivity;
+      referralCodes: typeof referralCodes;
+      institutions: typeof institutions;
+    };
 
     return (
       <AdminPanel
-        sessionLabel={session.adminLabel}
-        overview={overview}
-        members={members}
-        billingEvents={billingEvents}
-        authActivity={authActivity}
-        referralCodes={referralCodes}
-        institutions={institutions}
+        sessionLabel={payload.sessionLabel}
+        overview={payload.overview}
+        members={payload.members}
+        billingEvents={payload.billingEvents}
+        authActivity={payload.authActivity}
+        referralCodes={payload.referralCodes}
+        institutions={payload.institutions}
       />
     );
   } catch {

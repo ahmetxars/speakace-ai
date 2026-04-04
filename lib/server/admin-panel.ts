@@ -426,7 +426,7 @@ export async function listAdminBillingEvents(limit = 20) {
   }
 
   const sql = getSql();
-  return sql<
+  const rows = await sql<
     Array<{
       id: string;
       event_name: string;
@@ -441,6 +441,15 @@ export async function listAdminBillingEvents(limit = 20) {
     order by created_at desc
     limit ${limit}
   `;
+
+  return rows.map((row) => ({
+    id: String(row.id),
+    event_name: String(row.event_name),
+    user_email: row.user_email ? String(row.user_email) : null,
+    plan: row.plan,
+    billing_status: row.billing_status,
+    created_at: String(row.created_at)
+  }));
 }
 
 export async function listAdminAuthActivity(limit = 30): Promise<AdminAuthActivityRecord[]> {
@@ -613,7 +622,7 @@ export async function listInstitutionBreakdown(): Promise<AdminInstitutionRecord
   }
 
   const sql = getSql();
-  return sql<AdminInstitutionRecord[]>`
+  const rows = await sql<AdminInstitutionRecord[]>`
     select
       coalesce(nullif(trim(u.organization_name), ''), 'Independent') as "organizationName",
       count(*) filter (where u.member_type = 'teacher')::int as teachers,
@@ -636,4 +645,13 @@ export async function listInstitutionBreakdown(): Promise<AdminInstitutionRecord
     group by coalesce(nullif(trim(u.organization_name), ''), 'Independent')
     order by students desc, teachers desc, "organizationName" asc
   `;
+
+  return rows.map((row) => ({
+    organizationName: String(row.organizationName),
+    teachers: Number(row.teachers ?? 0),
+    students: Number(row.students ?? 0),
+    schools: Number(row.schools ?? 0),
+    averageScore: row.averageScore === null || row.averageScore === undefined ? null : Number(row.averageScore),
+    totalSessions: Number(row.totalSessions ?? 0)
+  }));
 }
