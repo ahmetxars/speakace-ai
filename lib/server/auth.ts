@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { compare, hash } from "bcryptjs";
 import { isAdminEmail, withAdminPrivileges } from "@/lib/admin";
 import { createMemberProfile } from "@/lib/membership";
+import { recordAuthActivity, validateReferralCode } from "@/lib/server/admin-panel";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { hasEmailTransport, sendPasswordResetEmail, sendVerificationEmail } from "@/lib/server/email";
 import { MemberProfile } from "@/lib/types";
@@ -73,6 +74,7 @@ export async function signUpWithPassword(input: {
   name: string;
   memberType?: MemberProfile["memberType"];
   organizationName?: string | null;
+  referralCode?: string | null;
 }) {
   const normalizedEmail = input.email.trim().toLowerCase();
   if (!normalizedEmail || !input.password.trim()) {
@@ -86,6 +88,8 @@ export async function signUpWithPassword(input: {
     input.memberType === "teacher" || input.memberType === "school" ? input.memberType : "student";
   const passwordHash = await hash(input.password, 12);
   const purchasedPlan = await getActiveBillingPlanForEmail(normalizedEmail);
+  const referral = await validateReferralCode(input.referralCode);
+  const trialEndsAt = referral ? new Date(Date.now() + referral.trialDays * 24 * 60 * 60 * 1000).toISOString() : null;
   const profile = withAdminPrivileges({
     ...createMemberProfile(normalizedEmail, input.name, {
       memberType: requestedMemberType,
@@ -93,7 +97,10 @@ export async function signUpWithPassword(input: {
     }),
     teacherAccess: requestedMemberType === "teacher" || requestedMemberType === "school",
     adminAccess: requestedMemberType === "school",
-    plan: purchasedPlan ?? "free"
+    plan: purchasedPlan ?? (referral ? "plus" : "free"),
+    billingStatus: referral ? "on_trial" : purchasedPlan ? "active" : "free",
+    trialEndsAt,
+    referralCodeUsed: referral?.code ?? null
   });
   const autoVerified = isAdminEmail(normalizedEmail);
 
@@ -107,9 +114,19 @@ export async function signUpWithPassword(input: {
     }
 
     const rows = await sql<MemberProfile[]>`
-      insert into users (id, email, name, role, member_type, organization_name, plan, password_hash, email_verified, admin_access, teacher_access, created_at)
-      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.memberType}, ${profile.organizationName ?? null}, ${profile.plan}, ${passwordHash}, ${autoVerified}, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false}, ${profile.createdAt})
-      returning id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      insert into users (
+        id, email, name, role, member_type, organization_name, plan, password_hash, email_verified,
+        admin_access, teacher_access, billing_status, trial_ends_at, referral_code_used, created_at
+      )
+      values (
+        ${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.memberType}, ${profile.organizationName ?? null},
+        ${profile.plan}, ${passwordHash}, ${autoVerified}, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false},
+        ${profile.billingStatus ?? "free"}, ${profile.trialEndsAt ?? null}, ${profile.referralCodeUsed ?? null}, ${profile.createdAt}
+      )
+      returning
+        id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan,
+        billing_status as "billingStatus", trial_ends_at as "trialEndsAt", referral_code_used as "referralCodeUsed",
+        email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
     `;
 
     return withAdminPrivileges(rows[0]);
@@ -128,7 +145,19 @@ export async function signInWithPassword(input: { email: string; password: strin
     const rows = await sql<
       Array<MemberProfile & { password_hash: string | null; emailVerified?: boolean }>
     >`
-      select id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, password_hash, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      select
+        id, email, name, role, member_type as "memberType", organization_name as "organizationName",
+        case
+          when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'free'
+          else plan
+        end as "plan",
+        case
+          when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'expired'
+          else billing_status
+        end as "billingStatus",
+        lemon_customer_id as "lemonCustomerId", lemon_subscription_id as "lemonSubscriptionId",
+        trial_ends_at as "trialEndsAt", referral_code_used as "referralCodeUsed",
+        password_hash, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where email = ${normalizedEmail}
       limit 1
@@ -150,7 +179,7 @@ export async function signInWithPassword(input: { email: string; password: strin
       user.emailVerified = true;
     }
 
-    return withAdminPrivileges({
+    const profile = withAdminPrivileges({
       id: user.id,
       email: user.email,
       name: user.name,
@@ -158,11 +187,18 @@ export async function signInWithPassword(input: { email: string; password: strin
       memberType: user.memberType,
       organizationName: user.organizationName,
       plan: user.plan,
+      billingStatus: user.billingStatus,
+      lemonCustomerId: user.lemonCustomerId,
+      lemonSubscriptionId: user.lemonSubscriptionId,
+      trialEndsAt: user.trialEndsAt,
+      referralCodeUsed: user.referralCodeUsed,
       adminAccess: user.adminAccess,
       teacherAccess: user.teacherAccess,
       emailVerified: user.emailVerified,
       createdAt: user.createdAt
     });
+    await recordAuthActivity({ userId: profile.id, eventType: "signin", meta: { source: "password" } });
+    return profile;
   }
 
   const profile = await findMemberByEmail(normalizedEmail);
@@ -221,7 +257,19 @@ export async function getAuthenticatedUser(sessionToken: string | undefined) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select u.id, u.email, u.name, u.role, u.member_type as "memberType", u.organization_name as "organizationName", u.plan, u.email_verified as "emailVerified", u.admin_access as "adminAccess", u.teacher_access as "teacherAccess", u.created_at as "createdAt"
+      select
+        u.id, u.email, u.name, u.role, u.member_type as "memberType", u.organization_name as "organizationName",
+        case
+          when u.billing_status = 'on_trial' and u.trial_ends_at is not null and u.trial_ends_at <= now() then 'free'
+          else u.plan
+        end as "plan",
+        case
+          when u.billing_status = 'on_trial' and u.trial_ends_at is not null and u.trial_ends_at <= now() then 'expired'
+          else u.billing_status
+        end as "billingStatus",
+        u.lemon_customer_id as "lemonCustomerId", u.lemon_subscription_id as "lemonSubscriptionId",
+        u.trial_ends_at as "trialEndsAt", u.referral_code_used as "referralCodeUsed",
+        u.email_verified as "emailVerified", u.admin_access as "adminAccess", u.teacher_access as "teacherAccess", u.created_at as "createdAt"
       from auth_sessions s
       inner join users u on u.id = s.user_id
       where s.token_hash = ${tokenHash} and s.expires_at > now()
@@ -253,7 +301,13 @@ export async function signOutSession(sessionToken: string | undefined) {
   const tokenHash = sha256(sessionToken);
   if (hasDatabaseUrl()) {
     const sql = getSql();
+    const rows = await sql<Array<{ user_id: string }>>`
+      select user_id from auth_sessions where token_hash = ${tokenHash} limit 1
+    `;
     await sql`delete from auth_sessions where token_hash = ${tokenHash}`;
+    if (rows[0]?.user_id) {
+      await recordAuthActivity({ userId: rows[0].user_id, eventType: "signout", meta: { source: "session" } });
+    }
     return;
   }
 

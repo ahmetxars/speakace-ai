@@ -26,6 +26,7 @@ function AuthPageInner() {
   const [memberType, setMemberType] = useState<"student" | "teacher" | "school">("student");
   const [classCode, setClassCode] = useState("");
   const [organizationName, setOrganizationName] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [successToast, setSuccessToast] = useState("");
@@ -36,6 +37,10 @@ function AuthPageInner() {
     const requestedMode = searchParams.get("mode");
     if (requestedMode === "signin" || requestedMode === "signup") {
       setMode(requestedMode);
+    }
+    const requestedReferral = searchParams.get("ref");
+    if (requestedReferral) {
+      setReferralCode(requestedReferral.toUpperCase());
     }
   }, [searchParams]);
 
@@ -58,7 +63,8 @@ function AuthPageInner() {
         name,
         memberType,
         classCode,
-        organizationName
+        organizationName,
+        referralCode
       })
     });
 
@@ -239,6 +245,21 @@ function AuthPageInner() {
                   />
                 </label>
               ) : null}
+              <label style={{ display: "grid", gap: "0.4rem" }}>
+                <span>{tr ? "Referans kodu (opsiyonel)" : "Referral code (optional)"}</span>
+                <input
+                  type="text"
+                  value={referralCode}
+                  onChange={(event) => setReferralCode(event.target.value.toUpperCase())}
+                  placeholder={tr ? "Örn. SPEAKACE7" : "Example: SPEAKACE7"}
+                  style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
+                />
+                <span style={{ color: "var(--muted)", fontSize: "0.9rem", lineHeight: 1.55 }}>
+                  {tr
+                    ? "Geçerli bir kod girersen 1 haftalık ücretsiz deneme gibi kampanyalar otomatik uygulanır."
+                    : "If you enter a valid code, offers like a 1-week free trial will be applied automatically."}
+                </span>
+              </label>
             </>
           ) : null}
           <label style={{ display: "grid", gap: "0.4rem" }}>

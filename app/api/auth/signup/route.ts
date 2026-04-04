@@ -29,7 +29,8 @@ export async function POST(request: Request) {
       password: body.password ?? "",
       name: body.name ?? "",
       memberType: body.memberType ?? "student",
-      organizationName: body.organizationName ?? null
+      organizationName: body.organizationName ?? null,
+      referralCode: body.referralCode ?? null
     });
     let classJoinMessage: string | undefined;
     if (profile.memberType === "student" && typeof body.classCode === "string" && body.classCode.trim()) {

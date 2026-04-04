@@ -613,8 +613,16 @@ export async function upsertMember(profile: MemberProfile) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      insert into users (id, email, name, role, member_type, organization_name, plan, email_verified, admin_access, teacher_access, created_at)
-      values (${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.memberType}, ${profile.organizationName ?? null}, ${profile.plan}, ${profile.emailVerified ?? false}, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false}, ${profile.createdAt})
+      insert into users (
+        id, email, name, role, member_type, organization_name, plan, billing_status, lemon_customer_id, lemon_subscription_id,
+        trial_ends_at, referral_code_used, email_verified, admin_access, teacher_access, created_at
+      )
+      values (
+        ${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.memberType}, ${profile.organizationName ?? null},
+        ${profile.plan}, ${profile.billingStatus ?? "free"}, ${profile.lemonCustomerId ?? null}, ${profile.lemonSubscriptionId ?? null},
+        ${profile.trialEndsAt ?? null}, ${profile.referralCodeUsed ?? null}, ${profile.emailVerified ?? false}, ${profile.adminAccess ?? false},
+        ${profile.teacherAccess ?? false}, ${profile.createdAt}
+      )
       on conflict (id)
       do update set
         email = excluded.email,
@@ -623,10 +631,19 @@ export async function upsertMember(profile: MemberProfile) {
         member_type = excluded.member_type,
         organization_name = excluded.organization_name,
         plan = excluded.plan,
+        billing_status = excluded.billing_status,
+        lemon_customer_id = excluded.lemon_customer_id,
+        lemon_subscription_id = excluded.lemon_subscription_id,
+        trial_ends_at = excluded.trial_ends_at,
+        referral_code_used = excluded.referral_code_used,
         email_verified = excluded.email_verified,
         admin_access = excluded.admin_access,
         teacher_access = excluded.teacher_access
-      returning id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      returning
+        id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan,
+        billing_status as "billingStatus", lemon_customer_id as "lemonCustomerId", lemon_subscription_id as "lemonSubscriptionId",
+        trial_ends_at as "trialEndsAt", referral_code_used as "referralCodeUsed",
+        email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
     `;
 
     return withAdminPrivileges(rows[0]);
@@ -642,7 +659,19 @@ export async function getMember(userId: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      select
+        id, email, name, role, member_type as "memberType", organization_name as "organizationName",
+        case
+          when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'free'
+          else plan
+        end as "plan",
+        case
+          when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'expired'
+          else billing_status
+        end as "billingStatus",
+        lemon_customer_id as "lemonCustomerId", lemon_subscription_id as "lemonSubscriptionId",
+        trial_ends_at as "trialEndsAt", referral_code_used as "referralCodeUsed",
+        email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where id = ${userId}
       limit 1
@@ -661,7 +690,19 @@ export async function getMemberByEmail(email: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
-      select id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      select
+        id, email, name, role, member_type as "memberType", organization_name as "organizationName",
+        case
+          when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'free'
+          else plan
+        end as "plan",
+        case
+          when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'expired'
+          else billing_status
+        end as "billingStatus",
+        lemon_customer_id as "lemonCustomerId", lemon_subscription_id as "lemonSubscriptionId",
+        trial_ends_at as "trialEndsAt", referral_code_used as "referralCodeUsed",
+        email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where lower(email) = ${normalizedEmail}
       limit 1
@@ -743,7 +784,11 @@ export async function applyBillingPlanByEmail(input: {
         lemon_customer_id = coalesce(${input.providerCustomerId ?? null}, lemon_customer_id),
         lemon_subscription_id = coalesce(${input.providerSubscriptionId ?? null}, lemon_subscription_id)
       where lower(email) = ${normalizedEmail}
-      returning id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+      returning
+        id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan,
+        billing_status as "billingStatus", lemon_customer_id as "lemonCustomerId", lemon_subscription_id as "lemonSubscriptionId",
+        trial_ends_at as "trialEndsAt", referral_code_used as "referralCodeUsed",
+        email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
     `;
 
     return rows[0] ? withAdminPrivileges(rows[0]) : null;

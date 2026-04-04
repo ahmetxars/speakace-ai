@@ -38,6 +38,21 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const { slug } = await params;
   const language = await getServerLanguage();
   const chrome = getBlogChromeCopy(language);
+  const pageLabels = {
+    en: { resources: "Resources", guides: "Guides", readNext: "Read next" },
+    tr: { resources: "Kaynaklar", guides: "Rehberler", readNext: "Sıradaki okunacak yazılar" },
+    de: { resources: "Ressourcen", guides: "Leitfäden", readNext: "Als Nächstes lesen" },
+    es: { resources: "Recursos", guides: "Guías", readNext: "Sigue leyendo" },
+    fr: { resources: "Ressources", guides: "Guides", readNext: "À lire ensuite" },
+    it: { resources: "Risorse", guides: "Guide", readNext: "Leggi dopo" },
+    pt: { resources: "Recursos", guides: "Guias", readNext: "Ler a seguir" },
+    nl: { resources: "Bronnen", guides: "Gidsen", readNext: "Lees hierna" },
+    pl: { resources: "Materiały", guides: "Przewodniki", readNext: "Czytaj dalej" },
+    ru: { resources: "Материалы", guides: "Гайды", readNext: "Читайте дальше" },
+    ar: { resources: "المصادر", guides: "الأدلة", readNext: "اقرأ بعد ذلك" },
+    ja: { resources: "リソース", guides: "ガイド", readNext: "次に読む" },
+    ko: { resources: "리소스", guides: "가이드", readNext: "다음 글" }
+  }[language];
   const post = getLocalizedBlogPost(language, slug);
   if (!post) {
     notFound();
@@ -84,8 +99,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <article className="card" style={{ padding: "1.5rem" }}>
           <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginBottom: "1rem" }}>
             <Link href="/blog" className="pill">{chrome.cta.blog}</Link>
-            <Link href="/resources" className="pill">{language === "tr" ? "Kaynaklar" : "Resources"}</Link>
-            <Link href="/guides" className="pill">{language === "tr" ? "Rehberler" : "Guides"}</Link>
+            <Link href="/resources" className="pill">{pageLabels.resources}</Link>
+            <Link href="/guides" className="pill">{pageLabels.guides}</Link>
           </div>
           <p style={{ color: "var(--muted)", lineHeight: 1.85 }}>{post.intro}</p>
           {post.sections.map((section) => (
@@ -103,7 +118,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="section-head">
             <span className="eyebrow">{chrome.cta.latest}</span>
-            <h2>{language === "tr" ? "Sıradaki okunacak yazılar" : "Read next"}</h2>
+            <h2>{pageLabels.readNext}</h2>
           </div>
           <div className="marketing-grid">
             {relatedPosts.map((item) => (

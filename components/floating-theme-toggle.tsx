@@ -1,31 +1,33 @@
 "use client";
 
-import { useMemo } from "react";
+import { usePathname } from "next/navigation";
 import { useAppState } from "@/components/providers";
 
 export function FloatingThemeToggle() {
+  const pathname = usePathname();
   const { theme, setTheme, language } = useAppState();
   const tr = language === "tr";
 
-  const content = useMemo(() => {
-    if (theme === "dark") {
-      return {
-        activeEmoji: "🌙",
-        activeLabel: tr ? "Koyu tema aktif" : "Dark theme active",
-        nextEmoji: "☀️",
-        nextLabel: tr ? "Aydinlik temaya gec" : "Switch to light theme",
-        nextTheme: "light" as const
-      };
-    }
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
-    return {
-      activeEmoji: "☀️",
-      activeLabel: tr ? "Aydinlik tema aktif" : "Light theme active",
-      nextEmoji: "🌙",
-      nextLabel: tr ? "Koyu temaya gec" : "Switch to dark theme",
-      nextTheme: "dark" as const
-    };
-  }, [theme, tr]);
+  const content =
+    theme === "dark"
+      ? {
+          activeEmoji: "🌙",
+          activeLabel: tr ? "Koyu tema aktif" : "Dark theme active",
+          nextEmoji: "☀️",
+          nextLabel: tr ? "Aydinlik temaya gec" : "Switch to light theme",
+          nextTheme: "light" as const
+        }
+      : {
+          activeEmoji: "☀️",
+          activeLabel: tr ? "Aydinlik tema aktif" : "Light theme active",
+          nextEmoji: "🌙",
+          nextLabel: tr ? "Koyu temaya gec" : "Switch to dark theme",
+          nextTheme: "dark" as const
+        };
 
   return (
     <div className="theme-fab-shell">

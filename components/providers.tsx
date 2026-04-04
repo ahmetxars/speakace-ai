@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { defaultLanguage, isSupportedLanguage, Language } from "@/lib/copy";
 import { createGuestProfile } from "@/lib/membership";
 import { trackClientEvent } from "@/lib/analytics-client";
@@ -27,6 +27,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 export function Providers({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [language, setLanguageState] = useState<Language>("en");
   const [theme, setThemeState] = useState<ThemeMode>("light");
   const [signedIn, setSignedInState] = useState(false);
@@ -36,6 +37,7 @@ export function Providers({ children }: { children: ReactNode }) {
     setLanguageState(nextLanguage);
     window.localStorage.setItem("speakace-language", nextLanguage);
     document.cookie = `speakace-language=${nextLanguage}; path=/; max-age=31536000; samesite=lax`;
+    router.refresh();
   };
 
   const setTheme = (nextTheme: ThemeMode) => {

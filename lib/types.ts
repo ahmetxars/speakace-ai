@@ -96,6 +96,8 @@ export interface MemberProfile {
   billingStatus?: BillingStatus;
   lemonCustomerId?: string | null;
   lemonSubscriptionId?: string | null;
+  trialEndsAt?: string | null;
+  referralCodeUsed?: string | null;
   emailVerified?: boolean;
   isAdmin?: boolean;
   isTeacher?: boolean;
@@ -364,4 +366,77 @@ export interface BillingEventRecord {
   providerCustomerId?: string | null;
   providerSubscriptionId?: string | null;
   createdAt: string;
+}
+
+export interface AdminPanelSession {
+  adminUserId?: string | null;
+  adminLabel: string;
+  authMode: "config" | "member";
+  expiresAt: string;
+}
+
+export interface AdminOverview {
+  totalUsers: number;
+  totalStudents: number;
+  totalTeachers: number;
+  totalSchools: number;
+  paidMembers: number;
+  trialMembers: number;
+  activeSessions: number;
+  recentSignIns24h: number;
+  classesCount: number;
+  monthlyRevenueEstimate: number;
+}
+
+export interface AdminMemberRecord {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  memberType: MemberType;
+  organizationName?: string | null;
+  plan: SubscriptionPlan;
+  billingStatus: BillingStatus;
+  trialEndsAt?: string | null;
+  referralCodeUsed?: string | null;
+  emailVerified: boolean;
+  passwordStatus: "protected" | "no_password";
+  createdAt: string;
+  monthlyValue: number;
+  activeSessionCount: number;
+  lastSignInAt?: string | null;
+  lastSignOutAt?: string | null;
+  totalPracticeSessions: number;
+  averageScore?: number | null;
+  teacherNoteCount: number;
+}
+
+export interface AdminAuthActivityRecord {
+  id: string;
+  userId?: string | null;
+  userName: string;
+  userEmail: string;
+  memberType?: MemberType | null;
+  eventType: "signin" | "signout";
+  occurredAt: string;
+}
+
+export interface ReferralCodeRecord {
+  id: string;
+  code: string;
+  label?: string | null;
+  trialDays: number;
+  active: boolean;
+  usageLimit?: number | null;
+  usageCount: number;
+  createdAt: string;
+}
+
+export interface AdminInstitutionRecord {
+  organizationName: string;
+  teachers: number;
+  students: number;
+  schools: number;
+  averageScore?: number | null;
+  totalSessions: number;
 }

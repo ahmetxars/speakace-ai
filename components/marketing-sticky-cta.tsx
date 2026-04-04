@@ -10,7 +10,7 @@ export function MarketingStickyCta() {
   const tr = language === "tr";
 
   if (!pathname) return null;
-  if (pathname.startsWith("/app") || pathname.startsWith("/auth")) return null;
+  if (pathname.startsWith("/app") || pathname.startsWith("/auth") || pathname.startsWith("/admin")) return null;
   if (signedIn && currentUser?.plan && currentUser.plan !== "free") return null;
 
   return (

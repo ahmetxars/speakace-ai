@@ -17,6 +17,16 @@ create table if not exists auth_sessions (
   created_at timestamptz not null default now()
 );
 
+create table if not exists admin_panel_sessions (
+  id text primary key,
+  admin_user_id text references users(id) on delete set null,
+  admin_label text not null,
+  auth_mode text not null check (auth_mode in ('config', 'member')),
+  token_hash text not null unique,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists auth_tokens (
   id text primary key,
   user_id text not null references users(id) on delete cascade,
@@ -164,6 +174,14 @@ create table if not exists analytics_events (
   created_at timestamptz not null default now()
 );
 
+create table if not exists auth_activity (
+  id text primary key,
+  user_id text not null references users(id) on delete cascade,
+  event_type text not null check (event_type in ('signin', 'signout')),
+  meta_json jsonb not null default '{}'::jsonb,
+  occurred_at timestamptz not null default now()
+);
+
 create table if not exists billing_events (
   id text primary key,
   provider text not null check (provider in ('lemonsqueezy')),
@@ -193,6 +211,17 @@ create table if not exists marketing_leads (
   email text not null unique,
   name text,
   source text not null default 'site',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists referral_codes (
+  id text primary key,
+  code text not null unique,
+  label text,
+  created_by text,
+  trial_days integer not null default 7,
+  active boolean not null default true,
+  usage_limit integer,
   created_at timestamptz not null default now()
 );
 
@@ -257,6 +286,8 @@ alter table users add column if not exists teacher_access boolean not null defau
 alter table users add column if not exists billing_status text not null default 'free';
 alter table users add column if not exists lemon_customer_id text;
 alter table users add column if not exists lemon_subscription_id text;
+alter table users add column if not exists trial_ends_at timestamptz;
+alter table users add column if not exists referral_code_used text;
 alter table teacher_classes add column if not exists approval_required boolean not null default true;
 alter table teacher_classes add column if not exists join_message text;
 alter table teacher_class_enrollments add column if not exists status text not null default 'approved';
@@ -278,6 +309,12 @@ create index if not exists idx_speaking_sessions_user_created_at
 
 create index if not exists idx_auth_sessions_user_id
   on auth_sessions(user_id);
+
+create index if not exists idx_auth_activity_user_id
+  on auth_activity(user_id, occurred_at desc);
+
+create index if not exists idx_referral_codes_code
+  on referral_codes(code);
 
 create index if not exists idx_auth_tokens_user_id
   on auth_tokens(user_id);

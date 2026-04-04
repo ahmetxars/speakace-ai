@@ -77,10 +77,10 @@ export default async function BlogIndexPage() {
               <div className="pill" style={{ marginBottom: "0.8rem" }}>{chrome.labels.startPath}</div>
               <h3 style={{ fontSize: "1.4rem" }}>{firstPath[0]?.title}</h3>
               <p>{chrome.labels.featuredDescription}</p>
-              <div style={{ display: "grid", gap: "0.55rem" }}>
+              <div className="blog-reading-list">
                 {firstPath.map((post) => (
-                  <Link key={post.slug} href={`/blog/${post.slug}`} className="button button-secondary">
-                    {post.title}
+                  <Link key={post.slug} href={`/blog/${post.slug}`} className="blog-reading-link">
+                    <strong>{post.title}</strong>
                   </Link>
                 ))}
               </div>
@@ -89,10 +89,10 @@ export default async function BlogIndexPage() {
               <div className="pill" style={{ marginBottom: "0.8rem" }}>{chrome.labels.advancedPath}</div>
               <h3 style={{ fontSize: "1.4rem" }}>{secondPath[0]?.title}</h3>
               <p>{chrome.labels.latestDescription}</p>
-              <div style={{ display: "grid", gap: "0.55rem" }}>
+              <div className="blog-reading-list">
                 {secondPath.map((post) => (
-                  <Link key={post.slug} href={`/blog/${post.slug}`} className="button button-secondary">
-                    {post.title}
+                  <Link key={post.slug} href={`/blog/${post.slug}`} className="blog-reading-link">
+                    <strong>{post.title}</strong>
                   </Link>
                 ))}
               </div>
