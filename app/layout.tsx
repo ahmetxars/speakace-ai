@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import Script from "next/script";
 import { FloatingThemeToggle } from "@/components/floating-theme-toggle";
 import { SiteFooter } from "@/components/site-footer";
 import { MarketingStickyCta } from "@/components/marketing-sticky-cta";
@@ -46,15 +47,26 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
         <link rel="dns-prefetch" href="https://googleads.g.doubleclick.net" />
         <link rel="dns-prefetch" href="https://fundingchoicesmessages.google.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://googleads.g.doubleclick.net" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://fundingchoicesmessages.google.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
         <script
           async
           fetchPriority="low"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3403105676925789"
           crossOrigin="anonymous"
         />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-806S0CWRWX" strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-806S0CWRWX');
+          `}
+        </Script>
       </head>
       <body>
         <Providers>
