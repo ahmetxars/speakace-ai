@@ -36,6 +36,10 @@ export function AdminPanel(props: {
   institutions: AdminInstitutionRecord[];
 }) {
   const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [memberTypeFilter, setMemberTypeFilter] = useState("all");
+  const [planFilter, setPlanFilter] = useState("all");
+  const [billingFilter, setBillingFilter] = useState("all");
   const [code, setCode] = useState("");
   const [label, setLabel] = useState("");
   const [trialDays, setTrialDays] = useState("7");
@@ -43,11 +47,49 @@ export function AdminPanel(props: {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [memberMessage, setMemberMessage] = useState("");
+  const [memberError, setMemberError] = useState("");
+  const [memberBusyId, setMemberBusyId] = useState<string | null>(null);
+  const [memberDrafts, setMemberDrafts] = useState<Record<string, { plan: string; billingStatus: string; trialDays: string }>>(
+    () =>
+      Object.fromEntries(
+        props.members.map((member) => [
+          member.id,
+          { plan: member.plan, billingStatus: member.billingStatus, trialDays: "7" }
+        ])
+      )
+  );
 
   const teacherCount = useMemo(
     () => props.members.filter((member) => member.memberType === "teacher").length,
     [props.members]
   );
+
+  const referralOverview = useMemo(() => {
+    const totalCodes = props.referralCodes.length;
+    const activeCodes = props.referralCodes.filter((item) => item.active).length;
+    const totalUses = props.referralCodes.reduce((sum, item) => sum + item.usageCount, 0);
+    const remainingSeats = props.referralCodes.reduce(
+      (sum, item) => sum + (item.usageLimit ? Math.max(item.usageLimit - item.usageCount, 0) : 0),
+      0
+    );
+
+    return { totalCodes, activeCodes, totalUses, remainingSeats };
+  }, [props.referralCodes]);
+
+  const filteredMembers = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return props.members.filter((member) => {
+      if (memberTypeFilter !== "all" && member.memberType !== memberTypeFilter) return false;
+      if (planFilter !== "all" && member.plan !== planFilter) return false;
+      if (billingFilter !== "all" && member.billingStatus !== billingFilter) return false;
+      if (!query) return true;
+      return [member.name, member.email, member.organizationName ?? "", member.referralCodeUsed ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [billingFilter, memberTypeFilter, planFilter, props.members, search]);
 
   const logout = async () => {
     await fetch("/api/admin/auth/logout", { method: "POST" });
@@ -80,6 +122,44 @@ export function AdminPanel(props: {
     setLabel("");
     setUsageLimit("");
     setTrialDays("7");
+    router.refresh();
+  };
+
+  const updateMemberDraft = (memberId: string, patch: Partial<{ plan: string; billingStatus: string; trialDays: string }>) => {
+    setMemberDrafts((current) => ({
+      ...current,
+      [memberId]: {
+        ...(current[memberId] ?? { plan: "free", billingStatus: "free", trialDays: "7" }),
+        ...patch
+      }
+    }));
+  };
+
+  const saveMember = async (memberId: string) => {
+    const draft = memberDrafts[memberId];
+    if (!draft) return;
+
+    setMemberBusyId(memberId);
+    setMemberError("");
+    setMemberMessage("");
+    const response = await fetch(`/api/admin/members/${memberId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plan: draft.plan,
+        billingStatus: draft.billingStatus,
+        trialDays: draft.trialDays ? Number(draft.trialDays) : null
+      })
+    });
+    const data = (await response.json()) as { error?: string };
+    setMemberBusyId(null);
+
+    if (!response.ok) {
+      setMemberError(data.error ?? "Could not update member.");
+      return;
+    }
+
+    setMemberMessage("Member access updated.");
     router.refresh();
   };
 
@@ -135,6 +215,24 @@ export function AdminPanel(props: {
           <p style={{ margin: 0, color: "var(--muted)" }}>
             Share a code with a student or teacher. When they sign up with it, the account gets trial access automatically.
           </p>
+        </div>
+        <div className="stats-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
+          <div className="card" style={{ padding: "1rem" }}>
+            <strong>Total codes</strong>
+            <div style={{ fontSize: "1.8rem", fontWeight: 800 }}>{referralOverview.totalCodes}</div>
+          </div>
+          <div className="card" style={{ padding: "1rem" }}>
+            <strong>Active codes</strong>
+            <div style={{ fontSize: "1.8rem", fontWeight: 800 }}>{referralOverview.activeCodes}</div>
+          </div>
+          <div className="card" style={{ padding: "1rem" }}>
+            <strong>Total uses</strong>
+            <div style={{ fontSize: "1.8rem", fontWeight: 800 }}>{referralOverview.totalUses}</div>
+          </div>
+          <div className="card" style={{ padding: "1rem" }}>
+            <strong>Remaining seats</strong>
+            <div style={{ fontSize: "1.8rem", fontWeight: 800 }}>{referralOverview.remainingSeats}</div>
+          </div>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.85rem" }}>
           <input
@@ -208,6 +306,54 @@ export function AdminPanel(props: {
             Passwords are intentionally not shown. They are stored as protected hashes. This panel shows safe account status instead.
           </p>
         </div>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr repeat(3, minmax(140px, 1fr))", gap: "0.85rem" }}>
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search member, email, organization, referral..."
+            style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
+          />
+          <select
+            value={memberTypeFilter}
+            onChange={(event) => setMemberTypeFilter(event.target.value)}
+            style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
+          >
+            <option value="all">All member types</option>
+            <option value="student">Students</option>
+            <option value="teacher">Teachers</option>
+            <option value="school">Schools</option>
+          </select>
+          <select
+            value={planFilter}
+            onChange={(event) => setPlanFilter(event.target.value)}
+            style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
+          >
+            <option value="all">All plans</option>
+            <option value="free">Free</option>
+            <option value="plus">Plus</option>
+            <option value="pro">Pro</option>
+          </select>
+          <select
+            value={billingFilter}
+            onChange={(event) => setBillingFilter(event.target.value)}
+            style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
+          >
+            <option value="all">All billing states</option>
+            <option value="free">Free</option>
+            <option value="active">Active</option>
+            <option value="on_trial">On trial</option>
+            <option value="paused">Paused</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="past_due">Past due</option>
+            <option value="expired">Expired</option>
+            <option value="refunded">Refunded</option>
+          </select>
+        </div>
+        <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
+          <span style={{ color: "var(--muted)" }}>{filteredMembers.length} members shown</span>
+          {memberMessage ? <span style={{ color: "var(--success)" }}>{memberMessage}</span> : null}
+          {memberError ? <span style={{ color: "var(--accent-deep)" }}>{memberError}</span> : null}
+        </div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -219,12 +365,14 @@ export function AdminPanel(props: {
                 <th align="left">Monthly</th>
                 <th align="left">Sessions</th>
                 <th align="left">Last sign in</th>
+                <th align="left">Last sign out</th>
                 <th align="left">Password</th>
                 <th align="left">Notes</th>
+                <th align="left">Admin actions</th>
               </tr>
             </thead>
             <tbody>
-              {props.members.map((member) => (
+              {filteredMembers.map((member) => (
                 <tr key={member.id}>
                   <td>
                     <strong>{member.name}</strong>
@@ -254,12 +402,56 @@ export function AdminPanel(props: {
                     </div>
                   </td>
                   <td>{formatDate(member.lastSignInAt)}</td>
+                  <td>{formatDate(member.lastSignOutAt)}</td>
                   <td>{member.passwordStatus === "protected" ? "Protected hash" : "No password"}</td>
                   <td>
                     {member.teacherNoteCount}
                     {member.averageScore ? (
                       <div style={{ color: "var(--muted)", fontSize: "0.85rem" }}>avg {member.averageScore}</div>
                     ) : null}
+                  </td>
+                  <td style={{ minWidth: 270 }}>
+                    <div style={{ display: "grid", gap: "0.55rem" }}>
+                      <select
+                        value={memberDrafts[member.id]?.plan ?? member.plan}
+                        onChange={(event) => updateMemberDraft(member.id, { plan: event.target.value })}
+                        style={{ padding: "0.75rem", borderRadius: 12, border: "1px solid var(--line)" }}
+                      >
+                        <option value="free">Free</option>
+                        <option value="plus">Plus</option>
+                        <option value="pro">Pro</option>
+                      </select>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 110px", gap: "0.55rem" }}>
+                        <select
+                          value={memberDrafts[member.id]?.billingStatus ?? member.billingStatus}
+                          onChange={(event) => updateMemberDraft(member.id, { billingStatus: event.target.value })}
+                          style={{ padding: "0.75rem", borderRadius: 12, border: "1px solid var(--line)" }}
+                        >
+                          <option value="free">Free</option>
+                          <option value="active">Active</option>
+                          <option value="on_trial">On trial</option>
+                          <option value="paused">Paused</option>
+                          <option value="cancelled">Cancelled</option>
+                          <option value="past_due">Past due</option>
+                          <option value="expired">Expired</option>
+                          <option value="refunded">Refunded</option>
+                        </select>
+                        <input
+                          value={memberDrafts[member.id]?.trialDays ?? "7"}
+                          onChange={(event) => updateMemberDraft(member.id, { trialDays: event.target.value })}
+                          placeholder="Trial days"
+                          style={{ padding: "0.75rem", borderRadius: 12, border: "1px solid var(--line)" }}
+                        />
+                      </div>
+                      <button
+                        className="button button-secondary"
+                        type="button"
+                        disabled={memberBusyId === member.id}
+                        onClick={() => saveMember(member.id)}
+                      >
+                        {memberBusyId === member.id ? "Saving..." : "Save access"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

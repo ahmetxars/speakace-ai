@@ -532,6 +532,49 @@ export async function listReferralCodes(): Promise<ReferralCodeRecord[]> {
   }));
 }
 
+export async function updateAdminMemberAccess(input: {
+  memberId: string;
+  plan: SubscriptionPlan;
+  billingStatus: BillingStatus;
+  trialDays?: number | null;
+}) {
+  if (!hasDatabaseUrl()) {
+    throw new Error("Admin member updates require DATABASE_URL.");
+  }
+
+  const memberId = input.memberId.trim();
+  if (!memberId) {
+    throw new Error("Member id is required.");
+  }
+
+  const allowedPlans: SubscriptionPlan[] = ["free", "plus", "pro"];
+  const allowedStatuses: BillingStatus[] = ["free", "active", "on_trial", "paused", "cancelled", "past_due", "expired", "refunded"];
+
+  if (!allowedPlans.includes(input.plan)) {
+    throw new Error("Invalid plan.");
+  }
+
+  if (!allowedStatuses.includes(input.billingStatus)) {
+    throw new Error("Invalid billing status.");
+  }
+
+  const trialEndsAt =
+    input.billingStatus === "on_trial"
+      ? new Date(Date.now() + Math.max(1, Math.min(30, input.trialDays ?? 7)) * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+
+  const plan = input.billingStatus === "free" ? "free" : input.plan;
+  const sql = getSql();
+  await sql`
+    update users
+    set
+      plan = ${plan},
+      billing_status = ${input.billingStatus},
+      trial_ends_at = ${trialEndsAt}
+    where id = ${memberId}
+  `;
+}
+
 export async function createReferralCode(input: {
   code: string;
   label?: string;
