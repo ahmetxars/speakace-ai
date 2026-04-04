@@ -252,7 +252,11 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       activeSessions: 0,
       recentSignIns24h: 0,
       classesCount: 0,
-      monthlyRevenueEstimate: 0
+      monthlyRevenueEstimate: 0,
+      liveUsers5m: 0,
+      requests5m: 0,
+      pageViews1h: 0,
+      lastRequestAt: null
     };
   }
 
@@ -269,11 +273,19 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       recent_signins_24h: number;
       classes_count: number;
       monthly_revenue_estimate: number;
+      live_users_5m: number;
+      requests_5m: number;
+      page_views_1h: number;
+      last_request_at: string | null;
     }>
   >`
     with institution_prices as (
       select teacher_id, monthly_price
       from institution_billing
+    ),
+    recent_analytics as (
+      select user_id, event, created_at
+      from analytics_events
     )
     select
       count(*)::int as total_users,
@@ -289,6 +301,25 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         where event_type = 'signin' and occurred_at > now() - interval '24 hours'
       ) as recent_signins_24h,
       (select count(*)::int from teacher_classes) as classes_count,
+      (
+        select count(distinct user_id)::int
+        from recent_analytics
+        where created_at > now() - interval '5 minutes'
+      ) as live_users_5m,
+      (
+        select count(*)::int
+        from recent_analytics
+        where created_at > now() - interval '5 minutes'
+      ) as requests_5m,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'page_view' and created_at > now() - interval '1 hour'
+      ) as page_views_1h,
+      (
+        select max(created_at)::text
+        from recent_analytics
+      ) as last_request_at,
       coalesce(sum(
         case
           when users.member_type = 'school' then coalesce(institution_prices.monthly_price, 0)
@@ -311,7 +342,11 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     activeSessions: row?.active_sessions ?? 0,
     recentSignIns24h: row?.recent_signins_24h ?? 0,
     classesCount: row?.classes_count ?? 0,
-    monthlyRevenueEstimate: Number(row?.monthly_revenue_estimate ?? 0)
+    monthlyRevenueEstimate: Number(row?.monthly_revenue_estimate ?? 0),
+    liveUsers5m: row?.live_users_5m ?? 0,
+    requests5m: row?.requests_5m ?? 0,
+    pageViews1h: row?.page_views_1h ?? 0,
+    lastRequestAt: row?.last_request_at ?? null
   };
 }
 

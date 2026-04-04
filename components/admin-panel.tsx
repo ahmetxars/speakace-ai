@@ -19,6 +19,19 @@ function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 }
 
+function formatRelativeDate(value?: string | null) {
+  if (!value) return "No recent requests";
+  const date = new Date(value);
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.max(0, Math.round(diffMs / 60000));
+  if (diffMin < 1) return "Just now";
+  if (diffMin === 1) return "1 minute ago";
+  if (diffMin < 60) return `${diffMin} minutes ago`;
+  const diffHours = Math.round(diffMin / 60);
+  if (diffHours === 1) return "1 hour ago";
+  return `${diffHours} hours ago`;
+}
+
 export function AdminPanel(props: {
   sessionLabel: string;
   overview: AdminOverview;
@@ -204,6 +217,27 @@ export function AdminPanel(props: {
           <div className="card" style={{ padding: "1rem" }}>
             <strong>Monthly value</strong>
             <div style={{ fontSize: "2rem", fontWeight: 800 }}>{formatMoney(props.overview.monthlyRevenueEstimate)}</div>
+          </div>
+          <div className="card" style={{ padding: "1rem" }}>
+            <strong>Live users (5m)</strong>
+            <div style={{ fontSize: "2rem", fontWeight: 800 }}>{props.overview.liveUsers5m}</div>
+            <div style={{ color: "var(--muted)", marginTop: "0.3rem", fontSize: "0.92rem" }}>
+              Distinct users with recent activity
+            </div>
+          </div>
+          <div className="card" style={{ padding: "1rem" }}>
+            <strong>Requests (5m)</strong>
+            <div style={{ fontSize: "2rem", fontWeight: 800 }}>{props.overview.requests5m}</div>
+            <div style={{ color: "var(--muted)", marginTop: "0.3rem", fontSize: "0.92rem" }}>
+              Last request: {formatRelativeDate(props.overview.lastRequestAt)}
+            </div>
+          </div>
+          <div className="card" style={{ padding: "1rem" }}>
+            <strong>Page views (1h)</strong>
+            <div style={{ fontSize: "2rem", fontWeight: 800 }}>{props.overview.pageViews1h}</div>
+            <div style={{ color: "var(--muted)", marginTop: "0.3rem", fontSize: "0.92rem" }}>
+              Based on tracked page views
+            </div>
           </div>
         </div>
       </section>

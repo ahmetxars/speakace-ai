@@ -386,6 +386,10 @@ export interface AdminOverview {
   recentSignIns24h: number;
   classesCount: number;
   monthlyRevenueEstimate: number;
+  liveUsers5m: number;
+  requests5m: number;
+  pageViews1h: number;
+  lastRequestAt?: string | null;
 }
 
 export interface AdminMemberRecord {

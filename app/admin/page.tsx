@@ -50,7 +50,11 @@ export default async function AdminPage() {
             activeSessions: 0,
             recentSignIns24h: 0,
             classesCount: 0,
-            monthlyRevenueEstimate: 0
+            monthlyRevenueEstimate: 0,
+            liveUsers5m: 0,
+            requests5m: 0,
+            pageViews1h: 0,
+            lastRequestAt: null
           };
     const members = membersResult.status === "fulfilled" ? membersResult.value : [];
     const billingEvents = billingEventsResult.status === "fulfilled" ? billingEventsResult.value : [];
