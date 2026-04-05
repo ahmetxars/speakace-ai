@@ -65,7 +65,7 @@ export default function BillingPage() {
           </div>
           <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
             <strong>{commerceConfig.plusPlanName} · {commerceConfig.plusMonthlyPrice}</strong>
-            <p>{tr ? "Günde 18 oturum, 35 dakika speaking süresi, daha ayrıntılı puan dökümü ve ilerleme takibi." : "18 daily sessions, 35 speaking minutes, score breakdowns, and stronger progress support."}</p>
+            <p>{tr ? "Haftalık planda günde 18 oturum, 35 dakika speaking süresi, daha ayrıntılı puan dökümü ve ilerleme takibi." : "Weekly plan with 18 daily sessions, 35 speaking minutes, score breakdowns, and stronger progress support."}</p>
           </div>
         </div>
         <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.6)" }}>

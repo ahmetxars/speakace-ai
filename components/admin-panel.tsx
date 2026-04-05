@@ -215,7 +215,7 @@ export function AdminPanel(props: {
             </div>
           </div>
           <div className="card" style={{ padding: "1rem" }}>
-            <strong>Monthly value</strong>
+            <strong>Weekly value</strong>
             <div style={{ fontSize: "2rem", fontWeight: 800 }}>{formatMoney(props.overview.monthlyRevenueEstimate)}</div>
           </div>
           <div className="card" style={{ padding: "1rem" }}>
@@ -396,7 +396,7 @@ export function AdminPanel(props: {
                 <th align="left">Type</th>
                 <th align="left">Plan</th>
                 <th align="left">Billing</th>
-                <th align="left">Monthly</th>
+                <th align="left">Weekly</th>
                 <th align="left">Sessions</th>
                 <th align="left">Last sign in</th>
                 <th align="left">Last sign out</th>

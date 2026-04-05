@@ -231,11 +231,11 @@ export async function validateReferralCode(code: string | null | undefined) {
   };
 }
 
-function planMonthlyValue(plan: SubscriptionPlan, memberType?: string, institutionPrice?: number | null) {
+function planWeeklyValue(plan: SubscriptionPlan, memberType?: string, institutionPrice?: number | null) {
   if (memberType === "school" && institutionPrice) {
     return Number(institutionPrice);
   }
-  if (plan === "plus") return 9.99;
+  if (plan === "plus") return 3.99;
   if (plan === "pro") return 19.99;
   return 0;
 }
@@ -323,7 +323,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       coalesce(sum(
         case
           when users.member_type = 'school' then coalesce(institution_prices.monthly_price, 0)
-          when users.plan = 'plus' and users.billing_status in ('active', 'on_trial') then 9.99
+          when users.plan = 'plus' and users.billing_status in ('active', 'on_trial') then 3.99
           when users.plan = 'pro' and users.billing_status in ('active', 'on_trial') then 19.99
           else 0
         end
@@ -445,7 +445,7 @@ export async function listAdminMembers(): Promise<AdminMemberRecord[]> {
     emailVerified: row.email_verified,
     passwordStatus: row.password_hash ? "protected" : "no_password",
     createdAt: row.created_at,
-    monthlyValue: planMonthlyValue(row.plan, row.member_type, row.institution_price),
+    monthlyValue: planWeeklyValue(row.plan, row.member_type, row.institution_price),
     activeSessionCount: row.active_session_count,
     lastSignInAt: row.last_signin_at,
     lastSignOutAt: row.last_signout_at,

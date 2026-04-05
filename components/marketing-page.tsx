@@ -341,14 +341,14 @@ const howItWorks = {
 
 const pricingReasons = {
   en: [
-    "One good speaking lesson or mock interview can cost more than a full month of SpeakAce.",
-    "For $9.99/month, learners can practice more often, get feedback faster, and build a real speaking routine.",
-    "The value is not just AI feedback. It is the speed of the feedback loop, the quality of the transcript review, and the number of score-improving repetitions you can fit into one month."
+    "One good speaking lesson or mock interview can cost more than a full week of SpeakAce.",
+    "For $3.99/week, learners can practice more often, get feedback faster, and build a real speaking routine.",
+    "The value is not just AI feedback. It is the speed of the feedback loop, the quality of the transcript review, and the number of score-improving repetitions you can fit into one focused week."
   ],
   tr: [
-    "Tek bir iyi speaking dersi veya mock görüşme, SpeakAce’in bir aylık ücretinden daha pahalı olabilir.",
-    "Aylık $9.99 ile öğrenciler daha sık pratik yapabilir, daha hızlı geri bildirim alabilir ve gerçek bir speaking rutini kurabilir.",
-    "Değer sadece AI geri bildiriminde değil; geri bildirim döngüsünün hızında, transcript incelemesinin kalitesinde ve bir ay içinde yapabileceğin gelişim odaklı tekrar sayısında."
+    "Tek bir iyi speaking dersi veya mock görüşme, SpeakAce’in bir haftalık ücretinden daha pahalı olabilir.",
+    "Haftalık $3.99 ile öğrenciler daha sık pratik yapabilir, daha hızlı geri bildirim alabilir ve gerçek bir speaking rutini kurabilir.",
+    "Değer sadece AI geri bildiriminde değil; geri bildirim döngüsünün hızında, transcript incelemesinin kalitesinde ve bir hafta içinde yapabileceğin gelişim odaklı tekrar sayısında."
   ]
 };
 
@@ -1082,7 +1082,7 @@ export function MarketingPage({
     operatingSystem: "Web",
     offers: {
       "@type": "Offer",
-      price: "9.99",
+      price: "3.99",
       priceCurrency: "USD"
     },
     description: siteConfig.description
@@ -1583,22 +1583,22 @@ export function MarketingPage({
           <span className="eyebrow">{tr ? "Fiyat değeri" : "Pricing value"}</span>
           <h2>
             {tr
-              ? "Neden aylık $9.99 ödemeye değer?"
-              : "Why $9.99/month is worth it for IELTS speaking practice"}
+              ? "Neden haftalık $3.99 ödemeye değer?"
+              : "Why $3.99/week is worth it for IELTS speaking practice"}
           </h2>
           <p>
             {tr
               ? "SpeakAce, tek bir özel dersin veya kısa bir mock speaking seansının maliyetinden daha düşük bir seviyede, düzenli AI English speaking practice sunar."
-              : "SpeakAce is priced to feel easier than booking repeated mock sessions while still giving daily speaking value."}
+              : "SpeakAce is priced to feel lighter than booking repeated mock sessions while still giving daily speaking value."}
           </p>
         </div>
         <div className="marketing-grid">
           {localizedPricingReasons.map((item) => (
             <FeatureCard key={item} title={tr ? "Neden değerli?" : "Why it matters"} description={item} />
           ))}
-          <PricingCard
+            <PricingCard
             ctaLabel={tr ? "Plus ile şimdi başla" : "Start Plus now"}
-            name={commerceConfig.plusPlanName.replace(" Monthly", "")}
+            name={commerceConfig.plusPlanName.replace(" Weekly", "")}
             price={commerceConfig.plusMonthlyPrice}
             features={
               tr

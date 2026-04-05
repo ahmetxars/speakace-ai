@@ -1,8 +1,8 @@
 export const commerceConfig = {
   plusMonthlyCheckout:
     "https://speakace.lemonsqueezy.com/checkout/buy/b4c5f62b-17a3-4f53-82a1-bed7b2925084",
-  plusMonthlyPrice: "$9.99",
-  plusPlanName: "SpeakAce Plus Monthly",
+  plusMonthlyPrice: "$3.99",
+  plusPlanName: "SpeakAce Plus Weekly",
   plusCheckoutPath: "/api/payments/lemon/checkout?plan=plus",
   customerPortalUrl: "https://speakace.lemonsqueezy.com/billing",
   launchOfferLabel: "Launch offer",

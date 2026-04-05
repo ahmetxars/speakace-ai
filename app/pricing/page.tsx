@@ -248,7 +248,7 @@ export default async function PricingPage() {
     },
     {
       q: "Is this a subscription?",
-      a: "Yes. SpeakAce Plus is a monthly plan built for learners who want more daily speaking practice and faster progress."
+      a: "Yes. SpeakAce Plus is a weekly plan built for learners who want more daily speaking practice and faster progress."
     },
     {
       q: "Who should buy Plus?",
@@ -284,7 +284,7 @@ export default async function PricingPage() {
           </div>
           <div className="card stat-strip-card">
             <div className="practice-meta">{copy.price}</div>
-            <strong>{commerceConfig.plusMonthlyPrice}/month</strong>
+            <strong>{commerceConfig.plusMonthlyPrice}/week</strong>
           </div>
         </div>
 
@@ -377,7 +377,7 @@ export default async function PricingPage() {
         <div className="marketing-grid">
           <article className="card feature-card">
             <h3>Why Plus pays for itself</h3>
-            <p>One private lesson can cost more than a full month of repeatable speaking practice, scoring, and feedback.</p>
+            <p>One private lesson can cost more than a full week of repeatable speaking practice, scoring, and feedback.</p>
           </article>
           <article className="card feature-card">
             <h3>Built for score movement</h3>
