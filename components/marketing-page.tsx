@@ -363,6 +363,178 @@ const shortLandingCopy = {
   }
 };
 
+const minimalMarketingCopy = {
+  en: {
+    title: "Increase your IELTS Speaking score with AI practice",
+    description: "Practice real questions, get instant feedback, and improve your English speaking fluency faster.",
+    cta: "Start Speaking Now",
+    free: "Free • No signup required",
+    learners: "Used by 1,000+ learners",
+    demo: "Quick demo",
+    userPrompt: 'User: "Describe your hometown"',
+    estimatedScore: "Estimated IELTS speaking score",
+    aiFeedback: "AI feedback",
+    aiFeedbackText: "Add a specific example to improve clarity.",
+    fluency: "Fluency",
+    pronunciation: "Pronunciation",
+    structure: "Structure",
+    reasonsEyebrow: "Score improvement",
+    reasonsTitle: "Why learners use SpeakAce",
+    reasonCards: [
+      {
+        title: "Practice real IELTS tasks",
+        description: "Timed tasks feel closer to the exam, so your progress stays connected to the test you actually want to pass."
+      },
+      {
+        title: "See what keeps your band score low",
+        description: "Instead of vague praise, you can spot weak fluency, pronunciation, structure, and idea support."
+      },
+      {
+        title: "Turn every retry into a stronger answer",
+        description: "Score signals, grammar fixes, and a better sample answer make the next attempt more useful."
+      }
+    ],
+    fluencyEyebrow: "Fluency",
+    fluencyTitle: "Improve your English speaking fluency",
+    fluencyP1: "SpeakAce makes IELTS speaking practice online feel more structured. You do not just record an answer and move on. You also see how your answer is built, where fluency drops, and whether your example really supports your point.",
+    fluencyP2: "Fluency improves when speaking becomes clearer, steadier, and more controlled under pressure. That is why SpeakAce is built as a score improvement system rather than a generic AI tool.",
+    tasksEyebrow: "Real tasks",
+    tasksTitle: "Practice real IELTS questions",
+    tasksP1: "Many learners prepare with random prompts and never get close to the rhythm of the real test. SpeakAce helps you practice question types that feel closer to actual exam expectations.",
+    tasksP2: "If you want a faster starting point, you can open the free test, browse IELTS speaking topics, or read practical study guides before your first session.",
+    freeTest: "Open the free IELTS speaking test",
+    topicHub: "Browse IELTS speaking topics",
+    blog: "Read study guides on the blog",
+    instantEyebrow: "Instant insight",
+    instantTitle: "Get instant feedback",
+    instantP1: "SpeakAce does more than show a transcript. It shows why an answer feels weak and what should change next.",
+    instantP2: "That means the first free session already creates real value: answer once, see a score, fix one weakness, and retry with more confidence.",
+    firstStepEyebrow: "First step",
+    firstStepTitle: "Take your first speaking test in 30 seconds",
+    firstStepText: "Make the first action obvious: speak, see your score, then unlock deeper feedback if you want more.",
+    scoreTitle: "See the score first, unlock full feedback later",
+    scoreText: "SpeakAce shows value before upgrade pressure: take one attempt, see your score, then move to Plus for full feedback and more retries.",
+    unlock: "Unlock full feedback",
+    faqTitle: "Frequently asked questions",
+    faq: [
+      {
+        question: "Is SpeakAce an official IELTS scoring service?",
+        answer: "No. SpeakAce is an AI-powered IELTS and TOEFL speaking practice platform that gives estimated scores and feedback for preparation."
+      },
+      {
+        question: "Can daily AI practice improve IELTS speaking?",
+        answer: "Yes. Daily speaking practice with transcript review and retry sessions can improve fluency, confidence, and answer structure."
+      },
+      {
+        question: "Who is SpeakAce for?",
+        answer: "SpeakAce is built for IELTS students, TOEFL students, teachers, and language schools that want stronger speaking practice."
+      }
+    ]
+  },
+  tr: {
+    title: "Yapay zekayla IELTS speaking skorunu yükselt",
+    description: "Gerçek sorularla çalış, anında geri bildirim al ve İngilizce konuşma akıcılığını daha hızlı geliştir.",
+    cta: "Konuşmaya başla",
+    free: "Ücretsiz • Kayıt olmadan kullanılabilir",
+    learners: "1.000+ öğrenci tarafından kullanılıyor",
+    demo: "Hızlı demo",
+    userPrompt: 'Kullanıcı: "Doğduğun yeri anlat"',
+    estimatedScore: "Tahmini IELTS speaking skoru",
+    aiFeedback: "Yapay zeka geri bildirimi",
+    aiFeedbackText: "Netliği artırmak için tek bir somut örnek ekle.",
+    fluency: "Akıcılık",
+    pronunciation: "Telaffuz",
+    structure: "Yapı",
+    reasonsEyebrow: "Skor artışı",
+    reasonsTitle: "Öğrenciler neden SpeakAce kullanıyor",
+    reasonCards: [
+      { title: "Gerçek IELTS görevleriyle çalış", description: "Süreli görevler pratiği gerçek sınava daha yakın hale getirir." },
+      { title: "Band skorunu neyin düşürdüğünü gör", description: "Akıcılık, telaffuz, yapı ve fikir desteğindeki zayıf noktaları fark et." },
+      { title: "Her tekrarı daha güçlü cevaba çevir", description: "Skor sinyalleri ve düzeltmeler bir sonraki denemeyi daha faydalı kılar." }
+    ],
+    fluencyEyebrow: "Akıcılık",
+    fluencyTitle: "İngilizce konuşma akıcılığını geliştir",
+    fluencyP1: "SpeakAce, IELTS speaking pratiğini daha düzenli hissettirmek için kuruldu. Sadece kayıt almaz; cevabının nasıl kurulduğunu ve nerede dağıldığını da gösterir.",
+    fluencyP2: "Akıcılık sadece daha fazla konuşmakla değil, daha net ve daha dengeli konuşmakla gelişir. Bu yüzden SpeakAce genel bir araç değil, skor geliştirme sistemi olarak tasarlandı.",
+    tasksEyebrow: "Gerçek görevler",
+    tasksTitle: "Gerçek IELTS sorularıyla pratik yap",
+    tasksP1: "Rastgele sorular yerine gerçek sınav beklentisine daha yakın görevlerle çalışarak daha sınav-hazır cevaplar kurarsın.",
+    tasksP2: "Hızlı bir giriş istiyorsan ücretsiz testi açabilir, konu sayfalarına geçebilir veya blog rehberlerini okuyabilirsin.",
+    freeTest: "Ücretsiz IELTS speaking testini aç",
+    topicHub: "IELTS speaking konularını gör",
+    blog: "Blog rehberlerini oku",
+    instantEyebrow: "Anında içgörü",
+    instantTitle: "Anında geri bildirim al",
+    instantP1: "SpeakAce sadece transcript vermez; cevabın neden zayıf göründüğünü ve bir sonraki denemede neyi düzeltmen gerektiğini gösterir.",
+    instantP2: "Bu yüzden ilk ücretsiz deneme bile gerçek değer üretir: konuş, skorunu gör, bir zayıflığı düzelt ve daha güçlü tekrar dene.",
+    firstStepEyebrow: "İlk adım",
+    firstStepTitle: "İlk speaking denemeni 30 saniyede başlat",
+    firstStepText: "İlk hareket net olsun: konuş, skorunu gör, sonra istersen daha derin geri bildirimi aç.",
+    scoreTitle: "Önce skoru gör, sonra tam geri bildirimi aç",
+    scoreText: "SpeakAce değeri önce gösterir: bir deneme yap, skorunu gör, sonra tam analiz ve daha fazla tekrar için Plus’a geç.",
+    unlock: "Tam geri bildirimi aç",
+    faqTitle: "Sık sorulan sorular",
+    faq: [
+      { question: "SpeakAce resmi IELTS puanlama servisi mi?", answer: "Hayır. SpeakAce, hazırlık için tahmini skor ve geri bildirim sunan bir IELTS ve TOEFL speaking çalışma platformudur." },
+      { question: "Günlük AI pratiği IELTS speaking’i geliştirir mi?", answer: "Evet. Transcript incelemesi ve tekrar denemeleri akıcılığı, özgüveni ve cevap yapısını geliştirebilir." },
+      { question: "SpeakAce kimler için uygun?", answer: "SpeakAce, IELTS ve TOEFL öğrencileri, öğretmenler ve dil okulları için tasarlanmıştır." }
+    ]
+  },
+  de: {
+    title: "Steigere deinen IELTS-Speaking-Score mit KI-Training",
+    description: "Übe echte Fragen, erhalte sofortiges Feedback und verbessere deine Sprechflüssigkeit schneller.",
+    cta: "Jetzt sprechen",
+    free: "Kostenlos • Keine Registrierung nötig",
+    learners: "Von über 1.000 Lernenden genutzt",
+    demo: "Schnelldemo",
+    userPrompt: 'Nutzer: „Beschreibe deine Heimatstadt“',
+    estimatedScore: "Geschätzter IELTS-Speaking-Score",
+    aiFeedback: "KI-Feedback",
+    aiFeedbackText: "Füge ein konkretes Beispiel hinzu, um klarer zu klingen.",
+    fluency: "Flüssigkeit",
+    pronunciation: "Aussprache",
+    structure: "Struktur",
+    reasonsEyebrow: "Score-Wachstum",
+    reasonsTitle: "Warum Lernende SpeakAce nutzen",
+    reasonCards: [
+      { title: "Mit echten IELTS-Aufgaben üben", description: "Zeitgesteuerte Aufgaben fühlen sich näher an der Prüfung an." },
+      { title: "Sehen, was den Band-Score bremst", description: "Erkenne Schwächen bei Flüssigkeit, Aussprache und Struktur." },
+      { title: "Jeden Retry stärker machen", description: "Score-Signale und Korrekturen machen den nächsten Versuch nützlicher." }
+    ],
+    fluencyEyebrow: "Flüssigkeit",
+    fluencyTitle: "Verbessere deine englische Sprechflüssigkeit",
+    fluencyP1: "SpeakAce macht IELTS-Speaking-Training strukturierter. Du nimmst nicht nur auf, sondern siehst auch, wie deine Antwort aufgebaut ist.",
+    fluencyP2: "Flüssigkeit wächst durch klareres und kontrollierteres Sprechen. Darum ist SpeakAce ein System für Score-Verbesserung statt nur ein Tool.",
+    tasksEyebrow: "Echte Aufgaben",
+    tasksTitle: "Übe mit echten IELTS-Fragen",
+    tasksP1: "Statt zufälliger Prompts trainierst du mit Formaten, die näher an echten Prüfungsfragen liegen.",
+    tasksP2: "Wenn du schneller starten willst, öffne den Gratis-Test, die Themen-Seiten oder die Leitfäden im Blog.",
+    freeTest: "Gratis-IELTS-Test öffnen",
+    topicHub: "IELTS-Themen ansehen",
+    blog: "Leitfäden im Blog lesen",
+    instantEyebrow: "Sofortige Einsicht",
+    instantTitle: "Sofort Feedback erhalten",
+    instantP1: "SpeakAce zeigt nicht nur ein Transcript, sondern warum eine Antwort schwach wirkt und was du als Nächstes verbessern solltest.",
+    instantP2: "So schafft schon die erste kostenlose Sitzung echten Wert: sprechen, Score sehen, eine Schwäche korrigieren und besser wiederholen.",
+    firstStepEyebrow: "Erster Schritt",
+    firstStepTitle: "Starte deinen ersten Speaking-Test in 30 Sekunden",
+    firstStepText: "Die erste Aktion soll klar sein: sprechen, Score sehen und danach bei Bedarf mehr Feedback freischalten.",
+    scoreTitle: "Zuerst den Score sehen, dann volles Feedback freischalten",
+    scoreText: "SpeakAce zeigt den Wert zuerst: ein Versuch, ein Score und danach volles Feedback mit Plus.",
+    unlock: "Volles Feedback freischalten",
+    faqTitle: "Häufige Fragen",
+    faq: [
+      { question: "Ist SpeakAce ein offizieller IELTS-Bewertungsdienst?", answer: "Nein. SpeakAce bietet geschätzte Scores und Feedback zur Vorbereitung." },
+      { question: "Hilft tägliches KI-Training beim IELTS Speaking?", answer: "Ja. Tägliche Übung mit Transcript-Review und Wiederholungen verbessert Struktur und Flüssigkeit." },
+      { question: "Für wen ist SpeakAce gedacht?", answer: "Für IELTS- und TOEFL-Lernende, Lehrkräfte und Sprachschulen." }
+    ]
+  }
+} as const;
+
+function getMinimalCopy(language: string) {
+  return minimalMarketingCopy[language as keyof typeof minimalMarketingCopy] ?? minimalMarketingCopy.en;
+}
+
 export function MarketingPage({
   eyebrow,
   title,
@@ -397,6 +569,7 @@ export function MarketingPage({
   const localizedSpeakingIdentities = tr ? speakingIdentities.tr : speakingIdentities.en;
   const localizedScoreLadders = tr ? scoreLadders.tr : scoreLadders.en;
   const planComparison = getPlanComparison(tr);
+  const minimalCopy = getMinimalCopy(language);
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -431,59 +604,53 @@ export function MarketingPage({
         <section className="page-shell section home-hero">
           <div className="hero-copy">
             <span className="eyebrow">{eyebrow}</span>
-            <h1>{tr ? "AI ile IELTS speaking pratiği yap ve skorunu yükselt" : title}</h1>
-            <p className="hero-description">
-              {tr
-                ? "Gerçek soru tipleriyle çalış, anında geri bildirim al ve İngilizce konuşma akıcılığını daha hızlı geliştir."
-                : description}
-            </p>
+            <h1>{minimalCopy.title}</h1>
+            <p className="hero-description">{minimalCopy.description}</p>
             <div className="hero-actions">
               <Link className="button button-primary" href={ctaHref}>
-                {tr ? "Konuşmaya başla" : "Start Speaking Now"}
+                {minimalCopy.cta}
               </Link>
             </div>
             <p className="practice-meta" style={{ marginTop: "0.9rem" }}>
-              {tr ? "Ücretsiz • Kayıt olmadan kullanılabilir" : "Free • No signup required"}
+              {minimalCopy.free}
             </p>
             <p className="practice-meta" style={{ marginTop: "0.45rem" }}>
-              {tr ? "1.000+ öğrenci tarafından kullanılıyor" : "Used by 1,000+ learners"}
+              {minimalCopy.learners}
             </p>
           </div>
 
           <aside className="card hero-result">
-            <div className="pill">{tr ? "Hızlı demo" : "Quick demo"}</div>
+            <div className="pill">{minimalCopy.demo}</div>
             <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
-              {tr ? 'Kullanıcı: "Doğduğun yeri anlat"' : 'User: "Describe your hometown"'}
+              {minimalCopy.userPrompt}
             </div>
             <div className="score-showcase">
               <div className="score-value">6.5</div>
-              <div className="score-label">
-                {tr ? "Tahmini IELTS speaking skoru" : "Estimated IELTS speaking score"}
-              </div>
+              <div className="score-label">{minimalCopy.estimatedScore}</div>
             </div>
             <div className="card spotlight-card">
-              <strong>{tr ? "AI geri bildirimi" : "AI feedback"}</strong>
-              <p>
-                {tr
-                  ? "Daha net olmak için tek bir spesifik örnek ekle."
-                  : "Add a specific example to improve clarity."}
-              </p>
+              <strong>{minimalCopy.aiFeedback}</strong>
+              <p>{minimalCopy.aiFeedbackText}</p>
             </div>
             <div className="metrics-grid">
-              <MiniMetric label={tr ? "Akicilik" : "Fluency"} value="7.0" />
-              <MiniMetric label={tr ? "Telaffuz" : "Pronunciation"} value="6.5" />
-              <MiniMetric label={tr ? "Yapi" : "Structure"} value="6.5" />
+              <MiniMetric label={minimalCopy.fluency} value="7.0" />
+              <MiniMetric label={minimalCopy.pronunciation} value="6.5" />
+              <MiniMetric label={minimalCopy.structure} value="6.5" />
             </div>
           </aside>
         </section>
 
         <section className="page-shell section" style={{ paddingTop: 0 }}>
+          <div className="section-head">
+            <span className="eyebrow">{minimalCopy.reasonsEyebrow}</span>
+            <h2>{minimalCopy.reasonsTitle}</h2>
+          </div>
           <div className="marketing-grid">
-            {whySpeakAce.map((item) => (
+            {minimalCopy.reasonCards.map((item) => (
               <FeatureCard
-                key={item.title.en}
-                title={tr ? item.title.tr : item.title.en}
-                description={tr ? item.description.tr : item.description.en}
+                key={item.title}
+                title={item.title}
+                description={item.description}
               />
             ))}
           </div>
@@ -491,51 +658,35 @@ export function MarketingPage({
 
         <section className="page-shell section">
           <div className="section-head">
-            <span className="eyebrow">{tr ? "Akicilik" : "Fluency"}</span>
-            <h2>{tr ? "İngilizce konuşma akıcılığını geliştir" : "Improve your English speaking fluency"}</h2>
+            <span className="eyebrow">{minimalCopy.fluencyEyebrow}</span>
+            <h2>{minimalCopy.fluencyTitle}</h2>
           </div>
           <div className="card quick-pitch">
             <div className="stack" style={{ gap: "1rem" }}>
-              <p className="practice-copy">
-                {tr
-                  ? "SpeakAce, IELTS speaking practice online deneyimini daha düzenli hale getirmek için kuruldu. Bir soruya cevap verirken sadece ses kaydı almazsın; aynı zamanda cevap yapını, akıcılığını ve örnek kullanma biçimini de görürsün. Bu, kendi başına çalışan öğrenciler için neyin gerçekten geliştiğini anlamayı çok daha kolaylaştırır."
-                  : "SpeakAce is built to make IELTS speaking practice online feel more structured. You do not just record an answer and move on. You also see how your answer is built, where fluency drops, and whether your example actually supports the point you are trying to make. That makes it easier for self-study learners to understand what is really improving."}
-              </p>
-              <p className="practice-copy">
-                {tr
-                  ? "Akıcılığı geliştirmek çoğu öğrenci için sadece daha fazla konuşmak değil, daha net ve daha dengeli konuşmaktır. Bu yüzden platform, seni genel konuşma araçları gibi rastgele yönlendirmek yerine cevaplarını daha net hale getirmeye odaklanır. Eğer hedefin İngilizce konuşma akıcılığını geliştirmek ve sınav baskısı altında daha kontrollü konuşmaksa, burada her deneme daha bilinçli bir tekrar haline gelir."
-                  : "For most learners, fluency does not improve by speaking more without structure. It improves by speaking more clearly, more evenly, and with better control under pressure. That is why SpeakAce is not positioned as a general chat tool. It is designed for learners who want to improve English speaking fluency and make every retry feel more deliberate and more useful."}
-              </p>
+              <p className="practice-copy">{minimalCopy.fluencyP1}</p>
+              <p className="practice-copy">{minimalCopy.fluencyP2}</p>
             </div>
           </div>
         </section>
 
         <section className="page-shell section">
           <div className="section-head">
-            <span className="eyebrow">{tr ? "Gercek sorular" : "Real tasks"}</span>
-            <h2>{tr ? "Gerçek IELTS sorularıyla pratik yap" : "Practice real IELTS questions"}</h2>
+            <span className="eyebrow">{minimalCopy.tasksEyebrow}</span>
+            <h2>{minimalCopy.tasksTitle}</h2>
           </div>
           <div className="card quick-pitch">
             <div className="stack" style={{ gap: "1rem" }}>
-              <p className="practice-copy">
-                {tr
-                  ? "Birçok öğrenci speaking pratiğini rastgele konularla yapar ve bu yüzden gerçek sınav ritmine yaklaşamaz. SpeakAce, seni gerçek soru mantığına daha yakın bir akışla çalıştırır. Part 1, Part 2 ve Part 3 benzeri görevlerde ne kadar net, ne kadar doğal ve ne kadar dengeli cevap verdiğini anlaman kolaylaşır."
-                  : "Many learners prepare with random prompts and never get close to the rhythm of the real test. SpeakAce helps you practice real IELTS questions and answer structures that feel closer to actual exam expectations. When you work through Part 1, Part 2, and Part 3 style tasks, it becomes easier to see whether your answer sounds clear, natural, and complete."}
-              </p>
-              <p className="practice-copy">
-                {tr
-                  ? "Aynı yaklaşım TOEFL speaking practice için de faydalıdır. Çünkü burada asıl amaç sadece soru görmek değil, soruya verdiğin cevabı daha güçlü hale getirmektir. Eğer hızlı bir başlangıç istiyorsan ücretsiz denemeyle başlayabilir, konu bazlı çalışma yapmak istiyorsan IELTS topic hub sayfasına geçebilir veya daha fazla içerik için blog bölümünü inceleyebilirsin."
-                  : "The same structure is also useful for TOEFL speaking practice, because the real value is not only seeing a prompt. It is learning how to turn your answer into a stronger version on the next try. If you want a fast entry point, you can start with the free test, move into the IELTS topic hub, or read practical study ideas on the blog before your first session."}
-              </p>
+              <p className="practice-copy">{minimalCopy.tasksP1}</p>
+              <p className="practice-copy">{minimalCopy.tasksP2}</p>
               <div className="lead-capture-actions">
                 <Link className="button button-secondary" href="/free-ielts-speaking-test">
-                  {tr ? "Ücretsiz testi aç" : "Open the free IELTS speaking test"}
+                  {minimalCopy.freeTest}
                 </Link>
                 <Link className="button button-secondary" href="/ielts-speaking-topics">
-                  {tr ? "IELTS speaking konularını gör" : "Browse IELTS speaking topics"}
+                  {minimalCopy.topicHub}
                 </Link>
                 <Link className="button button-secondary" href="/blog">
-                  {tr ? "Çalışma rehberlerini oku" : "Read study guides on the blog"}
+                  {minimalCopy.blog}
                 </Link>
               </div>
             </div>
@@ -544,34 +695,22 @@ export function MarketingPage({
 
         <section className="page-shell section">
           <div className="section-head">
-            <span className="eyebrow">{tr ? "Aninda icgoru" : "Instant insight"}</span>
-            <h2>{tr ? "Anında geri bildirim al" : "Get instant feedback"}</h2>
+            <span className="eyebrow">{minimalCopy.instantEyebrow}</span>
+            <h2>{minimalCopy.instantTitle}</h2>
           </div>
           <div className="card quick-pitch">
             <div className="stack" style={{ gap: "1rem" }}>
-              <p className="practice-copy">
-                {tr
-                  ? "SpeakAce’in en güçlü tarafı sadece transcript vermesi değil, cevabın neden zayıf kaldığını hızlıca gösterebilmesidir. Tahmini band skoru, akıcılık, telaffuz ve yapı sinyalleri sayesinde öğrenciler bir sonraki denemede tam olarak neyi düzeltmeleri gerektiğini daha net görür. Bu da ücretsiz kullanıcı için bile ilk denemede gerçek değer hissi yaratır."
-                  : "The strongest part of SpeakAce is not just that it gives you a transcript. It quickly shows why an answer feels weak. With an estimated IELTS-style band score, fluency signal, pronunciation signal, and structure signal, learners can understand what to fix on the very next attempt. That means even the first free session creates real value instead of just showing a blank tool."}
-              </p>
-              <p className="practice-copy">
-                {tr
-                  ? "Bu yaklaşım, Google’ın da daha kolay anlayabileceği net bir kalite sinyali oluşturur: site yalnızca bir yapay zeka aracı değil, speaking gelişimini daha görünür ve ölçülebilir hale getiren faydalı bir öğrenme sistemi sunar. Kullanıcı bir soruya cevap verir, skorunu görür, kısmi yönlendirme alır ve daha derin analiz isterse Plus tarafına geçer. Bu akış hem kullanıcı hem arama motoru açısından daha güven verici bir yapı kurar."
-                  : "This creates a clearer quality signal for both users and search engines: the site is not only another AI tool. It is a useful system for making speaking improvement more visible and more measurable. A learner answers one question, sees a score, gets useful direction, and only then decides whether to unlock full feedback. That sequence makes the product easier to trust and easier to understand."}
-              </p>
+              <p className="practice-copy">{minimalCopy.instantP1}</p>
+              <p className="practice-copy">{minimalCopy.instantP2}</p>
             </div>
           </div>
         </section>
 
         <section className="page-shell section">
           <div className="section-head">
-            <span className="eyebrow">{tr ? "Nasil calisir" : "How it works"}</span>
-            <h2>{tr ? "İlk speaking denemeni 30 saniyede başlat" : "Take your first speaking test in 30 seconds"}</h2>
-            <p>
-              {tr
-                ? "İlk adım net olsun: konuş, skorunu gör, sonra istersen daha derin geri bildirimi aç."
-                : "Make the first action obvious: speak, see your score, then unlock deeper feedback if you want more."}
-            </p>
+            <span className="eyebrow">{minimalCopy.firstStepEyebrow}</span>
+            <h2>{minimalCopy.firstStepTitle}</h2>
+            <p>{minimalCopy.firstStepText}</p>
           </div>
           <div className="steps-grid">
             {localizedHow.slice(0, 3).map((item, index) => (
@@ -589,21 +728,15 @@ export function MarketingPage({
           <div className="card quick-pitch">
             <div className="quick-pitch-grid">
               <div>
-                <h2 style={{ marginBottom: "0.8rem" }}>
-                  {tr ? "Önce skoru gör, sonra tam geri bildirimi aç" : "See the score first, unlock full feedback later"}
-                </h2>
-                <p className="practice-copy">
-                  {tr
-                    ? "SpeakAce önce değeri gösterir: hızlı bir speaking denemesi yap, skorunu gör, sonra tam analiz ve daha fazla deneme için Plus’a geç."
-                    : "SpeakAce shows value before upgrade pressure: take one attempt, see your score, then move to Plus for full feedback and more retries."}
-                </p>
+                <h2 style={{ marginBottom: "0.8rem" }}>{minimalCopy.scoreTitle}</h2>
+                <p className="practice-copy">{minimalCopy.scoreText}</p>
               </div>
               <div className="lead-capture-actions">
                 <Link className="button button-primary" href="/app/practice?quickStart=1">
-                  {tr ? "Konuşmaya başla" : "Start Speaking Now"}
+                  {minimalCopy.cta}
                 </Link>
                 <Link className="button button-secondary" href="/pricing">
-                  {tr ? "Tam geri bildirimi gör" : "Unlock full feedback"}
+                  {minimalCopy.unlock}
                 </Link>
               </div>
             </div>
@@ -613,10 +746,10 @@ export function MarketingPage({
         <section className="page-shell section">
           <div className="section-head">
             <span className="eyebrow">FAQ</span>
-            <h2>{tr ? "Sık sorulan sorular" : "Frequently asked questions"}</h2>
+            <h2>{minimalCopy.faqTitle}</h2>
           </div>
           <div className="marketing-grid">
-            {localizedFaqs.slice(0, 3).map((item) => (
+            {minimalCopy.faq.map((item) => (
               <article key={item.question} className="card feature-card">
                 <h3>{item.question}</h3>
                 <p>{item.answer}</p>

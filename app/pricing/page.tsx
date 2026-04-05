@@ -3,18 +3,68 @@ import Link from "next/link";
 import { MarketingSchema } from "@/components/marketing-schema";
 import { SiteHeader } from "@/components/site-header";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
+import type { Language } from "@/lib/copy";
+import { getServerLanguage } from "@/lib/language";
 
-export const metadata: Metadata = {
-  title: "IELTS Speaking Pricing | Full Feedback and Unlimited Practice",
-  description:
-    "Compare free and Plus plans for IELTS speaking practice, full feedback, band-style scoring, and more daily speaking time.",
-  alternates: {
-    canonical: "/pricing"
+const pricingCopy = {
+  en: {
+    title: "IELTS Speaking Pricing | Full Feedback and Unlimited Practice",
+    description:
+      "Compare free and Plus plans for IELTS speaking practice, full feedback, band-style scoring, and more daily speaking time.",
+    eyebrow: "Pricing",
+    heading: "IELTS speaking practice pricing built around faster score improvement",
+    intro:
+      "Start free, see your score first, then unlock full feedback, more daily speaking time, and a stronger IELTS scoring workflow.",
+    launchOffer: "Launch offer",
+    bestFor: "Best for",
+    bestForValue: "Daily IELTS score improvement",
+    corePromise: "Core promise",
+    corePromiseValue: "Full feedback after every speaking attempt",
+    price: "Price",
+    free: "Free",
+    start: "Start Speaking Now",
+    faqTitle: "Common buying questions"
+  },
+  tr: {
+    title: "IELTS Speaking Fiyatları | Tam Geri Bildirim ve Sınırsıza Yakın Pratik",
+    description:
+      "IELTS speaking pratiği için ücretsiz ve Plus planlarını; tam geri bildirim, band benzeri skor ve daha fazla günlük speaking süresiyle karşılaştırın.",
+    eyebrow: "Fiyatlar",
+    heading: "IELTS speaking pratiği için daha hızlı skor gelişimine uygun fiyatlar",
+    intro:
+      "Ücretsiz başla, önce skorunu gör, sonra tam geri bildirim, daha fazla günlük speaking süresi ve daha güçlü bir IELTS skorlama akışı aç.",
+    launchOffer: "Tanıtım teklifi",
+    bestFor: "En uygun kullanım",
+    bestForValue: "Günlük IELTS skor gelişimi",
+    corePromise: "Ana vaat",
+    corePromiseValue: "Her denemeden sonra tam geri bildirim",
+    price: "Fiyat",
+    free: "Ücretsiz",
+    start: "Konuşmaya başla",
+    faqTitle: "Sık sorulan satın alma soruları"
   }
-};
+} as const;
 
-export default function PricingPage() {
-  const comparison = getPlanComparison(false);
+function getPricingCopy(language: Language) {
+  return ((pricingCopy as unknown) as Partial<Record<Language, (typeof pricingCopy)["en"]>>)[language] ?? pricingCopy.en;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const language = await getServerLanguage();
+  const copy = getPricingCopy(language);
+  return {
+    title: copy.title,
+    description: copy.description,
+    alternates: {
+      canonical: "/pricing"
+    }
+  };
+}
+
+export default async function PricingPage() {
+  const language = await getServerLanguage();
+  const copy = getPricingCopy(language);
+  const comparison = getPlanComparison(language === "tr");
   const faq = [
     {
       q: "How is Plus different from free?",
@@ -36,38 +86,35 @@ export default function PricingPage() {
       <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
-          <span className="eyebrow">Pricing</span>
+          <span className="eyebrow">{copy.eyebrow}</span>
           <h1 style={{ fontSize: "clamp(2.7rem, 6vw, 5rem)", lineHeight: 0.95 }}>
-            IELTS speaking practice pricing built around faster score improvement
+            {copy.heading}
           </h1>
-          <p>
-            Start free, see your score first, then unlock full feedback, more daily speaking time,
-            and a stronger IELTS scoring workflow.
-          </p>
+          <p>{copy.intro}</p>
         </div>
 
         <div className="stats-strip">
           <div className="card stat-strip-card">
-            <div className="practice-meta">Launch offer</div>
+            <div className="practice-meta">{copy.launchOffer}</div>
             <strong>{couponCatalog.LAUNCH20.code}</strong>
           </div>
           <div className="card stat-strip-card">
-            <div className="practice-meta">Best for</div>
-            <strong>Daily IELTS score improvement</strong>
+            <div className="practice-meta">{copy.bestFor}</div>
+            <strong>{copy.bestForValue}</strong>
           </div>
           <div className="card stat-strip-card">
-            <div className="practice-meta">Core promise</div>
-            <strong>Full feedback after every speaking attempt</strong>
+            <div className="practice-meta">{copy.corePromise}</div>
+            <strong>{copy.corePromiseValue}</strong>
           </div>
           <div className="card stat-strip-card">
-            <div className="practice-meta">Price</div>
+            <div className="practice-meta">{copy.price}</div>
             <strong>{commerceConfig.plusMonthlyPrice}/month</strong>
           </div>
         </div>
 
         <div className="marketing-grid">
           <article className="card pricing-card">
-            <h3>Free</h3>
+            <h3>{copy.free}</h3>
             <div className="price-tag">$0</div>
             <ul>
               <li>4 daily speaking sessions</li>
@@ -75,7 +122,7 @@ export default function PricingPage() {
               <li>Starter score view and limited feedback</li>
             </ul>
             <Link className="button button-secondary" href="/auth">
-              Start Speaking Now
+              {copy.start}
             </Link>
           </article>
 
@@ -168,7 +215,7 @@ export default function PricingPage() {
 
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
           <span className="eyebrow">FAQ</span>
-          <h2 style={{ margin: 0 }}>Common buying questions</h2>
+          <h2 style={{ margin: 0 }}>{copy.faqTitle}</h2>
           <div className="marketing-grid">
             {faq.map((item) => (
               <article key={item.q} className="card feature-card">

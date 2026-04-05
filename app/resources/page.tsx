@@ -4,8 +4,80 @@ import Link from "next/link";
 import { LeadCaptureForm } from "@/components/lead-capture-form";
 import { SiteHeader } from "@/components/site-header";
 import { getBlogChromeCopy, getLocalizedBlogPosts } from "@/lib/blog-content";
+import type { Language } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
+
+const resourcesCopy = {
+  en: {
+    metaTitle: "IELTS Speaking Resources",
+    metaDescription:
+      "Explore IELTS speaking resources, topic guides, band score strategy, and AI practice content built to improve score and fluency.",
+    ogTitle: "IELTS Speaking Resources | SpeakAce",
+    ogDescription:
+      "A resource hub for IELTS speaking practice, band score guidance, topic ideas, and task-specific improvement.",
+    eyebrow: "Resources",
+    heading: "IELTS speaking resources, guides, and practice ideas",
+    intro:
+      "Explore topic pages, band score guides, sample answers, and practical articles that help you move from reading into real speaking practice.",
+    collectionsEyebrow: "Collections",
+    collectionsTitle: "Start with the content format that fits your goal",
+    exploreCollection: "Explore collection",
+    resourceBadge: "Resource",
+    openGuide: "Open guide",
+    topicEyebrow: "Topic of the day",
+    topicTitle: "One easy prompt to pull visitors into practice",
+    topicText:
+      "A simple daily topic works well because it gives people a low-friction reason to record one answer and see the transcript.",
+    openTopic: "Open topic page",
+    startFree: "Start free practice",
+    freeChecklistEyebrow: "Free checklist",
+    freeChecklistTitle: "Give new visitors one easy reason to stay",
+    freeChecklistText:
+      "A free checklist and welcome email create a softer first conversion for visitors who are not ready to buy yet.",
+    readingPathsEyebrow: "Reading paths",
+    readingPathsTitle: "Popular articles readers usually open first",
+    readingPathsText:
+      "Strong resource hubs usually give visitors a simple first path instead of showing an endless wall of links.",
+    openAllArticles: "Open all articles"
+  },
+  tr: {
+    metaTitle: "IELTS Speaking Kaynakları",
+    metaDescription:
+      "Skoru ve akıcılığı geliştirmek için hazırlanan IELTS speaking kaynaklarını, konu rehberlerini ve band stratejilerini keşfedin.",
+    ogTitle: "IELTS Speaking Kaynakları | SpeakAce",
+    ogDescription:
+      "IELTS speaking pratiği, band skoru rehberleri, konu fikirleri ve görev bazlı gelişim için kaynak merkezi.",
+    eyebrow: "Kaynaklar",
+    heading: "IELTS speaking kaynakları, rehberler ve çalışma fikirleri",
+    intro:
+      "Konu sayfaları, band skoru rehberleri, örnek cevaplar ve okumayı gerçek speaking pratiğine bağlayan yararlı içerikleri keşfet.",
+    collectionsEyebrow: "Koleksiyonlar",
+    collectionsTitle: "Hedefine uyan içerik türüyle başla",
+    exploreCollection: "Koleksiyonu aç",
+    resourceBadge: "Kaynak",
+    openGuide: "Rehberi aç",
+    topicEyebrow: "Günün konusu",
+    topicTitle: "Ziyaretçiyi pratiğe çeken kolay bir prompt",
+    topicText:
+      "Basit bir günlük konu, kullanıcıya düşük sürtünmeyle bir cevap kaydedip transcript görmesi için net bir sebep verir.",
+    openTopic: "Konu sayfasını aç",
+    startFree: "Ücretsiz pratiğe başla",
+    freeChecklistEyebrow: "Ücretsiz kontrol listesi",
+    freeChecklistTitle: "Yeni ziyaretçiye kalması için kolay bir sebep ver",
+    freeChecklistText:
+      "Ücretsiz kontrol listesi ve karşılama e-postası, hemen satın almaya hazır olmayan ziyaretçi için daha yumuşak bir ilk dönüşüm oluşturur.",
+    readingPathsEyebrow: "Okuma yolları",
+    readingPathsTitle: "Ziyaretçilerin önce açtığı popüler yazılar",
+    readingPathsText:
+      "Güçlü kaynak merkezleri ziyaretçiye sonsuz bağlantı yerine basit bir ilk yol sunar.",
+    openAllArticles: "Tüm yazıları aç"
+  }
+} as const;
+
+function getResourcesCopy(language: Language) {
+  return ((resourcesCopy as unknown) as Partial<Record<Language, (typeof resourcesCopy)["en"]>>)[language] ?? resourcesCopy.en;
+}
 
 const resourceCards: Array<{
   href: Route;
@@ -101,25 +173,28 @@ const featuredCollections: Array<{
   }
 ];
 
-export const metadata: Metadata = {
-  title: "IELTS Speaking Resources",
-  description:
-    "Explore IELTS speaking resources, topic guides, band score strategy, and AI practice content built to improve score and fluency.",
-  alternates: {
-    canonical: "/resources"
-  },
-  openGraph: {
-    title: "IELTS Speaking Resources | SpeakAce",
-    description:
-      "A resource hub for IELTS speaking practice, band score guidance, topic ideas, and task-specific improvement.",
-    url: `${siteConfig.domain}/resources`,
-    siteName: siteConfig.name,
-    type: "website"
-  }
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const language = await getServerLanguage();
+  const copy = getResourcesCopy(language);
+  return {
+    title: copy.metaTitle,
+    description: copy.metaDescription,
+    alternates: {
+      canonical: "/resources"
+    },
+    openGraph: {
+      title: copy.ogTitle,
+      description: copy.ogDescription,
+      url: `${siteConfig.domain}/resources`,
+      siteName: siteConfig.name,
+      type: "website"
+    }
+  };
+}
 
 export default async function ResourcesPage() {
   const language = await getServerLanguage();
+  const copy = getResourcesCopy(language);
   const chrome = getBlogChromeCopy(language);
   const blogPosts = getLocalizedBlogPosts(language);
   const featuredArticle = blogPosts[0];
@@ -136,20 +211,17 @@ export default async function ResourcesPage() {
       <SiteHeader />
       <main className="page-shell section">
         <div className="section-head">
-          <span className="eyebrow">Resources</span>
+          <span className="eyebrow">{copy.eyebrow}</span>
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.8rem)", lineHeight: 0.96 }}>
-            IELTS speaking resources, guides, and practice ideas
+            {copy.heading}
           </h1>
-          <p>
-            Explore topic pages, band score guides, sample answers, and practical articles that
-            help you move from reading into real speaking practice.
-          </p>
+          <p>{copy.intro}</p>
         </div>
 
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="section-head">
-            <span className="eyebrow">Collections</span>
-            <h2>Start with the content format that fits your goal</h2>
+            <span className="eyebrow">{copy.collectionsEyebrow}</span>
+            <h2>{copy.collectionsTitle}</h2>
           </div>
           <div className="marketing-grid">
             {featuredCollections.map((collection) => (
@@ -157,7 +229,7 @@ export default async function ResourcesPage() {
                 <h3>{collection.title}</h3>
                 <p>{collection.description}</p>
                 <Link className="button button-secondary" href={collection.href}>
-                  Explore collection
+                  {copy.exploreCollection}
                 </Link>
               </article>
             ))}
@@ -185,11 +257,11 @@ export default async function ResourcesPage() {
         <div className="marketing-grid">
           {resourceCards.map((card) => (
             <article key={card.href} className="card feature-card">
-              <div className="pill" style={{ marginBottom: "0.8rem" }}>Resource</div>
+              <div className="pill" style={{ marginBottom: "0.8rem" }}>{copy.resourceBadge}</div>
               <h2 style={{ fontSize: "1.4rem" }}>{card.title}</h2>
               <p>{card.description}</p>
               <Link className="button button-primary" href={card.href}>
-                Open guide
+                {copy.openGuide}
               </Link>
             </article>
           ))}
@@ -197,23 +269,20 @@ export default async function ResourcesPage() {
 
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="section-head">
-            <span className="eyebrow">Topic of the day</span>
-            <h2>One easy prompt to pull visitors into practice</h2>
+            <span className="eyebrow">{copy.topicEyebrow}</span>
+            <h2>{copy.topicTitle}</h2>
           </div>
           <div className="card institution-cta">
             <div>
               <h2 style={{ margin: "0 0 0.5rem" }}>Describe a useful object you use often</h2>
-              <p className="practice-copy">
-                A simple daily topic works well because it gives people a low-friction reason to
-                record one answer and see the transcript.
-              </p>
+              <p className="practice-copy">{copy.topicText}</p>
             </div>
             <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
               <Link className="button button-primary" href="/ielts-speaking-topics/describe-a-useful-object">
-                Open topic page
+                {copy.openTopic}
               </Link>
               <Link className="button button-secondary" href="/app/practice">
-                Start free practice
+                {copy.startFree}
               </Link>
             </div>
           </div>
@@ -222,11 +291,9 @@ export default async function ResourcesPage() {
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="card lead-capture-card">
             <div>
-              <span className="eyebrow">Free checklist</span>
-              <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Give new visitors one easy reason to stay</h2>
-              <p className="practice-copy">
-                A free checklist and welcome email create a softer first conversion for visitors who are not ready to buy yet.
-              </p>
+              <span className="eyebrow">{copy.freeChecklistEyebrow}</span>
+              <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{copy.freeChecklistTitle}</h2>
+              <p className="practice-copy">{copy.freeChecklistText}</p>
             </div>
             <div className="lead-capture-actions">
               <LeadCaptureForm source="resources_lead" />
@@ -236,11 +303,9 @@ export default async function ResourcesPage() {
 
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="section-head">
-            <span className="eyebrow">Reading paths</span>
-            <h2>Popular articles readers usually open first</h2>
-            <p>
-              Strong resource hubs usually give visitors a simple first path instead of showing an endless wall of links.
-            </p>
+            <span className="eyebrow">{copy.readingPathsEyebrow}</span>
+            <h2>{copy.readingPathsTitle}</h2>
+            <p>{copy.readingPathsText}</p>
           </div>
           <div className="marketing-grid">
             {popularArticles.map((post) => (
@@ -256,7 +321,7 @@ export default async function ResourcesPage() {
           </div>
           <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center" }}>
             <Link className="button button-primary" href="/blog">
-              Open all articles
+              {copy.openAllArticles}
             </Link>
           </div>
         </section>
