@@ -387,6 +387,20 @@ export function PracticeConsole() {
     }
   }, [prepareMicrophone, tr]);
 
+  const requestMicrophoneAccess = useCallback(async () => {
+    const granted = await prepareMicrophone(sessionRef.current);
+    if (!granted) {
+      return;
+    }
+
+    setMode("prep");
+    setStatus(
+      tr
+        ? "Mikrofon hazır. Otomatik kayıt başlamadan önce cevabını kısaca planla."
+        : "Microphone ready. Prepare your structure before automatic recording begins."
+    );
+  }, [prepareMicrophone, tr]);
+
   const stopRecording = useCallback(() => {
     if (recorderRef.current && recorderRef.current.state !== "inactive") {
       recorderRef.current.stop();
@@ -490,13 +504,6 @@ export function PracticeConsole() {
       void trackClientEvent({ userId: currentUser.id, event: "practice_start", path: "/app/practice" });
     }
 
-    const granted = await prepareMicrophone(data.session);
-    if (!granted) {
-      return;
-    }
-
-    setMode("prep");
-    setStatus(tr ? "Mikrofon hazır. Otomatik kayıt başlamadan önce cevabını kısaca planla." : "Microphone ready. Prepare your structure before automatic recording begins.");
   };
 
   // This effect is intentionally one-shot for the quick-start landing CTA.
@@ -1232,6 +1239,11 @@ export function PracticeConsole() {
               {(mode === "prep" || mode === "permission") ? (
                 <button className="button button-secondary" type="button" onClick={endEarly}>
                   {tr ? "Session'dan cik" : "Exit session"}
+                </button>
+              ) : null}
+              {mode === "permission" ? (
+                <button className="button button-primary" type="button" onClick={() => void requestMicrophoneAccess()}>
+                  {tr ? "Mikrofon izni ver" : "Allow microphone access"}
                 </button>
               ) : null}
               {mode === "prep" ? (
