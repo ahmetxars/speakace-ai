@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BlogReadingEnhancements } from "@/components/blog-reading-enhancements";
 import { SiteHeader } from "@/components/site-header";
 import { getBlogChromeCopy, getLocalizedBlogPost, getLocalizedBlogPosts } from "@/lib/blog-content";
 import { getServerLanguage } from "@/lib/language";
@@ -51,6 +52,21 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     ja: { resources: "リソース", guides: "ガイド", readNext: "次に読む" },
     ko: { resources: "리소스", guides: "가이드", readNext: "다음 글" }
   }[language];
+  const ctaLabels = {
+    en: { title: "Practice this topic with AI", description: "Get an IELTS-style score, instant feedback, and a clearer next attempt." },
+    tr: { title: "Bu konuyu AI ile çalış", description: "IELTS benzeri skor, anında geri bildirim ve daha güçlü bir sonraki denemeyi gör." },
+    de: { title: "Übe dieses Thema mit KI", description: "Sieh einen IELTS-ähnlichen Score, direktes Feedback und einen stärkeren nächsten Versuch." },
+    es: { title: "Practica este tema con IA", description: "Obtén una puntuación estilo IELTS, feedback instantáneo y un intento más fuerte." },
+    fr: { title: "Travaille ce sujet avec l’IA", description: "Obtiens un score type IELTS, un retour immédiat et une meilleure nouvelle tentative." },
+    it: { title: "Lavora su questo tema con l’IA", description: "Ottieni un punteggio stile IELTS, feedback immediato e un tentativo successivo più forte." },
+    pt: { title: "Pratique este tema com IA", description: "Receba uma pontuação estilo IELTS, feedback instantâneo e uma nova tentativa melhor." },
+    nl: { title: "Oefen dit onderwerp met AI", description: "Krijg een IELTS-achtige score, directe feedback en een sterkere volgende poging." },
+    pl: { title: "Ćwicz ten temat z AI", description: "Zobacz wynik w stylu IELTS, natychmiastowy feedback i mocniejszą kolejną próbę." },
+    ru: { title: "Практикуйте эту тему с ИИ", description: "Получите балл в стиле IELTS, мгновенную обратную связь и более сильную следующую попытку." },
+    ar: { title: "تدرّب على هذا الموضوع بالذكاء الاصطناعي", description: "احصل على درجة شبيهة بـ IELTS وملاحظات فورية ومحاولة أقوى بعد ذلك." },
+    ja: { title: "このテーマをAIで練習する", description: "IELTS風スコア、即時フィードバック、より強い次の回答を確認できます。" },
+    ko: { title: "이 주제를 AI로 연습해 보세요", description: "IELTS 스타일 점수, 즉시 피드백, 더 강한 다음 답변을 확인하세요." }
+  }[language];
   const post = getLocalizedBlogPost(language, slug);
   if (!post) {
     notFound();
@@ -87,6 +103,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   return (
     <>
       <SiteHeader />
+      <BlogReadingEnhancements
+        ctaLabel={ctaLabels.title}
+        ctaDescription={ctaLabels.description}
+        ctaHref="/app/practice?quickStart=1"
+      />
       <main className="page-shell section">
         <div className="section-head">
           <span className="eyebrow">{chrome.cta.blog}</span>

@@ -1097,16 +1097,14 @@ export function MarketingPage({
             <h1>{minimalCopy.title}</h1>
             <p className="hero-description">{minimalCopy.description}</p>
             <div className="hero-actions">
-              <Link className="button button-primary" href={ctaHref}>
+              <Link className="button button-primary hero-primary-cta" href={ctaHref}>
                 {minimalCopy.cta}
               </Link>
             </div>
-            <p className="practice-meta" style={{ marginTop: "0.9rem" }}>
-              {minimalCopy.free}
-            </p>
-            <p className="practice-meta" style={{ marginTop: "0.45rem" }}>
-              {minimalCopy.learners}
-            </p>
+            <div className="hero-trust-lines">
+              <p className="practice-meta">{minimalCopy.free}</p>
+              <p className="practice-meta">{minimalCopy.learners}</p>
+            </div>
           </div>
 
           <aside className="card hero-result">
@@ -1270,13 +1268,18 @@ export function MarketingPage({
               : description}
           </p>
           <div className="hero-actions">
-            <Link className="button button-primary" href={ctaHref}>
+            <Link className="button button-primary hero-primary-cta" href={ctaHref}>
               {tr ? "Konuşmaya başla" : "Start Speaking Now"}
             </Link>
           </div>
-          <p className="practice-meta" style={{ marginTop: "0.9rem" }}>
-            {tr ? "Ücretsiz • Kayıt olmadan kullanılabilir" : "Free • No signup required"}
-          </p>
+          <div className="hero-trust-lines">
+            <p className="practice-meta">
+              {tr ? "Ücretsiz • Kayıt olmadan kullanılabilir" : "Free • No signup required"}
+            </p>
+            <p className="practice-meta">
+              {tr ? "1.000+ öğrenci tarafından kullanılıyor" : "Used by 1,000+ learners"}
+            </p>
+          </div>
           <div className="hero-outcomes">
             {coreKeywords.slice(0, 5).map((keyword) => (
               <span key={keyword} className="pill">

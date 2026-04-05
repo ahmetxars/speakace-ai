@@ -37,16 +37,19 @@ export default function ToolsHubPage() {
         </div>
         <div className="marketing-grid">
           {toolPages.map((item) => (
-            <article key={item.slug} className="card feature-card">
+            <article key={item.slug} className="card feature-card interactive-link-card">
               <div className="tool-card-visual" aria-hidden="true">
                 <span className="tool-card-icon">{getToolVisual(item.slug).emoji}</span>
-                <span className="pill">{getToolVisual(item.slug).badge}</span>
+                <span className="pill tool-card-badge">{getToolVisual(item.slug).badge}</span>
               </div>
               <h2 style={{ fontSize: "1.35rem" }}>{item.title}</h2>
               <p>{item.description}</p>
-              <Link className="button button-secondary" href={`/tools/${item.slug}`}>
-                {item.actionLabel ?? "Open tool"}
-              </Link>
+              <div className="interactive-link-card-footer">
+                <span className="interactive-link-card-tag">AI-powered</span>
+                <Link className="button button-secondary" href={`/tools/${item.slug}`}>
+                  {item.actionLabel ?? "Open tool"}
+                </Link>
+              </div>
             </article>
           ))}
         </div>

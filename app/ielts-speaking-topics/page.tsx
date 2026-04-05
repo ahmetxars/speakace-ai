@@ -38,14 +38,21 @@ export default function IeltsSpeakingTopicsPage() {
 
         <div className="marketing-grid">
           {seoTopicPages.map((topic) => (
-            <article key={topic.slug} className="card feature-card">
+            <article key={topic.slug} className="card feature-card interactive-link-card">
+              <div className="tool-card-visual" aria-hidden="true">
+                <span className="tool-card-icon">🎯</span>
+                <span className="pill tool-card-badge">AI-powered</span>
+              </div>
               <h2 style={{ fontSize: "1.35rem" }}>{topic.title}</h2>
               <p>
                 {topic.tip}
               </p>
-              <Link className="button button-secondary" href={`/ielts-speaking-topics/${topic.slug}` as Route}>
-                Open topic page
-              </Link>
+              <div className="interactive-link-card-footer">
+                <span className="interactive-link-card-tag">Score-focused topic</span>
+                <Link className="button button-secondary" href={`/ielts-speaking-topics/${topic.slug}` as Route}>
+                  Open topic page
+                </Link>
+              </div>
             </article>
           ))}
         </div>
