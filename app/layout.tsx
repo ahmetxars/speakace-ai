@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { headers } from "next/headers";
 import Script from "next/script";
 import { FloatingThemeToggle } from "@/components/floating-theme-toggle";
 import { SiteFooter } from "@/components/site-footer";
@@ -19,9 +20,6 @@ export const metadata: Metadata = {
   keywords: siteConfig.keywords,
   category: "education",
   applicationName: "SpeakAce AI",
-  alternates: {
-    canonical: siteConfig.domain
-  },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION
   },
@@ -42,12 +40,16 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const requestHeaders = await headers();
   const language = await getServerLanguage();
   const direction = await getServerDirection();
+  const currentPath = requestHeaders.get("x-current-path") ?? "/";
+  const canonicalUrl = `${siteConfig.domain}${currentPath === "/" ? "" : currentPath}`;
 
   return (
     <html lang={language} dir={direction}>
       <head>
+        <link rel="canonical" href={canonicalUrl} />
         <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
         <link rel="dns-prefetch" href="https://googleads.g.doubleclick.net" />
         <link rel="dns-prefetch" href="https://fundingchoicesmessages.google.com" />

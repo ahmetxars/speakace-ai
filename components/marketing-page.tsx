@@ -431,15 +431,11 @@ export function MarketingPage({
         <section className="page-shell section home-hero">
           <div className="hero-copy">
             <span className="eyebrow">{eyebrow}</span>
-            <h1>
-              {tr
-                ? "AI destekli speaking pratiğiyle IELTS skorunu yükselt."
-                : "Increase your IELTS Speaking score with AI practice"}
-            </h1>
+            <h1>{tr ? "AI ile IELTS speaking pratiği yap ve skorunu yükselt" : title}</h1>
             <p className="hero-description">
               {tr
-                ? "Gerçek soru tipleriyle çalış, anında geri bildirim al ve akıcılığını daha hızlı geliştir."
-                : "Practice real questions, get instant feedback, and improve your fluency fast."}
+                ? "Gerçek soru tipleriyle çalış, anında geri bildirim al ve İngilizce konuşma akıcılığını daha hızlı geliştir."
+                : description}
             </p>
             <div className="hero-actions">
               <Link className="button button-primary" href={ctaHref}>
@@ -448,6 +444,9 @@ export function MarketingPage({
             </div>
             <p className="practice-meta" style={{ marginTop: "0.9rem" }}>
               {tr ? "Ücretsiz • Kayıt olmadan kullanılabilir" : "Free • No signup required"}
+            </p>
+            <p className="practice-meta" style={{ marginTop: "0.45rem" }}>
+              {tr ? "1.000+ öğrenci tarafından kullanılıyor" : "Used by 1,000+ learners"}
             </p>
           </div>
 
@@ -487,6 +486,80 @@ export function MarketingPage({
                 description={tr ? item.description.tr : item.description.en}
               />
             ))}
+          </div>
+        </section>
+
+        <section className="page-shell section">
+          <div className="section-head">
+            <span className="eyebrow">{tr ? "Akicilik" : "Fluency"}</span>
+            <h2>{tr ? "İngilizce konuşma akıcılığını geliştir" : "Improve your English speaking fluency"}</h2>
+          </div>
+          <div className="card quick-pitch">
+            <div className="stack" style={{ gap: "1rem" }}>
+              <p className="practice-copy">
+                {tr
+                  ? "SpeakAce, IELTS speaking practice online deneyimini daha düzenli hale getirmek için kuruldu. Bir soruya cevap verirken sadece ses kaydı almazsın; aynı zamanda cevap yapını, akıcılığını ve örnek kullanma biçimini de görürsün. Bu, kendi başına çalışan öğrenciler için neyin gerçekten geliştiğini anlamayı çok daha kolaylaştırır."
+                  : "SpeakAce is built to make IELTS speaking practice online feel more structured. You do not just record an answer and move on. You also see how your answer is built, where fluency drops, and whether your example actually supports the point you are trying to make. That makes it easier for self-study learners to understand what is really improving."}
+              </p>
+              <p className="practice-copy">
+                {tr
+                  ? "Akıcılığı geliştirmek çoğu öğrenci için sadece daha fazla konuşmak değil, daha net ve daha dengeli konuşmaktır. Bu yüzden platform, seni genel konuşma araçları gibi rastgele yönlendirmek yerine cevaplarını daha net hale getirmeye odaklanır. Eğer hedefin İngilizce konuşma akıcılığını geliştirmek ve sınav baskısı altında daha kontrollü konuşmaksa, burada her deneme daha bilinçli bir tekrar haline gelir."
+                  : "For most learners, fluency does not improve by speaking more without structure. It improves by speaking more clearly, more evenly, and with better control under pressure. That is why SpeakAce is not positioned as a general chat tool. It is designed for learners who want to improve English speaking fluency and make every retry feel more deliberate and more useful."}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="page-shell section">
+          <div className="section-head">
+            <span className="eyebrow">{tr ? "Gercek sorular" : "Real tasks"}</span>
+            <h2>{tr ? "Gerçek IELTS sorularıyla pratik yap" : "Practice real IELTS questions"}</h2>
+          </div>
+          <div className="card quick-pitch">
+            <div className="stack" style={{ gap: "1rem" }}>
+              <p className="practice-copy">
+                {tr
+                  ? "Birçok öğrenci speaking pratiğini rastgele konularla yapar ve bu yüzden gerçek sınav ritmine yaklaşamaz. SpeakAce, seni gerçek soru mantığına daha yakın bir akışla çalıştırır. Part 1, Part 2 ve Part 3 benzeri görevlerde ne kadar net, ne kadar doğal ve ne kadar dengeli cevap verdiğini anlaman kolaylaşır."
+                  : "Many learners prepare with random prompts and never get close to the rhythm of the real test. SpeakAce helps you practice real IELTS questions and answer structures that feel closer to actual exam expectations. When you work through Part 1, Part 2, and Part 3 style tasks, it becomes easier to see whether your answer sounds clear, natural, and complete."}
+              </p>
+              <p className="practice-copy">
+                {tr
+                  ? "Aynı yaklaşım TOEFL speaking practice için de faydalıdır. Çünkü burada asıl amaç sadece soru görmek değil, soruya verdiğin cevabı daha güçlü hale getirmektir. Eğer hızlı bir başlangıç istiyorsan ücretsiz denemeyle başlayabilir, konu bazlı çalışma yapmak istiyorsan IELTS topic hub sayfasına geçebilir veya daha fazla içerik için blog bölümünü inceleyebilirsin."
+                  : "The same structure is also useful for TOEFL speaking practice, because the real value is not only seeing a prompt. It is learning how to turn your answer into a stronger version on the next try. If you want a fast entry point, you can start with the free test, move into the IELTS topic hub, or read practical study ideas on the blog before your first session."}
+              </p>
+              <div className="lead-capture-actions">
+                <Link className="button button-secondary" href="/free-ielts-speaking-test">
+                  {tr ? "Ücretsiz testi aç" : "Open the free IELTS speaking test"}
+                </Link>
+                <Link className="button button-secondary" href="/ielts-speaking-topics">
+                  {tr ? "IELTS speaking konularını gör" : "Browse IELTS speaking topics"}
+                </Link>
+                <Link className="button button-secondary" href="/blog">
+                  {tr ? "Çalışma rehberlerini oku" : "Read study guides on the blog"}
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="page-shell section">
+          <div className="section-head">
+            <span className="eyebrow">{tr ? "Aninda icgoru" : "Instant insight"}</span>
+            <h2>{tr ? "Anında geri bildirim al" : "Get instant feedback"}</h2>
+          </div>
+          <div className="card quick-pitch">
+            <div className="stack" style={{ gap: "1rem" }}>
+              <p className="practice-copy">
+                {tr
+                  ? "SpeakAce’in en güçlü tarafı sadece transcript vermesi değil, cevabın neden zayıf kaldığını hızlıca gösterebilmesidir. Tahmini band skoru, akıcılık, telaffuz ve yapı sinyalleri sayesinde öğrenciler bir sonraki denemede tam olarak neyi düzeltmeleri gerektiğini daha net görür. Bu da ücretsiz kullanıcı için bile ilk denemede gerçek değer hissi yaratır."
+                  : "The strongest part of SpeakAce is not just that it gives you a transcript. It quickly shows why an answer feels weak. With an estimated IELTS-style band score, fluency signal, pronunciation signal, and structure signal, learners can understand what to fix on the very next attempt. That means even the first free session creates real value instead of just showing a blank tool."}
+              </p>
+              <p className="practice-copy">
+                {tr
+                  ? "Bu yaklaşım, Google’ın da daha kolay anlayabileceği net bir kalite sinyali oluşturur: site yalnızca bir yapay zeka aracı değil, speaking gelişimini daha görünür ve ölçülebilir hale getiren faydalı bir öğrenme sistemi sunar. Kullanıcı bir soruya cevap verir, skorunu görür, kısmi yönlendirme alır ve daha derin analiz isterse Plus tarafına geçer. Bu akış hem kullanıcı hem arama motoru açısından daha güven verici bir yapı kurar."
+                  : "This creates a clearer quality signal for both users and search engines: the site is not only another AI tool. It is a useful system for making speaking improvement more visible and more measurable. A learner answers one question, sees a score, gets useful direction, and only then decides whether to unlock full feedback. That sequence makes the product easier to trust and easier to understand."}
+              </p>
+            </div>
           </div>
         </section>
 
@@ -534,6 +607,21 @@ export function MarketingPage({
                 </Link>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="page-shell section">
+          <div className="section-head">
+            <span className="eyebrow">FAQ</span>
+            <h2>{tr ? "Sık sorulan sorular" : "Frequently asked questions"}</h2>
+          </div>
+          <div className="marketing-grid">
+            {localizedFaqs.slice(0, 3).map((item) => (
+              <article key={item.question} className="card feature-card">
+                <h3>{item.question}</h3>
+                <p>{item.answer}</p>
+              </article>
+            ))}
           </div>
         </section>
 
