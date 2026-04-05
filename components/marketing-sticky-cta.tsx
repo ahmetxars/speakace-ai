@@ -11,6 +11,7 @@ export function MarketingStickyCta() {
 
   if (!pathname) return null;
   if (pathname.startsWith("/app") || pathname.startsWith("/auth") || pathname.startsWith("/admin")) return null;
+  if (pathname === "/") return null;
   if (signedIn && currentUser?.plan && currentUser.plan !== "free") return null;
 
   return (
