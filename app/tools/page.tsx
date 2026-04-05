@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 import { toolPages } from "@/lib/seo-growth";
+import { getToolVisual } from "@/lib/tool-visuals";
 
 export const metadata: Metadata = {
   title: "Free IELTS Speaking Tools",
@@ -37,6 +38,10 @@ export default function ToolsHubPage() {
         <div className="marketing-grid">
           {toolPages.map((item) => (
             <article key={item.slug} className="card feature-card">
+              <div className="tool-card-visual" aria-hidden="true">
+                <span className="tool-card-icon">{getToolVisual(item.slug).emoji}</span>
+                <span className="pill">{getToolVisual(item.slug).badge}</span>
+              </div>
               <h2 style={{ fontSize: "1.35rem" }}>{item.title}</h2>
               <p>{item.description}</p>
               <Link className="button button-secondary" href={`/tools/${item.slug}`}>

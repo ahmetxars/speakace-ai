@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { ToolWorkbench } from "@/components/tool-workbench";
 import { siteConfig } from "@/lib/site";
 import { toolPages } from "@/lib/seo-growth";
+import { getToolVisual } from "@/lib/tool-visuals";
 
 export function generateStaticParams() {
   return toolPages.map((item) => ({ slug: item.slug }));
@@ -40,6 +41,7 @@ export default async function ToolDetailPage({
   const { slug } = await params;
   const page = toolPages.find((item) => item.slug === slug);
   if (!page) notFound();
+  const visual = getToolVisual(page.slug);
 
   return (
     <>
@@ -47,6 +49,10 @@ export default async function ToolDetailPage({
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">Free tool</span>
+          <div className="tool-card-visual" aria-hidden="true" style={{ margin: "0.25rem 0 0.75rem" }}>
+            <span className="tool-card-icon">{visual.emoji}</span>
+            <span className="pill">{visual.badge}</span>
+          </div>
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.6rem)", lineHeight: 0.96 }}>{page.title}</h1>
           <p>{page.intro}</p>
         </div>

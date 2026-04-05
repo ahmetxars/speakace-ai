@@ -227,3 +227,44 @@ export async function sendStudyTaskReminderEmail(input: {
         : `Hi ${greeting}, your study task "${input.taskTitle}" has used ${input.milestonePercent}% of its timeline. ${remainingPercent}% is left${dueText ? ` before ${dueText}` : ""}. Open it here: ${appUrl}`
   });
 }
+
+export async function sendGeneratedStudyPlanEmail(input: {
+  to: string;
+  name?: string;
+  title: string;
+  plan: string;
+  dueAt?: string;
+}) {
+  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const studyUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app/study-lists`;
+  const dueText = input.dueAt
+    ? new Date(input.dueAt).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit"
+      })
+    : null;
+
+  return sendEmail({
+    to: input.to,
+    subject: `${input.title} is ready in SpeakAce`,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
+        <h2 style="margin:0 0 12px">${input.title}</h2>
+        <p>Hi ${greeting},</p>
+        <p>Your study plan was generated successfully and saved to your SpeakAce study list.</p>
+        <div style="background:#fff8f2;border:1px solid #e9d9ca;border-radius:16px;padding:16px 18px;margin:20px 0">
+          <p style="margin:0 0 8px;font-weight:700">Plan summary</p>
+          <p style="margin:0">${input.plan}</p>
+        </div>
+        ${dueText ? `<p>Suggested deadline: <strong>${dueText}</strong></p>` : ""}
+        <p style="margin:24px 0">
+          <a href="${studyUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Open study list</a>
+        </p>
+        <p>You can review the plan, edit the due date, and keep building your next speaking routine inside SpeakAce.</p>
+      </div>
+    `,
+    text: `Hi ${greeting}, your study plan "${input.title}" is ready. ${input.plan}${dueText ? ` Deadline: ${dueText}.` : ""} Open it here: ${studyUrl}`
+  });
+}
