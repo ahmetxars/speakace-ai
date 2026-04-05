@@ -661,7 +661,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="page-shell section" style={{ display: "grid", gap: "1.4rem" }}>
+    <div className="page-shell section dashboard-page" style={{ display: "grid", gap: "1.4rem" }}>
       {needsOnboarding ? (
         <section className="card" style={{ padding: "1.1rem", display: "grid", gap: "0.75rem", background: "rgba(29, 111, 117, 0.08)" }}>
           <strong>{tr ? "Ilk kurulum eksik" : "Onboarding incomplete"}</strong>
@@ -675,7 +675,7 @@ export function Dashboard() {
       ) : null}
 
       <section
-        className="card"
+        className="card dashboard-overview-grid"
         style={{
           padding: "1.6rem",
           display: "grid",
@@ -715,7 +715,7 @@ export function Dashboard() {
         <TargetCard examType={latestExamType} targetScore={targetScore} onChange={handleTargetScoreChange} tr={tr} />
       </section>
 
-      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1.2fr) minmax(260px, 0.8fr)", gap: "1rem", alignItems: "start" }}>
+      <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1.2fr) minmax(260px, 0.8fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
           <div>
             <span className="eyebrow">{tr ? "Hızlı aksiyonlar" : "Quick actions"}</span>
@@ -778,7 +778,7 @@ export function Dashboard() {
       </section>
 
       {shouldUpsellPlus ? (
-        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem" }}>
+        <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem" }}>
           {[
             {
               title: tr ? "Daha derin transcript düzeltmesi" : "Deeper transcript cleanup",
@@ -808,7 +808,7 @@ export function Dashboard() {
         </section>
       ) : null}
 
-      <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
+      <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
         <StatCard label={tr ? "Ortalama tahmin" : "Average estimate"} value={summary.averageScore ? String(summary.averageScore) : tr ? "Skor yok" : "No score"} note={tr ? "Son denemelerin genel ortalamasi" : "Across your recent attempts"} />
         <StatCard
           label={tr ? "Skill odagi" : "Skill focus"}
@@ -827,14 +827,14 @@ export function Dashboard() {
         <StatCard label={tr ? "Hedef farki" : "Target gap"} value={numericTarget && scoreGap !== null ? (scoreGap <= 0 ? "0" : String(scoreGap)) : "-"} note={targetGapNote} />
       </section>
 
-      <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
+      <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
         <StatCard label={tr ? "Rapor inceleme" : "Result reviews"} value={String(analytics.mockReportViews)} note={tr ? "Result ve mock rapor ekranlari" : "How often you opened result and mock report views"} />
         <StatCard label={tr ? "Practice baslangici" : "Practice starts"} value={String(analytics.practiceStarts)} note={tr ? "Konusma denemesi baslatma sayin" : "How many times you started practice"} />
         <StatCard label={tr ? "Yuklenen kayit" : "Uploaded recordings"} value={String(analytics.uploads)} note={tr ? "Transcript icin giden ses kayitlari" : "Recordings sent for transcript"} />
         <StatCard label={tr ? "Tamamlanan simulasyon" : "Completed simulations"} value={String(analytics.simulationsCompleted)} note={tr ? "Bitirilen tam mock sinavlar" : "Full mock exams completed"} />
       </section>
 
-      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1.15fr) minmax(320px, 0.85fr)", gap: "1rem", alignItems: "start" }}>
+      <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1.15fr) minmax(320px, 0.85fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem" }}>
           <div>
             <span className="eyebrow">{tr ? "Momentum profili" : "Momentum profile"}</span>
@@ -873,7 +873,7 @@ export function Dashboard() {
         </div>
       </section>
 
-      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
+      <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
           <div>
             <span className="eyebrow">{tr ? "Gunluk gorev" : "Daily mission"}</span>
@@ -915,7 +915,7 @@ export function Dashboard() {
         </div>
       </section>
 
-      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
+      <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
           <div>
             <span className="eyebrow">{tr ? "Sonraki kaynak" : "Next resource"}</span>
@@ -978,7 +978,7 @@ export function Dashboard() {
         </section>
       ) : null}
 
-      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1.3fr) minmax(280px, 0.9fr)", gap: "1rem", alignItems: "start" }}>
+      <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1.3fr) minmax(280px, 0.9fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem" }}>
           <div>
             <span className="eyebrow">{tr ? "Trend" : "Trend"}</span>
@@ -996,6 +996,7 @@ export function Dashboard() {
                   <Link
                     key={session.id}
                     href={`/app/results/${session.id}`}
+                    className="dashboard-trend-link"
                     style={{ display: "grid", gridTemplateColumns: "150px 1fr 56px", gap: "0.8rem", alignItems: "center", textDecoration: "none", color: "inherit" }}
                   >
                     <span style={{ color: "var(--muted)", fontSize: "0.92rem" }}>{session.prompt.title}</span>
@@ -1026,7 +1027,7 @@ export function Dashboard() {
       </section>
 
       {signedIn && !currentUser?.isTeacher ? (
-        <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 0.9fr) minmax(320px, 1.1fr)", gap: "1rem", alignItems: "start" }}>
+        <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 0.9fr) minmax(320px, 1.1fr)", gap: "1rem", alignItems: "start" }}>
           <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
             <div>
               <span className="eyebrow">{tr ? "Sinif katilimi" : "Class join"}</span>
@@ -1077,7 +1078,7 @@ export function Dashboard() {
       ) : null}
 
       {signedIn && !currentUser?.isTeacher ? (
-        <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
+        <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
           <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
             <div>
               <span className="eyebrow">{tr ? "Homework board" : "Homework board"}</span>
@@ -1195,7 +1196,7 @@ export function Dashboard() {
         </section>
       ) : null}
 
-      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
+      <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
           <div>
             <span className="eyebrow">{tr ? "Weekly checklist" : "Weekly checklist"}</span>
@@ -1232,7 +1233,7 @@ export function Dashboard() {
                 : `You have practiced for ${summary.streakDays} day(s) in a row.`}
             </p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "0.6rem" }}>
+          <div className="dashboard-streak-grid" style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "0.6rem" }}>
             {streakCalendar.map((day) => (
               <div key={day.key} className="card" style={{ padding: "0.8rem 0.55rem", textAlign: "center", background: day.active ? "rgba(47, 125, 75, 0.12)" : "var(--surface-strong)" }}>
                 <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.35rem" }}>{day.label}</div>
@@ -1244,7 +1245,7 @@ export function Dashboard() {
         </div>
       </section>
 
-      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
+      <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
           <div>
             <span className="eyebrow">{tr ? "Mistake notebook" : "Mistake notebook"}</span>
