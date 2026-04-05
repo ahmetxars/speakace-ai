@@ -86,11 +86,11 @@ export function InstitutionAdminPanel() {
     });
     const data = (await response.json()) as { user?: InstitutionUserSummary; error?: string };
     if (!response.ok || !data.user) {
-      setError(data.error ?? (tr ? "Rol guncellenemedi." : "Could not update role."));
+      setError(data.error ?? (tr ? "Rol güncellenemedi." : "Could not update role."));
       return;
     }
     setUsers((current) => current.map((item) => (item.id === userId ? data.user! : item)));
-    setNotice(tr ? "Kullanici yetkisi guncellendi." : "User access updated.");
+    setNotice(tr ? "Kullanıcı yetkisi güncellendi." : "User access updated.");
   };
 
   const sendAnnouncement = async () => {
@@ -107,12 +107,12 @@ export function InstitutionAdminPanel() {
     });
     const data = (await response.json()) as { error?: string };
     if (!response.ok) {
-      setError(data.error ?? (tr ? "Duyuru gonderilemedi." : "Could not send announcement."));
+      setError(data.error ?? (tr ? "Duyuru gönderilemedi." : "Could not send announcement."));
       return;
     }
     setAnnouncementTitle("");
     setAnnouncementBody("");
-    setNotice(tr ? "Duyuru gonderildi." : "Announcement sent.");
+    setNotice(tr ? "Duyuru gönderildi." : "Announcement sent.");
   };
 
   return (
@@ -174,15 +174,15 @@ export function InstitutionAdminPanel() {
       <section className="grid" style={{ gridTemplateColumns: "minmax(340px, 1.1fr) minmax(320px, 0.9fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1rem", display: "grid", gap: "0.8rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "center", flexWrap: "wrap" }}>
-            <strong>{tr ? "Kullanici ve rol yonetimi" : "User and role management"}</strong>
+            <strong>{tr ? "Kullanıcı ve rol yönetimi" : "User and role management"}</strong>
             <a className="button button-secondary" href="/api/institution-admin/export">
-              {tr ? "CSV disa aktar" : "Export CSV"}
+              {tr ? "CSV dışa aktar" : "Export CSV"}
             </a>
           </div>
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder={tr ? "Isim veya email ara" : "Search by name or email"}
+            placeholder={tr ? "İsim veya email ara" : "Search by name or email"}
             style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }}
           />
           {notice ? <p style={{ color: "var(--success)", margin: 0 }}>{notice}</p> : null}
@@ -209,10 +209,10 @@ export function InstitutionAdminPanel() {
                 </div>
                 <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
                   <button type="button" className="button button-secondary" onClick={() => updateAccess(user.id, { teacherAccess: !user.teacherAccess })}>
-                    {user.teacherAccess ? (tr ? "Teacher kaldir" : "Remove teacher") : tr ? "Teacher yap" : "Make teacher"}
+                    {user.teacherAccess ? (tr ? "Öğretmen yetkisini kaldır" : "Remove teacher") : tr ? "Öğretmen yap" : "Make teacher"}
                   </button>
                   <button type="button" className="button button-secondary" onClick={() => updateAccess(user.id, { adminAccess: !user.adminAccess })}>
-                    {user.adminAccess ? (tr ? "Admin kaldir" : "Remove admin") : tr ? "Admin yap" : "Make admin"}
+                    {user.adminAccess ? (tr ? "Admin yetkisini kaldır" : "Remove admin") : tr ? "Admin yap" : "Make admin"}
                   </button>
                 </div>
               </div>
@@ -222,10 +222,10 @@ export function InstitutionAdminPanel() {
 
         <div className="card" style={{ padding: "1rem", display: "grid", gap: "0.8rem" }}>
           <strong>{tr ? "Toplu duyuru" : "Broadcast announcement"}</strong>
-          <input value={announcementTitle} onChange={(event) => setAnnouncementTitle(event.target.value)} placeholder={tr ? "Duyuru basligi" : "Announcement title"} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }} />
-          <textarea value={announcementBody} onChange={(event) => setAnnouncementBody(event.target.value)} rows={5} placeholder={tr ? "Tum platform kullanicilarina gidecek duyuru..." : "Announcement that will be shown to platform users..."} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }} />
+          <input value={announcementTitle} onChange={(event) => setAnnouncementTitle(event.target.value)} placeholder={tr ? "Duyuru başlığı" : "Announcement title"} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }} />
+          <textarea value={announcementBody} onChange={(event) => setAnnouncementBody(event.target.value)} rows={5} placeholder={tr ? "Tüm platform kullanıcılarına gidecek duyuru..." : "Announcement that will be shown to platform users..."} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }} />
           <button type="button" className="button button-primary" onClick={sendAnnouncement}>
-            {tr ? "Duyuruyu gonder" : "Send announcement"}
+            {tr ? "Duyuruyu gönder" : "Send announcement"}
           </button>
         </div>
       </section>

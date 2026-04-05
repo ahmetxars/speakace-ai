@@ -81,7 +81,7 @@ function AuthPageInner() {
       setSuccessToast(
         data.emailSent
           ? tr ? "Hesabın oluşturuldu. Doğrulama maili gönderildi." : "Your account was created. Verification email sent."
-          : tr ? "Hesabın oluşturuldu. Giris yapmadan once e-posta dogrulamasi gerekiyor." : "Your account was created. Email verification is required."
+          : tr ? "Hesabın oluşturuldu. Giriş yapmadan önce e-posta doğrulaması gerekiyor." : "Your account was created. Email verification is required."
       );
       if (data.classJoinMessage) {
         setNotice(data.classJoinMessage);
@@ -109,7 +109,7 @@ function AuthPageInner() {
           setError(data.error ?? (tr ? "Doğrulama işlemi başarısız oldu." : "Verification failed."));
           return;
         }
-        setSuccessToast(tr ? "E-posta adresin doğrulandı. Artik giris yapabilirsin." : "Your email address has been verified. You can now sign in.");
+        setSuccessToast(tr ? "E-posta adresin doğrulandı. Artık giriş yapabilirsin." : "Your email address has been verified. You can now sign in.");
         setMode("signin");
       })
       .finally(() => setVerifying(false));
@@ -131,7 +131,7 @@ function AuthPageInner() {
       setError(data.error ?? (tr ? "Şifre sıfırlanamadı." : "Password could not be reset."));
       return;
     }
-    setSuccessToast(tr ? "Sifren guncellendi. Yeni sifrenle giris yapabilirsin." : "Your password has been updated. You can now sign in.");
+    setSuccessToast(tr ? "Şifren güncellendi. Yeni şifrenle giriş yapabilirsin." : "Your password has been updated. You can now sign in.");
     setMode("signin");
     setPassword("");
   };
@@ -159,7 +159,7 @@ function AuthPageInner() {
                 ✓
               </span>
               <div style={{ display: "grid", gap: "0.18rem" }}>
-                <strong>{tr ? "Mail gonderildi" : "Email sent"}</strong>
+                <strong>{tr ? "Mail gönderildi" : "Email sent"}</strong>
                 <span style={{ color: "var(--muted)", lineHeight: 1.55 }}>{successToast}</span>
               </div>
             </div>
@@ -212,7 +212,7 @@ function AuthPageInner() {
                   type="text"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
-                  placeholder={tr ? "Name" : "Name"}
+                  placeholder={tr ? "İsim" : "Name"}
                   style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
                 />
               </label>
@@ -278,12 +278,12 @@ function AuthPageInner() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder={tr ? "En az 8 karakter ve 1 sayi" : "At least 8 characters and 1 number"}
+              placeholder={tr ? "En az 8 karakter ve 1 sayı" : "At least 8 characters and 1 number"}
               style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
             />
             <span style={{ color: "var(--muted)", fontSize: "0.9rem", lineHeight: 1.55 }}>
               {tr
-                ? "Sifren en az 8 karakter olmali ve en az 1 sayi icermeli."
+                ? "Şifren en az 8 karakter olmalı ve en az 1 sayı içermeli."
                 : "Your password must be at least 8 characters long and include at least 1 number."}
             </span>
           </label>

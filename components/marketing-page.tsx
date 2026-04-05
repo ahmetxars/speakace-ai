@@ -253,28 +253,28 @@ const speakingIdentities = {
   ],
   tr: [
     {
-      title: "Hizli ama ince",
-      signal: "Cevabi hizli veriyorsun ama fikirlerin fazla yuzeyde kaliyor.",
-      move: "Bitirmeden once bir neden ve bir somut ornek ekle.",
-      badge: "Band artisi derinlikten gelir"
+      title: "Hızlı ama ince",
+      signal: "Cevabı hızlı veriyorsun ama fikirlerin fazla yüzeyde kalıyor.",
+      move: "Bitirmeden önce bir neden ve bir somut örnek ekle.",
+      badge: "Band artışı derinlikten gelir"
     },
     {
-      title: "Dikkatli ama yavas",
-      signal: "Dilbilgisi kontrollu ama duraksamalar ritmi bozuyor.",
-      move: "Daha kisa cumle kaliplari ve daha hafif baglaclar akisi iyilestirir.",
-      badge: "Band artisi ritimden gelir"
+      title: "Dikkatli ama yavaş",
+      signal: "Dilbilgisi kontrollü ama duraksamalar ritmi bozuyor.",
+      move: "Daha kısa cümle kalıpları ve daha hafif bağlaçlar akışı iyileştirir.",
+      badge: "Band artışı ritimden gelir"
     },
     {
-      title: "Dogal ama tekrarci",
-      signal: "Konusman rahat ama ana kelimeleri fazla tekrar ediyorsun.",
-      move: "Tekrar eden bir ifadeyi konuya uygun daha guclu bir kelimeyle degistir.",
-      badge: "Band artisi kelime cesidinden gelir"
+      title: "Doğal ama tekrarcı",
+      signal: "Konuşman rahat ama ana kelimeleri fazla tekrar ediyorsun.",
+      move: "Tekrar eden bir ifadeyi konuya uygun daha güçlü bir kelimeyle değiştir.",
+      badge: "Band artışı kelime çeşitliliğinden gelir"
     },
     {
-      title: "Yapili ama duz",
-      signal: "Cevabin duzenli ama guclu bir ornek eksik kaliyor.",
-      move: "Cevabi daha canli yapmak icin tek bir gercek hayat detayi ekle.",
-      badge: "Band artisi ozgullukten gelir"
+      title: "Yapılı ama düz",
+      signal: "Cevabın düzenli ama güçlü bir örnek eksik kalıyor.",
+      move: "Cevabı daha canlı yapmak için tek bir gerçek hayat detayı ekle.",
+      badge: "Band artışı özgüllükten gelir"
     }
   ]
 };
@@ -286,9 +286,9 @@ const scoreLadders = {
     { label: "6.5 -> 7.0", note: "Sound more natural, less repetitive, and more controlled under pressure." }
   ],
   tr: [
-    { label: "5.5 -> 6.0", note: "Parcali cevaplari birak ve fikrini temiz sekilde tamamla." },
-    { label: "6.0 -> 6.5", note: "Daha net ornekler ve daha akici baglantilar ekle." },
-    { label: "6.5 -> 7.0", note: "Baski altinda daha dogal, daha az tekrarli ve daha kontrollu konus." }
+    { label: "5.5 -> 6.0", note: "Parçalı cevapları bırak ve fikrini temiz şekilde tamamla." },
+    { label: "6.0 -> 6.5", note: "Daha net örnekler ve daha akıcı bağlantılar ekle." },
+    { label: "6.5 -> 7.0", note: "Baskı altında daha doğal, daha az tekrarlı ve daha kontrollü konuş." }
   ]
 };
 
@@ -886,7 +886,7 @@ export function MarketingPage({
           <h2>{tr ? "Kendi speaking tipini hemen tani" : "Recognize your speaking pattern immediately"}</h2>
           <p>
             {tr
-              ? "Cogu urun sadece puan verir. SpeakAce ise ogrencinin nasil cevap verdigini adlandirip dogru sonraki hamleyi gosterir."
+              ? "Çoğu ürün sadece puan verir. SpeakAce ise öğrencinin nasıl cevap verdiğini adlandırıp doğru sonraki hamleyi gösterir."
               : "Most products stop at a score. SpeakAce also names the learner pattern and points to the smartest next move."}
           </p>
         </div>
@@ -905,10 +905,10 @@ export function MarketingPage({
       <section className="page-shell section">
         <div className="section-head">
           <span className="eyebrow">{tr ? "Skor merdiveni" : "Score ladder"}</span>
-          <h2>{tr ? "Skor yukselirken ne degismeli?" : "What should change as the score rises?"}</h2>
+          <h2>{tr ? "Skor yükselirken ne değişmeli?" : "What should change as the score rises?"}</h2>
           <p>
             {tr
-              ? "Skor artisi tek bir numarayla gelmez. Her aralikta fark yaratan davranis biraz degisir."
+              ? "Skor artışı tek bir numarayla gelmez. Her aralıkta fark yaratan davranış biraz değişir."
               : "Score growth does not come from one trick. The behavior that matters changes slightly at each band range."}
           </p>
         </div>
@@ -1337,7 +1337,7 @@ export function MarketingPage({
         </div>
         <div style={{ display: "flex", justifyContent: "center", marginTop: "1rem" }}>
           <Link className="button button-secondary" href="/reviews">
-            {tr ? "Tum yorumlari ac" : "Open all reviews"}
+            {tr ? "Tüm yorumları aç" : "Open all reviews"}
           </Link>
         </div>
         <TestimonialTicker items={localizedTestimonials} />
@@ -1374,12 +1374,12 @@ export function MarketingPage({
           <span className="eyebrow">{tr ? "Kaynak merkezi" : "Resource hub"}</span>
           <h2>
             {tr
-              ? "Dogru kaynak sayfalariyla daha fazla kesif ve daha net donusum yolu"
+              ? "Doğru kaynak sayfalarıyla daha fazla keşif ve daha net dönüşüm yolu"
               : "Resource pages designed to attract the right learners and guide them into practice"}
           </h2>
           <p>
             {tr
-              ? "Topic listeleri, band score rehberleri ve task bazli sayfalar sayesinde ziyaretci once dogru icerige, sonra practice ve Plus akisina girer."
+              ? "Topic listeleri, band score rehberleri ve task bazlı sayfalar sayesinde ziyaretçi önce doğru içeriğe, sonra practice ve Plus akışına girer."
               : "With topic pages, band score guides, and task-specific landing pages, visitors can enter through search and move cleanly toward practice and Plus."}
           </p>
         </div>
@@ -1389,21 +1389,21 @@ export function MarketingPage({
               href: "/resources",
               title: tr ? "Kaynak merkezi" : "Resource hub",
               description: tr
-                ? "Tum IELTS speaking rehberlerini, konu sayfalarini ve faydali giris noktalarini tek yerde topla."
+                ? "Tüm IELTS speaking rehberlerini, konu sayfalarını ve faydalı giriş noktalarını tek yerde topla."
                 : "Collect all IELTS speaking guides, topic pages, and useful entry points in one place."
             },
             {
               href: "/ielts-speaking-topics",
               title: tr ? "IELTS speaking topics" : "IELTS speaking topics",
               description: tr
-                ? "Konu bazli arama yapan ogrencileri practice akisina tasiyan sayfa."
+                ? "Konu bazlı arama yapan öğrencileri practice akışına taşıyan sayfa."
                 : "A topic page that helps curious visitors move into real practice."
             },
             {
               href: "/ielts-band-score-guide",
               title: tr ? "Band score rehberi" : "Band score guide",
               description: tr
-                ? "Skor hedefi olan ogrenciler icin daha guclu bir giris kapisi."
+                ? "Skor hedefi olan öğrenciler için daha güçlü bir giriş kapısı."
                 : "A stronger entry page for students who search around score improvement."
             }
           ].map((item) => (
@@ -1411,7 +1411,7 @@ export function MarketingPage({
               <h3>{item.title}</h3>
               <p>{item.description}</p>
               <Link className="button button-secondary" href={item.href as Route}>
-                {tr ? "Sayfayi ac" : "Open page"}
+                {tr ? "Sayfayı aç" : "Open page"}
               </Link>
             </article>
           ))}
@@ -1474,20 +1474,20 @@ export function MarketingPage({
 
       <section className="page-shell section">
         <div className="section-head">
-          <span className="eyebrow">{tr ? "Gunluk giris" : "Daily entry point"}</span>
-          <h2>{tr ? "Her gun yeni bir speaking girisiyle geri don" : "Come back through a fresh daily speaking entry point"}</h2>
+          <span className="eyebrow">{tr ? "Günlük giriş" : "Daily entry point"}</span>
+          <h2>{tr ? "Her gün yeni bir speaking girişiyle geri dön" : "Come back through a fresh daily speaking entry point"}</h2>
           <p>
             {tr
-              ? "Gunluk prompt ve case study sayfalari, organik trafikten gelen kullaniciyi tekrar practice ve Plus akisina tasiyor."
+              ? "Günlük prompt ve case study sayfaları, organik trafikten gelen kullanıcıyı tekrar practice ve Plus akışına taşıyor."
               : "The daily prompt and case study pages create repeatable traffic entry points that guide visitors back into practice and Plus."}
           </p>
         </div>
         <div className="lead-capture-actions">
           <Link className="button button-secondary" href="/daily-ielts-speaking-prompt">
-            {tr ? "Gunluk prompt sayfasini ac" : "Open daily prompt page"}
+            {tr ? "Günlük prompt sayfasını aç" : "Open daily prompt page"}
           </Link>
           <Link className="button button-ghost" href="/case-studies">
-            {tr ? "Case study'leri gor" : "See case studies"}
+            {tr ? "Case study'leri gör" : "See case studies"}
           </Link>
         </div>
       </section>

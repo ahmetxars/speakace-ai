@@ -9,18 +9,18 @@ export function getToolVisual(slug: string, tr = false): ToolVisual {
   if (slug.includes("calculator")) {
     return {
       emoji: "📊",
-      badge: tr ? "Skor araci" : "Score tool",
-      title: tr ? "Tahmini band gorunumu" : "Estimated band preview",
-      note: tr ? "Puan sinyalini hizli gormek icin." : "Use it to preview your band signal quickly."
+      badge: tr ? "Skor aracı" : "Score tool",
+      title: tr ? "Tahmini band görünümü" : "Estimated band preview",
+      note: tr ? "Puan sinyalini hızlı görmek için." : "Use it to preview your band signal quickly."
     };
   }
 
   if (slug.includes("answer-checker")) {
     return {
       emoji: "🧠",
-      badge: tr ? "Kontrol araci" : "Check tool",
-      title: tr ? "Cevap kalitesi tarayici" : "Answer quality scan",
-      note: tr ? "Netlik, ornek ve uzunluk sinyali verir." : "Checks clarity, examples, and answer length."
+      badge: tr ? "Kontrol aracı" : "Check tool",
+      title: tr ? "Cevap kalitesi tarayıcı" : "Answer quality scan",
+      note: tr ? "Netlik, örnek ve uzunluk sinyali verir." : "Checks clarity, examples, and answer length."
     };
   }
 
@@ -33,25 +33,25 @@ export function getToolVisual(slug: string, tr = false): ToolVisual {
   ) {
     return {
       emoji: "🗓️",
-      badge: tr ? "Planlayici" : "Planner",
-      title: tr ? "Kaydedilebilir calisma plani" : "Saveable study plan",
-      note: tr ? "Sisteme kaydet, goreve donustur, maile gonder." : "Save it, turn it into tasks, and email it."
+      badge: tr ? "Planlayıcı" : "Planner",
+      title: tr ? "Kaydedilebilir çalışma planı" : "Saveable study plan",
+      note: tr ? "Sisteme kaydet, göreve dönüştür, maile gönder." : "Save it, turn it into tasks, and email it."
     };
   }
 
   if (slug.includes("template")) {
     return {
       emoji: "📝",
-      badge: tr ? "Sablon" : "Template",
-      title: tr ? "Kullanima hazir not duzeni" : "Ready-to-use note structure",
-      note: tr ? "Ozellikle TOEFL not tutma icin hizli iskelet." : "A fast note framework, especially for TOEFL tasks."
+      badge: tr ? "Şablon" : "Template",
+      title: tr ? "Kullanıma hazır not düzeni" : "Ready-to-use note structure",
+      note: tr ? "Özellikle TOEFL not tutma için hızlı iskelet." : "A fast note framework, especially for TOEFL tasks."
     };
   }
 
   return {
     emoji: "✨",
-    badge: tr ? "Uretici" : "Generator",
-    title: tr ? "Aninda speaking ciktilari" : "Instant speaking outputs",
-    note: tr ? "Prompt, acilis, gecis veya fikir uretir." : "Generates prompts, openings, transitions, or ideas."
+    badge: tr ? "Üretici" : "Generator",
+    title: tr ? "Anında speaking çıktıları" : "Instant speaking outputs",
+    note: tr ? "Prompt, açılış, geçiş veya fikir üretir." : "Generates prompts, openings, transitions, or ideas."
   };
 }
