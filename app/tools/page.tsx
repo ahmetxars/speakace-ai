@@ -6,9 +6,9 @@ import { toolPages } from "@/lib/seo-growth";
 import { getToolVisual } from "@/lib/tool-visuals";
 
 export const metadata: Metadata = {
-  title: "Free IELTS Speaking Tools",
+  title: "Free IELTS Speaking Tools | SpeakAce",
   description:
-    "Explore free IELTS speaking tools, study-plan ideas, topic generators, and score-focused speaking pages.",
+    "Explore free IELTS speaking tools, topic generators, study plans, and score-focused practice helpers. Try a tool free ->",
   alternates: { canonical: "/tools" },
   openGraph: {
     title: "Free IELTS Speaking Tools | SpeakAce",

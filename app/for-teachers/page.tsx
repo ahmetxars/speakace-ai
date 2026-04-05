@@ -4,14 +4,14 @@ import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "SpeakAce for Teachers",
+  title: "IELTS Speaking Platform for Teachers | SpeakAce",
   description:
-    "Use SpeakAce to track student speaking progress, assign homework, review attempts, and support IELTS and TOEFL learners between lessons.",
+    "Track student speaking progress, assign homework, and review IELTS or TOEFL speaking attempts with SpeakAce. See teacher tools ->",
   alternates: {
     canonical: "/for-teachers"
   },
   openGraph: {
-    title: "SpeakAce for Teachers",
+    title: "IELTS Speaking Platform for Teachers | SpeakAce",
     description:
       "Teacher tools for IELTS and TOEFL speaking practice, homework, risk alerts, and class progress tracking.",
     url: `${siteConfig.domain}/for-teachers`,

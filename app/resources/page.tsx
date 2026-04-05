@@ -10,9 +10,9 @@ import { siteConfig } from "@/lib/site";
 
 const resourcesCopy = {
   en: {
-    metaTitle: "IELTS Speaking Resources",
+    metaTitle: "IELTS Speaking Resources | SpeakAce",
     metaDescription:
-      "Explore IELTS speaking resources, topic guides, band score strategy, and AI practice content built to improve score and fluency.",
+      "Explore IELTS speaking resources, topic guides, band score strategy, and AI practice content. Start speaking free ->",
     ogTitle: "IELTS Speaking Resources | SpeakAce",
     ogDescription:
       "A resource hub for IELTS speaking practice, band score guidance, topic ideas, and task-specific improvement.",

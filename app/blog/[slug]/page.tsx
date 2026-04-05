@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BlogReadingEnhancements } from "@/components/blog-reading-enhancements";
 import { SiteHeader } from "@/components/site-header";
 import { getBlogChromeCopy, getLocalizedBlogPost, getLocalizedBlogPosts } from "@/lib/blog-content";
+import { getBlogPublicDescription, getBlogPublicTitle, getBlogSeoEntry } from "@/lib/blog-seo";
 import { getServerLanguage } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
 
@@ -15,17 +16,19 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!post) {
     return {};
   }
+  const seoTitle = getBlogPublicTitle(slug, post.title);
+  const seoDescription = getBlogPublicDescription(slug, post.description);
 
   return {
-    title: post.title,
-    description: post.description,
+    title: seoTitle,
+    description: seoDescription,
     alternates: {
       canonical: `/blog/${post.slug}`
     },
     keywords: post.keywords,
     openGraph: {
-      title: post.title,
-      description: post.description,
+      title: seoTitle,
+      description: seoDescription,
       url: `${siteConfig.domain}/blog/${post.slug}`,
       siteName: siteConfig.name,
       type: "article"
@@ -71,6 +74,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   if (!post) {
     notFound();
   }
+  const seoTitle = getBlogPublicTitle(slug, post.title);
+  const seoDescription = getBlogPublicDescription(slug, post.description);
+  const seoEntry = getBlogSeoEntry(slug);
 
   const relatedPosts = getLocalizedBlogPosts(language).filter((item) => item.slug !== post.slug).slice(0, 3);
   const breadcrumbJsonLd = {
@@ -85,18 +91,21 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   const articleJsonLd = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: post.title,
-    description: post.description,
+    "@type": "Article",
+    headline: seoTitle,
+    datePublished: seoEntry?.datePublished ?? "2026-03-01",
+    description: seoDescription,
     mainEntityOfPage: `${siteConfig.domain}/blog/${post.slug}`,
     keywords: post.keywords.join(", "),
     author: {
       "@type": "Organization",
-      name: "SpeakAce AI"
+      name: "SpeakAce",
+      url: siteConfig.domain
     },
     publisher: {
       "@type": "Organization",
-      name: "SpeakAce AI"
+      name: "SpeakAce",
+      url: siteConfig.domain
     }
   };
 
@@ -111,8 +120,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <main className="page-shell section">
         <div className="section-head">
           <span className="eyebrow">{chrome.cta.blog}</span>
-          <h1 style={{ fontSize: "clamp(2.6rem, 6vw, 4.5rem)", lineHeight: 0.98 }}>{post.title}</h1>
-          <p>{post.description}</p>
+          <h1 style={{ fontSize: "clamp(2.6rem, 6vw, 4.5rem)", lineHeight: 0.98 }}>{seoTitle}</h1>
+          <p>{seoDescription}</p>
         </div>
 
         <article className="card" style={{ padding: "1.5rem" }}>
@@ -122,6 +131,23 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             <Link href="/guides" className="pill">{pageLabels.guides}</Link>
           </div>
           <p style={{ color: "var(--muted)", lineHeight: 1.85 }}>{post.intro}</p>
+
+          <div className="card spotlight-card" style={{ marginTop: "1.2rem" }}>
+            <strong>{ctaLabels.title}</strong>
+            <p style={{ marginTop: "0.55rem" }}>{ctaLabels.description}</p>
+            <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap", marginTop: "0.85rem" }}>
+              <Link className="button button-primary" href="/app/practice?quickStart=1">
+                Start Speaking Now
+              </Link>
+              <Link className="button button-secondary" href="/free-ielts-speaking-test">
+                try a free IELTS speaking test
+              </Link>
+              <Link className="button button-secondary" href={relatedPosts[0] ? `/blog/${relatedPosts[0].slug}` : "/ielts-speaking-topics"}>
+                {relatedPosts[0] ? pageLabels.readNext : "IELTS Speaking Topics"}
+              </Link>
+            </div>
+          </div>
+
           {post.sections.map((section) => (
             <section key={section.title} style={{ marginTop: "1.8rem" }}>
               <h2 style={{ marginBottom: "0.7rem" }}>{section.title}</h2>
@@ -130,6 +156,25 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                   {paragraph}
                 </p>
               ))}
+              {section.title === post.sections[2]?.title ? (
+                <div className="card quick-pitch" style={{ marginTop: "1.1rem" }}>
+                  <h3 style={{ marginBottom: "0.55rem" }}>Practice this topic now</h3>
+                  <p className="practice-copy" style={{ marginBottom: "0.9rem" }}>
+                    See your score first, fix one weak pattern, and retry the same topic with clearer fluency and stronger structure.
+                  </p>
+                  <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
+                    <Link className="button button-primary" href="/app/practice?quickStart=1">
+                      Practice this topic now
+                    </Link>
+                    <Link className="button button-secondary" href="/ielts-speaking-topics">
+                      IELTS Speaking Topics
+                    </Link>
+                    <Link className="button button-secondary" href="/pricing">
+                      Unlock full feedback
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
             </section>
           ))}
         </article>

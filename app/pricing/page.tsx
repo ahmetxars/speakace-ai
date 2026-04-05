@@ -8,9 +8,9 @@ import { getServerLanguage } from "@/lib/language";
 
 const pricingCopy = {
   en: {
-    title: "IELTS Speaking Pricing | Full Feedback and Unlimited Practice",
+    title: "IELTS Speaking Pricing | SpeakAce",
     description:
-      "Compare free and Plus plans for IELTS speaking practice, full feedback, band-style scoring, and more daily speaking time.",
+      "Compare IELTS speaking pricing, full feedback, AI band scoring, and weekly Plus value. Start free with no card ->",
     eyebrow: "Pricing",
     heading: "IELTS speaking practice pricing built around faster score improvement",
     intro:
@@ -269,6 +269,28 @@ export default async function PricingPage() {
           <p>{copy.intro}</p>
         </div>
 
+        <div className="marketing-grid">
+          {[
+            {
+              title: "Band score confidence without private lesson pricing",
+              body: "I liked seeing the score estimate first and then unlocking full feedback only when I wanted deeper review."
+            },
+            {
+              title: "A simpler weekly plan for daily speaking practice",
+              body: "The weekly price feels easier to try than a larger upfront monthly commitment, especially for test preparation."
+            },
+            {
+              title: "Useful if you want feedback between real lessons",
+              body: "The transcript plus retry loop gives enough structure to keep speaking active even outside tutoring sessions."
+            }
+          ].map((item) => (
+            <article key={item.title} className="card testimonial-card">
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </article>
+          ))}
+        </div>
+
         <div className="stats-strip">
           <div className="card stat-strip-card">
             <div className="practice-meta">{copy.launchOffer}</div>
@@ -284,8 +306,15 @@ export default async function PricingPage() {
           </div>
           <div className="card stat-strip-card">
             <div className="practice-meta">{copy.price}</div>
-            <strong>{commerceConfig.plusMonthlyPrice}/week</strong>
+            <strong>{commerceConfig.plusMonthlyPrice}/week = ~$16/month</strong>
           </div>
+        </div>
+
+        <div className="card quick-pitch">
+          <h2 style={{ marginBottom: "0.6rem" }}>One private IELTS lesson = $30–80. SpeakAce Plus = $3.99/week.</h2>
+          <p className="practice-copy">
+            If you want more than one speaking attempt per week, a structured AI review loop is much cheaper than relying only on private tutoring.
+          </p>
         </div>
 
         <div className="marketing-grid">
@@ -303,8 +332,10 @@ export default async function PricingPage() {
           </article>
 
           <article className="card pricing-card" data-featured="true">
+            <div className="pill" style={{ marginBottom: "0.8rem", width: "fit-content" }}>Most Popular</div>
             <h3>{commerceConfig.plusPlanName}</h3>
             <div className="price-tag">{commerceConfig.plusMonthlyPrice}</div>
+            <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>$3.99/week = ~$16/month</div>
             <ul>
               <li>18 daily sessions</li>
               <li>35 daily speaking minutes</li>
@@ -317,6 +348,7 @@ export default async function PricingPage() {
               Unlock full feedback
             </a>
             <div className="practice-meta">Try coupon: {couponCatalog.LAUNCH20.code}</div>
+            <div className="practice-meta">Cancel anytime. No questions.</div>
           </article>
         </div>
 
@@ -422,6 +454,12 @@ export default async function PricingPage() {
               Read reviews
             </Link>
           </div>
+        </div>
+
+        <div className="pricing-mobile-cta">
+          <Link className="button button-primary" href="/app/practice?quickStart=1">
+            Start free — no card needed
+          </Link>
         </div>
       </main>
     </>

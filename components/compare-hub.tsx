@@ -43,6 +43,41 @@ const compareRows: CompareRow[] = [
   }
 ];
 
+const namedComparisons = [
+  {
+    id: "smalltalk2me",
+    title: "SpeakAce vs SmallTalk2Me",
+    intro:
+      "SmallTalk2Me is often positioned as a general speaking and confidence tool, while SpeakAce is intentionally built around IELTS and TOEFL speaking improvement. That means the value is not only recording or talking more; it is seeing score direction, reviewing transcripts, retrying the same topic, and building a cleaner exam-focused habit. For learners who care about score movement rather than generic speaking confidence alone, that difference matters because the workflow stays tied to prompts, review loops, and test performance instead of broad conversation practice.",
+    summary:
+      "If your goal is exam improvement, SpeakAce gives a more structured score-improvement loop. If your goal is broad speaking comfort, a general speaking tool may feel enough at first."
+  },
+  {
+    id: "speechful",
+    title: "SpeakAce vs Speechful",
+    intro:
+      "Speechful can be useful for pronunciation and speaking confidence, but exam preparation usually needs more than isolated speaking feedback. SpeakAce is stronger when the learner needs IELTS or TOEFL-style prompt practice, a transcript-centered review flow, and a clearer path from weak answer to stronger retry. The important difference is not just what the AI says after you speak, but whether the full workflow helps you move toward a better speaking score over repeated attempts.",
+    summary:
+      "Speechful may fit learners focused on speaking confidence alone. SpeakAce is better aligned with band score improvement, answer structure, and repeatable exam prep."
+  },
+  {
+    id: "ielts-org",
+    title: "SpeakAce vs IELTS.org Mock Tests",
+    intro:
+      "Official IELTS materials are useful because they show the tone and format of the real test, but they do not always create a strong daily practice loop. A learner may open a mock test, finish it once, and still not know how to improve the next answer. SpeakAce fills that gap by making the practice process more active: answer, transcript, score estimate, feedback, retry, and visible progress. The goal is not to replace official material, but to make practice between official mock sessions more consistent and more measurable.",
+    summary:
+      "Official mock tests are valuable for realism. SpeakAce is stronger for everyday speaking practice and faster feedback between mock attempts."
+  },
+  {
+    id: "private-tutoring",
+    title: "SpeakAce vs Private Tutoring",
+    intro:
+      "Private tutoring can be powerful because a good teacher gives tailored advice and accountability, but it is usually expensive and limited by lesson frequency. SpeakAce is not the same as live tutoring, yet it can support the same learner between lessons by keeping speaking attempts active every day. For students who cannot afford frequent private speaking sessions, or for teachers who want their students to keep practicing outside class, SpeakAce creates a lower-cost improvement layer that keeps momentum visible.",
+    summary:
+      "Private tutoring gives human guidance. SpeakAce gives cheaper, repeatable daily speaking practice with clearer feedback loops between lessons."
+  }
+];
+
 export function CompareHub() {
   const { language } = useAppState();
   const tr = language === "tr";
@@ -134,6 +169,38 @@ export function CompareHub() {
           </Link>
         </div>
       </section>
+
+      {namedComparisons.map((item) => (
+        <section key={item.id} id={item.id} className="card compare-table-card">
+          <div className="section-head" style={{ marginBottom: "1rem" }}>
+            <span className="eyebrow">{tr ? "Ayrıntılı karşılaştırma" : "Detailed comparison"}</span>
+            <h2>{item.title}</h2>
+            <p>{item.intro}</p>
+          </div>
+
+          <div className="comparison-table">
+            <div className="comparison-head">{tr ? "Başlık" : "Category"}</div>
+            <div className="comparison-head">{tr ? "Diğer seçenek" : "Other option"}</div>
+            <div className="comparison-head">SpeakAce</div>
+
+            <div className="comparison-cell comparison-label">{tr ? "Sınav odağı" : "Exam focus"}</div>
+            <div className="comparison-cell">{tr ? "Daha genel veya daha tek katmanlı olabilir" : "Can feel broader or more one-layered"}</div>
+            <div className="comparison-cell">IELTS and TOEFL speaking score improvement workflow</div>
+
+            <div className="comparison-cell comparison-label">{tr ? "Geri bildirim akışı" : "Feedback flow"}</div>
+            <div className="comparison-cell">{tr ? "Tek cevap sonrası sınırlı yönlendirme olabilir" : "May stop after one answer and one response"}</div>
+            <div className="comparison-cell">Transcript, estimated score, targeted retry, and progress loop</div>
+
+            <div className="comparison-cell comparison-label">{tr ? "Günlük kullanım" : "Daily practice habit"}</div>
+            <div className="comparison-cell">{tr ? "Her gün dönmek için net yapı vermeyebilir" : "May not create a strong return habit"}</div>
+            <div className="comparison-cell">Built for repeated speaking attempts and visible progress</div>
+          </div>
+
+          <p className="practice-copy" style={{ marginTop: "1rem" }}>
+            {item.summary}
+          </p>
+        </section>
+      ))}
     </main>
   );
 }

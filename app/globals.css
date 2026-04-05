@@ -1754,7 +1754,34 @@ body[data-theme="dark"] .blog-reading-link:hover {
   line-height: 1.65;
 }
 
+.pricing-mobile-cta {
+  position: fixed;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.9rem;
+  z-index: 45;
+  display: none;
+  justify-content: center;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 18px 40px rgba(15, 20, 30, 0.12);
+}
+
+.pricing-mobile-cta .button {
+  width: 100%;
+  justify-content: center;
+}
+
 body[data-theme="dark"] .blog-sticky-cta {
+  background: rgba(23, 30, 38, 0.98);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.32);
+}
+
+body[data-theme="dark"] .pricing-mobile-cta {
   background: rgba(23, 30, 38, 0.98);
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.32);
@@ -2976,6 +3003,10 @@ body[data-theme="dark"] .marketing-sticky-copy span {
     bottom: 6rem;
     width: auto;
     padding: 0.9rem;
+  }
+
+  .pricing-mobile-cta {
+    display: flex;
   }
 
   .dashboard-overview-grid {

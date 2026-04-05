@@ -24,7 +24,7 @@ const prompts = [
 export const metadata: Metadata = {
   title: "Daily IELTS Speaking Prompt | SpeakAce",
   description:
-    "Get a fresh IELTS speaking prompt, quick structure tips, and a direct path into AI speaking practice with SpeakAce.",
+    "Get a daily IELTS speaking prompt, quick structure tips, and a direct path into AI speaking practice. Start free ->",
   alternates: {
     canonical: `${siteConfig.domain}/daily-ielts-speaking-prompt`
   }

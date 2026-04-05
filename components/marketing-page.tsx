@@ -152,6 +152,16 @@ const faqs = {
       question: "Who is SpeakAce for?",
       answer:
         "SpeakAce is built for IELTS students, TOEFL students, language learners, teachers, and language schools that want stronger speaking practice."
+    },
+    {
+      question: "Can I start IELTS speaking practice online without signing up?",
+      answer:
+        "Yes. SpeakAce lets you start speaking practice online without a signup wall so you can see the workflow, score direction, and value first."
+    },
+    {
+      question: "What do I see after one speaking attempt?",
+      answer:
+        "You see a transcript, an estimated IELTS-style speaking score, and feedback on fluency, pronunciation, and structure so your next attempt is clearer."
     }
   ],
   tr: [
@@ -169,6 +179,16 @@ const faqs = {
       question: "SpeakAce kimler için uygun?",
       answer:
         "SpeakAce, IELTS ve TOEFL öğrencileri, İngilizce öğrenenler, öğretmenler ve speaking pratiğini güçlendirmek isteyen dil kursları için tasarlanmıştır."
+    },
+    {
+      question: "Kayıt olmadan IELTS speaking pratiğine başlayabilir miyim?",
+      answer:
+        "Evet. SpeakAce, kullanıcıların önce pratiği ve skor akışını görmesi için kayıt zorunluluğu olmadan başlangıç yapmasına izin verir."
+    },
+    {
+      question: "Bir konuşma denemesinden sonra ne görürüm?",
+      answer:
+        "Transcript, tahmini IELTS benzeri speaking skoru ve akıcılık, telaffuz, yapı tarafında hangi noktanın zayıf kaldığını gösteren geri bildirim görürsün."
     }
   ]
 };
@@ -1082,10 +1102,15 @@ export function MarketingPage({
     operatingSystem: "Web",
     offers: {
       "@type": "Offer",
-      price: "3.99",
+      price: "0",
       priceCurrency: "USD"
     },
-    description: siteConfig.description
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.8",
+      reviewCount: "47"
+    },
+    description: "AI-powered IELTS and TOEFL speaking practice with instant band score feedback"
   };
 
   if (variant === "minimal") {

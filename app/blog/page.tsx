@@ -2,22 +2,23 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { getBlogChromeCopy, getFeaturedBlogPosts } from "@/lib/blog-content";
+import { getBlogPublicDescription, getBlogPublicTitle } from "@/lib/blog-seo";
 import { getServerLanguage } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "IELTS and TOEFL Speaking Blog",
+  title: "IELTS & TOEFL Speaking Guides | SpeakAce",
   description:
-    "Read longer articles about IELTS and TOEFL speaking, sample answers, speaking routines, score improvement, and test-day preparation.",
+    "Read IELTS and TOEFL speaking guides, sample answers, study plans, and score improvement tips. Practice free and get AI feedback ->",
   alternates: {
     canonical: "/blog"
   },
   openGraph: {
-    title: "IELTS and TOEFL Speaking Blog | SpeakAce",
+    title: "IELTS & TOEFL Speaking Guides | SpeakAce",
     description:
-      "Long-form articles about speaking strategy, sample answers, confidence, note-taking, and study plans.",
+      "IELTS and TOEFL speaking guides with sample answers, strategy tips, and practice ideas that turn reading into real score improvement.",
     url: `${siteConfig.domain}/blog`,
     siteName: siteConfig.name,
     type: "website"
@@ -28,6 +29,8 @@ export default async function BlogIndexPage() {
   const language = await getServerLanguage();
   const chrome = getBlogChromeCopy(language);
   const { featured, firstPath, secondPath, all } = getFeaturedBlogPosts(language);
+  const featuredTitle = getBlogPublicTitle(featured.slug, featured.title);
+  const featuredDescription = getBlogPublicDescription(featured.slug, featured.description);
   const pageLabels = {
     en: { count: "articles", latestIntro: "Read structured IELTS and TOEFL guides by topic, exam section, and study goal." },
     tr: { count: "yazı", latestIntro: "Konulara, sınav bölümlerine ve çalışma hedeflerine göre düzenlenmiş IELTS ve TOEFL yazılarını incele." },
@@ -73,8 +76,8 @@ export default async function BlogIndexPage() {
           <div className="card institution-cta">
             <div>
               <span className="eyebrow">{chrome.cta.featured}</span>
-              <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{featured.title}</h2>
-              <p className="practice-copy">{chrome.labels.featuredDescription}</p>
+              <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{featuredTitle}</h2>
+              <p className="practice-copy">{featuredDescription}</p>
             </div>
             <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
               <Link className="button button-primary" href={`/blog/${featured.slug}`}>
@@ -93,24 +96,24 @@ export default async function BlogIndexPage() {
           <div className="marketing-grid">
             <article className="card feature-card">
               <div className="pill" style={{ marginBottom: "0.8rem" }}>{chrome.labels.startPath}</div>
-              <h3 style={{ fontSize: "1.4rem" }}>{firstPath[0]?.title}</h3>
+              <h3 style={{ fontSize: "1.4rem" }}>{firstPath[0] ? getBlogPublicTitle(firstPath[0].slug, firstPath[0].title) : ""}</h3>
               <p>{chrome.labels.featuredDescription}</p>
               <div className="blog-reading-list">
                 {firstPath.map((post) => (
                   <Link key={post.slug} href={`/blog/${post.slug}`} className="blog-reading-link">
-                    <strong>{post.title}</strong>
+                    <strong>{getBlogPublicTitle(post.slug, post.title)}</strong>
                   </Link>
                 ))}
               </div>
             </article>
             <article className="card feature-card">
               <div className="pill" style={{ marginBottom: "0.8rem" }}>{chrome.labels.advancedPath}</div>
-              <h3 style={{ fontSize: "1.4rem" }}>{secondPath[0]?.title}</h3>
+              <h3 style={{ fontSize: "1.4rem" }}>{secondPath[0] ? getBlogPublicTitle(secondPath[0].slug, secondPath[0].title) : ""}</h3>
               <p>{chrome.labels.latestDescription}</p>
               <div className="blog-reading-list">
                 {secondPath.map((post) => (
                   <Link key={post.slug} href={`/blog/${post.slug}`} className="blog-reading-link">
-                    <strong>{post.title}</strong>
+                    <strong>{getBlogPublicTitle(post.slug, post.title)}</strong>
                   </Link>
                 ))}
               </div>
@@ -127,8 +130,8 @@ export default async function BlogIndexPage() {
             {all.map((post) => (
               <article key={post.slug} className="card feature-card">
                 <div className="pill" style={{ marginBottom: "0.8rem" }}>{post.keywords[0]}</div>
-                <h2 style={{ fontSize: "1.45rem", marginBottom: "0.7rem" }}>{post.title}</h2>
-                <p>{post.description}</p>
+                <h2 style={{ fontSize: "1.45rem", marginBottom: "0.7rem" }}>{getBlogPublicTitle(post.slug, post.title)}</h2>
+                <p>{getBlogPublicDescription(post.slug, post.description)}</p>
                 <Link href={`/blog/${post.slug}`} className="button button-primary" style={{ marginTop: "0.7rem" }}>
                   {chrome.cta.readMore}
                 </Link>
