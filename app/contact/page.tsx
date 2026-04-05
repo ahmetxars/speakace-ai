@@ -35,6 +35,39 @@ const contactCopy = {
       "Öğretmen ve okul demoları",
       "Ürün geri bildirimi ve iş birlikleri"
     ]
+  },
+  de: {
+    title: "Kontakt",
+    description: "Kontaktiere SpeakAce für Support, Schul-Demos, Produktfragen oder Partnerschaften.",
+    eyebrow: "Kontakt",
+    heading: "SpeakAce kontaktieren",
+    intro: "Melde dich bei uns, wenn du Hilfe zum Konto, zu Schul-Demos, zur Zahlung oder zum Produkt brauchst.",
+    email: "E-Mail",
+    reply: "Wir antworten in der Regel innerhalb von 1 bis 2 Werktagen.",
+    topics: "Wozu du uns schreiben kannst",
+    topicList: ["Konto- und Login-Hilfe", "Fragen zu Zahlung und Abo", "Demos für Lehrkräfte und Schulen", "Produktfeedback und Partnerschaften"]
+  },
+  fr: {
+    title: "Contact",
+    description: "Contactez SpeakAce pour le support, les démos école, les questions produit ou les partenariats.",
+    eyebrow: "Contact",
+    heading: "Contacter SpeakAce",
+    intro: "Écrivez-nous pour l’aide au compte, les démos école, les questions de paiement ou les questions produit.",
+    email: "E-mail",
+    reply: "Nous répondons généralement sous 1 à 2 jours ouvrés.",
+    topics: "Vous pouvez nous contacter pour",
+    topicList: ["Aide compte et connexion", "Questions de paiement et d’abonnement", "Démos pour enseignants et écoles", "Feedback produit et partenariats"]
+  },
+  nl: {
+    title: "Contact",
+    description: "Neem contact op met SpeakAce voor support, schooldemo's, productvragen of samenwerkingen.",
+    eyebrow: "Contact",
+    heading: "Neem contact op met SpeakAce",
+    intro: "Stuur ons een bericht voor hulp met je account, schooldemo's, betalingen of productvragen.",
+    email: "E-mail",
+    reply: "We reageren meestal binnen 1 tot 2 werkdagen.",
+    topics: "Waarover je ons kunt mailen",
+    topicList: ["Hulp bij account en inloggen", "Vragen over betaling en abonnement", "Demo's voor docenten en scholen", "Productfeedback en samenwerkingen"]
   }
 } as const;
 

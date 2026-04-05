@@ -41,6 +41,51 @@ const termsCopy = {
       "Ücretli planlar ek speaking dakikaları, daha derin geri bildirim ve gelişmiş ürün özellikleri açabilir. Fiyat ve plan şartları zamanla değişebilir.",
     contact: "İletişim",
     contactText: "Yasal veya hesapla ilgili sorular için bize şu adresten ulaşabilirsiniz:"
+  },
+  de: {
+    title: "Nutzungsbedingungen",
+    description: "Lies die Bedingungen, die bei der Nutzung von SpeakAce gelten.",
+    eyebrow: "Bedingungen",
+    heading: "Nutzungsbedingungen",
+    intro: "Mit der Nutzung von SpeakAce stimmst du zu, die Plattform verantwortungsvoll und nur für legale persönliche, schulische oder Bildungszwecke zu nutzen.",
+    service: "Nutzung des Dienstes",
+    serviceText: "SpeakAce bietet KI-gestütztes Speaking-Training, geschätztes Feedback und Lernwerkzeuge. Der Dienst ist keine offizielle Prüfungsbewertung.",
+    accounts: "Konten",
+    accountsText: "Du bist für die Richtigkeit deiner Kontodaten und den Schutz deiner Zugangsdaten verantwortlich.",
+    payments: "Zahlungen und Abos",
+    paymentsText: "Bezahlte Pläne können mehr Speaking-Zeit, tieferes Feedback und zusätzliche Funktionen freischalten. Preise und Bedingungen können sich ändern.",
+    contact: "Kontakt",
+    contactText: "Bei rechtlichen oder kontobezogenen Fragen kontaktiere uns unter:"
+  },
+  fr: {
+    title: "Conditions d’utilisation",
+    description: "Lisez les conditions applicables à l’utilisation de SpeakAce.",
+    eyebrow: "Conditions",
+    heading: "Conditions d’utilisation",
+    intro: "En utilisant SpeakAce, vous acceptez d’utiliser la plateforme de façon responsable et uniquement à des fins légales, éducatives ou scolaires.",
+    service: "Utilisation du service",
+    serviceText: "SpeakAce fournit de la pratique speaking assistée par IA, un feedback estimé et des outils d’étude. Le service n’est pas une notation officielle d’examen.",
+    accounts: "Comptes",
+    accountsText: "Vous êtes responsable de l’exactitude de vos informations de compte et de la sécurité de vos identifiants.",
+    payments: "Paiements et abonnements",
+    paymentsText: "Les plans payants peuvent débloquer plus de temps de speaking, un feedback plus profond et des fonctions avancées. Les tarifs peuvent évoluer.",
+    contact: "Contact",
+    contactText: "Pour toute question juridique ou liée au compte, contactez-nous à :"
+  },
+  nl: {
+    title: "Gebruiksvoorwaarden",
+    description: "Lees de voorwaarden die gelden bij het gebruik van SpeakAce.",
+    eyebrow: "Voorwaarden",
+    heading: "Gebruiksvoorwaarden",
+    intro: "Door SpeakAce te gebruiken, ga je ermee akkoord het platform verantwoord en alleen voor legale persoonlijke, educatieve of schooldoeleinden te gebruiken.",
+    service: "Gebruik van de dienst",
+    serviceText: "SpeakAce biedt AI-ondersteunde speaking-oefening, geschatte feedback en studietools. De dienst is geen officiële examenbeoordeling.",
+    accounts: "Accounts",
+    accountsText: "Je bent verantwoordelijk voor de juistheid van je accountinformatie en voor het beveiligen van je inloggegevens.",
+    payments: "Betalingen en abonnementen",
+    paymentsText: "Betaalde plannen kunnen extra speaking-minuten, diepere feedback en geavanceerde functies ontgrendelen. Prijzen en voorwaarden kunnen veranderen.",
+    contact: "Contact",
+    contactText: "Voor juridische of accountvragen kun je contact opnemen via:"
   }
 } as const;
 

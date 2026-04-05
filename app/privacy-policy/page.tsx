@@ -49,6 +49,51 @@ const privacyCopy = {
       "SpeakAce barındırma, ödeme, analitik, e-posta teslimi ve yapay zekâ işleme için üçüncü taraf servisler kullanabilir. Bu servisler yalnızca görevlerini yerine getirmek için gereken bilgiyi alır.",
     contact: "İletişim",
     contactText: "Gizlilik soruları için bize şu adresten ulaşabilirsiniz:"
+  },
+  de: {
+    title: "Datenschutz",
+    description: "Lies, wie SpeakAce persönliche Daten sammelt, nutzt und schützt.",
+    eyebrow: "Datenschutz",
+    heading: "Datenschutzerklärung",
+    intro: "Diese Richtlinie erklärt, welche Informationen SpeakAce sammelt, wie sie verwendet werden und wie du uns bei Datenschutzfragen kontaktieren kannst.",
+    collect: "Was wir erfassen",
+    collectText: "Wir können Kontodaten wie Name, E-Mail, Spracheinstellungen, Lerndaten, Speaking-Sitzungen, Transkripte und Nutzungsaktivität erfassen.",
+    use: "Wie wir Informationen verwenden",
+    useItems: ["Zur Erstellung und Verwaltung deines Kontos", "Für Speaking-Training, Feedback und Fortschrittsansicht", "Zur Verbesserung von Produktqualität und Zuverlässigkeit", "Für wichtige E-Mails zu Konto, Zahlung und Support"],
+    third: "Drittanbieter",
+    thirdText: "SpeakAce kann Drittanbieter für Hosting, Zahlungen, Analysen, E-Mails und KI-Verarbeitung nutzen. Diese erhalten nur die dafür nötigen Daten.",
+    contact: "Kontakt",
+    contactText: "Bei Datenschutzfragen kontaktiere uns unter"
+  },
+  fr: {
+    title: "Politique de confidentialité",
+    description: "Lisez comment SpeakAce collecte, utilise et protège les données personnelles.",
+    eyebrow: "Confidentialité",
+    heading: "Politique de confidentialité",
+    intro: "Cette politique explique quelles informations SpeakAce collecte, comment elles sont utilisées et comment nous contacter pour les questions de confidentialité.",
+    collect: "Ce que nous collectons",
+    collectText: "Nous pouvons collecter des données de compte comme le nom, l’e-mail, la langue, les réglages d’étude, les sessions speaking, les transcripts et l’activité d’utilisation.",
+    use: "Comment nous utilisons vos informations",
+    useItems: ["Créer et gérer votre compte", "Fournir la pratique speaking, le feedback et le suivi", "Améliorer la qualité et la fiabilité du produit", "Envoyer les e-mails importants liés au compte, au paiement et au support"],
+    third: "Services tiers",
+    thirdText: "SpeakAce peut utiliser des services tiers pour l’hébergement, les paiements, l’analytics, l’e-mail et le traitement IA. Ils ne reçoivent que les données nécessaires.",
+    contact: "Contact",
+    contactText: "Pour toute question sur la confidentialité, contactez-nous à"
+  },
+  nl: {
+    title: "Privacybeleid",
+    description: "Lees hoe SpeakAce persoonsgegevens verzamelt, gebruikt en beschermt.",
+    eyebrow: "Privacy",
+    heading: "Privacybeleid",
+    intro: "Dit beleid legt uit welke informatie SpeakAce verzamelt, hoe die wordt gebruikt en hoe gebruikers contact kunnen opnemen over privacyvragen.",
+    collect: "Wat we verzamelen",
+    collectText: "We kunnen accountgegevens verzamelen zoals naam, e-mail, taalvoorkeur, studie-instellingen, speaking-sessies, transcripts en gebruiksactiviteit.",
+    use: "Hoe we je informatie gebruiken",
+    useItems: ["Om je account aan te maken en te beheren", "Om speaking-oefening, feedback en voortgang te bieden", "Om productkwaliteit en betrouwbaarheid te verbeteren", "Om belangrijke account-, facturatie- en supportmails te versturen"],
+    third: "Derdediensten",
+    thirdText: "SpeakAce kan externe diensten gebruiken voor hosting, betalingen, analytics, e-mail en AI-verwerking. Zij ontvangen alleen de informatie die ze nodig hebben.",
+    contact: "Contact",
+    contactText: "Voor privacyvragen kun je contact opnemen via"
   }
 } as const;
 
