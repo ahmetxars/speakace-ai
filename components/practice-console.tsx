@@ -103,6 +103,7 @@ export function PracticeConsole() {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const autoStartedRef = useRef(false);
 
   useEffect(() => {
     const nextExam = searchParams.get("examType");
@@ -498,6 +499,20 @@ export function PracticeConsole() {
     setStatus(tr ? "Mikrofon hazır. Otomatik kayıt başlamadan önce cevabını kısaca planla." : "Microphone ready. Prepare your structure before automatic recording begins.");
   };
 
+  // This effect is intentionally one-shot for the quick-start landing CTA.
+  /* eslint-disable react-hooks/exhaustive-deps */
+  useEffect(() => {
+    const quickStart = searchParams.get("quickStart") === "1";
+
+    if (!quickStart || autoStartedRef.current || mode !== "idle" || session) {
+      return;
+    }
+
+    autoStartedRef.current = true;
+    void startSession();
+  }, [mode, searchParams, session]);
+  /* eslint-enable react-hooks/exhaustive-deps */
+
   const endEarly = useCallback(() => {
     if (runMode === "simulation" && mode === "idle") {
       setSimulationState(null);
@@ -706,15 +721,15 @@ export function PracticeConsole() {
 
   return (
     <div className="page-shell section">
-      {currentUser?.plan === "free" ? (
+      {currentUser?.plan === "free" && summary.totalSessions > 0 ? (
         <section className="card free-plan-banner">
           <div>
             <span className="eyebrow">{tr ? "Free plan" : "Free plan"}</span>
-            <h2 style={{ margin: "0.7rem 0 0.35rem" }}>{tr ? "Daha fazla deneme için Plus görünürlüğü açık" : "Plus is visible whenever you want more volume"}</h2>
+            <h2 style={{ margin: "0.7rem 0 0.35rem" }}>{tr ? "Skoru gördün, şimdi tam geri bildirimi aç" : "You saw the score, now unlock full feedback"}</h2>
             <p className="practice-copy">
               {tr
-                ? "Free plan günlük alışkanlığı kurmak için iyi. Daha fazla speaking süresi, daha fazla tekrar ve daha derin review için Plus'a geçebilirsin."
-                : "Free is great for building the habit. Move to Plus when you want more daily speaking time, retries, and deeper review."}
+                ? "İlk deneme değeri gösterir. Plus ile daha fazla speaking süresi, daha fazla tekrar ve tam analiz açılır."
+                : "The first attempt shows the value. Plus unlocks more speaking time, more retries, and the full review."}
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
@@ -730,20 +745,37 @@ export function PracticeConsole() {
 
       <div className="practice-shell">
         <section className="card practice-panel">
+          {summary.totalSessions === 0 ? (
+            <div className="card practice-simulation-card" style={{ marginBottom: "1rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
+                <strong>{tr ? "İlk speaking testin" : "Your first speaking test"}</strong>
+                <span className="pill">{tr ? "30 saniye" : "30 seconds"}</span>
+              </div>
+              <p className="practice-meta" style={{ margin: "0.45rem 0 0.8rem" }}>
+                {tr
+                  ? "İlk denemeyi başlat, skorunu gör, sonra istersen tam geri bildirimi aç."
+                  : "Start the first attempt, see your score, then unlock full feedback if you want more."}
+              </p>
+              <button className="button button-primary" type="button" onClick={startSession} disabled={!currentUser || mode !== "idle"}>
+                {tr ? "Konuşmaya başla" : "Start Speaking Now"}
+              </button>
+            </div>
+          ) : null}
+
           <div>
-            <span className="eyebrow">{tr ? "Practice session" : "Practice session"}</span>
-            <h1 className="practice-title">{tr ? "Zamanli speaking drill ile calis" : "Train with a timed speaking drill"}</h1>
+            <span className="eyebrow">{tr ? "Skor odaklı speaking" : "Speaking score practice"}</span>
+            <h1 className="practice-title">{tr ? "Speaking skorunu yükseltecek denemeyi başlat" : "Start the attempt that can improve your speaking score"}</h1>
             <p className="practice-copy">
               {tr
-                ? "IELTS veya TOEFL sec, cevabini kaydet ve transcript ile AI puan tahminini aninda gor."
-                : "Choose IELTS or TOEFL, record your answer, and get a transcript plus AI-estimated scoring."}
+                ? "IELTS veya TOEFL seç, cevabını kaydet, band sinyalini gör ve bir sonraki denemede neyi düzeltmen gerektiğini öğren."
+                : "Choose IELTS or TOEFL, record your answer, see the band-style score, and learn what to fix in the next try."}
             </p>
           </div>
 
           <div className="practice-badges">
             <span className="pill">{tr ? "Otomatik mikrofon izni" : "Auto mic permission"}</span>
             <span className="pill">{tr ? "Buyuk geri sayim akisi" : "Big countdown flow"}</span>
-            <span className="pill">{tr ? "Transcript + feedback" : "Transcript + feedback"}</span>
+            <span className="pill">{tr ? "Skor + geri bildirim" : "Score + feedback"}</span>
             {retryMode ? <span className="pill">{tr ? "Ayni soru secildi" : "Same prompt selected"}</span> : null}
           </div>
 
@@ -966,8 +998,8 @@ export function PracticeConsole() {
               </div>
               <p className="practice-meta" style={{ margin: "0.45rem 0 0.8rem" }}>
                 {tr
-                  ? "Daha fazla gunluk speaking suresi, daha fazla oturum ve daha derin transcript analizi ile skor gelisimi hizlanir."
-                  : "More daily minutes, more attempts, and deeper transcript review make score growth easier to sustain."}
+                  ? "Daha fazla günlük speaking süresi, daha fazla oturum ve tam geri bildirim ile skor gelişimi daha sürdürülebilir olur."
+                  : "More daily minutes, more attempts, and full feedback make score growth easier to sustain."}
               </p>
               <div className="simulation-queue">
                 <span className="simulation-step is-active">{tr ? "35 dk speaking" : "35 min speaking"}</span>
@@ -990,15 +1022,15 @@ export function PracticeConsole() {
               {[
                 {
                   title: tr ? "Daha uzun günlük speaking" : "Longer daily speaking time",
-                  body: tr ? "Free planda ritmi kurarsın. Plus tarafında aynı gün içinde daha fazla tekrar açılır." : "Free is enough to start the habit. Plus opens enough room for multiple retries in the same day."
+                  body: tr ? "Free planda ritmi kurarsın. Plus ile aynı gün içinde daha fazla deneme açılır." : "Free is enough to start the habit. Plus opens enough room for multiple attempts in the same day."
                 },
                 {
-                  title: tr ? "Daha güçlü review döngüsü" : "Stronger review loop",
-                  body: tr ? "Transcript, score ladder ve retry mantığı daha yoğun kullanıldığında gerçek fark yaratır." : "Transcript review, score ladders, and retries make a much stronger difference when you can use them more often."
+                  title: tr ? "Tam geri bildirim görünümü" : "Full feedback visibility",
+                  body: tr ? "Daha detaylı düzeltmeler, daha net band sinyali ve daha iyi sonraki adım önerileri alırsın." : "See deeper corrections, clearer band signals, and stronger next-step guidance."
                 },
                 {
-                  title: tr ? "Haftalık mock ritmi" : "Weekly mock rhythm",
-                  body: tr ? "Gerçek ilerleme için tek bir kısa denemeden çok düzenli speaking hacmi gerekir." : "Real improvement comes from a repeatable weekly speaking rhythm, not only from a single short attempt."
+                  title: tr ? "Skor artışı için hacim" : "Volume for score improvement",
+                  body: tr ? "Gerçek ilerleme için tek deneme değil, düzenli speaking hacmi ve tekrar gerekir." : "Real improvement comes from repeatable speaking volume, not only from one short attempt."
                 }
               ].map((item) => (
                 <article key={item.title} className="card feature-card" style={{ padding: "1rem" }}>

@@ -5,25 +5,25 @@ import { MarketingPage } from "@/components/marketing-page";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "IELTS Speaking Practice AI | SpeakAce",
+  title: "IELTS Speaking Practice Online with AI | Improve Your Score",
   description:
-    "IELTS speaking practice with AI feedback, score estimates, transcripts, and timed speaking drills to improve fluency and confidence.",
+    "Increase your IELTS Speaking score with AI practice. Practice real questions, get instant feedback, and improve your fluency fast.",
   alternates: {
     canonical: "/"
   },
   openGraph: {
-    title: "IELTS Speaking Practice AI | SpeakAce",
+    title: "IELTS Speaking Practice Online with AI | Improve Your Score",
     description:
-      "Practice IELTS and TOEFL speaking online with AI feedback, score estimates, transcripts, and speaking test simulation.",
+      "Practice real IELTS speaking questions, get instant feedback, and improve your fluency with AI-powered score support.",
     url: siteConfig.domain,
     siteName: siteConfig.name,
     type: "website"
   },
   twitter: {
     card: "summary_large_image",
-    title: "IELTS Speaking Practice AI | SpeakAce",
+    title: "IELTS Speaking Practice Online with AI | Improve Your Score",
     description:
-      "Improve IELTS speaking score with AI feedback, transcript review, and speaking test simulator practice."
+      "Increase your IELTS Speaking score with AI practice, instant feedback, and a faster retry loop."
   },
   keywords: [
     "IELTS speaking practice",
@@ -45,10 +45,10 @@ export default function HomePage() {
       <MarketingSchema />
       <SiteHeader />
       <MarketingPage
-        eyebrow="AI coach for speaking"
-        title="Practice IELTS speaking with AI feedback that helps you improve faster."
-        description="Get transcript review, score-focused speaking drills, and IELTS-style practice that makes your next answer clearer and more confident."
-        focus="SpeakAce targets high-intent search terms like IELTS speaking practice, IELTS speaking AI, improve IELTS speaking score, and speaking test simulator IELTS with a product built around real exam preparation."
+        eyebrow="IELTS speaking score improvement"
+        title="Increase your IELTS Speaking score with AI practice"
+        description="Practice real questions, get instant feedback, and improve your fluency fast."
+        focus="SpeakAce helps learners practice online, see IELTS-style band signals, and turn every answer into a clearer next attempt."
         ctaHref="/app/practice"
         variant="minimal"
       />

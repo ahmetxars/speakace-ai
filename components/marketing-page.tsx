@@ -18,16 +18,16 @@ import { siteConfig } from "@/lib/site";
 
 const trustSignals = {
   en: [
-    { label: "Targeted use case", value: "IELTS + TOEFL speaking" },
-    { label: "Core promise", value: "AI feedback in minutes" },
-    { label: "Best for", value: "Students, teachers, schools" },
-    { label: "Focus", value: "Score growth and confidence" }
+    { label: "Best score seen", value: "Band-style score after each attempt" },
+    { label: "Average view", value: "Track score movement over time" },
+    { label: "Main payoff", value: "Speak, score, fix, retry" },
+    { label: "Best for", value: "IELTS speaking score improvement" }
   ],
   tr: [
-    { label: "Odak kullanım", value: "IELTS + TOEFL speaking" },
-    { label: "Ana vaat", value: "Dakikalar içinde AI feedback" },
-    { label: "En uygun kitle", value: "Öğrenci, öğretmen, kurum" },
-    { label: "Temel hedef", value: "Skor artışı ve özgüven" }
+    { label: "En iyi skor", value: "Her denemeden sonra band benzeri skor" },
+    { label: "Ortalama görünüm", value: "Skor hareketini zamanla takip et" },
+    { label: "Ana kazanç", value: "Konuş, skorunu gör, düzelt, tekrar dene" },
+    { label: "En uygun kullanım", value: "IELTS speaking skorunu yükseltmek" }
   ]
 };
 
@@ -433,44 +433,47 @@ export function MarketingPage({
             <span className="eyebrow">{eyebrow}</span>
             <h1>
               {tr
-                ? "IELTS ve TOEFL speaking pratiğini daha sakin, daha net ve daha odaklı bir AI koçla geliştir."
-                : "Practice IELTS and TOEFL speaking with calmer, clearer AI feedback."}
+                ? "AI destekli speaking pratiğiyle IELTS skorunu yükselt."
+                : "Increase your IELTS Speaking score with AI practice"}
             </h1>
             <p className="hero-description">
               {tr
-                ? "Cevabını kaydet, transcript’ini incele ve bir sonraki denemeyi nasıl daha iyi kuracağını tek ekranda gör."
-                : "Record one answer, review the transcript, and see exactly how to make the next attempt stronger."}
+                ? "Gerçek soru tipleriyle çalış, anında geri bildirim al ve akıcılığını daha hızlı geliştir."
+                : "Practice real questions, get instant feedback, and improve your fluency fast."}
             </p>
             <div className="hero-actions">
               <Link className="button button-primary" href={ctaHref}>
-                {tr ? "Ücretsiz speaking denemesi" : "Start free practice"}
+                {tr ? "Konuşmaya başla" : "Start Speaking Now"}
               </Link>
-              <a className="button button-secondary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "home_minimal" })}>
-                {tr ? "Plus'i ac" : "Get Plus"}
-              </a>
             </div>
+            <p className="practice-meta" style={{ marginTop: "0.9rem" }}>
+              {tr ? "Ücretsiz • Kayıt olmadan kullanılabilir" : "Free • No signup required"}
+            </p>
           </div>
 
           <aside className="card hero-result">
-            <div className="pill">{tr ? "Ornek geri bildirim" : "Sample feedback"}</div>
+            <div className="pill">{tr ? "Hızlı demo" : "Quick demo"}</div>
+            <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
+              {tr ? 'Kullanıcı: "Doğduğun yeri anlat"' : 'User: "Describe your hometown"'}
+            </div>
             <div className="score-showcase">
-              <div className="score-value">7.0</div>
+              <div className="score-value">6.5</div>
               <div className="score-label">
-                {tr ? "Tahmini speaking skoru" : "Estimated speaking score"}
+                {tr ? "Tahmini IELTS speaking skoru" : "Estimated IELTS speaking score"}
               </div>
             </div>
             <div className="card spotlight-card">
-              <strong>{tr ? "Bu neden daha iyi?" : "Why this works better"}</strong>
+              <strong>{tr ? "AI geri bildirimi" : "AI feedback"}</strong>
               <p>
                 {tr
-                  ? "Soruya daha net girer, tek bir iyi ornek verir ve daha kontrollu kapanir."
-                  : "It answers the prompt more directly, adds one useful example, and finishes with more control."}
+                  ? "Daha net olmak için tek bir spesifik örnek ekle."
+                  : "Add a specific example to improve clarity."}
               </p>
             </div>
             <div className="metrics-grid">
               <MiniMetric label={tr ? "Akicilik" : "Fluency"} value="7.0" />
               <MiniMetric label={tr ? "Telaffuz" : "Pronunciation"} value="6.5" />
-              <MiniMetric label={tr ? "Yapi" : "Structure"} value="7.5" />
+              <MiniMetric label={tr ? "Yapi" : "Structure"} value="6.5" />
             </div>
           </aside>
         </section>
@@ -490,11 +493,11 @@ export function MarketingPage({
         <section className="page-shell section">
           <div className="section-head">
             <span className="eyebrow">{tr ? "Nasil calisir" : "How it works"}</span>
-            <h2>{tr ? "Kisa ve net bir speaking calisma akisi" : "A simple speaking workflow"}</h2>
+            <h2>{tr ? "İlk speaking denemeni 30 saniyede başlat" : "Take your first speaking test in 30 seconds"}</h2>
             <p>
               {tr
-                ? "Ana sayfa sadece baslangic icin var. Daha derin tum sayfalar menu ve footer icinde seni bekliyor."
-                : "The homepage stays focused. Deeper guides, tools, and study pages are waiting in the navigation and footer."}
+                ? "İlk adım net olsun: konuş, skorunu gör, sonra istersen daha derin geri bildirimi aç."
+                : "Make the first action obvious: speak, see your score, then unlock deeper feedback if you want more."}
             </p>
           </div>
           <div className="steps-grid">
@@ -514,20 +517,20 @@ export function MarketingPage({
             <div className="quick-pitch-grid">
               <div>
                 <h2 style={{ marginBottom: "0.8rem" }}>
-                  {tr ? "Daha fazlasi icin nav ve footer'i kullan" : "Use the nav and footer to explore the rest"}
+                  {tr ? "Önce skoru gör, sonra tam geri bildirimi aç" : "See the score first, unlock full feedback later"}
                 </h2>
                 <p className="practice-copy">
                   {tr
-                    ? "Practice, free test, tools, blog, teachers ve schools gibi tum detayli alanlar artik ana sayfaya yigilmiyor."
-                    : "Practice, free test, tools, blog, teachers, and schools are no longer stacked into one long homepage."}
+                    ? "SpeakAce önce değeri gösterir: hızlı bir speaking denemesi yap, skorunu gör, sonra tam analiz ve daha fazla deneme için Plus’a geç."
+                    : "SpeakAce shows value before upgrade pressure: take one attempt, see your score, then move to Plus for full feedback and more retries."}
                 </p>
               </div>
               <div className="lead-capture-actions">
-                <Link className="button button-primary" href="/pricing">
-                  {tr ? "Planlari gor" : "See pricing"}
+                <Link className="button button-primary" href="/app/practice?quickStart=1">
+                  {tr ? "Konuşmaya başla" : "Start Speaking Now"}
                 </Link>
-                <Link className="button button-secondary" href="/resources">
-                  {tr ? "Kaynaklari ac" : "Open resources"}
+                <Link className="button button-secondary" href="/pricing">
+                  {tr ? "Tam geri bildirimi gör" : "Unlock full feedback"}
                 </Link>
               </div>
             </div>
@@ -557,12 +560,12 @@ export function MarketingPage({
           </p>
           <div className="hero-actions">
             <Link className="button button-primary" href={ctaHref}>
-              {tr ? "Ücretsiz speaking denemesi başlat" : "Start free speaking practice"}
+              {tr ? "Konuşmaya başla" : "Start Speaking Now"}
             </Link>
-            <a className="button button-secondary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "home_hero" })}>
-              {tr ? "Plus planını aç" : "Unlock Plus"}
-            </a>
           </div>
+          <p className="practice-meta" style={{ marginTop: "0.9rem" }}>
+            {tr ? "Ücretsiz • Kayıt olmadan kullanılabilir" : "Free • No signup required"}
+          </p>
           <div className="hero-outcomes">
             {coreKeywords.slice(0, 5).map((keyword) => (
               <span key={keyword} className="pill">
@@ -591,25 +594,28 @@ export function MarketingPage({
         </div>
 
         <aside className="card hero-result">
-          <div className="pill">{tr ? "Örnek AI geri bildirimi" : "Sample AI feedback"}</div>
+          <div className="pill">{tr ? "Hızlı demo" : "Quick demo"}</div>
+          <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
+            {tr ? 'Kullanıcı: "Doğduğun yeri anlat"' : 'User: "Describe your hometown"'}
+          </div>
           <div className="score-showcase">
-            <div className="score-value">7.0</div>
+            <div className="score-value">6.5</div>
             <div className="score-label">
               {tr ? "Tahmini IELTS speaking skoru" : "Estimated IELTS speaking score"}
             </div>
           </div>
           <div className="card spotlight-card">
-            <strong>{tr ? "Neyi daha iyi yapabilir?" : "What can improve next?"}</strong>
+            <strong>{tr ? "AI geri bildirimi" : "AI feedback"}</strong>
             <p>
               {tr
-                ? "Cevap soruya doğrudan giriyor ve iyi bir örnek veriyor. Daha güçlü bağlaçlar, daha net telaffuz ve daha temiz kapanış cümleleri skoru yukarı taşıyabilir."
-                : "The answer addresses the prompt directly and includes one relevant example. Clearer linking, cleaner pronunciation, and a stronger closing idea could move the score higher."}
+                ? "Daha net olmak için tek bir spesifik örnek ekle."
+                : "Add a specific example to improve clarity."}
             </p>
           </div>
           <div className="metrics-grid">
             <MiniMetric label={tr ? "Akıcılık" : "Fluency"} value="7.0" />
             <MiniMetric label={tr ? "Telaffuz" : "Pronunciation"} value="6.5" />
-            <MiniMetric label={tr ? "Yapı" : "Structure"} value="7.5" />
+            <MiniMetric label={tr ? "Yapı" : "Structure"} value="6.5" />
           </div>
         </aside>
       </section>
@@ -622,6 +628,32 @@ export function MarketingPage({
               <strong>{item.value}</strong>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="page-shell section" style={{ paddingTop: 0 }}>
+        <div className="card quick-pitch">
+          <div className="quick-pitch-grid">
+            <div>
+              <span className="eyebrow">{tr ? "İlk adım" : "First step"}</span>
+              <h2 style={{ margin: "0.8rem 0" }}>
+                {tr ? "İlk speaking testini 30 saniyede başlat" : "Take your first speaking test in 30 seconds"}
+              </h2>
+              <p className="practice-copy">
+                {tr
+                  ? "Önce bir soruya cevap ver, skorunu gör, sonra tam geri bildirim ve daha fazla tekrar için Plus’ı aç."
+                  : "Answer one question first, see your score, then unlock full feedback and more retries with Plus."}
+              </p>
+            </div>
+            <div className="lead-capture-actions">
+              <Link className="button button-primary" href="/app/practice?quickStart=1">
+                {tr ? "Konuşmaya başla" : "Start Speaking Now"}
+              </Link>
+              <Link className="button button-secondary" href="/pricing">
+                {tr ? "Tam geri bildirimi gör" : "Unlock full feedback"}
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 

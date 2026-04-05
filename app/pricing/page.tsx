@@ -5,9 +5,9 @@ import { SiteHeader } from "@/components/site-header";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
 
 export const metadata: Metadata = {
-  title: "SpeakAce Pricing",
+  title: "IELTS Speaking Pricing | Full Feedback and Unlimited Practice",
   description:
-    "See SpeakAce pricing for IELTS and TOEFL speaking practice with AI feedback, transcript review, and speaking score support.",
+    "Compare free and Plus plans for IELTS speaking practice, full feedback, band-style scoring, and more daily speaking time.",
   alternates: {
     canonical: "/pricing"
   }
@@ -38,11 +38,11 @@ export default function PricingPage() {
         <div className="section-head">
           <span className="eyebrow">Pricing</span>
           <h1 style={{ fontSize: "clamp(2.7rem, 6vw, 5rem)", lineHeight: 0.95 }}>
-            IELTS speaking practice pricing that feels easy to try
+            IELTS speaking practice pricing built around faster score improvement
           </h1>
           <p>
-            Start free or unlock SpeakAce Plus for more daily speaking minutes, stronger transcript
-            review, and faster score improvement loops.
+            Start free, see your score first, then unlock full feedback, more daily speaking time,
+            and a stronger IELTS scoring workflow.
           </p>
         </div>
 
@@ -53,11 +53,11 @@ export default function PricingPage() {
           </div>
           <div className="card stat-strip-card">
             <div className="practice-meta">Best for</div>
-            <strong>Daily IELTS/TOEFL speaking</strong>
+            <strong>Daily IELTS score improvement</strong>
           </div>
           <div className="card stat-strip-card">
             <div className="practice-meta">Core promise</div>
-            <strong>Faster transcript-to-retry loop</strong>
+            <strong>Full feedback after every speaking attempt</strong>
           </div>
           <div className="card stat-strip-card">
             <div className="practice-meta">Price</div>
@@ -72,10 +72,10 @@ export default function PricingPage() {
             <ul>
               <li>4 daily speaking sessions</li>
               <li>8 daily speaking minutes</li>
-              <li>Basic transcript and feedback</li>
+              <li>Starter score view and limited feedback</li>
             </ul>
             <Link className="button button-secondary" href="/auth">
-              Create free account
+              Start Speaking Now
             </Link>
           </article>
 
@@ -85,12 +85,13 @@ export default function PricingPage() {
             <ul>
               <li>18 daily sessions</li>
               <li>35 daily speaking minutes</li>
-              <li>Expanded score and transcript insight</li>
-              <li>Better retry and improvement workflow</li>
-              <li>Priority path for serious exam prep</li>
+              <li>Full feedback after each speaking attempt</li>
+              <li>Expanded IELTS-style score insight</li>
+              <li>Unlimited-feeling retry and improvement workflow</li>
+              <li>Built for serious exam score growth</li>
             </ul>
             <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "pricing_hero" })}>
-              Buy Plus
+              Unlock full feedback
             </a>
             <div className="practice-meta">Try coupon: {couponCatalog.LAUNCH20.code}</div>
           </article>
@@ -114,17 +115,17 @@ export default function PricingPage() {
             {
               title: "What students pay for",
               description:
-                "Not just AI output. They pay for a faster daily loop: record, review, retry, and track score movement without waiting."
+                "Not just AI output. They pay for a faster loop: speak, score, fix mistakes, retry, and track score movement without waiting."
             },
             {
               title: "Why teachers like the product",
               description:
-                "The same plan lets teachers show stronger proof of progress while students keep practicing between lessons."
+                "The same plan lets teachers show visible score movement while students keep practicing between lessons."
             },
             {
               title: "Why Plus converts better than a generic plan",
               description:
-                "It is tied to clear outcomes: more minutes, more attempts, stronger insight, and less friction."
+                "It is tied to clear outcomes: more speaking, more feedback, stronger scoring insight, and less friction."
             }
           ].map((item) => (
             <article key={item.title} className="card testimonial-card">
@@ -153,15 +154,15 @@ export default function PricingPage() {
         <div className="marketing-grid">
           <article className="card feature-card">
             <h3>Why Plus pays for itself</h3>
-            <p>One mock interview or one strong private lesson can cost more than a full month of repeatable AI speaking practice.</p>
+            <p>One private lesson can cost more than a full month of repeatable speaking practice, scoring, and feedback.</p>
           </article>
           <article className="card feature-card">
             <h3>Built for score movement</h3>
-            <p>Plus is not only more usage. It is a better loop: more attempts, deeper review, stronger retries, and cleaner progress tracking.</p>
+            <p>Plus is not only more usage. It is a better score-improvement loop: more attempts, deeper review, stronger retries, and clearer progress tracking.</p>
           </article>
           <article className="card feature-card">
             <h3>Start free, upgrade when ready</h3>
-            <p>The free plan is enough to feel the workflow. Plus is there when you want faster growth and more daily volume.</p>
+            <p>The free plan is enough to see your score and try the workflow. Plus is there when you want full feedback and more daily volume.</p>
           </article>
         </div>
 

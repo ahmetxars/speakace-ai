@@ -36,55 +36,55 @@ export const coreKeywords = [
 export const whySpeakAce: FeatureItem[] = [
   {
     title: {
-      en: "Practice with exam pressure, not random chat",
-      tr: "Rastgele sohbet yerine gerçek sınav baskısıyla çalış"
+      en: "Practice real IELTS speaking tasks, not random AI chat",
+      tr: "Rastgele AI sohbeti yerine gercek IELTS speaking gorevleriyle calis"
     },
     description: {
-      en: "SpeakAce gives you timed IELTS-style speaking tasks so your practice feels close to the real speaking test.",
-      tr: "SpeakAce, IELTS speaking sınavına benzeyen süreli görevler sunar; böylece çalışma deneyimin gerçek sınava daha çok yaklaşır."
+      en: "Timed speaking tasks make your first answer feel closer to the real exam, so improvement stays tied to the test you actually want to pass.",
+      tr: "Sureli speaking gorevleri ilk denemeni gercek sinava daha yakin hissettirir; boylece gelisim gecmek istedigin sinava bagli kalir."
     }
   },
   {
     title: {
-      en: "See why your answer sounds weak",
-      tr: "Cevabının neden zayıf kaldığını net gör"
+      en: "See what is holding your band score back",
+      tr: "Band skorunu neyin geri tuttugunu gor"
     },
     description: {
-      en: "Instead of generic praise, you get clear feedback on fluency, structure, vocabulary, and speaking control.",
-      tr: "Genel övgüler yerine akıcılık, yapı, kelime kullanımı ve konuşma kontrolü hakkında net geri bildirim alırsın."
+      en: "Instead of generic praise, you see where fluency, pronunciation, structure, and idea support need work before the next test.",
+      tr: "Genel ovguler yerine akicilik, telaffuz, yapi ve fikir desteginin bir sonraki testten once nerede gelismesi gerektigini gorursun."
     }
   },
   {
     title: {
-      en: "Turn every attempt into a better next attempt",
-      tr: "Her denemeyi bir sonraki daha iyi denemeye çevir"
+      en: "Turn every attempt into a higher-scoring retry",
+      tr: "Her denemeyi daha yuksek skorlu bir tekrar denemesine cevir"
     },
     description: {
-      en: "Your transcript, score estimate, model answer, and next-step guidance make each session useful for real score growth.",
-      tr: "Transcript, puan tahmini, örnek güçlü cevap ve sonraki çalışma önerisi her oturumu gerçek skor gelişimi için daha değerli hale getirir."
+      en: "Score signals, grammar fixes, fluency notes, and a stronger sample answer make each retry more useful for real score growth.",
+      tr: "Skor sinyalleri, dil bilgisi duzeltmeleri, akicilik notlari ve daha guclu ornek cevap her tekrar denemesini gercek skor artisi icin daha faydali yapar."
     }
   }
 ];
 
 export const standoutFeatures: FeatureItem[] = [
   {
-    title: { en: "AI IELTS speaking feedback", tr: "AI destekli IELTS speaking geri bildirimi" },
-    description: { en: "Get clear feedback after every response so you know exactly what to fix before your next speaking test.", tr: "Her cevaptan sonra net geri bildirim al ve bir sonraki speaking denemenden önce neyi düzeltmen gerektiğini açıkça gör." }
+    title: { en: "Fix grammar mistakes instantly", tr: "Dil bilgisi hatalarini aninda duzelt" },
+    description: { en: "See which grammar patterns make your answer sound weaker and fix them before your next attempt.", tr: "Cevabini zayif gosteren dil bilgisi kaliplarini gor ve bir sonraki denemenden once duzelt." }
   },
   {
-    title: { en: "Band score estimation", tr: "Band puan tahmini" },
-    description: { en: "See an estimated speaking band score to understand how close you are to your IELTS target.", tr: "Hedef IELTS puanına ne kadar yakın olduğunu görmek için tahmini speaking band skorunu incele." }
+    title: { en: "Get IELTS-style band score", tr: "IELTS tarzi band skoru gor" },
+    description: { en: "See an estimated speaking band score and understand how close your answer is to your target.", tr: "Tahmini speaking band skorunu gor ve cevabinin hedef puanina ne kadar yakin oldugunu anla." }
   },
   {
-    title: { en: "Pronunciation analysis", tr: "Telaffuz analizi" },
+    title: { en: "Improve pronunciation with clear fixes", tr: "Net duzeltmelerle telaffuzu gelistir" },
     description: { en: "Spot unclear sounds, weak endings, and rhythm issues that lower your speaking score.", tr: "Skorunu düşüren belirsiz sesleri, zayıf kelime sonlarını ve ritim sorunlarını fark et." }
   },
   {
-    title: { en: "Real-time speaking evaluation flow", tr: "Gerçek zamanlı değerlendirme akışı" },
+    title: { en: "See your score in one fast loop", tr: "Skorunu tek hizli dongude gor" },
     description: { en: "Move from recording to transcript to feedback in one fast workflow that keeps practice simple.", tr: "Kayıttan transcript’e ve geri bildirime tek, hızlı bir akış içinde geçerek çalışmayı daha kolay hale getir." }
   },
   {
-    title: { en: "IELTS-style questions", tr: "IELTS tarzı soru yapısı" },
+    title: { en: "Practice real IELTS-style questions", tr: "Gercek IELTS tarzi sorularla calis" },
     description: { en: "Train with questions built around IELTS speaking habits so your answers feel more exam-ready.", tr: "Cevapların sınava daha hazır hissedilsin diye IELTS speaking yapısına uygun sorularla çalış." }
   },
   {
@@ -92,7 +92,7 @@ export const standoutFeatures: FeatureItem[] = [
     description: { en: "Practice under timed conditions and build confidence before your real IELTS speaking exam.", tr: "Süreli koşullarda pratik yap ve gerçek IELTS speaking sınavından önce özgüven kazan." }
   },
   {
-    title: { en: "Fluency improvement coaching", tr: "Akıcılık geliştirme koçluğu" },
+    title: { en: "Improve fluency step-by-step", tr: "Akiciligi adim adim gelistir" },
     description: { en: "Learn how to speak longer, smoother, and with fewer pauses that interrupt your answer.", tr: "Cevabını bölen duraksamaları azaltarak daha uzun ve daha akıcı konuşmayı öğren." }
   },
   {
@@ -104,7 +104,7 @@ export const standoutFeatures: FeatureItem[] = [
     description: { en: "Replace weak or repeated words with stronger vocabulary that fits IELTS speaking better.", tr: "Tekrarlanan veya zayıf kelimeleri IELTS speaking’e daha uygun güçlü kelimelerle değiştir." }
   },
   {
-    title: { en: "Exact transcript review", tr: "Ham transcript inceleme" },
+    title: { en: "Review exactly what you said", tr: "Tam olarak ne dedigini incele" },
     description: { en: "Read what the system heard so you can catch unclear speech, pace issues, and missing words.", tr: "Sistemin ne duyduğunu okuyarak belirsiz konuşmayı, hız sorunlarını ve eksik kelimeleri fark et." }
   },
   {
