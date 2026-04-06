@@ -2037,15 +2037,16 @@ body[data-theme="dark"] .comparison-head {
 }
 
 .practice-page-shell {
-  min-height: calc(100vh - 8.8rem);
-  max-height: calc(100vh - 8.8rem);
-  overflow: hidden;
+  min-height: auto;
+  max-height: none;
+  overflow: visible;
+  padding-bottom: 7rem;
 }
 
 .practice-shell-dashboard {
-  height: 100%;
+  height: auto;
   grid-template-columns: minmax(0, 8fr) minmax(320px, 4fr);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .practice-panel {
@@ -2056,9 +2057,9 @@ body[data-theme="dark"] .comparison-head {
 
 .practice-main-column,
 .practice-sidebar {
-  min-height: 0;
-  overflow: auto;
-  padding-bottom: 6.5rem;
+  min-height: auto;
+  overflow: visible;
+  padding-bottom: 0;
 }
 
 .practice-shell-simple {
@@ -2233,6 +2234,7 @@ body[data-theme="dark"] .comparison-head {
 .practice-sidebar {
   position: sticky;
   top: 1rem;
+  align-self: start;
 }
 
 .practice-main-insights {
@@ -2298,16 +2300,16 @@ body[data-theme="dark"] .comparison-head {
 }
 
 .practice-action-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0.9rem;
+  position: sticky;
+  left: auto;
+  right: auto;
+  bottom: 1rem;
   z-index: 48;
-  pointer-events: none;
+  pointer-events: auto;
+  margin-top: 1.2rem;
 }
 
 .practice-action-bar-shell {
-  pointer-events: auto;
   display: flex;
   align-items: center;
   justify-content: center;
