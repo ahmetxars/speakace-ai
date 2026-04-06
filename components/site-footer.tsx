@@ -478,7 +478,7 @@ export function SiteFooter() {
         <div className="site-footer-top">
           <div className="site-footer-brand">
             <Image
-              src="/brand/speakace-logo.jpeg"
+              src="/brand/speakace-logo.png"
               alt="SpeakAce"
               width={958}
               height={330}
