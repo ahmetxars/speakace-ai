@@ -6,13 +6,14 @@ import { SiteHeader } from "@/components/site-header";
 import { getBlogChromeCopy, getLocalizedBlogPost, getLocalizedBlogPosts } from "@/lib/blog-content";
 import { getBlogPublicDescription, getBlogPublicTitle, getBlogSeoEntry } from "@/lib/blog-seo";
 import { getServerLanguage } from "@/lib/language";
+import { getPublishedCustomBlogPostBySlug, listPublishedCustomBlogPosts } from "@/lib/server/custom-blog";
 import { siteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getLocalizedBlogPost("en", slug);
+  const post = getLocalizedBlogPost("en", slug) ?? (await getPublishedCustomBlogPostBySlug(slug, "en"));
   if (!post) {
     return {};
   }
@@ -70,7 +71,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     ja: { title: "このテーマをAIで練習する", description: "IELTS風スコア、即時フィードバック、より強い次の回答を確認できます。" },
     ko: { title: "이 주제를 AI로 연습해 보세요", description: "IELTS 스타일 점수, 즉시 피드백, 더 강한 다음 답변을 확인하세요." }
   }[language];
-  const post = getLocalizedBlogPost(language, slug);
+  const post = getLocalizedBlogPost(language, slug) ?? (await getPublishedCustomBlogPostBySlug(slug, language));
   if (!post) {
     notFound();
   }
@@ -78,7 +79,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const seoDescription = getBlogPublicDescription(slug, post.description);
   const seoEntry = getBlogSeoEntry(slug);
 
-  const relatedPosts = getLocalizedBlogPosts(language).filter((item) => item.slug !== post.slug).slice(0, 3);
+  const relatedPosts = [
+    ...(await listPublishedCustomBlogPosts(language)),
+    ...getLocalizedBlogPosts(language)
+  ].filter((item, index, arr) => item.slug !== post.slug && arr.findIndex((candidate) => candidate.slug === item.slug) === index).slice(0, 3);
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",

@@ -1,10 +1,11 @@
 import type { MetadataRoute } from "next";
 import { getAllBlogSlugs } from "@/lib/blog-content";
 import { comparisonPages, guidePages, toolPages } from "@/lib/seo-growth";
+import { listAllCustomBlogSlugs } from "@/lib/server/custom-blog";
 import { siteConfig } from "@/lib/site";
 import { seoTopicPages } from "@/lib/seo-topics";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const routes = [
     "",
     "/pricing",
@@ -43,11 +44,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/app"
   ];
   const blogRoutes = getAllBlogSlugs().map((slug) => `/blog/${slug}`);
+  const customBlogRoutes = (await listAllCustomBlogSlugs()).map((slug) => `/blog/${slug}`);
   const topicRoutes = seoTopicPages.map((topic) => `/ielts-speaking-topics/${topic.slug}`);
   const comparisonRoutes = comparisonPages.map((item) => `/compare/${item.slug}`);
   const toolRoutes = toolPages.map((item) => `/tools/${item.slug}`);
   const guideRoutes = guidePages.map((item) => `/guides/${item.slug}`);
-  const allRoutes = [...routes, ...blogRoutes, ...topicRoutes, ...comparisonRoutes, ...toolRoutes, ...guideRoutes];
+  const allRoutes = [...routes, ...blogRoutes, ...customBlogRoutes, ...topicRoutes, ...comparisonRoutes, ...toolRoutes, ...guideRoutes];
 
   return allRoutes.map((route) => ({
     url: `${siteConfig.domain}${route}`,

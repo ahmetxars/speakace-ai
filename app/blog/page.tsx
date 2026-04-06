@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { getBlogChromeCopy, getFeaturedBlogPosts } from "@/lib/blog-content";
 import { getBlogPublicDescription, getBlogPublicTitle } from "@/lib/blog-seo";
 import { getServerLanguage } from "@/lib/language";
+import { listPublishedCustomBlogPosts } from "@/lib/server/custom-blog";
 import { siteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -29,8 +30,10 @@ export default async function BlogIndexPage() {
   const language = await getServerLanguage();
   const chrome = getBlogChromeCopy(language);
   const { featured, firstPath, secondPath, all } = getFeaturedBlogPosts(language);
+  const customPosts = await listPublishedCustomBlogPosts(language);
   const featuredTitle = getBlogPublicTitle(featured.slug, featured.title);
   const featuredDescription = getBlogPublicDescription(featured.slug, featured.description);
+  const combinedPosts = [...customPosts, ...all];
   const pageLabels = {
     en: { count: "articles", latestIntro: "Read structured IELTS and TOEFL guides by topic, exam section, and study goal." },
     tr: { count: "yazı", latestIntro: "Konulara, sınav bölümlerine ve çalışma hedeflerine göre düzenlenmiş IELTS ve TOEFL yazılarını incele." },
@@ -52,7 +55,7 @@ export default async function BlogIndexPage() {
     "@type": "Blog",
     name: "SpeakAce Blog",
     url: `${siteConfig.domain}/blog`,
-    blogPost: all.map((post) => ({
+    blogPost: combinedPosts.map((post) => ({
       "@type": "BlogPosting",
       headline: post.title,
       description: post.description,
@@ -124,10 +127,10 @@ export default async function BlogIndexPage() {
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="section-head">
             <span className="eyebrow">{chrome.cta.latest}</span>
-            <h2>{all.length} {pageLabels.count}</h2>
+            <h2>{combinedPosts.length} {pageLabels.count}</h2>
           </div>
           <div className="marketing-grid">
-            {all.map((post) => (
+            {combinedPosts.map((post) => (
               <article key={post.slug} className="card feature-card">
                 <div className="pill" style={{ marginBottom: "0.8rem" }}>{post.keywords[0]}</div>
                 <h2 style={{ fontSize: "1.45rem", marginBottom: "0.7rem" }}>{getBlogPublicTitle(post.slug, post.title)}</h2>

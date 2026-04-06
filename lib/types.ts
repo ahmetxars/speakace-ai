@@ -444,3 +444,34 @@ export interface AdminInstitutionRecord {
   averageScore?: number | null;
   totalSessions: number;
 }
+
+export interface AdminCustomPostRecord {
+  id: string;
+  slug: string;
+  language: string;
+  title: string;
+  description: string;
+  status: "draft" | "published";
+  keywords: string[];
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string | null;
+}
+
+export interface CustomBlogPost {
+  id: string;
+  slug: string;
+  language: string;
+  title: string;
+  description: string;
+  keywords: string[];
+  intro: string;
+  sections: Array<{
+    title: string;
+    body: string[];
+  }>;
+  status: "draft" | "published";
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string | null;
+}

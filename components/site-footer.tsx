@@ -430,7 +430,7 @@ const footerCopy = {
 export function SiteFooter() {
   const pathname = usePathname();
   const { language } = useAppState();
-  if (pathname?.startsWith("/admin")) {
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/app")) {
     return null;
   }
   const text = footerCopy[language];

@@ -225,6 +225,21 @@ create table if not exists referral_codes (
   created_at timestamptz not null default now()
 );
 
+create table if not exists custom_blog_posts (
+  id text primary key,
+  slug text not null unique,
+  language text not null default 'en',
+  title text not null,
+  description text not null,
+  keywords_json jsonb not null default '[]'::jsonb,
+  intro text not null,
+  body text not null,
+  status text not null default 'draft' check (status in ('draft', 'published')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  published_at timestamptz
+);
+
 create table if not exists usage_daily (
   user_id text not null references users(id) on delete cascade,
   usage_date date not null,
@@ -315,6 +330,12 @@ create index if not exists idx_auth_activity_user_id
 
 create index if not exists idx_referral_codes_code
   on referral_codes(code);
+
+create index if not exists idx_custom_blog_posts_slug
+  on custom_blog_posts(slug);
+
+create index if not exists idx_custom_blog_posts_status_language
+  on custom_blog_posts(status, language, published_at desc);
 
 create index if not exists idx_auth_tokens_user_id
   on auth_tokens(user_id);

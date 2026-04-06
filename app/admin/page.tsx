@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AdminPanel } from "@/components/admin-panel";
+import { listAdminCustomBlogPosts } from "@/lib/server/custom-blog";
 import {
   getAdminOverview,
   getAdminPanelSession,
@@ -27,14 +28,15 @@ export default async function AdminPage() {
   }
 
   try {
-    const [overviewResult, membersResult, billingEventsResult, authActivityResult, referralCodesResult, institutionsResult] =
+    const [overviewResult, membersResult, billingEventsResult, authActivityResult, referralCodesResult, institutionsResult, customPostsResult] =
       await Promise.allSettled([
         getAdminOverview(),
         listAdminMembers(),
         listAdminBillingEvents(),
         listAdminAuthActivity(),
         listReferralCodes(),
-        listInstitutionBreakdown()
+        listInstitutionBreakdown(),
+        listAdminCustomBlogPosts()
       ]);
 
     const overview =
@@ -61,6 +63,7 @@ export default async function AdminPage() {
     const authActivity = authActivityResult.status === "fulfilled" ? authActivityResult.value : [];
     const referralCodes = referralCodesResult.status === "fulfilled" ? referralCodesResult.value : [];
     const institutions = institutionsResult.status === "fulfilled" ? institutionsResult.value : [];
+    const customPosts = customPostsResult.status === "fulfilled" ? customPostsResult.value : [];
 
     const payload = JSON.parse(
       JSON.stringify({
@@ -70,7 +73,8 @@ export default async function AdminPage() {
         billingEvents,
         authActivity,
         referralCodes,
-        institutions
+        institutions,
+        customPosts
       })
     ) as {
       sessionLabel: string;
@@ -80,6 +84,7 @@ export default async function AdminPage() {
       authActivity: typeof authActivity;
       referralCodes: typeof referralCodes;
       institutions: typeof institutions;
+      customPosts: typeof customPosts;
     };
 
     return (
@@ -91,6 +96,7 @@ export default async function AdminPage() {
         authActivity={payload.authActivity}
         referralCodes={payload.referralCodes}
         institutions={payload.institutions}
+        customPosts={payload.customPosts}
       />
     );
   } catch {
