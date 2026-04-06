@@ -2,6 +2,7 @@
 
 import type { Route } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { useAppState } from "@/components/providers";
 import { LeadCaptureForm } from "@/components/lead-capture-form";
 import { MarketingDemoShowcase } from "@/components/marketing-demo-showcase";
@@ -1368,6 +1369,10 @@ export function MarketingPage({
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="page-shell section" style={{ paddingTop: 0 }}>
+        <AdSenseUnit className="marketing-ad-slot" />
       </section>
 
       <section className="page-shell section" style={{ paddingTop: 0 }}>

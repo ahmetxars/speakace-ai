@@ -1775,6 +1775,32 @@ body[data-theme="dark"] .blog-reading-link:hover {
   justify-content: center;
 }
 
+.adsense-shell {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1rem 1rem 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  background: var(--surface);
+  box-shadow: var(--soft-shadow);
+}
+
+.adsense-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.adsense-unit {
+  min-height: 280px;
+}
+
+.marketing-ad-slot {
+  margin-top: -0.2rem;
+}
+
 body[data-theme="dark"] .blog-sticky-cta {
   background: rgba(23, 30, 38, 0.98);
   border-color: rgba(255, 255, 255, 0.08);
@@ -1782,6 +1808,12 @@ body[data-theme="dark"] .blog-sticky-cta {
 }
 
 body[data-theme="dark"] .pricing-mobile-cta {
+  background: rgba(23, 30, 38, 0.98);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.32);
+}
+
+body[data-theme="dark"] .adsense-shell {
   background: rgba(23, 30, 38, 0.98);
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow: 0 22px 48px rgba(0, 0, 0, 0.32);

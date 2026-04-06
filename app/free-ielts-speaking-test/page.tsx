@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 
@@ -118,6 +119,8 @@ export default function FreeIeltsSpeakingTestPage() {
             daily practice.
           </p>
         </section>
+
+        <AdSenseUnit />
 
         <section className="card" style={{ padding: "1.5rem" }}>
           <span className="eyebrow">How it works</span>
