@@ -61,6 +61,7 @@ type PromptBookmark = {
 
 type DrillGoal = "balanced" | "fluency" | "pronunciation" | "topicDevelopment";
 type AnswerMode = "safe" | "natural" | "bold";
+type WizardStep = 1 | 2 | 3;
 
 const emptySummary: ProgressSummary = {
   totalSessions: 0,
@@ -98,6 +99,9 @@ export function PracticeConsole() {
   const [drillGoal, setDrillGoal] = useState<DrillGoal>("balanced");
   const [answerMode, setAnswerMode] = useState<AnswerMode>("natural");
   const [bookmarks, setBookmarks] = useState<PromptBookmark[]>([]);
+  const [wizardStep, setWizardStep] = useState<WizardStep>(1);
+  const [topicSearch, setTopicSearch] = useState("");
+  const [showAllTopics, setShowAllTopics] = useState(false);
 
   const sessionRef = useRef<SpeakingSession | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -129,6 +133,12 @@ export function PracticeConsole() {
       setPreferredPromptId(undefined);
     }
   }, [examType, taskType]);
+
+  useEffect(() => {
+    setWizardStep(1);
+    setTopicSearch("");
+    setShowAllTopics(false);
+  }, [examType]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -410,15 +420,25 @@ export function PracticeConsole() {
     cleanupMedia();
   }, [cleanupMedia]);
 
-  const startSession = async () => {
+  const startSession = async (overrides?: {
+    examType?: ExamType;
+    taskType?: TaskType;
+    difficulty?: Difficulty;
+    promptId?: string;
+  }) => {
     setError(null);
 
-    const queue = buildSimulationQueue(examType);
+    const resolvedExamType = overrides?.examType ?? examType;
+    const resolvedTaskType = overrides?.taskType ?? taskType;
+    const resolvedDifficulty = overrides?.difficulty ?? difficulty;
+    const resolvedPromptId = overrides?.promptId ?? preferredPromptId;
+
+    const queue = buildSimulationQueue(resolvedExamType);
     const currentSimulation = runMode === "simulation"
-      ? simulationState && simulationState.examType === examType && !simulationState.finishedAt
+      ? simulationState && simulationState.examType === resolvedExamType && !simulationState.finishedAt
         ? simulationState
         : {
-            examType,
+            examType: resolvedExamType,
             queue,
             currentIndex: 0,
             completed: [],
@@ -430,19 +450,19 @@ export function PracticeConsole() {
         ? null
         : buildAdaptiveDrillPlan({
             summary,
-            examType,
-            selectedTaskType: taskType,
-            selectedDifficulty: difficulty,
+            examType: resolvedExamType,
+            selectedTaskType: resolvedTaskType,
+            selectedDifficulty: resolvedDifficulty,
             drillGoal,
             tr
           });
     const requestedTaskType = runMode === "simulation"
       ? currentSimulation?.queue[currentSimulation.currentIndex] ?? queue[0]
-      : adaptivePlan?.taskType ?? taskType;
-    const requestedDifficulty = runMode === "simulation" ? difficulty : adaptivePlan?.difficulty ?? difficulty;
-    const requestedPromptId = runMode === "simulation" ? undefined : preferredPromptId ?? adaptivePlan?.promptId;
+      : adaptivePlan?.taskType ?? resolvedTaskType;
+    const requestedDifficulty = runMode === "simulation" ? resolvedDifficulty : adaptivePlan?.difficulty ?? resolvedDifficulty;
+    const requestedPromptId = runMode === "simulation" ? undefined : resolvedPromptId ?? adaptivePlan?.promptId;
 
-    if (runMode === "simulation" && (!simulationState || simulationState.examType !== examType || simulationState.finishedAt)) {
+    if (runMode === "simulation" && (!simulationState || simulationState.examType !== resolvedExamType || simulationState.finishedAt)) {
       setSimulationState(currentSimulation);
     }
 
@@ -460,7 +480,7 @@ export function PracticeConsole() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        examType,
+        examType: resolvedExamType,
         taskType: requestedTaskType,
         difficulty: requestedDifficulty,
         promptId: requestedPromptId,
@@ -485,6 +505,7 @@ export function PracticeConsole() {
     setPreferredPromptId(data.session.prompt.id);
     setTaskType(data.session.taskType);
     setDifficulty(data.session.difficulty);
+    setExamType(data.session.examType);
     setMode("permission");
     setStatus(
       runMode === "simulation"
@@ -550,11 +571,13 @@ export function PracticeConsole() {
   const handleExamChange = useCallback((value: string) => {
     setPreferredPromptId(undefined);
     setExamType(value as ExamType);
+    setWizardStep(2);
   }, []);
 
   const handleTaskChange = useCallback((value: string) => {
     setPreferredPromptId(undefined);
     setTaskType(value as TaskType);
+    setWizardStep(3);
   }, []);
 
   const handleDifficultyChange = useCallback((value: string) => {
@@ -726,6 +749,35 @@ export function PracticeConsole() {
     window.localStorage.setItem(mockReportStorageKey, JSON.stringify(payload));
   }, [currentUser, examType, mockReportStorageKey, simulationAverage, simulationQueue.length, simulationState, simulationSummary, targetScore]);
 
+  const availablePrompts = useMemo(() => {
+    const prompts = listPromptsForTask(examType, taskType);
+    const byDifficulty = prompts.filter((item) => item.difficulty === difficulty);
+    return byDifficulty.length ? byDifficulty : prompts;
+  }, [difficulty, examType, taskType]);
+
+  const recommendedPrompts = useMemo(() => {
+    const shortlist = availablePrompts.slice(0, 3);
+    return shortlist.length ? shortlist : availablePrompts;
+  }, [availablePrompts]);
+
+  const filteredPrompts = useMemo(() => {
+    const query = topicSearch.trim().toLowerCase();
+    if (!query) return availablePrompts;
+    return availablePrompts.filter((item) => item.title.toLowerCase().includes(query));
+  }, [availablePrompts, topicSearch]);
+
+  const pickPromptAndStart = async (promptId: string) => {
+    setPreferredPromptId(promptId);
+    setWizardStep(3);
+    await startSession({ promptId, examType, taskType, difficulty });
+  };
+
+  const surpriseMe = async () => {
+    if (!availablePrompts.length) return;
+    const randomPrompt = availablePrompts[Math.floor(Math.random() * availablePrompts.length)];
+    await pickPromptAndStart(randomPrompt.id);
+  };
+
   return (
     <div className="page-shell section">
       {currentUser?.plan === "free" && summary.totalSessions > 0 ? (
@@ -763,7 +815,7 @@ export function PracticeConsole() {
                   ? "İlk denemeyi başlat, skorunu gör ve istersen ardından tam geri bildirimi aç."
                   : "Start the first attempt, see your score, and unlock full feedback afterwards if you want more."}
               </p>
-              <button className="button button-primary" type="button" onClick={startSession} disabled={!currentUser || mode !== "idle"}>
+              <button className="button button-primary" type="button" onClick={() => void startSession()} disabled={!currentUser || mode !== "idle"}>
                 {tr ? "Konuşmaya başla" : "Start Speaking Now"}
               </button>
             </div>
@@ -771,18 +823,151 @@ export function PracticeConsole() {
 
           <div>
             <span className="eyebrow">{tr ? "Speaking practice" : "Speaking practice"}</span>
-            <h1 className="practice-title">{tr ? "Skorunu yükseltecek denemeyi seç ve konuşmaya başla" : "Pick the right attempt and start speaking"}</h1>
+            <h1 className="practice-title">{tr ? "Adım adım speaking pratiğine başla" : "Start speaking with a guided flow"}</h1>
             <p className="practice-copy">
               {tr
-                ? "Tek bir görev, tam sınav simülasyonu veya telaffuz çalışması seç. SpeakAce sana skoru, zayıf noktayı ve bir sonraki net adımı göstersin."
-                : "Choose a single task, a full simulation, or a pronunciation drill. SpeakAce shows your score, your weakest point, and the next clear step."}
+                ? "Önce sınavı seç, sonra görev tipini belirle, en son bir konuyla konuşmaya başla. Böylece tek ekranda çok fazla karar vermen gerekmez."
+                : "Choose the exam first, then the task type, and then one topic. This keeps the path from landing to recording much easier to follow."}
             </p>
           </div>
 
           <div className="card practice-setup-card">
+            <div className="practice-stepper" aria-label={tr ? "Practice adimlari" : "Practice steps"}>
+              {[
+                { step: 1, label: tr ? "Sınav" : "Exam" },
+                { step: 2, label: tr ? "Görev" : "Task" },
+                { step: 3, label: tr ? "Konu" : "Topic" }
+              ].map((item) => (
+                <div
+                  key={item.step}
+                  className={`practice-stepper-item ${wizardStep === item.step ? "is-active" : wizardStep > item.step ? "is-complete" : ""}`}
+                >
+                  <span className="practice-stepper-badge">{item.step}</span>
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </div>
+
             <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-              <strong>{tr ? "Session kurulumu" : "Session setup"}</strong>
-              <span className="pill">{retryMode ? (tr ? "Aynı soru seçildi" : "Same prompt selected") : progressLabel}</span>
+              <strong>{tr ? "Yönlendirmeli seçim" : "Guided selection"}</strong>
+              <span className="pill">{retryMode ? (tr ? "Aynı konu seçildi" : "Same prompt selected") : progressLabel}</span>
+            </div>
+
+            <div className="practice-wizard">
+              <div className="practice-wizard-grid">
+                <button
+                  type="button"
+                  className={`practice-choice-card ${examType === "IELTS" ? "is-selected" : ""}`}
+                  onClick={() => handleExamChange("IELTS")}
+                  disabled={mode !== "idle"}
+                >
+                  <span className="practice-choice-icon">🎯</span>
+                  <strong>IELTS</strong>
+                  <p>{tr ? "Part 1, cue card ve discussion akışıyla band odaklı çalış." : "Practice Part 1, cue cards, and discussion with band-style scoring."}</p>
+                </button>
+                <button
+                  type="button"
+                  className={`practice-choice-card ${examType === "TOEFL" ? "is-selected" : ""}`}
+                  onClick={() => handleExamChange("TOEFL")}
+                  disabled={mode !== "idle"}
+                >
+                  <span className="practice-choice-icon">🗣️</span>
+                  <strong>TOEFL</strong>
+                  <p>{tr ? "Independent ve integrated speaking görevleriyle daha düzenli çalış." : "Train with independent and integrated speaking tasks more clearly."}</p>
+                </button>
+              </div>
+
+              <div className="practice-wizard-grid">
+                {taskOptions[examType].map((option) => {
+                  const meta = getTaskCardMeta(option, tr);
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`practice-choice-card ${taskType === option ? "is-selected" : ""}`}
+                      onClick={() => handleTaskChange(option)}
+                      disabled={mode !== "idle"}
+                    >
+                      <span className="practice-choice-icon">{meta.icon}</span>
+                      <strong>{meta.title}</strong>
+                      <p>{meta.description}</p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="practice-topic-panel">
+                <div className="practice-topic-head">
+                  <div>
+                    <strong>{tr ? "Sana önerilen konular" : "Recommended for you"}</strong>
+                    <p className="practice-meta">
+                      {tr ? "Önce bunlardan biriyle başla, sonra istersen tüm konulara göz at." : "Start with one of these, then browse all topics if you want more control."}
+                    </p>
+                  </div>
+                  <div className="practice-topic-actions">
+                    <button type="button" className="button button-secondary" onClick={surpriseMe} disabled={!availablePrompts.length || mode !== "idle"}>
+                      {tr ? "Sürpriz başlat" : "Surprise Me"}
+                    </button>
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      onClick={() => setShowAllTopics((current) => !current)}
+                      disabled={mode !== "idle"}
+                    >
+                      {showAllTopics ? (tr ? "Listeyi kapat" : "Hide all") : (tr ? "Ara / tümünü gör" : "Search / Browse all")}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="practice-wizard-grid">
+                  {recommendedPrompts.map((prompt) => (
+                    <article key={prompt.id} className={`practice-topic-card ${preferredPromptId === prompt.id ? "is-selected" : ""}`}>
+                      <div className="practice-topic-card-copy">
+                        <span className="pill">{tr ? translateDifficulty(prompt.difficulty) : prompt.difficulty}</span>
+                        <strong>{prompt.title}</strong>
+                        <p className="practice-meta">{humanizeTaskType(prompt.taskType, tr)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="button button-primary"
+                        onClick={() => void pickPromptAndStart(prompt.id)}
+                        disabled={!currentUser || mode !== "idle"}
+                      >
+                        {tr ? "Bu konuyla başla" : "Start"}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+
+                {showAllTopics ? (
+                  <div className="practice-topic-browser">
+                    <input
+                      className="practice-topic-search"
+                      value={topicSearch}
+                      onChange={(event) => setTopicSearch(event.target.value)}
+                      placeholder={tr ? "Konu veya görev ara" : "Search topics or task types"}
+                    />
+                    <div className="practice-topic-list">
+                      {filteredPrompts.map((prompt) => (
+                        <article key={`browse-${prompt.id}`} className={`practice-topic-row ${preferredPromptId === prompt.id ? "is-selected" : ""}`}>
+                          <div>
+                            <strong>{prompt.title}</strong>
+                            <div className="practice-meta">{humanizeTaskType(prompt.taskType, tr)} · {tr ? translateDifficulty(prompt.difficulty) : prompt.difficulty}</div>
+                          </div>
+                          <button
+                            type="button"
+                            className="button button-secondary"
+                            onClick={() => void pickPromptAndStart(prompt.id)}
+                            disabled={!currentUser || mode !== "idle"}
+                          >
+                            {tr ? "Başlat" : "Start"}
+                          </button>
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </div>
 
             <div className="practice-run-modes">
@@ -821,15 +1006,21 @@ export function PracticeConsole() {
               </button>
             </div>
 
-            <div className="practice-form-grid">
-              <SelectField label={tr ? "Sınav" : "Exam"} value={examType} onChange={handleExamChange} options={[{ value: "IELTS", label: "IELTS" }, { value: "TOEFL", label: "TOEFL" }]} />
-              <SelectField label={tr ? "Görev tipi" : "Task type"} value={effectiveTaskType} onChange={handleTaskChange} options={taskOptions[examType].map((option) => ({ value: option, label: humanizeTaskType(option, tr) }))} disabled={runMode === "simulation"} />
-              <SelectField label={tr ? "Seviye" : "Difficulty"} value={difficulty} onChange={handleDifficultyChange} options={["Starter", "Target", "Stretch"].map((option) => ({ value: option, label: tr ? translateDifficulty(option as Difficulty) : option }))} />
-              <SelectField label={tr ? "Plan" : "Plan"} value={currentUser?.plan ?? "free"} onChange={() => undefined} options={[{ value: currentUser?.plan ?? "free", label: humanizePlan(currentUser?.plan ?? "free", tr) }]} disabled />
-            </div>
+            <details className="practice-collapsible">
+              <summary>
+                <strong>{tr ? "Gelişmiş ayarlar" : "Advanced options"}</strong>
+                <span className="pill">{tr ? "İsteğe bağlı" : "Optional"}</span>
+              </summary>
+              <div className="practice-form-grid" style={{ marginTop: "0.8rem" }}>
+                <SelectField label={tr ? "Sınav" : "Exam"} value={examType} onChange={handleExamChange} options={[{ value: "IELTS", label: "IELTS" }, { value: "TOEFL", label: "TOEFL" }]} />
+                <SelectField label={tr ? "Görev tipi" : "Task type"} value={effectiveTaskType} onChange={handleTaskChange} options={taskOptions[examType].map((option) => ({ value: option, label: humanizeTaskType(option, tr) }))} disabled={runMode === "simulation"} />
+                <SelectField label={tr ? "Seviye" : "Difficulty"} value={difficulty} onChange={handleDifficultyChange} options={["Starter", "Target", "Stretch"].map((option) => ({ value: option, label: tr ? translateDifficulty(option as Difficulty) : option }))} />
+                <SelectField label={tr ? "Plan" : "Plan"} value={currentUser?.plan ?? "free"} onChange={() => undefined} options={[{ value: currentUser?.plan ?? "free", label: humanizePlan(currentUser?.plan ?? "free", tr) }]} disabled />
+              </div>
+            </details>
 
             <div className="practice-actions">
-              <button className="button button-primary" type="button" onClick={startSession} disabled={!currentUser || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}>
+              <button className="button button-primary" type="button" onClick={() => void startSession()} disabled={!currentUser || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}>
                 {runMode === "simulation"
                   ? simulationState?.finishedAt
                     ? tr ? "Simülasyonu yeniden başlat" : "Restart simulation"
@@ -1355,6 +1546,81 @@ function humanizePlan(plan: string, tr: boolean) {
   if (plan === "pro") return "Pro";
   if (plan === "plus") return "Plus";
   return tr ? "Ucretsiz" : "Free";
+}
+
+function getTaskCardMeta(taskType: TaskType, tr: boolean) {
+  const meta: Record<TaskType, { icon: string; titleEn: string; titleTr: string; descriptionEn: string; descriptionTr: string }> = {
+    "ielts-part-1": {
+      icon: "👋",
+      titleEn: "Part 1: Introduction",
+      titleTr: "Part 1: Tanışma",
+      descriptionEn: "Short warm-up questions about familiar daily topics.",
+      descriptionTr: "Tanıdık günlük konular hakkında kısa ısınma soruları."
+    },
+    "ielts-part-2": {
+      icon: "📝",
+      titleEn: "Part 2: Cue Card",
+      titleTr: "Part 2: Cue Card",
+      descriptionEn: "A longer answer built around one topic card and story flow.",
+      descriptionTr: "Tek bir cue card üzerinden daha uzun ve akışlı cevap."
+    },
+    "ielts-part-3": {
+      icon: "💬",
+      titleEn: "Part 3: Discussion",
+      titleTr: "Part 3: Tartışma",
+      descriptionEn: "Opinion and analysis questions that need clearer reasoning.",
+      descriptionTr: "Daha net gerekçe isteyen görüş ve analiz soruları."
+    },
+    "toefl-task-1": {
+      icon: "🎙️",
+      titleEn: "Task 1: Independent",
+      titleTr: "Task 1: Independent",
+      descriptionEn: "State your opinion fast and support it with one example.",
+      descriptionTr: "Görüşünü hızlıca söyle ve tek bir örnekle destekle."
+    },
+    "toefl-task-2": {
+      icon: "📚",
+      titleEn: "Task 2: Campus",
+      titleTr: "Task 2: Campus",
+      descriptionEn: "Summarize a notice and explain two student reactions.",
+      descriptionTr: "Bir duyuruyu özetle ve iki öğrenci görüşünü açıkla."
+    },
+    "toefl-task-3": {
+      icon: "🧠",
+      titleEn: "Task 3: Academic Concept",
+      titleTr: "Task 3: Akademik Kavram",
+      descriptionEn: "Connect a reading concept to the lecturer's example.",
+      descriptionTr: "Okuma parçasındaki kavramı hocanın örneğine bağla."
+    },
+    "toefl-task-4": {
+      icon: "🎓",
+      titleEn: "Task 4: Lecture Summary",
+      titleTr: "Task 4: Lecture Özeti",
+      descriptionEn: "Summarize the main topic and two key supporting points.",
+      descriptionTr: "Ana konuyu ve iki temel destek noktasını özetle."
+    },
+    "toefl-independent": {
+      icon: "🎙️",
+      titleEn: "Independent Speaking",
+      titleTr: "Independent Speaking",
+      descriptionEn: "Give a personal opinion with cleaner structure.",
+      descriptionTr: "Kişisel görüşünü daha temiz yapıyla anlat."
+    },
+    "toefl-integrated": {
+      icon: "🔗",
+      titleEn: "Integrated Speaking",
+      titleTr: "Integrated Speaking",
+      descriptionEn: "Combine reading and listening into one focused answer.",
+      descriptionTr: "Okuma ve dinlemeyi tek bir odaklı cevapta birleştir."
+    }
+  };
+
+  const item = meta[taskType];
+  return {
+    icon: item.icon,
+    title: tr ? item.titleTr : item.titleEn,
+    description: tr ? item.descriptionTr : item.descriptionEn
+  };
 }
 
 function translateDifficulty(difficulty: Difficulty) {
