@@ -1653,6 +1653,11 @@ body[data-theme="dark"] .tool-card-icon {
   background: rgba(255, 255, 255, 0.04);
 }
 
+body[data-theme="dark"] .practice-action-bar-shell {
+  background: rgba(18, 24, 30, 0.94);
+  box-shadow: 0 -10px 26px rgba(0, 0, 0, 0.28);
+}
+
 body[data-theme="dark"] .interactive-link-card {
   background: rgba(23, 30, 38, 0.98);
 }
@@ -2031,10 +2036,29 @@ body[data-theme="dark"] .comparison-head {
   align-items: flex-start;
 }
 
+.practice-page-shell {
+  min-height: calc(100vh - 8.8rem);
+  max-height: calc(100vh - 8.8rem);
+  overflow: hidden;
+}
+
+.practice-shell-dashboard {
+  height: 100%;
+  grid-template-columns: minmax(0, 8fr) minmax(320px, 4fr);
+  overflow: hidden;
+}
+
 .practice-panel {
   padding: 1.5rem;
   display: grid;
   gap: 1rem;
+}
+
+.practice-main-column,
+.practice-sidebar {
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 6.5rem;
 }
 
 .practice-shell-simple {
@@ -2043,7 +2067,9 @@ body[data-theme="dark"] .comparison-head {
 
 .practice-setup-card {
   display: grid;
-  gap: 1rem;
+  gap: 0.85rem;
+  padding-top: 1.2rem;
+  padding-bottom: 1rem;
 }
 
 .practice-stepper {
@@ -2056,7 +2082,7 @@ body[data-theme="dark"] .comparison-head {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  padding: 0.85rem 1rem;
+  padding: 0.72rem 0.9rem;
   border: 1px solid var(--line);
   border-radius: 1.1rem;
   background: rgba(255, 255, 255, 0.56);
@@ -2088,8 +2114,8 @@ body[data-theme="dark"] .comparison-head {
 
 .practice-wizard {
   display: grid;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.85rem;
+  padding: 0.95rem;
   border: 1px solid var(--line);
   border-radius: 1.5rem;
   background: linear-gradient(180deg, rgba(250, 246, 240, 0.92), rgba(245, 239, 232, 0.72));
@@ -2185,7 +2211,7 @@ body[data-theme="dark"] .comparison-head {
 .practice-topic-list {
   display: grid;
   gap: 0.65rem;
-  max-height: 320px;
+  max-height: 220px;
   overflow: auto;
 }
 
@@ -2207,6 +2233,12 @@ body[data-theme="dark"] .comparison-head {
 .practice-sidebar {
   position: sticky;
   top: 1rem;
+}
+
+.practice-main-insights {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.85rem;
 }
 
 .practice-title {
@@ -2265,6 +2297,33 @@ body[data-theme="dark"] .comparison-head {
   flex-wrap: wrap;
 }
 
+.practice-action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0.9rem;
+  z-index: 48;
+  pointer-events: none;
+}
+
+.practice-action-bar-shell {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1.3rem;
+  background: rgba(255, 249, 242, 0.94);
+  box-shadow: 0 -6px 18px rgba(27, 18, 13, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.practice-action-bar-shell .button {
+  min-width: 9rem;
+}
+
 .practice-collapsible {
   display: grid;
   gap: 0.7rem;
@@ -2291,6 +2350,11 @@ body[data-theme="dark"] .comparison-head {
 .practice-status-copy {
   margin: 0.45rem 0 0.7rem;
   line-height: 1.6;
+}
+
+.practice-meta-compact {
+  font-size: 0.92rem;
+  line-height: 1.55;
 }
 
 .practice-status-row {
@@ -2354,6 +2418,45 @@ body[data-theme="dark"] .comparison-head {
   padding: 1rem;
   display: grid;
   gap: 0.55rem;
+}
+
+.practice-focus-card,
+.practice-answer-plan-card,
+.practice-sidebar-card {
+  padding-top: 0.95rem;
+  padding-bottom: 0.95rem;
+}
+
+.practice-answer-moves {
+  gap: 0.45rem;
+}
+
+.practice-answer-moves .simulation-step {
+  padding: 0.38rem 0.68rem;
+  font-size: 0.84rem;
+}
+
+.practice-run-modes-compact {
+  gap: 0.45rem;
+}
+
+.practice-run-modes-compact .button {
+  padding: 0.6rem 0.85rem;
+  font-size: 0.9rem;
+}
+
+.practice-sidebar-selects {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.practice-collapsible-compact summary {
+  padding: 0.15rem 0;
+}
+
+.practice-form-grid-compact {
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
 }
 
 .practice-tone-card-cool {
@@ -3018,6 +3121,17 @@ body[data-theme="dark"] .marketing-sticky-copy span {
     grid-template-columns: 1fr;
   }
 
+  .practice-page-shell {
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .practice-shell-dashboard {
+    height: auto;
+    overflow: visible;
+  }
+
   .dashboard-momentum-grid {
     grid-template-columns: 1fr;
   }
@@ -3055,6 +3169,13 @@ body[data-theme="dark"] .marketing-sticky-copy span {
 
   .practice-sidebar {
     position: static;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .practice-main-column {
+    overflow: visible;
+    padding-bottom: 0;
   }
 
   .practice-setup-card,
@@ -3064,6 +3185,10 @@ body[data-theme="dark"] .marketing-sticky-copy span {
 
   .practice-stepper,
   .practice-wizard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-main-insights {
     grid-template-columns: 1fr;
   }
 
@@ -3078,6 +3203,22 @@ body[data-theme="dark"] .marketing-sticky-copy span {
 
   .practice-metrics {
     grid-template-columns: 1fr;
+  }
+
+  .practice-action-bar {
+    position: static;
+    pointer-events: auto;
+    margin-top: 1rem;
+  }
+
+  .practice-action-bar-shell {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+  }
+
+  .practice-action-bar-shell .button {
+    width: 100%;
   }
 
   .practice-overlay-card {
