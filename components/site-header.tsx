@@ -2,6 +2,7 @@
 
 import type { Route } from "next";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { copy, languageMeta, localeOptions } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
@@ -546,7 +547,14 @@ export function SiteHeader() {
       <div className="card site-header-card">
         <div className="site-header-brand">
           <Link href="/" className="site-header-logo" onClick={closeMenu}>
-            {content.brand}
+            <Image
+              src="/brand/speakace-logo.jpeg"
+              alt="SpeakAce"
+              width={958}
+              height={330}
+              priority
+              className="site-header-logo-image"
+            />
           </Link>
           <div className="site-header-tagline">{content.tagline}</div>
           {currentUser ? (

@@ -287,8 +287,15 @@ body[data-theme="dark"] .case-study-list li {
 }
 
 .site-header-logo {
-  font-weight: 800;
-  font-size: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  max-width: min(100%, 15.75rem);
+}
+
+.site-header-logo-image {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .site-header-tagline {
@@ -303,6 +310,13 @@ body[data-theme="dark"] .case-study-list li {
   color: var(--accent-cool);
   font-size: 0.85rem;
   margin-top: 0.35rem;
+}
+
+.site-footer-logo {
+  width: min(15rem, 100%);
+  height: auto;
+  display: block;
+  margin-bottom: 0.75rem;
 }
 
 .site-header-desktop {

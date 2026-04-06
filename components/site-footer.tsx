@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
 import { usePathname } from "next/navigation";
@@ -476,7 +477,13 @@ export function SiteFooter() {
       <div className="page-shell card site-footer-card">
         <div className="site-footer-top">
           <div className="site-footer-brand">
-            <span className="eyebrow">{text.eyebrow}</span>
+            <Image
+              src="/brand/speakace-logo.jpeg"
+              alt="SpeakAce"
+              width={958}
+              height={330}
+              className="site-footer-logo"
+            />
             <h2 className="site-footer-brand-title">{text.title}</h2>
             <p className="practice-copy site-footer-brand-copy">{text.description}</p>
           </div>
