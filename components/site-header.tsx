@@ -475,7 +475,7 @@ export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 18);
+    const onScroll = () => setScrolled(window.scrollY > 50);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -513,35 +513,43 @@ export function SiteHeader() {
         </div>
 
         <div className="sa-header-center desktop-nav">
-          <nav className="sa-header-nav">
-            {signedIn ? (
-              <Link href="/app" className={`sa-nav-link${isActive("/app") ? " is-active" : ""}`}>
-                {labels.dashboard}
-              </Link>
-            ) : null}
+          <div className="sa-header-nav-cluster" onMouseLeave={() => setActiveGroup(null)}>
+            <nav className="sa-header-nav">
+              {signedIn ? (
+                <Link href="/app" className={`sa-nav-link${isActive("/app") ? " is-active" : ""}`}>
+                  {labels.dashboard}
+                </Link>
+              ) : null}
 
-            {groups.map((group) => (
-              <div
-                key={group.key}
-                className="sa-nav-group"
-                onMouseEnter={() => setActiveGroup(group.key)}
-                onMouseLeave={() => setActiveGroup((current) => (current === group.key ? null : current))}
-              >
-                <button className={`sa-nav-link sa-nav-trigger${activeGroup === group.key ? " is-open" : ""}`} type="button">
+              {groups.map((group) => (
+                <button
+                  key={group.key}
+                  type="button"
+                  className={`sa-nav-link sa-nav-pill${activeGroup === group.key ? " is-active" : ""}`}
+                  onMouseEnter={() => setActiveGroup(group.key)}
+                >
                   {group.label}
                 </button>
-                <div className={`sa-nav-dropdown${activeGroup === group.key ? " is-open" : ""}`}>
-                  <div className="sa-nav-dropdown-grid">
-                    {group.items.map((item) => (
-                      <Link key={item.href} href={item.href as Route} className={`sa-nav-dropdown-link${isActive(item.href) ? " is-active" : ""}`}>
-                        {item.label}
-                      </Link>
-                    ))}
+              ))}
+            </nav>
+
+            <div className={`sa-mega-menu${activeGroup ? " is-open" : ""}`}>
+              <div className="sa-mega-grid">
+                {groups.map((group) => (
+                  <div key={group.key} className={`sa-mega-column${activeGroup === group.key ? " is-active" : ""}`}>
+                    <strong>{group.label}</strong>
+                    <div className="sa-mega-links">
+                      {group.items.map((item) => (
+                        <Link key={item.href} href={item.href as Route} className={`sa-mega-link${isActive(item.href) ? " is-active" : ""}`}>
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </nav>
+            </div>
+          </div>
         </div>
 
         <div className="sa-header-actions desktop-nav">
@@ -579,11 +587,16 @@ export function SiteHeader() {
           )}
 
           <div className="sa-locale-wrap">
-            <button type="button" className="sa-locale-button" onClick={() => setLocaleOpen((value) => !value)}>
+            <button
+              type="button"
+              className="sa-locale-button"
+              onClick={() => setLocaleOpen((value) => !value)}
+              onMouseEnter={() => setLocaleOpen(true)}
+            >
               <span>{locale.flag}</span>
               <span>{locale.code.toUpperCase()}</span>
             </button>
-            <div className={`sa-locale-dropdown${localeOpen ? " is-open" : ""}`}>
+            <div className={`sa-locale-dropdown${localeOpen ? " is-open" : ""}`} onMouseLeave={() => setLocaleOpen(false)}>
               {localeOptions.map((item) => (
                 <button key={item.code} type="button" className={`sa-locale-option${language === item.code ? " is-active" : ""}`} onClick={() => setLanguage(item.code)}>
                   <span>{item.flag}</span>
