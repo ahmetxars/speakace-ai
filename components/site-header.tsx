@@ -4,9 +4,11 @@ import type { Route } from "next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { copy, languageMeta, localeOptions } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
 import type { NotificationItem } from "@/lib/notifications";
+import { buildPlanCheckoutPath } from "@/lib/commerce";
 
 type NavMenuItem = {
   href: Route;
@@ -441,13 +443,16 @@ const menuItem = (href: Route, label: string): NavMenuItem => ({ href, label });
 
 export function SiteHeader() {
   const { language, setLanguage, signedIn, currentUser, signOut } = useAppState();
+  const pathname = usePathname();
   const content = copy[language];
   const labels = localeText[language];
   const currentLocale = languageMeta[language];
   const [menuOpen, setMenuOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [scrolled, setScrolled] = useState(false);
   const bellRef = useRef<HTMLDivElement | null>(null);
+  const normalizedPath = pathname ? pathname.replace(/\/$/, "") || "/" : "/";
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
@@ -467,6 +472,21 @@ export function SiteHeader() {
       .then((data: { notifications?: NotificationItem[] }) => setNotifications((data.notifications ?? []).slice(0, 5)))
       .catch(() => setNotifications([]));
   }, [currentUser?.id, signedIn]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+    setNotificationOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
@@ -535,6 +555,11 @@ export function SiteHeader() {
     [aboutGroup, exploreGroup, practiceGroup, programsGroup]
   );
 
+  const isPathActive = (href: string) =>
+    normalizedPath === href || (href !== "/" && normalizedPath.startsWith(`${href}/`));
+
+  const isGroupActive = (group: NavGroup) => group.items.some((item) => isPathActive(item.href));
+
   const closeMenu = () => setMenuOpen(false);
   const changeLanguage = (nextLanguage: typeof language) => {
     setLanguage(nextLanguage);
@@ -544,7 +569,7 @@ export function SiteHeader() {
 
   return (
     <header className="page-shell site-header-shell">
-      <div className="card site-header-card">
+      <div className={`card site-header-card${scrolled ? " is-scrolled" : ""}`}>
         <div className="site-header-brand">
           <Link href="/" className="site-header-logo" onClick={closeMenu}>
             <Image
@@ -568,20 +593,26 @@ export function SiteHeader() {
         <div className="site-header-desktop desktop-nav">
           <nav className="site-header-nav site-header-nav-groups">
             {signedIn ? (
-              <Link className="site-header-toplink" href="/app">
+              <Link className="site-header-toplink" href="/app" data-active={normalizedPath === "/app"} aria-current={normalizedPath === "/app" ? "page" : undefined}>
                 {labels.dashboard}
               </Link>
             ) : null}
 
             {[practiceGroup, exploreGroup, programsGroup, aboutGroup].map((group) => (
               <div key={group.label} className="site-header-dropdown site-header-mega">
-                <button type="button" className="site-header-dropdown-trigger">
+                <button type="button" className="site-header-dropdown-trigger" data-active={isGroupActive(group)}>
                   {group.label}
                 </button>
                 <div className="site-header-dropdown-menu card site-header-mega-menu">
                   <div className="site-header-mega-grid">
                     {group.items.map((item) => (
-                      <Link key={item.href} href={item.href} className="site-header-mega-link">
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="site-header-mega-link"
+                        data-active={isPathActive(item.href)}
+                        aria-current={isPathActive(item.href) ? "page" : undefined}
+                      >
                         <strong>{item.label}</strong>
                       </Link>
                     ))}
@@ -601,7 +632,7 @@ export function SiteHeader() {
                   <Link className="button button-ghost button-header-minor" href="/auth?mode=signin">
                     {content.nav.signIn}
                   </Link>
-                  <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_cta">
+                  <a className="button button-primary button-header-plus" href={buildPlanCheckoutPath({ campaign: "header_cta" })}>
                     {labels.getPlus}
                   </a>
                 </>
@@ -783,7 +814,7 @@ export function SiteHeader() {
                 <Link className="button button-ghost" href="/auth?mode=signin" onClick={closeMenu}>
                   {content.nav.signIn}
                 </Link>
-                <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=header_mobile_cta">
+                <a className="button button-primary button-header-plus" href={buildPlanCheckoutPath({ campaign: "header_mobile_cta" })}>
                   {labels.getPlus}
                 </a>
               </>

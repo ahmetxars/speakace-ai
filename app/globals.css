@@ -269,6 +269,9 @@ body[data-theme="dark"] .case-study-list li {
 }
 
 .site-header-shell {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   padding: 1.2rem 0 0.5rem;
 }
 
@@ -278,6 +281,24 @@ body[data-theme="dark"] .case-study-list li {
   gap: 0.8rem 1.5rem;
   align-items: center;
   padding: 0.9rem 1.35rem;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  transition: all 0.3s ease;
+}
+
+.site-header-card.is-scrolled {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(12px);
+}
+
+body[data-theme="dark"] .site-header-card.is-scrolled {
+  background: rgba(20, 24, 30, 0.92);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .site-header-brand {
@@ -484,6 +505,8 @@ body[data-theme="dark"] .mobile-nav-links a {
   font-size: 0.93rem;
   font-weight: 700;
   color: var(--text);
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
 }
 
 .site-header-nav a,
@@ -497,6 +520,18 @@ body[data-theme="dark"] .mobile-nav-links a {
 .site-header-nav a:hover,
 .site-header-dropdown-trigger:hover {
   color: var(--text);
+}
+
+.site-header-toplink[data-active="true"],
+.site-header-nav a[data-active="true"],
+.site-header-dropdown-trigger[data-active="true"] {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.site-header-toplink[data-active="true"],
+.site-header-dropdown-trigger[data-active="true"] {
+  background: rgba(217, 93, 57, 0.08);
 }
 
 .site-header-dropdown {
@@ -521,7 +556,8 @@ body[data-theme="dark"] .mobile-nav-links a {
 .site-header-dropdown-trigger {
   border: 0;
   background: transparent;
-  padding: 0.2rem 0;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
   cursor: pointer;
 }
 
@@ -591,6 +627,10 @@ body[data-theme="dark"] .mobile-nav-links a {
   background: var(--surface-strong);
 }
 
+.site-header-mega-link[data-active="true"] {
+  background: rgba(217, 93, 57, 0.08);
+}
+
 .site-header-mega-link:hover span,
 .site-header-mega-link:hover strong {
   color: var(--text);
@@ -656,6 +696,11 @@ body[data-theme="dark"] .mobile-nav-links a {
 
 .site-header-actions .button-primary {
   box-shadow: 0 12px 24px rgba(217, 93, 57, 0.16);
+}
+
+.site-header-actions .button-primary.button-header-plus:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(217, 93, 57, 0.22);
 }
 
 .button-header-minor {

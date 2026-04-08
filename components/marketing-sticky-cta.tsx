@@ -11,22 +11,31 @@ export function MarketingStickyCta() {
 
   if (!pathname) return null;
   if (pathname.startsWith("/app") || pathname.startsWith("/auth") || pathname.startsWith("/admin")) return null;
-  if (pathname === "/") return null;
+  if (!(pathname === "/pricing" || pathname.startsWith("/blog"))) return null;
   if (signedIn && currentUser?.plan && currentUser.plan !== "free") return null;
+  const isPricingPage = pathname === "/pricing";
 
   return (
     <div className="marketing-sticky-cta">
       <div className="marketing-sticky-copy">
-        <strong>{tr ? "Plus ile daha hizli gelis" : "Grow faster with Plus"}</strong>
+        <strong>{tr ? "Plus ile daha hızlı geliş" : "Grow faster with Plus"}</strong>
         <span>
-          {tr
-            ? `${commerceConfig.plusMonthlyPrice} · ${couponCatalog.LAUNCH20.code} ile erken destekci indirimi`
-            : `${commerceConfig.plusMonthlyPrice} · early supporter offer with ${couponCatalog.LAUNCH20.code}`}
+          {isPricingPage
+            ? tr
+              ? `${commerceConfig.plusMonthlyPrice} · ${couponCatalog.LAUNCH20.code} ile erken destekçi indirimi`
+              : `${commerceConfig.plusMonthlyPrice} · early supporter offer with ${couponCatalog.LAUNCH20.code}`
+            : tr
+              ? `${commerceConfig.plusMonthlyPrice} · Tam geri bildirim ve daha fazla speaking oturumu`
+              : `${commerceConfig.plusMonthlyPrice} · Full feedback and more speaking sessions`}
         </span>
       </div>
       <a
         className="button button-primary"
-        href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "sticky_cta" })}
+        href={
+          isPricingPage
+            ? buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "sticky_cta" })
+            : buildPlanCheckoutPath({ campaign: "sticky_cta" })
+        }
       >
         {tr ? "Plus'i ac" : "Unlock Plus"}
       </a>
