@@ -1,619 +1,540 @@
 "use client";
 
 import type { Route } from "next";
-import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { copy, languageMeta, localeOptions } from "@/lib/copy";
+import { useEffect, useMemo, useState } from "react";
+import { copy, languageMeta, localeOptions, type Language } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
-import type { NotificationItem } from "@/lib/notifications";
 import { buildPlanCheckoutPath } from "@/lib/commerce";
 
-type NavMenuItem = {
-  href: Route;
-  label: string;
+type HeaderLabels = {
+  practice: string;
+  explore: string;
+  programs: string;
+  about: string;
+  freeTest: string;
+  tools: string;
+  topics: string;
+  blog: string;
+  reviews: string;
+  resources: string;
+  students: string;
+  teachers: string;
+  schools: string;
+  demo: string;
+  caseStudies: string;
+  compare: string;
+  dashboard: string;
+  profile: string;
+  billing: string;
+  settings: string;
+  signUp: string;
+  signIn: string;
+  signOut: string;
+  account: string;
+  notifications: string;
+  menu: string;
+  close: string;
 };
 
-type NavGroup = {
-  label: string;
-  items: NavMenuItem[];
-};
-
-const localeText = {
+const headerLabels: Record<Language, HeaderLabels> = {
   en: {
     practice: "Practice",
     explore: "Explore",
     programs: "Programs",
     about: "About",
-    speakingPractice: "Speaking practice",
-    tools: "Tools",
     freeTest: "Free test",
-    dailyPrompt: "Daily prompt",
-    resources: "Resources",
+    tools: "Tools",
+    topics: "IELTS topics",
+    blog: "Blog",
     reviews: "Reviews",
+    resources: "Resources",
     students: "Students",
     teachers: "Teachers",
     schools: "Schools",
-    demoClass: "Demo class",
-    whoIsSpeakAce: "Who is SpeakAce?",
+    demo: "Demo class",
     caseStudies: "Case studies",
-    successStories: "Success stories",
     compare: "Compare",
     dashboard: "Dashboard",
-    signUp: "Sign up",
-    getPlus: "Get Plus",
-    notifications: "Notifications",
-    viewAll: "View all",
-    noNotifications: "No new notifications right now.",
-    account: "Account",
     profile: "Profile",
-    teacherPanel: "Teacher panel",
-    quickAccess: "Quick access",
-    openMenu: "Open menu",
-    closeMenu: "Close menu"
+    billing: "Billing",
+    settings: "Settings",
+    signUp: "Sign up",
+    signIn: "Sign in",
+    signOut: "Sign out",
+    account: "Account",
+    notifications: "Notifications",
+    menu: "Menu",
+    close: "Close"
   },
   tr: {
     practice: "Pratik",
     explore: "Keşfet",
     programs: "Programlar",
     about: "Hakkımızda",
-    speakingPractice: "Speaking practice",
-    tools: "Araçlar",
     freeTest: "Ücretsiz test",
-    dailyPrompt: "Günlük prompt",
-    resources: "Kaynaklar",
+    tools: "Araçlar",
+    topics: "IELTS konuları",
+    blog: "Blog",
     reviews: "Yorumlar",
+    resources: "Kaynaklar",
     students: "Öğrenciler",
     teachers: "Öğretmenler",
     schools: "Kurumlar",
-    demoClass: "Demo sınıf",
-    whoIsSpeakAce: "SpeakAce kimdir?",
-    caseStudies: "Örnekler",
-    successStories: "Başarı hikayeleri",
+    demo: "Demo sınıf",
+    caseStudies: "Vaka örnekleri",
     compare: "Karşılaştır",
     dashboard: "Panel",
-    signUp: "Kayıt ol",
-    getPlus: "Plus al",
-    notifications: "Bildirimler",
-    viewAll: "Tümünü gör",
-    noNotifications: "Şu an yeni bildirim yok.",
-    account: "Hesap",
     profile: "Profil",
-    teacherPanel: "Öğretmen paneli",
-    quickAccess: "Hızlı giriş",
-    openMenu: "Menüyü aç",
-    closeMenu: "Menüyü kapat"
+    billing: "Ödeme",
+    settings: "Ayarlar",
+    signUp: "Kayıt ol",
+    signIn: "Giriş yap",
+    signOut: "Çıkış yap",
+    account: "Hesap",
+    notifications: "Bildirimler",
+    menu: "Menü",
+    close: "Kapat"
   },
   de: {
     practice: "Üben",
     explore: "Entdecken",
     programs: "Programme",
     about: "Über uns",
-    speakingPractice: "Sprechtraining",
-    tools: "Tools",
     freeTest: "Gratis-Test",
-    dailyPrompt: "Täglicher Prompt",
-    resources: "Ressourcen",
+    tools: "Tools",
+    topics: "IELTS-Themen",
+    blog: "Blog",
     reviews: "Bewertungen",
+    resources: "Ressourcen",
     students: "Lernende",
     teachers: "Lehrkräfte",
     schools: "Schulen",
-    demoClass: "Demo-Klasse",
-    whoIsSpeakAce: "Wer ist SpeakAce?",
+    demo: "Demo-Klasse",
     caseStudies: "Fallstudien",
-    successStories: "Erfolgsgeschichten",
     compare: "Vergleichen",
     dashboard: "Dashboard",
-    signUp: "Registrieren",
-    getPlus: "Plus holen",
-    notifications: "Benachrichtigungen",
-    viewAll: "Alle anzeigen",
-    noNotifications: "Zurzeit keine neuen Benachrichtigungen.",
-    account: "Konto",
     profile: "Profil",
-    teacherPanel: "Lehrerbereich",
-    quickAccess: "Schnellzugriff",
-    openMenu: "Menü öffnen",
-    closeMenu: "Menü schließen"
+    billing: "Abrechnung",
+    settings: "Einstellungen",
+    signUp: "Registrieren",
+    signIn: "Anmelden",
+    signOut: "Abmelden",
+    account: "Konto",
+    notifications: "Benachrichtigungen",
+    menu: "Menü",
+    close: "Schließen"
   },
   es: {
     practice: "Practicar",
     explore: "Explorar",
     programs: "Programas",
     about: "Nosotros",
-    speakingPractice: "Práctica oral",
-    tools: "Herramientas",
     freeTest: "Prueba gratis",
-    dailyPrompt: "Prompt diario",
-    resources: "Recursos",
+    tools: "Herramientas",
+    topics: "Temas IELTS",
+    blog: "Blog",
     reviews: "Opiniones",
+    resources: "Recursos",
     students: "Estudiantes",
     teachers: "Profesores",
     schools: "Escuelas",
-    demoClass: "Clase demo",
-    whoIsSpeakAce: "¿Quién es SpeakAce?",
-    caseStudies: "Casos reales",
-    successStories: "Historias de éxito",
+    demo: "Clase demo",
+    caseStudies: "Casos",
     compare: "Comparar",
     dashboard: "Panel",
-    signUp: "Crear cuenta",
-    getPlus: "Obtener Plus",
-    notifications: "Notificaciones",
-    viewAll: "Ver todo",
-    noNotifications: "No hay notificaciones nuevas por ahora.",
-    account: "Cuenta",
     profile: "Perfil",
-    teacherPanel: "Panel docente",
-    quickAccess: "Acceso rápido",
-    openMenu: "Abrir menú",
-    closeMenu: "Cerrar menú"
+    billing: "Pagos",
+    settings: "Ajustes",
+    signUp: "Crear cuenta",
+    signIn: "Entrar",
+    signOut: "Salir",
+    account: "Cuenta",
+    notifications: "Notificaciones",
+    menu: "Menú",
+    close: "Cerrar"
   },
   fr: {
     practice: "Pratique",
     explore: "Explorer",
     programs: "Programmes",
     about: "À propos",
-    speakingPractice: "Pratique orale",
-    tools: "Outils",
     freeTest: "Test gratuit",
-    dailyPrompt: "Prompt du jour",
-    resources: "Ressources",
+    tools: "Outils",
+    topics: "Sujets IELTS",
+    blog: "Blog",
     reviews: "Avis",
+    resources: "Ressources",
     students: "Étudiants",
     teachers: "Enseignants",
     schools: "Écoles",
-    demoClass: "Classe démo",
-    whoIsSpeakAce: "Qui est SpeakAce ?",
+    demo: "Classe démo",
     caseStudies: "Études de cas",
-    successStories: "Histoires de réussite",
     compare: "Comparer",
     dashboard: "Tableau",
-    signUp: "Créer un compte",
-    getPlus: "Passer à Plus",
-    notifications: "Notifications",
-    viewAll: "Voir tout",
-    noNotifications: "Aucune nouvelle notification pour le moment.",
-    account: "Compte",
     profile: "Profil",
-    teacherPanel: "Espace enseignant",
-    quickAccess: "Accès rapide",
-    openMenu: "Ouvrir le menu",
-    closeMenu: "Fermer le menu"
+    billing: "Paiement",
+    settings: "Réglages",
+    signUp: "Créer un compte",
+    signIn: "Connexion",
+    signOut: "Déconnexion",
+    account: "Compte",
+    notifications: "Notifications",
+    menu: "Menu",
+    close: "Fermer"
   },
   it: {
     practice: "Pratica",
     explore: "Esplora",
     programs: "Programmi",
     about: "Chi siamo",
-    speakingPractice: "Pratica speaking",
-    tools: "Strumenti",
     freeTest: "Test gratuito",
-    dailyPrompt: "Prompt del giorno",
-    resources: "Risorse",
+    tools: "Strumenti",
+    topics: "Argomenti IELTS",
+    blog: "Blog",
     reviews: "Recensioni",
+    resources: "Risorse",
     students: "Studenti",
     teachers: "Docenti",
     schools: "Scuole",
-    demoClass: "Classe demo",
-    whoIsSpeakAce: "Chi è SpeakAce?",
+    demo: "Classe demo",
     caseStudies: "Casi studio",
-    successStories: "Storie di successo",
     compare: "Confronta",
     dashboard: "Dashboard",
-    signUp: "Registrati",
-    getPlus: "Passa a Plus",
-    notifications: "Notifiche",
-    viewAll: "Vedi tutto",
-    noNotifications: "Nessuna nuova notifica al momento.",
-    account: "Account",
     profile: "Profilo",
-    teacherPanel: "Area docente",
-    quickAccess: "Accesso rapido",
-    openMenu: "Apri menu",
-    closeMenu: "Chiudi menu"
+    billing: "Pagamenti",
+    settings: "Impostazioni",
+    signUp: "Registrati",
+    signIn: "Accedi",
+    signOut: "Esci",
+    account: "Account",
+    notifications: "Notifiche",
+    menu: "Menu",
+    close: "Chiudi"
   },
   pt: {
     practice: "Praticar",
     explore: "Explorar",
     programs: "Programas",
     about: "Sobre",
-    speakingPractice: "Prática oral",
-    tools: "Ferramentas",
     freeTest: "Teste grátis",
-    dailyPrompt: "Prompt diário",
-    resources: "Recursos",
+    tools: "Ferramentas",
+    topics: "Tópicos IELTS",
+    blog: "Blog",
     reviews: "Avaliações",
+    resources: "Recursos",
     students: "Alunos",
     teachers: "Professores",
     schools: "Escolas",
-    demoClass: "Turma demo",
-    whoIsSpeakAce: "Quem é a SpeakAce?",
-    caseStudies: "Casos de uso",
-    successStories: "Histórias de sucesso",
+    demo: "Turma demo",
+    caseStudies: "Casos",
     compare: "Comparar",
     dashboard: "Painel",
-    signUp: "Criar conta",
-    getPlus: "Obter Plus",
-    notifications: "Notificações",
-    viewAll: "Ver tudo",
-    noNotifications: "Nenhuma notificação nova no momento.",
-    account: "Conta",
     profile: "Perfil",
-    teacherPanel: "Painel do professor",
-    quickAccess: "Acesso rápido",
-    openMenu: "Abrir menu",
-    closeMenu: "Fechar menu"
+    billing: "Cobrança",
+    settings: "Configurações",
+    signUp: "Criar conta",
+    signIn: "Entrar",
+    signOut: "Sair",
+    account: "Conta",
+    notifications: "Notificações",
+    menu: "Menu",
+    close: "Fechar"
   },
   nl: {
     practice: "Oefenen",
     explore: "Ontdekken",
     programs: "Programma's",
     about: "Over ons",
-    speakingPractice: "Spreekoefening",
-    tools: "Tools",
     freeTest: "Gratis test",
-    dailyPrompt: "Dagelijkse prompt",
-    resources: "Bronnen",
+    tools: "Tools",
+    topics: "IELTS-onderwerpen",
+    blog: "Blog",
     reviews: "Reviews",
+    resources: "Bronnen",
     students: "Studenten",
     teachers: "Docenten",
     schools: "Scholen",
-    demoClass: "Demo-les",
-    whoIsSpeakAce: "Wie is SpeakAce?",
+    demo: "Demo-les",
     caseStudies: "Praktijkvoorbeelden",
-    successStories: "Succesverhalen",
     compare: "Vergelijken",
     dashboard: "Dashboard",
-    signUp: "Registreren",
-    getPlus: "Neem Plus",
-    notifications: "Meldingen",
-    viewAll: "Alles bekijken",
-    noNotifications: "Er zijn nu geen nieuwe meldingen.",
-    account: "Account",
     profile: "Profiel",
-    teacherPanel: "Docentenpaneel",
-    quickAccess: "Snelle toegang",
-    openMenu: "Menu openen",
-    closeMenu: "Menu sluiten"
+    billing: "Facturatie",
+    settings: "Instellingen",
+    signUp: "Registreren",
+    signIn: "Inloggen",
+    signOut: "Uitloggen",
+    account: "Account",
+    notifications: "Meldingen",
+    menu: "Menu",
+    close: "Sluiten"
   },
   pl: {
     practice: "Ćwiczenia",
     explore: "Odkrywaj",
     programs: "Programy",
     about: "O nas",
-    speakingPractice: "Praktyka mówienia",
-    tools: "Narzędzia",
     freeTest: "Darmowy test",
-    dailyPrompt: "Codzienny prompt",
-    resources: "Materiały",
+    tools: "Narzędzia",
+    topics: "Tematy IELTS",
+    blog: "Blog",
     reviews: "Opinie",
+    resources: "Materiały",
     students: "Uczniowie",
     teachers: "Nauczyciele",
     schools: "Szkoły",
-    demoClass: "Klasa demo",
-    whoIsSpeakAce: "Kim jest SpeakAce?",
+    demo: "Klasa demo",
     caseStudies: "Studia przypadków",
-    successStories: "Historie sukcesu",
     compare: "Porównaj",
     dashboard: "Panel",
-    signUp: "Załóż konto",
-    getPlus: "Kup Plus",
-    notifications: "Powiadomienia",
-    viewAll: "Zobacz wszystko",
-    noNotifications: "Brak nowych powiadomień.",
-    account: "Konto",
     profile: "Profil",
-    teacherPanel: "Panel nauczyciela",
-    quickAccess: "Szybki dostęp",
-    openMenu: "Otwórz menu",
-    closeMenu: "Zamknij menu"
+    billing: "Płatności",
+    settings: "Ustawienia",
+    signUp: "Załóż konto",
+    signIn: "Zaloguj się",
+    signOut: "Wyloguj się",
+    account: "Konto",
+    notifications: "Powiadomienia",
+    menu: "Menu",
+    close: "Zamknij"
   },
   ru: {
     practice: "Практика",
     explore: "Обзор",
     programs: "Программы",
     about: "О нас",
-    speakingPractice: "Практика speaking",
-    tools: "Инструменты",
     freeTest: "Бесплатный тест",
-    dailyPrompt: "Ежедневный prompt",
-    resources: "Материалы",
+    tools: "Инструменты",
+    topics: "Темы IELTS",
+    blog: "Блог",
     reviews: "Отзывы",
+    resources: "Материалы",
     students: "Студенты",
     teachers: "Преподаватели",
     schools: "Школы",
-    demoClass: "Демо-класс",
-    whoIsSpeakAce: "Кто такой SpeakAce?",
+    demo: "Демо-класс",
     caseStudies: "Кейсы",
-    successStories: "Истории успеха",
     compare: "Сравнить",
     dashboard: "Панель",
-    signUp: "Регистрация",
-    getPlus: "Купить Plus",
-    notifications: "Уведомления",
-    viewAll: "Смотреть все",
-    noNotifications: "Сейчас нет новых уведомлений.",
-    account: "Аккаунт",
     profile: "Профиль",
-    teacherPanel: "Панель преподавателя",
-    quickAccess: "Быстрый доступ",
-    openMenu: "Открыть меню",
-    closeMenu: "Закрыть меню"
+    billing: "Оплата",
+    settings: "Настройки",
+    signUp: "Регистрация",
+    signIn: "Войти",
+    signOut: "Выйти",
+    account: "Аккаунт",
+    notifications: "Уведомления",
+    menu: "Меню",
+    close: "Закрыть"
   },
   ar: {
     practice: "التدريب",
     explore: "استكشاف",
     programs: "البرامج",
     about: "من نحن",
-    speakingPractice: "تدريب المحادثة",
-    tools: "الأدوات",
     freeTest: "اختبار مجاني",
-    dailyPrompt: "مهمة يومية",
-    resources: "المصادر",
+    tools: "الأدوات",
+    topics: "مواضيع IELTS",
+    blog: "المدونة",
     reviews: "التقييمات",
+    resources: "المصادر",
     students: "الطلاب",
     teachers: "المعلمون",
     schools: "المدارس",
-    demoClass: "حصة تجريبية",
-    whoIsSpeakAce: "من هي SpeakAce؟",
+    demo: "حصة تجريبية",
     caseStudies: "دراسات حالة",
-    successStories: "قصص نجاح",
     compare: "قارن",
     dashboard: "اللوحة",
-    signUp: "إنشاء حساب",
-    getPlus: "احصل على Plus",
-    notifications: "الإشعارات",
-    viewAll: "عرض الكل",
-    noNotifications: "لا توجد إشعارات جديدة الآن.",
-    account: "الحساب",
     profile: "الملف الشخصي",
-    teacherPanel: "لوحة المعلم",
-    quickAccess: "وصول سريع",
-    openMenu: "فتح القائمة",
-    closeMenu: "إغلاق القائمة"
+    billing: "الفوترة",
+    settings: "الإعدادات",
+    signUp: "إنشاء حساب",
+    signIn: "تسجيل الدخول",
+    signOut: "تسجيل الخروج",
+    account: "الحساب",
+    notifications: "الإشعارات",
+    menu: "القائمة",
+    close: "إغلاق"
   },
   ja: {
     practice: "練習",
     explore: "見る",
     programs: "プログラム",
-    about: "About",
-    speakingPractice: "スピーキング練習",
-    tools: "ツール",
+    about: "概要",
     freeTest: "無料テスト",
-    dailyPrompt: "今日のプロンプト",
-    resources: "リソース",
+    tools: "ツール",
+    topics: "IELTSトピック",
+    blog: "ブログ",
     reviews: "レビュー",
+    resources: "リソース",
     students: "受講者",
     teachers: "教師",
     schools: "学校",
-    demoClass: "デモクラス",
-    whoIsSpeakAce: "SpeakAceとは？",
+    demo: "デモクラス",
     caseStudies: "事例",
-    successStories: "成功事例",
     compare: "比較",
     dashboard: "ダッシュボード",
-    signUp: "登録",
-    getPlus: "Plusにする",
-    notifications: "通知",
-    viewAll: "すべて見る",
-    noNotifications: "新しい通知はありません。",
-    account: "アカウント",
     profile: "プロフィール",
-    teacherPanel: "教師パネル",
-    quickAccess: "クイックアクセス",
-    openMenu: "メニューを開く",
-    closeMenu: "メニューを閉じる"
+    billing: "請求",
+    settings: "設定",
+    signUp: "登録",
+    signIn: "ログイン",
+    signOut: "ログアウト",
+    account: "アカウント",
+    notifications: "通知",
+    menu: "メニュー",
+    close: "閉じる"
   },
   ko: {
     practice: "연습",
     explore: "탐색",
     programs: "프로그램",
     about: "소개",
-    speakingPractice: "스피킹 연습",
-    tools: "도구",
     freeTest: "무료 테스트",
-    dailyPrompt: "오늘의 프롬프트",
-    resources: "리소스",
+    tools: "도구",
+    topics: "IELTS 주제",
+    blog: "블로그",
     reviews: "후기",
+    resources: "리소스",
     students: "학생",
     teachers: "교사",
     schools: "학교",
-    demoClass: "데모 수업",
-    whoIsSpeakAce: "SpeakAce는 누구인가요?",
+    demo: "데모 수업",
     caseStudies: "사례 연구",
-    successStories: "성공 사례",
     compare: "비교",
     dashboard: "대시보드",
-    signUp: "회원가입",
-    getPlus: "플러스 받기",
-    notifications: "알림",
-    viewAll: "전체 보기",
-    noNotifications: "새 알림이 없습니다.",
-    account: "계정",
     profile: "프로필",
-    teacherPanel: "교사용 패널",
-    quickAccess: "빠른 이동",
-    openMenu: "메뉴 열기",
-    closeMenu: "메뉴 닫기"
+    billing: "결제",
+    settings: "설정",
+    signUp: "회원가입",
+    signIn: "로그인",
+    signOut: "로그아웃",
+    account: "계정",
+    notifications: "알림",
+    menu: "메뉴",
+    close: "닫기"
   }
-} as const;
+};
 
-const menuItem = (href: Route, label: string): NavMenuItem => ({ href, label });
+const navGroups = (labels: HeaderLabels) => [
+  {
+    key: "practice",
+    label: labels.practice,
+    items: [
+      { href: "/app/practice", label: labels.practice },
+      { href: "/free-ielts-speaking-test", label: labels.freeTest },
+      { href: "/ielts-speaking-topics", label: labels.topics },
+      { href: "/tools", label: labels.tools }
+    ]
+  },
+  {
+    key: "resources",
+    label: labels.explore,
+    items: [
+      { href: "/resources", label: labels.resources },
+      { href: "/blog", label: labels.blog },
+      { href: "/reviews", label: labels.reviews },
+      { href: "/pricing", label: copy.en.nav.pricing }
+    ]
+  },
+  {
+    key: "programs",
+    label: labels.programs,
+    items: [
+      { href: "/for-students", label: labels.students },
+      { href: "/for-teachers", label: labels.teachers },
+      { href: "/for-schools", label: labels.schools },
+      { href: "/teacher-demo", label: labels.demo }
+    ]
+  },
+  {
+    key: "about",
+    label: labels.about,
+    items: [
+      { href: "/about", label: labels.about },
+      { href: "/case-studies", label: labels.caseStudies },
+      { href: "/compare", label: labels.compare }
+    ]
+  }
+];
 
 export function SiteHeader() {
+  const pathname = usePathname() ?? "/";
   const { language, setLanguage, signedIn, currentUser, signOut } = useAppState();
-  const pathname = usePathname();
   const content = copy[language];
-  const labels = localeText[language];
-  const currentLocale = languageMeta[language];
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [notificationOpen, setNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const labels = headerLabels[language];
+  const locale = languageMeta[language];
+  const groups = useMemo(() => navGroups(labels), [labels]);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [localeOpen, setLocaleOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const bellRef = useRef<HTMLDivElement | null>(null);
-  const normalizedPath = pathname ? pathname.replace(/\/$/, "") || "/" : "/";
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
+    const onScroll = () => setScrolled(window.scrollY > 18);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [menuOpen]);
+  }, [mobileOpen]);
 
   useEffect(() => {
-    if (!signedIn || !currentUser?.id) {
-      setNotifications([]);
-      return;
-    }
-
-    fetch("/api/notifications")
-      .then((response) => response.json())
-      .then((data: { notifications?: NotificationItem[] }) => setNotifications((data.notifications ?? []).slice(0, 5)))
-      .catch(() => setNotifications([]));
-  }, [currentUser?.id, signedIn]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    setMenuOpen(false);
-    setNotificationOpen(false);
+    setMobileOpen(false);
+    setActiveGroup(null);
+    setLocaleOpen(false);
+    setAccountOpen(false);
   }, [pathname]);
 
-  useEffect(() => {
-    const handleClick = (event: MouseEvent) => {
-      if (!bellRef.current?.contains(event.target as Node)) {
-        setNotificationOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  const practiceGroup = useMemo<NavGroup>(
-    () => ({
-      label: labels.practice,
-      items: [
-        menuItem("/app/practice", labels.speakingPractice),
-        menuItem("/tools", labels.tools),
-        menuItem("/free-ielts-speaking-test", labels.freeTest),
-        menuItem("/daily-ielts-speaking-prompt", labels.dailyPrompt)
-      ]
-    }),
-    [labels]
-  );
-
-  const exploreGroup = useMemo<NavGroup>(
-    () => ({
-      label: labels.explore,
-      items: [
-        menuItem("/resources", labels.resources),
-        menuItem("/blog", "Blog"),
-        menuItem("/reviews", labels.reviews),
-        menuItem("/pricing", content.nav.pricing)
-      ]
-    }),
-    [content.nav.pricing, labels]
-  );
-
-  const programsGroup = useMemo<NavGroup>(
-    () => ({
-      label: labels.programs,
-      items: [
-        menuItem("/for-students", labels.students),
-        menuItem("/for-teachers", labels.teachers),
-        menuItem("/for-schools", labels.schools),
-        menuItem("/teacher-demo", labels.demoClass)
-      ]
-    }),
-    [labels]
-  );
-
-  const aboutGroup = useMemo<NavGroup>(
-    () => ({
-      label: labels.about,
-      items: [
-        menuItem("/about", labels.whoIsSpeakAce),
-        menuItem("/case-studies", labels.caseStudies),
-        menuItem("/success-stories", labels.successStories),
-        menuItem("/compare", labels.compare)
-      ]
-    }),
-    [labels]
-  );
-
-  const mobileGroups = useMemo(
-    () => [practiceGroup, exploreGroup, programsGroup, aboutGroup],
-    [aboutGroup, exploreGroup, practiceGroup, programsGroup]
-  );
-
-  const isPathActive = (href: string) =>
-    normalizedPath === href || (href !== "/" && normalizedPath.startsWith(`${href}/`));
-
-  const isGroupActive = (group: NavGroup) => group.items.some((item) => isPathActive(item.href));
-
-  const closeMenu = () => setMenuOpen(false);
-  const changeLanguage = (nextLanguage: typeof language) => {
-    setLanguage(nextLanguage);
-    setMenuOpen(false);
-    setNotificationOpen(false);
-  };
+  const isActive = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
 
   return (
-    <header className="page-shell site-header-shell">
-      <div className={`card site-header-card${scrolled ? " is-scrolled" : ""}`}>
-        <div className="site-header-brand">
-          <Link href="/" className="site-header-logo" onClick={closeMenu}>
-            <Image
-              src="/brand/speakace-logo.png"
-              alt="SpeakAce"
-              width={958}
-              height={330}
-              priority
-              className="site-header-logo-image"
-            />
+    <header className="page-shell sa-header-shell">
+      <div className={`card sa-header${scrolled ? " is-scrolled" : ""}`}>
+        <div className="sa-header-brand">
+          <Link href="/" className="sa-header-logo">
+            <Image src="/brand/speakace-logo.png" alt="SpeakAce" width={958} height={330} priority className="sa-header-logo-image" />
           </Link>
-          <div className="site-header-tagline">{content.tagline}</div>
+          <p className="sa-header-tagline">{content.tagline}</p>
           {currentUser ? (
-            <div className="site-header-userline">
+            <span className="sa-header-userline">
               {currentUser.name} · {currentUser.plan.toUpperCase()}
-              {currentUser.isTeacher ? ` · ${labels.teachers.toUpperCase()}` : ""}
-            </div>
+            </span>
           ) : null}
         </div>
 
-        <div className="site-header-desktop desktop-nav">
-          <nav className="site-header-nav site-header-nav-groups">
+        <div className="sa-header-center desktop-nav">
+          <nav className="sa-header-nav">
             {signedIn ? (
-              <Link className="site-header-toplink" href="/app" data-active={normalizedPath === "/app"} aria-current={normalizedPath === "/app" ? "page" : undefined}>
+              <Link href="/app" className={`sa-nav-link${isActive("/app") ? " is-active" : ""}`}>
                 {labels.dashboard}
               </Link>
             ) : null}
 
-            {[practiceGroup, exploreGroup, programsGroup, aboutGroup].map((group) => (
-              <div key={group.label} className="site-header-dropdown site-header-mega">
-                <button type="button" className="site-header-dropdown-trigger" data-active={isGroupActive(group)}>
+            {groups.map((group) => (
+              <div
+                key={group.key}
+                className="sa-nav-group"
+                onMouseEnter={() => setActiveGroup(group.key)}
+                onMouseLeave={() => setActiveGroup((current) => (current === group.key ? null : current))}
+              >
+                <button className={`sa-nav-link sa-nav-trigger${activeGroup === group.key ? " is-open" : ""}`} type="button">
                   {group.label}
                 </button>
-                <div className="site-header-dropdown-menu card site-header-mega-menu">
-                  <div className="site-header-mega-grid">
+                <div className={`sa-nav-dropdown${activeGroup === group.key ? " is-open" : ""}`}>
+                  <div className="sa-nav-dropdown-grid">
                     {group.items.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className="site-header-mega-link"
-                        data-active={isPathActive(item.href)}
-                        aria-current={isPathActive(item.href) ? "page" : undefined}
-                      >
-                        <strong>{item.label}</strong>
+                      <Link key={item.href} href={item.href as Route} className={`sa-nav-dropdown-link${isActive(item.href) ? " is-active" : ""}`}>
+                        {item.label}
                       </Link>
                     ))}
                   </div>
@@ -621,226 +542,128 @@ export function SiteHeader() {
               </div>
             ))}
           </nav>
+        </div>
 
-          <div className="site-header-utility">
-            <div className="site-header-actions">
-              {!signedIn ? (
-                <>
-                  <Link className="button button-secondary button-header-minor" href="/auth?mode=signup">
-                    {labels.signUp}
-                  </Link>
-                  <Link className="button button-ghost button-header-minor" href="/auth?mode=signin">
-                    {content.nav.signIn}
-                  </Link>
-                  <a className="button button-primary button-header-plus" href={buildPlanCheckoutPath({ campaign: "header_cta" })}>
-                    {labels.getPlus}
-                  </a>
-                </>
-              ) : (
-                <>
-                  <div className="notification-bell-wrap" ref={bellRef}>
-                    <button
-                      className="notification-bell"
-                      type="button"
-                      aria-label={labels.notifications}
-                      aria-expanded={notificationOpen}
-                      onClick={() => setNotificationOpen((value) => !value)}
-                    >
-                      <span className="notification-bell-icon">🔔</span>
-                      {notifications.length ? <span className="notification-bell-count">{Math.min(notifications.length, 9)}</span> : null}
-                    </button>
-                    {notificationOpen ? (
-                      <div className="notification-dropdown card">
-                        <div className="notification-dropdown-head">
-                          <strong>{labels.notifications}</strong>
-                          <Link href="/app/notifications" onClick={() => setNotificationOpen(false)}>
-                            {labels.viewAll}
-                          </Link>
-                        </div>
-                        <div className="notification-dropdown-list">
-                          {notifications.length ? (
-                            notifications.map((item) => (
-                              <a
-                                key={item.id}
-                                href={item.href ?? "/app/notifications"}
-                                className={`notification-dropdown-item is-${item.level}`}
-                                onClick={() => setNotificationOpen(false)}
-                              >
-                                <strong>{item.title}</strong>
-                                <span>{item.body}</span>
-                              </a>
-                            ))
-                          ) : (
-                            <div className="notification-dropdown-empty">{labels.noNotifications}</div>
-                          )}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="site-header-dropdown site-header-mega">
-                    <button type="button" className="button button-secondary button-header-minor">
-                      {labels.account}
-                    </button>
-                    <div className="site-header-dropdown-menu card site-header-mega-menu site-header-account-menu">
-                      <div className="site-header-mega-grid">
-                        <Link href="/app/profile" className="site-header-mega-link">
-                          <strong>{labels.profile}</strong>
-                        </Link>
-                        <Link href="/app/billing" className="site-header-mega-link">
-                          <strong>{content.nav.billing}</strong>
-                        </Link>
-                        <Link href="/app/settings" className="site-header-mega-link">
-                          <strong>{content.nav.settings}</strong>
-                        </Link>
-                        {currentUser?.isTeacher ? (
-                          <Link href="/app/teacher" className="site-header-mega-link">
-                            <strong>{labels.teacherPanel}</strong>
-                          </Link>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                  <button className="button button-ghost button-header-minor" type="button" onClick={() => void signOut()}>
-                    {content.nav.signOut}
-                  </button>
-                </>
-              )}
-            </div>
-            <div className="site-header-dropdown site-header-locale-dropdown">
-              <button className="button button-locale button-locale-trigger" type="button" aria-label="Change language">
-                <span className="button-locale-flag" aria-hidden="true">{currentLocale.flag}</span>
-                <span>{currentLocale.code.toUpperCase()}</span>
-              </button>
-              <div className="site-header-dropdown-menu card site-header-locale-menu">
-                {localeOptions.map((locale) => (
-                  <button
-                    key={locale.code}
-                    className="site-header-locale-option"
-                    type="button"
-                    onClick={() => changeLanguage(locale.code)}
-                    data-active={language === locale.code}
-                  >
-                    <span aria-hidden="true">{locale.flag}</span>
-                    <span>{locale.nativeLabel}</span>
-                  </button>
-                ))}
+        <div className="sa-header-actions desktop-nav">
+          {signedIn ? (
+            <>
+              <Link href="/app/notifications" className="sa-icon-button" aria-label={labels.notifications}>
+                🔔
+              </Link>
+              <div className="sa-account-wrap">
+                <button type="button" className="sa-secondary-button" onClick={() => setAccountOpen((value) => !value)}>
+                  {labels.account}
+                </button>
+                <div className={`sa-account-dropdown${accountOpen ? " is-open" : ""}`}>
+                  <Link href="/app/profile">{labels.profile}</Link>
+                  <Link href="/app/billing">{labels.billing}</Link>
+                  <Link href="/app/settings">{labels.settings}</Link>
+                </div>
               </div>
+              <button type="button" className="sa-ghost-button" onClick={() => void signOut()}>
+                {labels.signOut}
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/auth?mode=signup" className="sa-secondary-button">
+                {labels.signUp}
+              </Link>
+              <Link href="/auth?mode=signin" className="sa-ghost-button">
+                {labels.signIn}
+              </Link>
+              <a href={buildPlanCheckoutPath({ campaign: "header_cta" })} className="sa-primary-button">
+                Get Plus
+              </a>
+            </>
+          )}
+
+          <div className="sa-locale-wrap">
+            <button type="button" className="sa-locale-button" onClick={() => setLocaleOpen((value) => !value)}>
+              <span>{locale.flag}</span>
+              <span>{locale.code.toUpperCase()}</span>
+            </button>
+            <div className={`sa-locale-dropdown${localeOpen ? " is-open" : ""}`}>
+              {localeOptions.map((item) => (
+                <button key={item.code} type="button" className={`sa-locale-option${language === item.code ? " is-active" : ""}`} onClick={() => setLanguage(item.code)}>
+                  <span>{item.flag}</span>
+                  <span>{item.nativeLabel}</span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        <button
-          type="button"
-          className="site-header-menu-button"
-          aria-label={menuOpen ? labels.closeMenu : labels.openMenu}
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((value) => !value)}
-        >
+        <button type="button" className={`sa-mobile-toggle${mobileOpen ? " is-open" : ""}`} aria-label={mobileOpen ? labels.close : labels.menu} onClick={() => setMobileOpen((value) => !value)}>
           <span />
           <span />
           <span />
         </button>
       </div>
 
-      {menuOpen ? <div className="mobile-nav-overlay is-open" onClick={closeMenu} /> : null}
-      {menuOpen ? (
-        <aside className="mobile-nav-panel is-open">
-          <div className="mobile-nav-panel-head">
-            <div>
-              <strong>{content.brand}</strong>
-              <div className="site-header-tagline">{content.tagline}</div>
+      <div className={`sa-mobile-overlay${mobileOpen ? " is-open" : ""}`} onClick={() => setMobileOpen(false)} />
+      <aside className={`sa-mobile-panel${mobileOpen ? " is-open" : ""}`}>
+        <div className="sa-mobile-head">
+          <Image src="/brand/speakace-logo.png" alt="SpeakAce" width={958} height={330} className="sa-mobile-logo" />
+          <button type="button" className="sa-mobile-close" onClick={() => setMobileOpen(false)}>
+            ✕
+          </button>
+        </div>
+        <p className="sa-mobile-tagline">{content.tagline}</p>
+
+        {groups.map((group) => (
+          <div key={group.key} className="sa-mobile-group">
+            <strong>{group.label}</strong>
+            <div className="sa-mobile-links">
+              {group.items.map((item) => (
+                <Link key={item.href} href={item.href as Route} className={`sa-mobile-link${isActive(item.href) ? " is-active" : ""}`}>
+                  {item.label}
+                </Link>
+              ))}
             </div>
-            <button type="button" className="site-header-menu-button is-close" aria-label={labels.closeMenu} onClick={closeMenu}>
-              <span />
-              <span />
-            </button>
           </div>
+        ))}
 
-          {signedIn ? (
-            <div className="mobile-nav-section">
-              <span className="eyebrow">{labels.quickAccess}</span>
-              <div className="mobile-nav-links">
-                <Link href="/app" onClick={closeMenu}>
-                  {labels.dashboard}
-                </Link>
-              </div>
-            </div>
-          ) : null}
-
-          {mobileGroups.map((group) => (
-            <div key={group.label} className="mobile-nav-section">
-              <span className="eyebrow">{group.label}</span>
-              <div className="mobile-nav-links">
-                {group.items.map((item) => (
-                  <Link key={item.href} href={item.href} onClick={closeMenu}>
-                    <strong>{item.label}</strong>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {signedIn ? (
-            <div className="mobile-nav-section">
-              <span className="eyebrow">{labels.account}</span>
-              <div className="mobile-nav-links">
-                <Link href="/app/profile" onClick={closeMenu}>
-                  {labels.profile}
-                </Link>
-                <Link href="/app/billing" onClick={closeMenu}>
-                  {content.nav.billing}
-                </Link>
-                <Link href="/app/settings" onClick={closeMenu}>
-                  {content.nav.settings}
-                </Link>
-                <Link href="/app/notifications" onClick={closeMenu}>
-                  {labels.notifications}
-                </Link>
-                {currentUser?.isTeacher ? (
-                  <Link href="/app/teacher" onClick={closeMenu}>
-                    {labels.teacherPanel}
-                  </Link>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="mobile-nav-actions">
-            {!signedIn ? (
-              <>
-                <Link className="button button-secondary" href="/auth?mode=signup" onClick={closeMenu}>
-                  {labels.signUp}
-                </Link>
-                <Link className="button button-ghost" href="/auth?mode=signin" onClick={closeMenu}>
-                  {content.nav.signIn}
-                </Link>
-                <a className="button button-primary button-header-plus" href={buildPlanCheckoutPath({ campaign: "header_mobile_cta" })}>
-                  {labels.getPlus}
-                </a>
-              </>
-            ) : (
-              <button className="button button-secondary" type="button" onClick={() => void signOut()}>
-                {content.nav.signOut}
-              </button>
-            )}
-          </div>
-
-          <div className="mobile-language-switch mobile-language-grid">
-            {localeOptions.map((locale) => (
-              <button
-                key={locale.code}
-                className="button button-locale mobile-language-option"
-                type="button"
-                onClick={() => changeLanguage(locale.code)}
-                data-active={language === locale.code}
-              >
-                <span aria-hidden="true">{locale.flag}</span>
-                <span>{locale.code.toUpperCase()}</span>
+        <div className="sa-mobile-group">
+          <strong>Language</strong>
+          <div className="sa-mobile-locale-list">
+            {localeOptions.map((item) => (
+              <button key={item.code} type="button" className={`sa-mobile-locale${language === item.code ? " is-active" : ""}`} onClick={() => setLanguage(item.code)}>
+                <span>{item.flag}</span>
+                <span>{item.nativeLabel}</span>
               </button>
             ))}
           </div>
-        </aside>
-      ) : null}
+        </div>
+
+        <div className="sa-mobile-actions">
+          {signedIn ? (
+            <>
+              <Link href="/app" className="sa-secondary-button">
+                {labels.dashboard}
+              </Link>
+              <Link href="/app/profile" className="sa-ghost-button">
+                {labels.profile}
+              </Link>
+              <button type="button" className="sa-ghost-button" onClick={() => void signOut()}>
+                {labels.signOut}
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/auth?mode=signup" className="sa-secondary-button">
+                {labels.signUp}
+              </Link>
+              <Link href="/auth?mode=signin" className="sa-ghost-button">
+                {labels.signIn}
+              </Link>
+              <a href={buildPlanCheckoutPath({ campaign: "mobile_header_cta" })} className="sa-primary-button">
+                Get Plus
+              </a>
+            </>
+          )}
+        </div>
+      </aside>
     </header>
   );
 }
