@@ -1779,6 +1779,80 @@ body[data-theme="dark"] .testimonial-card {
   line-height: 1.75;
 }
 
+.faq-accordion-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.faq-accordion-item {
+  overflow: hidden;
+  transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.faq-accordion-item[open] {
+  background: #fafafa;
+}
+
+body[data-theme="dark"] .faq-accordion-item[open] {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.faq-accordion-item summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
+  cursor: pointer;
+}
+
+.faq-accordion-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-accordion-item summary strong {
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.faq-accordion-icon {
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.faq-accordion-item[open] .faq-accordion-icon {
+  transform: rotate(45deg);
+  background: rgba(217, 93, 57, 0.08);
+  color: var(--accent-deep);
+}
+
+.faq-accordion-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.24s ease;
+}
+
+.faq-accordion-item[open] .faq-accordion-panel {
+  grid-template-rows: 1fr;
+}
+
+.faq-accordion-panel p {
+  overflow: hidden;
+  margin: 0;
+  padding: 0 1.25rem 1.2rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
 .daily-prompt-card,
 .lead-capture-card {
   display: grid;

@@ -203,6 +203,31 @@ const faqs = {
       question: "What do I see after one speaking attempt?",
       answer:
         "You see a transcript, an estimated IELTS-style speaking score, and feedback on fluency, pronunciation, and structure so your next attempt is clearer."
+    },
+    {
+      question: "How accurate is the AI band score estimate?",
+      answer:
+        "SpeakAce gives an estimated IELTS band score based on fluency, pronunciation, structure, and idea support. It is designed to show relative progress across attempts, not to replicate the exact marking of an official IELTS examiner. Most learners find the estimates useful as a weekly progress signal rather than a final grade."
+    },
+    {
+      question: "Do I need to create an account to start?",
+      answer:
+        "No. You can start a free speaking session without signing up. Creating an account lets you track your history, save your scores, and build a daily practice habit."
+    },
+    {
+      question: "Can I use SpeakAce for TOEFL preparation?",
+      answer:
+        "Yes. SpeakAce includes TOEFL-style speaking tasks alongside IELTS. The feedback system covers the same core areas: fluency, pronunciation, structure, and coherence."
+    },
+    {
+      question: "How is SpeakAce different from ChatGPT or general AI tools?",
+      answer:
+        "General AI tools respond to text. SpeakAce is built specifically for spoken English scoring — it listens to your voice, transcribes your answer, and gives exam-focused feedback on the aspects IELTS and TOEFL examiners actually score."
+    },
+    {
+      question: "Can teachers use SpeakAce with their students?",
+      answer:
+        "Yes. Teachers can create a class, add students, assign speaking homework, and track progress from a single panel. The teacher workflow is built to reduce admin time between lessons."
     }
   ],
   tr: [
@@ -230,6 +255,31 @@ const faqs = {
       question: "Bir konuşma denemesinden sonra ne görürüm?",
       answer:
         "Transcript, tahmini IELTS benzeri speaking skoru ve akıcılık, telaffuz, yapı tarafında hangi noktanın zayıf kaldığını gösteren geri bildirim görürsün."
+    },
+    {
+      question: "AI band skoru tahmini ne kadar doğru?",
+      answer:
+        "SpeakAce; akıcılık, telaffuz, yapı ve fikir desteğine göre tahmini bir IELTS band skoru verir. Resmî bir IELTS değerlendiricisinin birebir puanlamasını kopyalamak için değil, denemeler arasındaki göreli gelişimi göstermek için tasarlanmıştır. Çoğu kullanıcı bu tahmini haftalık gelişim sinyali olarak faydalı bulur."
+    },
+    {
+      question: "Başlamak için hesap oluşturmam gerekir mi?",
+      answer:
+        "Hayır. Kayıt olmadan ücretsiz bir speaking oturumu başlatabilirsin. Hesap oluşturduğunda geçmişini takip edebilir, skorlarını kaydedebilir ve günlük çalışma alışkanlığı kurabilirsin."
+    },
+    {
+      question: "SpeakAce'i TOEFL hazırlığı için kullanabilir miyim?",
+      answer:
+        "Evet. SpeakAce, IELTS yanında TOEFL tarzı speaking görevlerini de içerir. Geri bildirim sistemi aynı temel alanları kapsar: akıcılık, telaffuz, yapı ve bütünlük."
+    },
+    {
+      question: "SpeakAce, ChatGPT veya genel AI araçlarından nasıl farklı?",
+      answer:
+        "Genel AI araçları çoğunlukla yazılı metne yanıt verir. SpeakAce ise özellikle sözlü İngilizce puanlaması için tasarlanmıştır; sesini dinler, cevabını transcript'e çevirir ve IELTS ile TOEFL değerlendiricilerinin baktığı alanlarda sınav odaklı geri bildirim verir."
+    },
+    {
+      question: "Öğretmenler SpeakAce'i öğrencileriyle kullanabilir mi?",
+      answer:
+        "Evet. Öğretmenler sınıf oluşturabilir, öğrenci ekleyebilir, speaking ödevi verebilir ve ilerlemeyi tek panelden takip edebilir. Öğretmen akışı dersler arasındaki yönetim yükünü azaltmak için tasarlanmıştır."
     }
   ]
 };
@@ -1355,14 +1405,7 @@ export function MarketingPage({
             <span className="eyebrow">FAQ</span>
             <h2>{minimalCopy.faqTitle}</h2>
           </div>
-          <div className="marketing-grid">
-            {minimalCopy.faq.map((item) => (
-              <article key={item.question} className="card feature-card">
-                <h3>{item.question}</h3>
-                <p>{item.answer}</p>
-              </article>
-            ))}
-          </div>
+          <FaqAccordion items={minimalCopy.faq} />
         </section>
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
@@ -2159,7 +2202,7 @@ export function MarketingPage({
           <span className="eyebrow">FAQ</span>
           <h2>{tr ? "Sık sorulan sorular" : "Frequently asked questions"}</h2>
         </div>
-        <FaqTicker items={localizedFaqs} />
+        <FaqAccordion items={localizedFaqs} />
       </section>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
@@ -2184,6 +2227,26 @@ function StepCard({ index, title, description }: { index: string; title: string;
       <h3>{title}</h3>
       <p>{description}</p>
     </article>
+  );
+}
+
+function FaqAccordion({ items }: { items: readonly { question: string; answer: string }[] }) {
+  return (
+    <div className="faq-accordion-list">
+      {items.map((item, index) => (
+        <details key={item.question} className="card faq-accordion-item" open={index === 0}>
+          <summary>
+            <strong>{item.question}</strong>
+            <span className="faq-accordion-icon" aria-hidden="true">
+              +
+            </span>
+          </summary>
+          <div className="faq-accordion-panel">
+            <p>{item.answer}</p>
+          </div>
+        </details>
+      ))}
+    </div>
   );
 }
 
@@ -2252,28 +2315,6 @@ function HeroProgressBar({ label, value }: { label: string; value: number }) {
       </div>
       <div className="hero-progress-track" aria-hidden="true">
         <div className="hero-progress-fill" style={{ width: `${value}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function FaqTicker({
-  items
-}: {
-  items: Array<{ question: string; answer: string }>;
-}) {
-  const loopItems = [...items, ...items];
-
-  return (
-    <div className="faq-ticker-shell">
-      <div className="faq-ticker-track">
-        {loopItems.map((faq, index) => (
-          <article key={`${faq.question}-${index}`} className="card faq-ticker-card">
-            <span className="eyebrow">FAQ</span>
-            <h3>{faq.question}</h3>
-            <p>{faq.answer}</p>
-          </article>
-        ))}
       </div>
     </div>
   );
