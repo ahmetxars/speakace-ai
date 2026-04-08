@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { AdSenseUnit } from "@/components/adsense-unit";
@@ -1486,28 +1487,32 @@ export function MarketingPage({
       </section>
 
       <section className="page-shell section" style={{ paddingTop: 0 }}>
-        <div className="card quick-pitch">
-          <div className="quick-pitch-grid">
-            <div>
-              <span className="eyebrow">{tr ? "İlk adım" : "First step"}</span>
-              <h2 style={{ margin: "0.8rem 0" }}>
-                {tr ? "İlk speaking testini 30 saniyede başlat" : "Take your first speaking test in 30 seconds"}
-              </h2>
-              <p className="practice-copy">
-                {tr
-                  ? "Önce bir soruya cevap ver, skorunu gör, sonra tam geri bildirim ve daha fazla tekrar için Plus’ı aç."
-                  : "Answer one question first, see your score, then unlock full feedback and more retries with Plus."}
-              </p>
-            </div>
-            <div className="lead-capture-actions">
-              <Link className="button button-primary" href="/app/practice?quickStart=1">
-                {tr ? "Konuşmaya başla" : "Start Speaking Now"}
-              </Link>
-              <Link className="button button-secondary" href="/pricing">
-                {tr ? "Tam geri bildirimi gör" : "Unlock full feedback"}
-              </Link>
-            </div>
+        <div className="section-head">
+          <span className="eyebrow">{tr ? "Nasıl çalışır" : "How it works"}</span>
+          <h2>{tr ? "Daha iyi bir band skoru için üç adım" : "Three steps to a better band score"}</h2>
+        </div>
+        <div className="how-steps-shell">
+          <div className="how-steps-grid" aria-hidden="true" />
+          <div className="how-steps-grid">
+            {localizedHow.slice(0, 3).map((item, index) => (
+              <HowItWorksStep
+                key={item.title}
+                index={`0${index + 1}`}
+                icon={<StepIcon index={index} />}
+                title={item.title}
+                description={item.description}
+              />
+            ))}
           </div>
+        </div>
+        <div className="card how-steps-cta">
+          <h3>{tr ? "Skorunu görmeye hazır mısın?" : "Ready to see your score?"}</h3>
+          <div className="lead-capture-actions" style={{ justifyContent: "center" }}>
+            <Link className="button button-primary" href="/app/practice?quickStart=1">
+              {tr ? "Konuşmaya başla" : "Start Speaking Now"}
+            </Link>
+          </div>
+          <p className="practice-meta">{tr ? "Ücretsiz oturum · Hesap gerekmez · Sonuçlar 60 saniyede" : "Free session · No account needed · Results in 60 seconds"}</p>
         </div>
       </section>
 
@@ -2176,6 +2181,53 @@ function StepCard({ index, title, description }: { index: string; title: string;
   return (
     <article className="card step-card">
       <span>{index}</span>
+      <h3>{title}</h3>
+      <p>{description}</p>
+    </article>
+  );
+}
+
+function StepIcon({ index }: { index: number }) {
+  if (index === 0) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 6h16v12H4z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M8 10h8M8 14h5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (index === 1) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 4a4 4 0 0 1 4 4v4a4 4 0 1 1-8 0V8a4 4 0 0 1 4-4Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M6 11a6 6 0 0 0 12 0M12 17v3M9 20h6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 19h14M7 15l3-3 2 2 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function HowItWorksStep({
+  index,
+  icon,
+  title,
+  description
+}: {
+  index: string;
+  icon: ReactNode;
+  title: string;
+  description: string;
+}) {
+  return (
+    <article className="card how-step-card">
+      <div className="how-step-watermark">{index}</div>
+      <div className="how-step-icon">{icon}</div>
       <h3>{title}</h3>
       <p>{description}</p>
     </article>

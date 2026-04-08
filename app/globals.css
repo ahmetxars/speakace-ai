@@ -1324,6 +1324,23 @@ body[data-theme="dark"] .testimonial-week-card {
   .testimonial-week-grid {
     grid-template-columns: 1fr;
   }
+
+  .how-steps-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .how-steps-shell::before {
+    display: none;
+  }
+
+  .how-step-card {
+    min-height: auto;
+  }
+
+  .how-step-watermark {
+    top: 0.9rem;
+    right: 1rem;
+  }
 }
 
 @keyframes float {
@@ -1350,6 +1367,92 @@ body[data-theme="dark"] .testimonial-week-card {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
+.how-steps-shell {
+  position: relative;
+}
+
+.how-steps-shell::before {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 3.1rem;
+  border-top: 2px dashed #d1d5db;
+  z-index: 0;
+}
+
+.how-steps-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.how-step-card {
+  position: relative;
+  min-height: 240px;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.how-step-watermark {
+  position: absolute;
+  top: 1rem;
+  right: 1.1rem;
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+  color: #f3f4f6;
+  letter-spacing: -0.05em;
+  pointer-events: none;
+}
+
+.how-step-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  background: rgba(217, 93, 57, 0.12);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.how-step-icon svg {
+  width: 1.45rem;
+  height: 1.45rem;
+}
+
+.how-step-card h3 {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 0.65rem;
+}
+
+.how-step-card p {
+  position: relative;
+  z-index: 1;
+  color: var(--muted);
+  line-height: 1.72;
+}
+
+.how-steps-cta {
+  margin-top: 1.2rem;
+  padding: 2rem;
+  border-radius: 16px;
+  background: #f9fafb;
+  text-align: center;
+}
+
+.how-steps-cta h3 {
+  margin-bottom: 1rem;
+}
+
+.how-steps-cta p {
+  margin: 0.85rem 0 0;
+}
+
 .metrics-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -1366,6 +1469,23 @@ body[data-theme="dark"] .feature-card,
 body[data-theme="dark"] .step-card,
 body[data-theme="dark"] .mini-metric {
   background: rgba(23, 30, 38, 0.97);
+}
+
+body[data-theme="dark"] .how-step-watermark {
+  color: rgba(255, 255, 255, 0.05);
+}
+
+body[data-theme="dark"] .how-step-icon {
+  background: rgba(234, 122, 82, 0.12);
+}
+
+body[data-theme="dark"] .how-steps-shell::before {
+  border-top-color: rgba(255, 255, 255, 0.14);
+}
+
+body[data-theme="dark"] .how-steps-cta {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .feature-card h3,
