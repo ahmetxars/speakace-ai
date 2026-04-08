@@ -387,10 +387,13 @@ const shortLandingCopy = {
 const minimalMarketingCopy = {
   en: {
     title: "Increase your IELTS Speaking score with AI practice",
-    description: "Practice real questions, get instant feedback, and improve your English speaking fluency faster.",
+    description:
+      "Practice real questions, get instant feedback, and improve your English speaking fluency faster.\nTrusted by learners in 50+ countries.",
     cta: "Start Speaking Now",
+    demoCta: "Watch 60s demo →",
     free: "Free • No signup required",
     learners: "Used by 1,000+ learners",
+    learnersToday: "1,000+ learners practicing today",
     demo: "Quick demo",
     userPrompt: 'User: "Describe your hometown"',
     estimatedScore: "Estimated IELTS speaking score",
@@ -454,10 +457,13 @@ const minimalMarketingCopy = {
   },
   tr: {
     title: "Yapay zekayla IELTS speaking skorunu yükselt",
-    description: "Gerçek sorularla çalış, anında geri bildirim al ve İngilizce konuşma akıcılığını daha hızlı geliştir.",
+    description:
+      "Gerçek sorularla çalış, anında geri bildirim al ve İngilizce konuşma akıcılığını daha hızlı geliştir.\n50+ ülkede öğrenciler tarafından güvenle kullanılıyor.",
     cta: "Konuşmaya başla",
+    demoCta: "60 sn demoyu izle →",
     free: "Ücretsiz • Kayıt olmadan kullanılabilir",
     learners: "1.000+ öğrenci tarafından kullanılıyor",
+    learnersToday: "Bugün 1.000+ öğrenci pratik yapıyor",
     demo: "Hızlı demo",
     userPrompt: 'Kullanıcı: "Doğduğun yeri anlat"',
     estimatedScore: "Tahmini IELTS speaking skoru",
@@ -1081,6 +1087,8 @@ export function MarketingPage({
   const localizedScoreLadders = tr ? scoreLadders.tr : scoreLadders.en;
   const planComparison = getPlanComparison(tr);
   const minimalCopy = getMinimalCopy(language);
+  const heroLearnersToday = "learnersToday" in minimalCopy ? minimalCopy.learnersToday : minimalCopy.learners;
+  const heroDemoCta = "demoCta" in minimalCopy ? minimalCopy.demoCta : tr ? "60 sn demoyu izle →" : "Watch 60s demo →";
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -1119,17 +1127,29 @@ export function MarketingPage({
       <main>
         <section className="page-shell section home-hero">
           <div className="hero-copy">
+            <div className="hero-status-badge" aria-label={heroLearnersToday}>
+              <span className="hero-status-dot" aria-hidden="true" />
+              <span>{heroLearnersToday}</span>
+            </div>
             <span className="eyebrow">{eyebrow}</span>
             <h1>{minimalCopy.title}</h1>
-            <p className="hero-description">{minimalCopy.description}</p>
+            <p className="hero-description">
+              {minimalCopy.description.split("\n").map((line) => (
+                <span key={line} className="hero-description-line">
+                  {line}
+                </span>
+              ))}
+            </p>
             <div className="hero-actions">
               <Link className="button button-primary hero-primary-cta" href={ctaHref}>
                 {minimalCopy.cta}
               </Link>
+              <Link className="button button-secondary hero-secondary-cta" href="#how-it-works">
+                {heroDemoCta}
+              </Link>
             </div>
             <div className="hero-trust-lines">
-              <p className="practice-meta">{minimalCopy.free}</p>
-              <p className="practice-meta">{minimalCopy.learners}</p>
+              <p className="practice-meta">{tr ? "Ücretsiz • Kayıt gerekmez • İstediğin zaman iptal et" : "Free • No signup required • Cancel anytime"}</p>
             </div>
           </div>
 
@@ -1137,6 +1157,10 @@ export function MarketingPage({
             <div className="pill">{minimalCopy.demo}</div>
             <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
               {minimalCopy.userPrompt}
+            </div>
+            <div className="hero-floating-summary">
+              <div className="hero-floating-score">6.5 → 7.0</div>
+              <div className="hero-floating-label">{tr ? "Band skoru yükseldi" : "Band score improved"}</div>
             </div>
             <div className="score-showcase">
               <div className="score-value">6.5</div>
@@ -1150,6 +1174,11 @@ export function MarketingPage({
               <MiniMetric label={minimalCopy.fluency} value="7.0" />
               <MiniMetric label={minimalCopy.pronunciation} value="6.5" />
               <MiniMetric label={minimalCopy.structure} value="6.5" />
+            </div>
+            <div className="hero-progress-list">
+              <HeroProgressBar label={minimalCopy.fluency} value={78} />
+              <HeroProgressBar label={minimalCopy.pronunciation} value={72} />
+              <HeroProgressBar label={minimalCopy.structure} value={75} />
             </div>
           </aside>
         </section>
@@ -1170,7 +1199,7 @@ export function MarketingPage({
           </div>
         </section>
 
-        <section className="page-shell section">
+        <section className="page-shell section" id="how-it-works">
           <div className="section-head">
             <span className="eyebrow">{minimalCopy.fluencyEyebrow}</span>
             <h2>{minimalCopy.fluencyTitle}</h2>
@@ -1282,6 +1311,10 @@ export function MarketingPage({
     <main>
       <section className="page-shell section home-hero">
         <div className="hero-copy">
+          <div className="hero-status-badge" aria-label={heroLearnersToday}>
+            <span className="hero-status-dot" aria-hidden="true" />
+            <span>{heroLearnersToday}</span>
+          </div>
           <span className="eyebrow">{eyebrow}</span>
           <h1>
             {tr
@@ -1289,21 +1322,26 @@ export function MarketingPage({
               : title}
           </h1>
           <p className="hero-description">
-            {tr
-              ? "Cevabını kaydet, transcript’ini incele, tahmini band skorunu gör ve speaking puanını yükseltmek için sana en çok yardımcı olacak geri bildirimi al."
-              : description}
+            {(tr
+              ? "Cevabını kaydet, transcript’ini incele, tahmini band skorunu gör ve speaking puanını yükseltmek için sana en çok yardımcı olacak geri bildirimi al.\n50+ ülkede öğrenciler tarafından güvenle kullanılıyor."
+              : description
+            ).split("\n").map((line) => (
+              <span key={line} className="hero-description-line">
+                {line}
+              </span>
+            ))}
           </p>
           <div className="hero-actions">
             <Link className="button button-primary hero-primary-cta" href={ctaHref}>
               {tr ? "Konuşmaya başla" : "Start Speaking Now"}
             </Link>
+            <Link className="button button-secondary hero-secondary-cta" href="#how-it-works">
+              {heroDemoCta}
+            </Link>
           </div>
           <div className="hero-trust-lines">
             <p className="practice-meta">
-              {tr ? "Ücretsiz • Kayıt olmadan kullanılabilir" : "Free • No signup required"}
-            </p>
-            <p className="practice-meta">
-              {tr ? "1.000+ öğrenci tarafından kullanılıyor" : "Used by 1,000+ learners"}
+              {tr ? "Ücretsiz • Kayıt gerekmez • İstediğin zaman iptal et" : "Free • No signup required • Cancel anytime"}
             </p>
           </div>
           <div className="hero-outcomes">
@@ -1338,6 +1376,10 @@ export function MarketingPage({
           <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
             {tr ? 'Kullanıcı: "Doğduğun yeri anlat"' : 'User: "Describe your hometown"'}
           </div>
+          <div className="hero-floating-summary">
+            <div className="hero-floating-score">6.5 → 7.0</div>
+            <div className="hero-floating-label">{tr ? "Band skoru yükseldi" : "Band score improved"}</div>
+          </div>
           <div className="score-showcase">
             <div className="score-value">6.5</div>
             <div className="score-label">
@@ -1357,10 +1399,15 @@ export function MarketingPage({
             <MiniMetric label={tr ? "Telaffuz" : "Pronunciation"} value="6.5" />
             <MiniMetric label={tr ? "Yapı" : "Structure"} value="6.5" />
           </div>
+          <div className="hero-progress-list">
+            <HeroProgressBar label={tr ? "Akıcılık" : "Fluency"} value={78} />
+            <HeroProgressBar label={tr ? "Telaffuz" : "Pronunciation"} value={72} />
+            <HeroProgressBar label={tr ? "Yapı" : "Structure"} value={75} />
+          </div>
         </aside>
       </section>
 
-      <section className="page-shell section" style={{ paddingTop: 0 }}>
+      <section className="page-shell section" style={{ paddingTop: 0 }} id="how-it-works">
         <div className="stats-strip">
           {localizedTrustSignals.map((item) => (
             <div key={item.label} className="card stat-strip-card">
@@ -2053,6 +2100,20 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
     <div className="card mini-metric">
       <div>{label}</div>
       <strong>{value}</strong>
+    </div>
+  );
+}
+
+function HeroProgressBar({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="hero-progress-row">
+      <div className="hero-progress-labels">
+        <span>{label}</span>
+        <strong>{value}%</strong>
+      </div>
+      <div className="hero-progress-track" aria-hidden="true">
+        <div className="hero-progress-fill" style={{ width: `${value}%` }} />
+      </div>
     </div>
   );
 }
