@@ -75,6 +75,45 @@ const testimonials = {
   ]
 };
 
+const weekTestimonials = [
+  {
+    name: "Ayşe T.",
+    country: "🇹🇷 Turkey",
+    score: "Band 5.5 → 7.0",
+    quote:
+      "I practiced every morning for 10 days. The transcript review helped me see exactly where I was repeating myself.",
+    initials: "AT",
+    avatarClass: "is-purple"
+  },
+  {
+    name: "Kenji M.",
+    country: "🇯🇵 Japan",
+    score: "Band 6.0 → 7.5",
+    quote:
+      "The retry feature is what makes this different. I could hear the improvement between attempt one and attempt three.",
+    initials: "KM",
+    avatarClass: "is-blue"
+  },
+  {
+    name: "Priya K.",
+    country: "🇮🇳 India",
+    score: "Band 6.5 → 7.5",
+    quote:
+      "Unlike other tools, SpeakAce shows why your score is low, not just what it is. That made all the difference for my Part 2 answers.",
+    initials: "PK",
+    avatarClass: "is-green"
+  },
+  {
+    name: "Ahmed R.",
+    country: "🇪🇬 Egypt",
+    score: "Band 5.0 → 6.5",
+    quote:
+      "Three weeks of daily practice. My examiner said my fluency had clearly improved. I credit the daily prompt habit.",
+    initials: "AR",
+    avatarClass: "is-orange"
+  }
+] as const;
+
 const useCases = {
   en: [
     {
@@ -1199,6 +1238,30 @@ export function MarketingPage({
           </div>
         </section>
 
+        <section className="page-shell section" style={{ paddingTop: 0 }}>
+          <div className="section-head">
+            <h2>What learners say after their first week</h2>
+          </div>
+          <div className="testimonial-week-grid">
+            {weekTestimonials.map((item) => (
+              <article key={item.name} className="testimonial-week-card">
+                <div className="testimonial-week-head">
+                  <div className={`testimonial-week-avatar ${item.avatarClass}`}>{item.initials}</div>
+                  <div>
+                    <strong>{item.name}</strong>
+                    <div className="practice-meta">{item.country}</div>
+                  </div>
+                </div>
+                <div className="testimonial-week-stars" aria-label="5 stars">
+                  ⭐⭐⭐⭐⭐
+                </div>
+                <div className="testimonial-week-badge">{item.score}</div>
+                <p>{item.quote}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section className="page-shell section" id="how-it-works">
           <div className="section-head">
             <span className="eyebrow">{minimalCopy.fluencyEyebrow}</span>
@@ -1516,6 +1579,30 @@ export function MarketingPage({
               title={tr ? item.title.tr : item.title.en}
               description={tr ? item.description.tr : item.description.en}
             />
+          ))}
+        </div>
+      </section>
+
+      <section className="page-shell section" style={{ paddingTop: 0 }}>
+        <div className="section-head">
+          <h2>What learners say after their first week</h2>
+        </div>
+        <div className="testimonial-week-grid">
+          {weekTestimonials.map((item) => (
+            <article key={item.name} className="testimonial-week-card">
+              <div className="testimonial-week-head">
+                <div className={`testimonial-week-avatar ${item.avatarClass}`}>{item.initials}</div>
+                <div>
+                  <strong>{item.name}</strong>
+                  <div className="practice-meta">{item.country}</div>
+                </div>
+              </div>
+              <div className="testimonial-week-stars" aria-label="5 stars">
+                ⭐⭐⭐⭐⭐
+              </div>
+              <div className="testimonial-week-badge">{item.score}</div>
+              <p>{item.quote}</p>
+            </article>
           ))}
         </div>
       </section>

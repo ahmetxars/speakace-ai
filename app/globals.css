@@ -1227,6 +1227,74 @@ body[data-theme="dark"] .notification-dropdown-item.is-success {
   transition: width 1.2s ease;
 }
 
+.testimonial-week-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.testimonial-week-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.testimonial-week-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+}
+
+.testimonial-week-head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
+}
+
+.testimonial-week-avatar {
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.testimonial-week-avatar.is-purple { background: #7c3aed; }
+.testimonial-week-avatar.is-blue { background: #2563eb; }
+.testimonial-week-avatar.is-green { background: #16a34a; }
+.testimonial-week-avatar.is-orange { background: #ea580c; }
+
+.testimonial-week-stars {
+  color: #eab308;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+}
+
+.testimonial-week-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.28rem 0.65rem;
+  margin-top: 0.7rem;
+  margin-bottom: 0.9rem;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.testimonial-week-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.72;
+}
+
 body[data-theme="dark"] .hero-status-badge {
   background: rgba(34, 197, 94, 0.14);
   color: #8ee2a3;
@@ -1234,6 +1302,11 @@ body[data-theme="dark"] .hero-status-badge {
 
 body[data-theme="dark"] .hero-progress-track {
   background: rgba(246, 239, 230, 0.12);
+}
+
+body[data-theme="dark"] .testimonial-week-card {
+  background: var(--surface-strong);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 @keyframes pulse {
@@ -1244,6 +1317,12 @@ body[data-theme="dark"] .hero-progress-track {
   50% {
     transform: scale(1.18);
     opacity: 0.72;
+  }
+}
+
+@media (max-width: 768px) {
+  .testimonial-week-grid {
+    grid-template-columns: 1fr;
   }
 }
 
