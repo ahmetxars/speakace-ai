@@ -545,9 +545,9 @@ export function SiteHeader() {
         right: 0,
         zIndex: 50,
         transition: "all 0.3s ease",
-        background: scrolled ? "oklch(0.08 0.01 280 / 0.85)" : "transparent",
+        background: scrolled ? "var(--nav-bg-scrolled)" : "transparent",
         backdropFilter: scrolled ? "blur(16px)" : "none",
-        borderBottom: scrolled ? "1px solid oklch(1 0 0 / 8%)" : "1px solid transparent"
+        borderBottom: scrolled ? "1px solid var(--nav-border)" : "1px solid transparent"
       }}
     >
       <div
@@ -592,7 +592,8 @@ export function SiteHeader() {
             width={120}
             height={41}
             priority
-            style={{ height: "22px", width: "auto", filter: "brightness(0) invert(1)" }}
+            className="nav-logo-img"
+            style={{ height: "22px", width: "auto" }}
           />
         </Link>
 
@@ -634,7 +635,7 @@ export function SiteHeader() {
                   fontSize: "0.875rem",
                   fontWeight: 500,
                   color: activeGroup === group.key ? "var(--primary)" : "var(--foreground)",
-                  background: activeGroup === group.key ? "oklch(1 0 0 / 6%)" : "transparent",
+                  background: activeGroup === group.key ? "var(--nav-active-bg)" : "transparent",
                   border: "none",
                   borderRadius: "6px",
                   cursor: "pointer",
@@ -662,15 +663,15 @@ export function SiteHeader() {
                 top: "calc(100% + 8px)",
                 left: "50%",
                 transform: "translateX(-50%)",
-                background: "oklch(0.12 0.015 280)",
-                border: "1px solid oklch(1 0 0 / 10%)",
+                background: "var(--nav-dropdown-bg)",
+                border: "1px solid var(--nav-border)",
                 borderRadius: "12px",
                 padding: "1rem",
                 display: "grid",
                 gridTemplateColumns: "repeat(4, 1fr)",
                 gap: "0.5rem",
                 minWidth: "520px",
-                boxShadow: "0 20px 60px oklch(0 0 0 / 0.5)",
+                boxShadow: "var(--nav-dropdown-shadow)",
                 zIndex: 100
               }}
             >
@@ -744,8 +745,8 @@ export function SiteHeader() {
                     fontSize: "0.875rem",
                     fontWeight: 500,
                     color: "var(--foreground)",
-                    background: "oklch(1 0 0 / 8%)",
-                    border: "1px solid oklch(1 0 0 / 12%)",
+                    background: "var(--nav-btn-bg)",
+                    border: "1px solid var(--nav-btn-border)",
                     borderRadius: "8px",
                     cursor: "pointer",
                     transition: "all 0.2s"
@@ -759,12 +760,12 @@ export function SiteHeader() {
                       position: "absolute",
                       right: 0,
                       top: "calc(100% + 8px)",
-                      background: "oklch(0.12 0.015 280)",
-                      border: "1px solid oklch(1 0 0 / 10%)",
+                      background: "var(--nav-dropdown-bg)",
+                      border: "1px solid var(--nav-border)",
                       borderRadius: "10px",
                       padding: "0.5rem",
                       minWidth: "160px",
-                      boxShadow: "0 10px 40px oklch(0 0 0 / 0.5)",
+                      boxShadow: "var(--nav-dropdown-shadow)",
                       zIndex: 100,
                       display: "flex",
                       flexDirection: "column",
@@ -805,7 +806,7 @@ export function SiteHeader() {
                   fontWeight: 500,
                   color: "var(--foreground)",
                   background: "transparent",
-                  border: "1px solid oklch(1 0 0 / 12%)",
+                  border: "1px solid var(--nav-btn-border)",
                   borderRadius: "8px",
                   cursor: "pointer",
                   opacity: 0.7,
@@ -824,8 +825,8 @@ export function SiteHeader() {
                   fontSize: "0.875rem",
                   fontWeight: 500,
                   color: "var(--foreground)",
-                  background: "oklch(1 0 0 / 8%)",
-                  border: "1px solid oklch(1 0 0 / 12%)",
+                  background: "var(--nav-btn-bg)",
+                  border: "1px solid var(--nav-btn-border)",
                   borderRadius: "8px",
                   textDecoration: "none",
                   transition: "all 0.2s",
@@ -882,7 +883,7 @@ export function SiteHeader() {
                 gap: "0.375rem",
                 padding: "0.5rem",
                 background: "transparent",
-                border: "1px solid oklch(1 0 0 / 12%)",
+                border: "1px solid var(--nav-btn-border)",
                 borderRadius: "8px",
                 color: "var(--foreground)",
                 cursor: "pointer",
@@ -901,14 +902,14 @@ export function SiteHeader() {
                   position: "absolute",
                   right: 0,
                   top: "calc(100% + 8px)",
-                  background: "oklch(0.12 0.015 280)",
-                  border: "1px solid oklch(1 0 0 / 10%)",
+                  background: "var(--nav-dropdown-bg)",
+                  border: "1px solid var(--nav-border)",
                   borderRadius: "10px",
                   padding: "0.5rem",
                   minWidth: "160px",
                   maxHeight: "320px",
                   overflowY: "auto",
-                  boxShadow: "0 10px 40px oklch(0 0 0 / 0.5)",
+                  boxShadow: "0 var(--nav-dropdown-shadow)",
                   zIndex: 100,
                   display: "flex",
                   flexDirection: "column",
@@ -952,8 +953,8 @@ export function SiteHeader() {
           className="mobile-only"
           style={{
             padding: "0.5rem",
-            background: "oklch(1 0 0 / 8%)",
-            border: "1px solid oklch(1 0 0 / 12%)",
+            background: "var(--nav-btn-bg)",
+            border: "1px solid var(--nav-btn-border)",
             borderRadius: "8px",
             color: "var(--foreground)",
             cursor: "pointer"
@@ -985,8 +986,8 @@ export function SiteHeader() {
           right: 0,
           bottom: 0,
           width: "min(320px, 85vw)",
-          background: "oklch(0.10 0.015 280)",
-          borderLeft: "1px solid oklch(1 0 0 / 10%)",
+          background: "var(--nav-mobile-bg)",
+          borderLeft: "1px solid var(--nav-border)",
           zIndex: 50,
           transform: mobileOpen ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -1058,8 +1059,8 @@ export function SiteHeader() {
                   padding: "0.5rem 0.625rem",
                   fontSize: "0.8125rem",
                   color: "var(--foreground)",
-                  background: language === item.code ? "oklch(0.623 0.214 259.815 / 0.2)" : "oklch(1 0 0 / 4%)",
-                  border: `1px solid ${language === item.code ? "oklch(0.623 0.214 259.815 / 0.4)" : "oklch(1 0 0 / 8%)"}`,
+                  background: language === item.code ? "oklch(0.623 0.214 259.815 / 0.2)" : "var(--input-bg)",
+                  border: `1px solid ${language === item.code ? "oklch(0.623 0.214 259.815 / 0.4)" : "var(--nav-btn-bg)"}`,
                   borderRadius: "6px",
                   cursor: "pointer",
                   transition: "all 0.15s"
@@ -1073,16 +1074,16 @@ export function SiteHeader() {
         </div>
 
         {/* Mobile CTA */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", paddingTop: "0.75rem", borderTop: "1px solid oklch(1 0 0 / 8%)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", paddingTop: "0.75rem", borderTop: "1px solid var(--nav-border)" }}>
           {signedIn ? (
             <>
               <Link href="/app" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 600, color: "white", background: "var(--primary)", borderRadius: "8px", textDecoration: "none" }}>
                 {labels.dashboard}
               </Link>
-              <Link href="/app/profile" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "oklch(1 0 0 / 8%)", border: "1px solid oklch(1 0 0 / 12%)", borderRadius: "8px", textDecoration: "none", opacity: 0.8 }}>
+              <Link href="/app/profile" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "var(--nav-btn-bg)", border: "1px solid var(--nav-btn-border)", borderRadius: "8px", textDecoration: "none", opacity: 0.8 }}>
                 {labels.profile}
               </Link>
-              <button type="button" onClick={() => void signOut()} style={{ padding: "0.625rem 1rem", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "transparent", border: "1px solid oklch(1 0 0 / 12%)", borderRadius: "8px", cursor: "pointer", opacity: 0.6 }}>
+              <button type="button" onClick={() => void signOut()} style={{ padding: "0.625rem 1rem", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "transparent", border: "1px solid var(--nav-btn-border)", borderRadius: "8px", cursor: "pointer", opacity: 0.6 }}>
                 {labels.signOut}
               </button>
             </>
@@ -1091,10 +1092,10 @@ export function SiteHeader() {
               <a href={buildPlanCheckoutPath({ campaign: "mobile_header_cta" })} style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 600, color: "white", background: "var(--primary)", borderRadius: "8px", textDecoration: "none", boxShadow: "0 0 20px oklch(0.623 0.214 259.815 / 0.3)" }}>
                 Get Plus
               </a>
-              <Link href="/auth?mode=signup" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "oklch(1 0 0 / 8%)", border: "1px solid oklch(1 0 0 / 12%)", borderRadius: "8px", textDecoration: "none" }}>
+              <Link href="/auth?mode=signup" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "var(--nav-btn-bg)", border: "1px solid var(--nav-btn-border)", borderRadius: "8px", textDecoration: "none" }}>
                 {labels.signUp}
               </Link>
-              <Link href="/auth?mode=signin" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "transparent", border: "1px solid oklch(1 0 0 / 8%)", borderRadius: "8px", textDecoration: "none", opacity: 0.65 }}>
+              <Link href="/auth?mode=signin" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "transparent", border: "1px solid var(--nav-border)", borderRadius: "8px", textDecoration: "none", opacity: 0.65 }}>
                 {labels.signIn}
               </Link>
             </>

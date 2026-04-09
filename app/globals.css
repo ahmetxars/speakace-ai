@@ -1,8 +1,57 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap');
 
-/* ── Playground OKLch design system ── */
+/* ═══════════════════════════════════════
+   LIGHT MODE (default)
+   ═══════════════════════════════════════ */
 :root {
-  /* OKLch Tailwind-compatible variables */
+  --background: oklch(0.985 0.004 65);
+  --foreground: oklch(0.14 0.01 280);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.14 0.01 280);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.14 0.01 280);
+  --primary: oklch(0.623 0.214 259.815);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.94 0.006 280);
+  --secondary-foreground: oklch(0.14 0.01 280);
+  --muted: oklch(0.50 0.015 286);
+  --muted-foreground: oklch(0.50 0.015 286);
+  --accent: oklch(0.71 0.18 165.41);
+  --accent-foreground: oklch(0.14 0.01 280);
+  --destructive: oklch(0.60 0.22 22);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.14 0.01 280 / 10%);
+  --input: oklch(0.14 0.01 280 / 8%);
+  --ring: oklch(0.623 0.214 259.815);
+  --radius: 0.65rem;
+  --chart-1: oklch(0.623 0.214 259.815);
+  --chart-2: oklch(0.71 0.18 165.41);
+  --chart-3: oklch(0.65 0.15 200);
+  --chart-4: oklch(0.55 0.12 280);
+  --chart-5: oklch(0.45 0.1 320);
+
+  /* Legacy vars — light mode */
+  --bg: oklch(0.985 0.004 65);
+  --bg-strong: oklch(0.96 0.006 65);
+  --surface: oklch(1 0 0);
+  --surface-strong: oklch(0.96 0.006 65);
+  --text: oklch(0.14 0.01 280);
+  --line: oklch(0.14 0.01 280 / 9%);
+  --sa-accent: oklch(0.623 0.214 259.815);
+  --sa-accent-deep: oklch(0.52 0.22 259.815);
+  --sa-accent-cool: oklch(0.55 0.15 165.41);
+  --success: oklch(0.55 0.18 140);
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+  --radius-xl: 16px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --max-width: 1180px;
+}
+
+/* ═══════════════════════════════════════
+   DARK MODE
+   ═══════════════════════════════════════ */
+body[data-theme="dark"] {
   --background: oklch(0.08 0.01 280);
   --foreground: oklch(0.92 0.005 65);
   --card: oklch(0.12 0.015 280);
@@ -22,16 +71,10 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.7 0.2 259.815);
-  --radius: 0.65rem;
-  --chart-1: oklch(0.623 0.214 259.815);
-  --chart-2: oklch(0.71 0.18 165.41);
-  --chart-3: oklch(0.65 0.15 200);
-  --chart-4: oklch(0.55 0.12 280);
-  --chart-5: oklch(0.45 0.1 320);
 
-  /* Legacy compatibility variables */
+  /* Legacy vars — dark mode */
   --bg: oklch(0.08 0.01 280);
-  --bg-strong: oklch(0.1 0.01 280);
+  --bg-strong: oklch(0.10 0.012 280);
   --surface: oklch(0.12 0.015 280);
   --surface-strong: oklch(0.17 0.02 280);
   --text: oklch(0.92 0.005 65);
@@ -41,10 +84,6 @@
   --sa-accent-cool: oklch(0.71 0.18 165.41);
   --success: oklch(0.65 0.18 140);
   --shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
-  --radius-xl: 16px;
-  --radius-lg: 14px;
-  --radius-md: 10px;
-  --max-width: 1180px;
 }
 
 .maintenance-shell {
@@ -245,13 +284,22 @@
 }
 
 .sa-secondary-button {
-  border: 1px solid oklch(1 0 0 / 15%);
-  background: oklch(1 0 0 / 8%);
+  border: 1px solid var(--line);
+  background: var(--surface);
   color: var(--text);
 }
 
 .sa-secondary-button:hover {
   transform: translateY(-1px);
+  background: var(--surface-strong);
+}
+
+body[data-theme="dark"] .sa-secondary-button {
+  border-color: oklch(1 0 0 / 15%);
+  background: oklch(1 0 0 / 8%);
+}
+
+body[data-theme="dark"] .sa-secondary-button:hover {
   background: oklch(1 0 0 / 13%);
 }
 
@@ -1435,20 +1483,7 @@ body[data-theme="dark"] .sa-inline-promo {
   }
 }
 
-body[data-theme="dark"] {
-  --bg: #0f1419;
-  --bg-strong: #172029;
-  --surface: rgba(22, 29, 37, 0.94);
-  --surface-strong: #1c2530;
-  --text: #f6efe6;
-  --muted: #c2c8d0;
-  --line: rgba(236, 226, 215, 0.1);
-  --accent: #ea7a52;
-  --accent-deep: #ff9a70;
-  --accent-cool: #73c1c7;
-  --success: #6ac08b;
-  --shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
-}
+/* old duplicate dark block removed — see :root / body[data-theme="dark"] at top of file */
 
 * {
   box-sizing: border-box;
@@ -1465,6 +1500,44 @@ body {
   color: var(--foreground);
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════════════════
+   THEME-AWARE COMPONENT TOKENS
+   ═══════════════════════════════════════════════════════ */
+
+/* Navbar tokens */
+:root {
+  --nav-bg-scrolled:   rgba(255, 252, 248, 0.92);
+  --nav-border:        rgba(0, 0, 0, 0.09);
+  --nav-dropdown-bg:   rgba(255, 252, 248, 0.98);
+  --nav-dropdown-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+  --nav-btn-bg:        rgba(0, 0, 0, 0.04);
+  --nav-btn-border:    rgba(0, 0, 0, 0.10);
+  --nav-active-bg:     rgba(0, 0, 0, 0.05);
+  --nav-mobile-bg:     oklch(0.99 0.003 65);
+  --nav-hover-bg:      oklch(0.623 0.214 259.815 / 0.08);
+  --input-bg:          oklch(0.96 0.004 65);
+}
+body[data-theme="dark"] {
+  --nav-bg-scrolled:   oklch(0.08 0.01 280 / 0.88);
+  --nav-border:        oklch(1 0 0 / 8%);
+  --nav-dropdown-bg:   oklch(0.12 0.015 280);
+  --nav-dropdown-shadow: 0 20px 60px oklch(0 0 0 / 0.55);
+  --nav-btn-bg:        oklch(1 0 0 / 8%);
+  --nav-btn-border:    oklch(1 0 0 / 12%);
+  --nav-active-bg:     oklch(1 0 0 / 6%);
+  --nav-mobile-bg:     oklch(0.10 0.015 280);
+  --nav-hover-bg:      oklch(0.623 0.214 259.815 / 0.15);
+  --input-bg:          oklch(1 0 0 / 6%);
+}
+
+/* Logo image — dark in light mode, white in dark mode */
+.nav-logo-img {
+  filter: brightness(0) saturate(100%);
+}
+body[data-theme="dark"] .nav-logo-img {
+  filter: brightness(0) invert(1);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -3657,12 +3730,22 @@ body[data-theme="dark"] .card {
 }
 
 .button-secondary {
-  background: oklch(1 0 0 / 8%);
-  border-color: oklch(1 0 0 / 15%);
+  background: var(--surface);
+  border-color: var(--line);
   color: var(--text);
 }
 
 .button-secondary:hover {
+  background: var(--surface-strong);
+  border-color: oklch(0.623 0.214 259.815 / 25%);
+}
+
+body[data-theme="dark"] .button-secondary {
+  background: oklch(1 0 0 / 8%);
+  border-color: oklch(1 0 0 / 15%);
+}
+
+body[data-theme="dark"] .button-secondary:hover {
   background: oklch(1 0 0 / 13%);
   border-color: oklch(1 0 0 / 25%);
 }
