@@ -4,7 +4,8 @@ import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Globe, Menu, X, ChevronDown } from "lucide-react";
 import { copy, languageMeta, localeOptions, type Language } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
 import { buildPlanCheckoutPath } from "@/lib/commerce";
@@ -474,8 +475,12 @@ export function SiteHeader() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
+  const localeRef = useRef<HTMLDivElement>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
+  const megaMenuRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
+    const onScroll = () => setScrolled(window.scrollY > 10);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -483,9 +488,7 @@ export function SiteHeader() {
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
   useEffect(() => {
@@ -495,141 +498,541 @@ export function SiteHeader() {
     setAccountOpen(false);
   }, [pathname]);
 
+  // Fix: close locale dropdown on outside click
+  useEffect(() => {
+    if (!localeOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (localeRef.current && !localeRef.current.contains(event.target as Node)) {
+        setLocaleOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [localeOpen]);
+
+  // Fix: close account dropdown on outside click
+  useEffect(() => {
+    if (!accountOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(event.target as Node)) {
+        setAccountOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [accountOpen]);
+
+  // Fix: close mega menu on outside click
+  useEffect(() => {
+    if (!activeGroup) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (megaMenuRef.current && !megaMenuRef.current.contains(event.target as Node)) {
+        setActiveGroup(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [activeGroup]);
+
   const isActive = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
 
   return (
-    <header className="page-shell sa-header-shell">
-      <div className={`card sa-header${scrolled ? " is-scrolled" : ""}`}>
-        <div className="sa-header-brand">
-          <Link href="/" className="sa-header-logo">
-            <Image src="/brand/speakace-logo.png" alt="SpeakAce" width={958} height={330} priority className="sa-header-logo-image" />
-          </Link>
-          <p className="sa-header-tagline">{content.tagline}</p>
-          {currentUser ? (
-            <span className="sa-header-userline">
-              {currentUser.name} · {currentUser.plan.toUpperCase()}
-            </span>
-          ) : null}
-        </div>
-
-        <div className="sa-header-center desktop-nav">
-          <div className="sa-header-nav-cluster" onMouseLeave={() => setActiveGroup(null)}>
-            <nav className="sa-header-nav">
-              {signedIn ? (
-                <Link href="/app" className={`sa-nav-link${isActive("/app") ? " is-active" : ""}`}>
-                  {labels.dashboard}
-                </Link>
-              ) : null}
-
-              {groups.map((group) => (
-                <button
-                  key={group.key}
-                  type="button"
-                  className={`sa-nav-link sa-nav-pill${activeGroup === group.key ? " is-active" : ""}`}
-                  onMouseEnter={() => setActiveGroup(group.key)}
-                >
-                  {group.label}
-                </button>
-              ))}
-            </nav>
-
-            <div className={`sa-mega-menu${activeGroup ? " is-open" : ""}`}>
-              <div className="sa-mega-grid">
-                {groups.map((group) => (
-                  <div key={group.key} className={`sa-mega-column${activeGroup === group.key ? " is-active" : ""}`}>
-                    <strong>{group.label}</strong>
-                    <div className="sa-mega-links">
-                      {group.items.map((item) => (
-                        <Link key={item.href} href={item.href as Route} className={`sa-mega-link${isActive(item.href) ? " is-active" : ""}`}>
-                          {item.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+    <header
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        transition: "all 0.3s ease",
+        background: scrolled ? "oklch(0.08 0.01 280 / 0.85)" : "transparent",
+        backdropFilter: scrolled ? "blur(16px)" : "none",
+        borderBottom: scrolled ? "1px solid oklch(1 0 0 / 8%)" : "1px solid transparent"
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "1280px",
+          margin: "0 auto",
+          padding: "0 1.5rem",
+          height: "64px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "1rem"
+        }}
+      >
+        {/* Logo */}
+        <Link
+          href="/"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            textDecoration: "none",
+            flexShrink: 0
+          }}
+        >
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              background: "linear-gradient(135deg, var(--primary), var(--accent))",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
+            <span style={{ color: "white", fontWeight: 700, fontSize: "12px" }}>SA</span>
           </div>
+          <Image
+            src="/brand/speakace-logo.png"
+            alt="SpeakAce"
+            width={120}
+            height={41}
+            priority
+            style={{ height: "22px", width: "auto", filter: "brightness(0) invert(1)" }}
+          />
+        </Link>
+
+        {/* Desktop nav */}
+        <div
+          ref={megaMenuRef}
+          style={{ display: "flex", alignItems: "center", gap: "0", position: "relative", flex: 1, justifyContent: "center" }}
+          className="desktop-nav"
+        >
+          <nav style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+            {signedIn ? (
+              <Link
+                href="/app"
+                style={{
+                  padding: "0.375rem 0.75rem",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: isActive("/app") ? "var(--primary)" : "var(--foreground)",
+                  textDecoration: "none",
+                  borderRadius: "6px",
+                  transition: "all 0.2s",
+                  opacity: isActive("/app") ? 1 : 0.8
+                }}
+              >
+                {labels.dashboard}
+              </Link>
+            ) : null}
+
+            {groups.map((group) => (
+              <button
+                key={group.key}
+                type="button"
+                onClick={() => setActiveGroup(activeGroup === group.key ? null : group.key)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.25rem",
+                  padding: "0.375rem 0.75rem",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: activeGroup === group.key ? "var(--primary)" : "var(--foreground)",
+                  background: activeGroup === group.key ? "oklch(1 0 0 / 6%)" : "transparent",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  opacity: 0.85
+                }}
+              >
+                {group.label}
+                <ChevronDown
+                  size={14}
+                  style={{
+                    transition: "transform 0.2s",
+                    transform: activeGroup === group.key ? "rotate(180deg)" : "rotate(0deg)"
+                  }}
+                />
+              </button>
+            ))}
+          </nav>
+
+          {/* Mega dropdown */}
+          {activeGroup && (
+            <div
+              style={{
+                position: "absolute",
+                top: "calc(100% + 8px)",
+                left: "50%",
+                transform: "translateX(-50%)",
+                background: "oklch(0.12 0.015 280)",
+                border: "1px solid oklch(1 0 0 / 10%)",
+                borderRadius: "12px",
+                padding: "1rem",
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: "0.5rem",
+                minWidth: "520px",
+                boxShadow: "0 20px 60px oklch(0 0 0 / 0.5)",
+                zIndex: 100
+              }}
+            >
+              {groups.map((group) => (
+                <div
+                  key={group.key}
+                  style={{
+                    opacity: activeGroup === group.key ? 1 : 0.4,
+                    transition: "opacity 0.2s",
+                    padding: "0.5rem"
+                  }}
+                >
+                  <strong style={{ display: "block", fontSize: "0.75rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {group.label}
+                  </strong>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.125rem" }}>
+                    {group.items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href as Route}
+                        style={{
+                          display: "block",
+                          padding: "0.375rem 0.5rem",
+                          fontSize: "0.8125rem",
+                          color: isActive(item.href) ? "var(--primary)" : "var(--foreground)",
+                          textDecoration: "none",
+                          borderRadius: "6px",
+                          background: isActive(item.href) ? "oklch(0.623 0.214 259.815 / 0.15)" : "transparent",
+                          transition: "all 0.15s",
+                          opacity: 0.9
+                        }}
+                        onClick={() => setActiveGroup(null)}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="sa-header-actions desktop-nav">
+        {/* Desktop actions */}
+        <div
+          style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}
+          className="desktop-nav"
+        >
           {signedIn ? (
             <>
-              <Link href="/app/notifications" className="sa-icon-button" aria-label={labels.notifications}>
+              <Link
+                href="/app/notifications"
+                style={{
+                  padding: "0.5rem",
+                  borderRadius: "8px",
+                  color: "var(--foreground)",
+                  opacity: 0.7,
+                  textDecoration: "none",
+                  transition: "opacity 0.2s"
+                }}
+                aria-label={labels.notifications}
+              >
                 🔔
               </Link>
-              <div className="sa-account-wrap">
-                <button type="button" className="sa-secondary-button" onClick={() => setAccountOpen((value) => !value)}>
+              <div ref={accountRef} style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  onClick={() => setAccountOpen((v) => !v)}
+                  style={{
+                    padding: "0.375rem 0.75rem",
+                    fontSize: "0.875rem",
+                    fontWeight: 500,
+                    color: "var(--foreground)",
+                    background: "oklch(1 0 0 / 8%)",
+                    border: "1px solid oklch(1 0 0 / 12%)",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                >
                   {labels.account}
                 </button>
-                <div className={`sa-account-dropdown${accountOpen ? " is-open" : ""}`}>
-                  <Link href="/app/profile">{labels.profile}</Link>
-                  <Link href="/app/billing">{labels.billing}</Link>
-                  <Link href="/app/settings">{labels.settings}</Link>
-                </div>
+                {accountOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      top: "calc(100% + 8px)",
+                      background: "oklch(0.12 0.015 280)",
+                      border: "1px solid oklch(1 0 0 / 10%)",
+                      borderRadius: "10px",
+                      padding: "0.5rem",
+                      minWidth: "160px",
+                      boxShadow: "0 10px 40px oklch(0 0 0 / 0.5)",
+                      zIndex: 100,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.125rem"
+                    }}
+                  >
+                    {[
+                      { href: "/app/profile", label: labels.profile },
+                      { href: "/app/billing", label: labels.billing },
+                      { href: "/app/settings", label: labels.settings }
+                    ].map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href as Route}
+                        onClick={() => setAccountOpen(false)}
+                        style={{
+                          display: "block",
+                          padding: "0.5rem 0.75rem",
+                          fontSize: "0.875rem",
+                          color: "var(--foreground)",
+                          textDecoration: "none",
+                          borderRadius: "6px",
+                          transition: "background 0.15s"
+                        }}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
-              <button type="button" className="sa-ghost-button" onClick={() => void signOut()}>
+              <button
+                type="button"
+                onClick={() => void signOut()}
+                style={{
+                  padding: "0.375rem 0.75rem",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: "var(--foreground)",
+                  background: "transparent",
+                  border: "1px solid oklch(1 0 0 / 12%)",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  opacity: 0.7,
+                  transition: "all 0.2s"
+                }}
+              >
                 {labels.signOut}
               </button>
             </>
           ) : (
             <>
-              <Link href="/auth?mode=signup" className="sa-secondary-button">
+              <Link
+                href="/auth?mode=signup"
+                style={{
+                  padding: "0.375rem 0.875rem",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: "var(--foreground)",
+                  background: "oklch(1 0 0 / 8%)",
+                  border: "1px solid oklch(1 0 0 / 12%)",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                  transition: "all 0.2s",
+                  opacity: 0.85
+                }}
+              >
                 {labels.signUp}
               </Link>
-              <Link href="/auth?mode=signin" className="sa-ghost-button">
+              <Link
+                href="/auth?mode=signin"
+                style={{
+                  padding: "0.375rem 0.875rem",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  color: "var(--foreground)",
+                  background: "transparent",
+                  border: "1px solid transparent",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                  transition: "all 0.2s",
+                  opacity: 0.65
+                }}
+              >
                 {labels.signIn}
               </Link>
-              <a href={buildPlanCheckoutPath({ campaign: "header_cta" })} className="sa-primary-button">
+              <a
+                href={buildPlanCheckoutPath({ campaign: "header_cta" })}
+                style={{
+                  padding: "0.375rem 1rem",
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  color: "white",
+                  background: "var(--primary)",
+                  border: "none",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                  transition: "all 0.2s",
+                  boxShadow: "0 0 20px oklch(0.623 0.214 259.815 / 0.3)"
+                }}
+              >
                 Get Plus
               </a>
             </>
           )}
 
-          <div className="sa-locale-wrap">
+          {/* Language selector */}
+          <div ref={localeRef} style={{ position: "relative" }}>
             <button
               type="button"
-              className="sa-locale-button"
-              onClick={() => setLocaleOpen((value) => !value)}
-              onMouseEnter={() => setLocaleOpen(true)}
+              onClick={() => setLocaleOpen((v) => !v)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.375rem",
+                padding: "0.5rem",
+                background: "transparent",
+                border: "1px solid oklch(1 0 0 / 12%)",
+                borderRadius: "8px",
+                color: "var(--foreground)",
+                cursor: "pointer",
+                opacity: 0.75,
+                transition: "all 0.2s"
+              }}
+              aria-label="Select language"
             >
-              <span>{locale.flag}</span>
-              <span>{locale.code.toUpperCase()}</span>
+              <Globe size={16} />
+              <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>{locale.code.toUpperCase()}</span>
             </button>
-            <div className={`sa-locale-dropdown${localeOpen ? " is-open" : ""}`} onMouseLeave={() => setLocaleOpen(false)}>
-              {localeOptions.map((item) => (
-                <button key={item.code} type="button" className={`sa-locale-option${language === item.code ? " is-active" : ""}`} onClick={() => setLanguage(item.code)}>
-                  <span>{item.flag}</span>
-                  <span>{item.nativeLabel}</span>
-                </button>
-              ))}
-            </div>
+
+            {localeOpen && (
+              <div
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "calc(100% + 8px)",
+                  background: "oklch(0.12 0.015 280)",
+                  border: "1px solid oklch(1 0 0 / 10%)",
+                  borderRadius: "10px",
+                  padding: "0.5rem",
+                  minWidth: "160px",
+                  maxHeight: "320px",
+                  overflowY: "auto",
+                  boxShadow: "0 10px 40px oklch(0 0 0 / 0.5)",
+                  zIndex: 100,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.125rem"
+                }}
+              >
+                {localeOptions.map((item) => (
+                  <button
+                    key={item.code}
+                    type="button"
+                    onClick={() => { setLanguage(item.code); setLocaleOpen(false); }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.5rem 0.75rem",
+                      fontSize: "0.875rem",
+                      color: "var(--foreground)",
+                      background: language === item.code ? "oklch(0.623 0.214 259.815 / 0.2)" : "transparent",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      width: "100%",
+                      transition: "background 0.15s"
+                    }}
+                  >
+                    <span>{item.flag}</span>
+                    <span>{item.nativeLabel}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        <button type="button" className={`sa-mobile-toggle${mobileOpen ? " is-open" : ""}`} aria-label={mobileOpen ? labels.close : labels.menu} onClick={() => setMobileOpen((value) => !value)}>
-          <span />
-          <span />
-          <span />
+        {/* Mobile toggle */}
+        <button
+          type="button"
+          onClick={() => setMobileOpen((v) => !v)}
+          className="mobile-only"
+          style={{
+            padding: "0.5rem",
+            background: "oklch(1 0 0 / 8%)",
+            border: "1px solid oklch(1 0 0 / 12%)",
+            borderRadius: "8px",
+            color: "var(--foreground)",
+            cursor: "pointer"
+          }}
+          aria-label={mobileOpen ? labels.close : labels.menu}
+        >
+          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
-      <div className={`sa-mobile-overlay${mobileOpen ? " is-open" : ""}`} onClick={() => setMobileOpen(false)} />
-      <aside className={`sa-mobile-panel${mobileOpen ? " is-open" : ""}`}>
-        <div className="sa-mobile-head">
-          <Image src="/brand/speakace-logo.png" alt="SpeakAce" width={958} height={330} className="sa-mobile-logo" />
-          <button type="button" className="sa-mobile-close" onClick={() => setMobileOpen(false)}>
-            ✕
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "oklch(0 0 0 / 0.6)",
+            zIndex: 40
+          }}
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile panel */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: "min(320px, 85vw)",
+          background: "oklch(0.10 0.015 280)",
+          borderLeft: "1px solid oklch(1 0 0 / 10%)",
+          zIndex: 50,
+          transform: mobileOpen ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          overflowY: "auto",
+          padding: "1.5rem"
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ width: "28px", height: "28px", background: "linear-gradient(135deg, var(--primary), var(--accent))", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ color: "white", fontWeight: 700, fontSize: "11px" }}>SA</span>
+            </div>
+            <span style={{ fontWeight: 700, fontSize: "1rem", color: "var(--foreground)" }}>SpeakAce</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            style={{ padding: "0.375rem", background: "transparent", border: "none", color: "var(--foreground)", cursor: "pointer", opacity: 0.6 }}
+          >
+            <X size={20} />
           </button>
         </div>
-        <p className="sa-mobile-tagline">{content.tagline}</p>
+
+        <p style={{ fontSize: "0.8125rem", color: "var(--muted-foreground)", marginBottom: "1.5rem" }}>{content.tagline}</p>
 
         {groups.map((group) => (
-          <div key={group.key} className="sa-mobile-group">
-            <strong>{group.label}</strong>
-            <div className="sa-mobile-links">
+          <div key={group.key} style={{ marginBottom: "1.25rem" }}>
+            <strong style={{ display: "block", fontSize: "0.6875rem", color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.375rem" }}>
+              {group.label}
+            </strong>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.125rem" }}>
               {group.items.map((item) => (
-                <Link key={item.href} href={item.href as Route} className={`sa-mobile-link${isActive(item.href) ? " is-active" : ""}`}>
+                <Link
+                  key={item.href}
+                  href={item.href as Route}
+                  style={{
+                    display: "block",
+                    padding: "0.5rem 0.75rem",
+                    fontSize: "0.875rem",
+                    color: isActive(item.href) ? "var(--primary)" : "var(--foreground)",
+                    textDecoration: "none",
+                    borderRadius: "6px",
+                    background: isActive(item.href) ? "oklch(0.623 0.214 259.815 / 0.1)" : "transparent",
+                    opacity: isActive(item.href) ? 1 : 0.8
+                  }}
+                >
                   {item.label}
                 </Link>
               ))}
@@ -637,11 +1040,31 @@ export function SiteHeader() {
           </div>
         ))}
 
-        <div className="sa-mobile-group">
-          <strong>Language</strong>
-          <div className="sa-mobile-locale-list">
+        {/* Mobile language selector */}
+        <div style={{ marginBottom: "1.25rem" }}>
+          <strong style={{ display: "block", fontSize: "0.6875rem", color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.375rem" }}>
+            Language
+          </strong>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.25rem" }}>
             {localeOptions.map((item) => (
-              <button key={item.code} type="button" className={`sa-mobile-locale${language === item.code ? " is-active" : ""}`} onClick={() => setLanguage(item.code)}>
+              <button
+                key={item.code}
+                type="button"
+                onClick={() => { setLanguage(item.code); setMobileOpen(false); }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.375rem",
+                  padding: "0.5rem 0.625rem",
+                  fontSize: "0.8125rem",
+                  color: "var(--foreground)",
+                  background: language === item.code ? "oklch(0.623 0.214 259.815 / 0.2)" : "oklch(1 0 0 / 4%)",
+                  border: `1px solid ${language === item.code ? "oklch(0.623 0.214 259.815 / 0.4)" : "oklch(1 0 0 / 8%)"}`,
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  transition: "all 0.15s"
+                }}
+              >
                 <span>{item.flag}</span>
                 <span>{item.nativeLabel}</span>
               </button>
@@ -649,34 +1072,40 @@ export function SiteHeader() {
           </div>
         </div>
 
-        <div className="sa-mobile-actions">
+        {/* Mobile CTA */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", paddingTop: "0.75rem", borderTop: "1px solid oklch(1 0 0 / 8%)" }}>
           {signedIn ? (
             <>
-              <Link href="/app" className="sa-secondary-button">
+              <Link href="/app" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 600, color: "white", background: "var(--primary)", borderRadius: "8px", textDecoration: "none" }}>
                 {labels.dashboard}
               </Link>
-              <Link href="/app/profile" className="sa-ghost-button">
+              <Link href="/app/profile" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "oklch(1 0 0 / 8%)", border: "1px solid oklch(1 0 0 / 12%)", borderRadius: "8px", textDecoration: "none", opacity: 0.8 }}>
                 {labels.profile}
               </Link>
-              <button type="button" className="sa-ghost-button" onClick={() => void signOut()}>
+              <button type="button" onClick={() => void signOut()} style={{ padding: "0.625rem 1rem", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "transparent", border: "1px solid oklch(1 0 0 / 12%)", borderRadius: "8px", cursor: "pointer", opacity: 0.6 }}>
                 {labels.signOut}
               </button>
             </>
           ) : (
             <>
-              <Link href="/auth?mode=signup" className="sa-secondary-button">
-                {labels.signUp}
-              </Link>
-              <Link href="/auth?mode=signin" className="sa-ghost-button">
-                {labels.signIn}
-              </Link>
-              <a href={buildPlanCheckoutPath({ campaign: "mobile_header_cta" })} className="sa-primary-button">
+              <a href={buildPlanCheckoutPath({ campaign: "mobile_header_cta" })} style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 600, color: "white", background: "var(--primary)", borderRadius: "8px", textDecoration: "none", boxShadow: "0 0 20px oklch(0.623 0.214 259.815 / 0.3)" }}>
                 Get Plus
               </a>
+              <Link href="/auth?mode=signup" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "oklch(1 0 0 / 8%)", border: "1px solid oklch(1 0 0 / 12%)", borderRadius: "8px", textDecoration: "none" }}>
+                {labels.signUp}
+              </Link>
+              <Link href="/auth?mode=signin" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "transparent", border: "1px solid oklch(1 0 0 / 8%)", borderRadius: "8px", textDecoration: "none", opacity: 0.65 }}>
+                {labels.signIn}
+              </Link>
             </>
           )}
         </div>
-      </aside>
+      </div>
+
+      <style>{`
+        @media (min-width: 768px) { .mobile-only { display: none !important; } }
+        @media (max-width: 767px) { .desktop-nav { display: none !important; } }
+      `}</style>
     </header>
   );
 }

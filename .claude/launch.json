@@ -1,0 +1,14 @@
+{
+  "servers": [
+    {
+      "name": "Next.js Dev",
+      "command": "npm run dev",
+      "cwd": ".",
+      "port": 3000,
+      "url": "http://localhost:3000",
+      "description": "SpeakAce main Next.js app (App Router)",
+      "env": {}
+    }
+  ],
+  "defaultServer": "Next.js Dev"
+}

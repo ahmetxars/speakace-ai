@@ -2,6 +2,9 @@
 
 import type { Route } from "next";
 import Link from "next/link";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowRight, Zap, TrendingUp, BookOpen, ChevronDown } from "lucide-react";
 import { useAppState } from "@/components/providers";
 import { AdSenseUnit } from "@/components/adsense-unit";
 
@@ -19,51 +22,38 @@ const sectionCopy = {
     badge: "AI-powered speaking practice",
     badgeLive: "1,000+ learners practicing today",
     trusted: "Trusted by learners in 50+ countries.",
-    cta: "Start Speaking Now",
+    cta: "Start Speaking Free",
     ctaFree: "Try Free",
-    demo: "Watch 60s demo →",
-    trustBar: "Free • No signup required • Cancel anytime",
+    demo: "See how it works",
+    trustBar: "✓ No signup required   ✓ Free forever   ✓ 1,000+ active learners",
     scoreLabel: "Band score improved",
     whyEyebrow: "Why SpeakAce",
-    whyTitle: "Why learners choose SpeakAce instead of generic tools",
+    whyTitle: "Why learners choose SpeakAce",
+    whySubtitle: "Everything you need to improve your speaking score, powered by intelligent AI feedback.",
     whyCards: [
       {
-        icon: "🎯",
-        title: "Built for exam speaking",
-        body: "Practice IELTS and TOEFL speaking tasks that feel like real prep instead of generic chat prompts."
+        icon: Zap,
+        title: "AI-Powered Feedback",
+        body: "Get detailed analysis on every session. Our AI evaluates fluency, pronunciation, grammar, and coherence just like a real examiner."
       },
       {
-        icon: "📊",
-        title: "Feedback you can act on",
-        body: "See a band-style score, transcript, and clearer next steps after every attempt."
+        icon: TrendingUp,
+        title: "Track Your Progress",
+        body: "Watch your band score improve over time. See a band-style score, transcript, and clearer next steps after every attempt."
       },
       {
-        icon: "🔄",
-        title: "A calmer study system",
-        body: "Retry the same answer, compare improvement, and build a daily speaking rhythm that actually sticks."
+        icon: BookOpen,
+        title: "500+ Real Questions",
+        body: "Practice with authentic IELTS and TOEFL questions. Retry the same answer, compare improvement, and build a daily rhythm."
       }
     ],
     howEyebrow: "How it works",
     howTitle: "Three steps to a better band score",
+    howSubtitle: "Simple, focused practice that fits your schedule.",
     howCards: [
-      {
-        step: "01",
-        icon: "🎯",
-        title: "Pick your exam and task",
-        body: "Start with IELTS or TOEFL, then choose the speaking task you want to practice right now."
-      },
-      {
-        step: "02",
-        icon: "🎙️",
-        title: "Record one focused answer",
-        body: "Use one real question, one clear answer, and one attempt to see how your speaking holds up."
-      },
-      {
-        step: "03",
-        icon: "📈",
-        title: "Review, fix, and retry",
-        body: "Check the transcript, estimated score, and improvement notes, then record again with more control."
-      }
+      { step: 1, title: "Pick your exam and task", body: "Start with IELTS or TOEFL, then choose the speaking task you want to practice right now." },
+      { step: 2, title: "Record one focused answer", body: "Use one real question, one clear answer, and one attempt to see how your speaking holds up." },
+      { step: 3, title: "Review, fix, and retry", body: "Check the transcript, estimated score, and improvement notes, then record again with more control." }
     ],
     howCtaTitle: "Ready to see your score?",
     howCtaMeta: "Free session · No account needed · Results in 60 seconds",
@@ -76,7 +66,8 @@ const sectionCopy = {
       { title: "Daily practice hooks", body: "Tools, prompts, and habits that keep you speaking consistently.", tag: "Habits" }
     ],
     testEyebrow: "Results",
-    testTitle: "What learners say after their first week",
+    testTitle: "Loved by learners worldwide",
+    testSubtitle: "Join thousands of students who improved their IELTS speaking score",
     statsRow: [
       { value: "50+", label: "Countries" },
       { value: "1,000+", label: "Daily learners" },
@@ -84,7 +75,7 @@ const sectionCopy = {
       { value: "89%", label: "Satisfaction rate" }
     ],
     faqEyebrow: "FAQ",
-    faqTitle: "Questions learners ask before they start",
+    faqTitle: "Frequently asked questions",
     faqs: [
       {
         q: "How accurate is the AI band score estimate?",
@@ -106,7 +97,10 @@ const sectionCopy = {
         q: "Can teachers use SpeakAce with students?",
         a: "Yes. Teachers can create classes, assign speaking homework, track attempts, and see progress from a single panel."
       }
-    ]
+    ],
+    ctaFinalTitle: "Ready to improve your IELTS score?",
+    ctaFinalBody: "Start with our free plan today. No credit card required. Upgrade anytime.",
+    ctaFinalButton: "Get Started Free"
   },
   tr: {
     badge: "Yapay zekâ destekli speaking practice",
@@ -114,49 +108,36 @@ const sectionCopy = {
     trusted: "50+ ülkedeki öğrenciler tarafından kullanılıyor.",
     cta: "Hemen Konuşmaya Başla",
     ctaFree: "Ücretsiz Dene",
-    demo: "60 sn demoyu izle →",
-    trustBar: "Ücretsiz • Kayıt gerektirmez • İstediğin zaman iptal et",
+    demo: "Nasıl çalıştığını gör",
+    trustBar: "✓ Kayıt gerektirmez   ✓ Ücretsiz   ✓ 1.000+ aktif öğrenci",
     scoreLabel: "Band skoru gelişti",
     whyEyebrow: "Neden SpeakAce",
-    whyTitle: "Öğrenciler neden genel araçlar yerine SpeakAce'i seçiyor",
+    whyTitle: "Öğrenciler neden SpeakAce seçiyor",
+    whySubtitle: "Yapay zeka destekli geri bildirimle konuşma skorunu geliştirmek için ihtiyacın olan her şey.",
     whyCards: [
       {
-        icon: "🎯",
-        title: "Sınav speaking'i için tasarlandı",
-        body: "Genel sohbet prompt'ları yerine gerçek IELTS ve TOEFL speaking görevleriyle çalışırsın."
+        icon: Zap,
+        title: "Yapay Zeka Destekli Geri Bildirim",
+        body: "Her oturumda akıcılık, telaffuz, gramer ve tutarlılık değerlendirmesi alırsın."
       },
       {
-        icon: "📊",
-        title: "Harekete geçirici geri bildirim",
-        body: "Her denemeden sonra band benzeri skor, transcript ve bir sonraki net gelişim adımını görürsün."
+        icon: TrendingUp,
+        title: "İlerleni Takip Et",
+        body: "Band skorunun zamanla nasıl ilerlediğini gör. Her denemeden sonra detaylı analiz alırsın."
       },
       {
-        icon: "🔄",
-        title: "Daha sakin bir çalışma sistemi",
-        body: "Aynı cevabı tekrar dene, farkı gör, günlük speaking düzenini daha kolay kur."
+        icon: BookOpen,
+        title: "500+ Gerçek Soru",
+        body: "Gerçek IELTS ve TOEFL sorularıyla çalış. Aynı cevabı tekrar dene, gelişimi karşılaştır."
       }
     ],
     howEyebrow: "Nasıl çalışır",
     howTitle: "Daha iyi bir band skoruna giden üç adım",
+    howSubtitle: "Programına uyan, odaklı ve basit pratik.",
     howCards: [
-      {
-        step: "01",
-        icon: "🎯",
-        title: "Sınav ve görevi seç",
-        body: "Önce IELTS veya TOEFL'ı seç, sonra o anda çalışmak istediğin speaking görevini aç."
-      },
-      {
-        step: "02",
-        icon: "🎙️",
-        title: "Tek bir odaklı cevap kaydet",
-        body: "Gerçek bir soruya tek bir net cevap ver ve mevcut speaking seviyeni gör."
-      },
-      {
-        step: "03",
-        icon: "📈",
-        title: "İncele, düzelt, tekrar dene",
-        body: "Transcript'i, tahmini skoru ve geliştirme notlarını görüp daha kontrollü bir yeni deneme yap."
-      }
+      { step: 1, title: "Sınav ve görevi seç", body: "Önce IELTS veya TOEFL'ı seç, sonra o anda çalışmak istediğin speaking görevini aç." },
+      { step: 2, title: "Tek bir odaklı cevap kaydet", body: "Gerçek bir soruya tek bir net cevap ver ve mevcut speaking seviyeni gör." },
+      { step: 3, title: "İncele, düzelt, tekrar dene", body: "Transcript'i, tahmini skoru ve geliştirme notlarını görüp daha kontrollü bir yeni deneme yap." }
     ],
     howCtaTitle: "Skorunu görmeye hazır mısın?",
     howCtaMeta: "Ücretsiz oturum · Hesap gerekmez · 60 saniyede sonuç",
@@ -169,7 +150,8 @@ const sectionCopy = {
       { title: "Günlük pratik alışkanlığı", body: "Sürekli speaking'e bağlayan araçlar ve prompt'lar.", tag: "Alışkanlık" }
     ],
     testEyebrow: "Sonuçlar",
-    testTitle: "İlk haftadan sonra öğrenciler ne diyor",
+    testTitle: "Dünya genelindeki öğrenciler seviyor",
+    testSubtitle: "IELTS speaking skorunu geliştiren binlerce öğrenciye katıl",
     statsRow: [
       { value: "50+", label: "Ülke" },
       { value: "1.000+", label: "Günlük öğrenci" },
@@ -177,277 +159,874 @@ const sectionCopy = {
       { value: "%89", label: "Memnuniyet" }
     ],
     faqEyebrow: "SSS",
-    faqTitle: "Başlamadan önce en çok sorulanlar",
+    faqTitle: "Sık sorulan sorular",
     faqs: [
       {
         q: "AI band skoru tahmini ne kadar doğru?",
-        a: "SpeakAce; akıcılık, telaffuz, yapı ve fikir desteğine göre tahmini bir IELTS band skoru verir. Resmî puanlamayı birebir kopyalamaz, ama denemeler arası gelişimi net gösterir."
+        a: "SpeakAce; akıcılık, telaffuz, yapı ve fikir desteğine göre tahmini bir IELTS band skoru verir."
       },
       {
         q: "Başlamak için hesap oluşturmam gerekiyor mu?",
-        a: "Hayır. Ücretsiz bir speaking oturumuna kayıt olmadan başlayabilirsin. Hesap açarsan geçmişini ve skorlarını takip edebilirsin."
+        a: "Hayır. Ücretsiz bir speaking oturumuna kayıt olmadan başlayabilirsin."
       },
       {
         q: "SpeakAce TOEFL hazırlığı için de uygun mu?",
-        a: "Evet. IELTS yanında TOEFL tarzı speaking görevleri de var ve aynı temel alanlarda geri bildirim veriyor."
+        a: "Evet. IELTS yanında TOEFL tarzı speaking görevleri de var."
       },
       {
         q: "Genel AI araçlarından farkı ne?",
-        a: "Genel araçlar yazıya cevap verir. SpeakAce ise sesini dinler, transcript çıkarır ve sınav odaklı speaking gelişimi için tasarlanmıştır."
+        a: "Genel araçlar yazıya cevap verir. SpeakAce ise sesini dinler, transcript çıkarır ve sınav odaklı gelişim için tasarlanmıştır."
       },
       {
         q: "Öğretmenler öğrencileriyle kullanabilir mi?",
         a: "Evet. Öğretmenler sınıf kurabilir, ödev verebilir ve denemeleri tek panelden izleyebilir."
       }
-    ]
+    ],
+    ctaFinalTitle: "IELTS skorunu geliştirmeye hazır mısın?",
+    ctaFinalBody: "Bugün ücretsiz planla başla. Kredi kartı gerekmez. İstediğinde yükselt.",
+    ctaFinalButton: "Ücretsiz Başla"
   }
 } as const;
 
 const weeklyTestimonials = [
   {
-    initials: "AT",
-    tone: "is-purple",
     name: "Ayşe T.",
     country: "🇹🇷 Turkey",
     score: "5.5 → 7.0",
-    quote: "I practiced every morning for 10 days. The transcript review helped me see exactly where I was repeating myself."
+    text: "I practiced every morning for 10 days. The transcript review helped me see exactly where I was repeating myself."
   },
   {
-    initials: "KM",
-    tone: "is-blue",
     name: "Kenji M.",
     country: "🇯🇵 Japan",
     score: "6.0 → 7.5",
-    quote: "The retry feature is what makes this different. I could hear the improvement between attempt one and attempt three."
+    text: "The retry feature is what makes this different. I could hear the improvement between attempt one and attempt three."
   },
   {
-    initials: "PK",
-    tone: "is-green",
     name: "Priya K.",
     country: "🇮🇳 India",
     score: "6.5 → 7.5",
-    quote: "SpeakAce shows why your score is low, not just what it is. That changed my Part 2 answers completely."
+    text: "SpeakAce shows why your score is low, not just what it is. That changed my Part 2 answers completely."
   },
   {
-    initials: "AR",
-    tone: "is-orange",
     name: "Ahmed R.",
     country: "🇪🇬 Egypt",
     score: "5.0 → 6.5",
-    quote: "Three weeks of daily practice. My fluency improved because the daily prompt habit finally gave me consistency."
+    text: "Three weeks of daily practice. My fluency improved because the daily prompt habit finally gave me consistency."
   }
 ] as const;
 
-type SectionLocale = (typeof sectionCopy)[keyof typeof sectionCopy];
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.12, delayChildren: 0.1 }
+  }
+};
 
-function ProgressRow({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="sa-progress-row">
-      <div className="sa-progress-head">
-        <span>{label}</span>
-        <strong>{value}%</strong>
-      </div>
-      <div className="sa-progress-track">
-        <span className="sa-progress-fill" style={{ width: `${value}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function HeroScoreCard({ focus, trust }: { focus: string; trust: SectionLocale }) {
-  return (
-    <div className="sa-hero-card">
-      <div className="sa-hero-card-top">
-        <span className="sa-hero-card-badge">🎯 Band movement</span>
-        <div className="sa-hero-bandline">6.5 → 7.0</div>
-        <p className="sa-hero-bandnote">{trust.scoreLabel}</p>
-      </div>
-      <div className="sa-hero-progress">
-        <ProgressRow label="Fluency" value={78} />
-        <ProgressRow label="Pronunciation" value={72} />
-        <ProgressRow label="Structure" value={75} />
-      </div>
-      <div className="sa-hero-focus">
-        <span>Why this exists</span>
-        <p>{focus}</p>
-      </div>
-    </div>
-  );
-}
+const itemVariants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7 }
+  }
+};
 
 export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: MarketingPageProps) {
   const { language } = useAppState();
   const t = sectionCopy[language === "tr" ? "tr" : "en"];
   const primaryHref = ctaHref as Route;
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   return (
-    <main className="sa-home-shell">
+    <main style={{ minHeight: "100vh", paddingTop: "64px" }}>
 
       {/* ── Hero ─────────────────────────────── */}
-      <section className="page-shell sa-hero-grid">
-        <div className="sa-hero-copy">
-          <span className="sa-live-badge">
-            <span className="sa-live-dot" />
-            {t.badgeLive}
-          </span>
-          <span className="eyebrow sa-hero-eyebrow">{eyebrow || t.badge}</span>
-          <h1>{title}</h1>
-          <p className="sa-hero-description">
-            {description}
-            <br />
-            <span className="sa-trusted-line">{t.trusted}</span>
-          </p>
-          <div className="sa-hero-actions">
-            <Link href={primaryHref} className="sa-primary-button">
-              {t.cta}
-            </Link>
-            <a href="#how-it-works" className="sa-secondary-button">
-              {t.demo}
-            </a>
-          </div>
-          <p className="sa-hero-trust">{t.trustBar}</p>
-        </div>
+      <section style={{ position: "relative", padding: "5rem 1.5rem 4rem", overflow: "hidden" }}>
+        {/* Gradient background */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, oklch(0.623 0.214 259.815 / 0.05), transparent, oklch(0.71 0.18 165.41 / 0.05))", pointerEvents: "none" }} />
 
-        <HeroScoreCard focus={focus} trust={t} />
+        {/* Animated blobs */}
+        <motion.div
+          style={{
+            position: "absolute",
+            top: "5rem",
+            right: "5%",
+            width: "400px",
+            height: "400px",
+            background: "oklch(0.623 0.214 259.815 / 0.08)",
+            borderRadius: "50%",
+            filter: "blur(80px)",
+            pointerEvents: "none"
+          }}
+          animate={{ y: [0, 40, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          style={{
+            position: "absolute",
+            bottom: "3rem",
+            left: "5%",
+            width: "500px",
+            height: "500px",
+            background: "oklch(0.71 0.18 165.41 / 0.07)",
+            borderRadius: "50%",
+            filter: "blur(100px)",
+            pointerEvents: "none"
+          }}
+          animate={{ y: [0, -30, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        <div style={{ maxWidth: "1200px", margin: "0 auto", position: "relative", zIndex: 1 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3rem", alignItems: "center" }}
+            className="hero-grid"
+          >
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <motion.div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.375rem 0.875rem",
+                  background: "oklch(0.623 0.214 259.815 / 0.12)",
+                  border: "1px solid oklch(0.623 0.214 259.815 / 0.2)",
+                  borderRadius: "100px",
+                  marginBottom: "1.25rem"
+                }}
+                whileHover={{ scale: 1.03 }}
+              >
+                <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "var(--accent)", animation: "pulse 2s infinite" }} />
+                <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--primary)" }}>
+                  🎯 {eyebrow || t.badge}
+                </span>
+              </motion.div>
+
+              <motion.h1
+                style={{ fontSize: "clamp(2.25rem, 5vw, 3.5rem)", fontWeight: 800, lineHeight: 1.15, marginBottom: "1.25rem", letterSpacing: "-0.02em" }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.1 }}
+              >
+                {title || "Your IELTS Speaking Score,"}{" "}
+                <span className="gradient-text">Finally Moving</span>
+              </motion.h1>
+
+              <motion.p
+                style={{ fontSize: "1.125rem", color: "var(--muted-foreground)", marginBottom: "0.5rem", lineHeight: 1.6 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+              >
+                {description || "Practice real exam questions. Get instant AI feedback. Retry smarter."}
+              </motion.p>
+              <motion.p
+                style={{ fontSize: "0.875rem", color: "var(--muted-foreground)", marginBottom: "2rem", opacity: 0.7 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.25 }}
+              >
+                {t.trusted}
+              </motion.p>
+
+              <motion.div
+                style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+              >
+                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                  <Link
+                    href={primaryHref}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.5rem",
+                      fontSize: "0.9375rem",
+                      fontWeight: 700,
+                      color: "white",
+                      background: "var(--primary)",
+                      borderRadius: "10px",
+                      textDecoration: "none",
+                      boxShadow: "0 0 30px oklch(0.623 0.214 259.815 / 0.35)"
+                    }}
+                  >
+                    {t.cta}
+                    <motion.span
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <ArrowRight size={18} />
+                    </motion.span>
+                  </Link>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                  <a
+                    href="#how-it-works"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.5rem",
+                      fontSize: "0.9375rem",
+                      fontWeight: 600,
+                      color: "var(--foreground)",
+                      background: "oklch(1 0 0 / 6%)",
+                      border: "1px solid oklch(1 0 0 / 12%)",
+                      borderRadius: "10px",
+                      textDecoration: "none"
+                    }}
+                  >
+                    {t.demo}
+                  </a>
+                </motion.div>
+              </motion.div>
+
+              <motion.p
+                style={{ fontSize: "0.8125rem", color: "var(--muted-foreground)", opacity: 0.6 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.8, delay: 0.4 }}
+              >
+                {t.trustBar}
+              </motion.p>
+            </motion.div>
+
+            {/* Hero score card */}
+            <motion.div
+              style={{ position: "relative" }}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="hero-card-wrap"
+            >
+              <motion.div
+                style={{
+                  background: "linear-gradient(135deg, oklch(0.623 0.214 259.815 / 0.15), oklch(0.71 0.18 165.41 / 0.15))",
+                  borderRadius: "20px",
+                  padding: "1.5rem",
+                  border: "1px solid oklch(1 0 0 / 10%)"
+                }}
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div style={{ background: "var(--card)", borderRadius: "12px", padding: "1.5rem" }}>
+                  <div style={{ fontSize: "0.6875rem", fontWeight: 700, color: "var(--muted-foreground)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "0.75rem" }}>
+                    SPEAKING SCORE
+                  </div>
+                  <motion.div
+                    style={{ fontSize: "2.5rem", fontWeight: 800, marginBottom: "0.25rem" }}
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, delay: 0.4 }}
+                  >
+                    7.0
+                    <span style={{ fontSize: "1.25rem", color: "var(--accent)", marginLeft: "0.5rem" }}>↑ +0.5</span>
+                  </motion.div>
+                  <p style={{ fontSize: "0.8125rem", color: "var(--muted-foreground)", marginBottom: "1.25rem", opacity: 0.8 }}>
+                    {t.scoreLabel}
+                  </p>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    {[
+                      { label: "Fluency", score: "7.0", width: 78 },
+                      { label: "Pronunciation", score: "6.5", width: 72 },
+                      { label: "Structure", score: "7.0", width: 78 }
+                    ].map((item, idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5 + idx * 0.1 }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem", marginBottom: "0.375rem" }}>
+                          <span style={{ color: "var(--muted-foreground)" }}>{item.label}</span>
+                          <span style={{ fontWeight: 700 }}>{item.score}</span>
+                        </div>
+                        <div style={{ height: "6px", background: "var(--secondary)", borderRadius: "100px", overflow: "hidden" }}>
+                          <motion.div
+                            style={{ height: "100%", background: "var(--accent)", borderRadius: "100px" }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${item.width}%` }}
+                            transition={{ duration: 1.5, delay: 0.4 + idx * 0.1 }}
+                          />
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <div style={{ fontSize: "0.75rem", color: "var(--muted-foreground)", paddingTop: "1rem", borderTop: "1px solid var(--border)", marginTop: "1rem", opacity: 0.7 }}>
+                    IELTS Academic · {focus || "Practice session"}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </div>
+        </div>
       </section>
 
       {/* ── Stats bar ────────────────────────── */}
-      <section className="page-shell sa-stats-bar-section">
-        <div className="sa-stats-bar">
-          {t.statsRow.map((stat) => (
-            <div key={stat.label} className="sa-stat-item">
-              <strong>{stat.value}</strong>
-              <span>{stat.label}</span>
-            </div>
-          ))}
+      <section style={{ padding: "2rem 1.5rem", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", background: "oklch(1 0 0 / 2%)" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <motion.div
+            style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}
+            className="stats-grid"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            viewport={{ once: true }}
+          >
+            {t.statsRow.map((stat) => (
+              <div
+                key={stat.label}
+                style={{ textAlign: "center", padding: "0.5rem" }}
+              >
+                <strong style={{ display: "block", fontSize: "1.75rem", fontWeight: 800, background: "linear-gradient(135deg, var(--primary), var(--accent))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                  {stat.value}
+                </strong>
+                <span style={{ fontSize: "0.8125rem", color: "var(--muted-foreground)" }}>{stat.label}</span>
+              </div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
       {/* ── Why section ──────────────────────── */}
-      <section className="page-shell sa-section">
-        <span className="eyebrow">{t.whyEyebrow}</span>
-        <div className="sa-section-head">
-          <h2>{t.whyTitle}</h2>
-        </div>
-        <div className="sa-why-grid">
-          {t.whyCards.map((card) => (
-            <article key={card.title} className="card sa-why-card">
-              <div className="sa-why-card-icon">{card.icon}</div>
-              <span className="sa-card-chip">Score-focused</span>
-              <h3>{card.title}</h3>
-              <p>{card.body}</p>
-            </article>
-          ))}
+      <section style={{ padding: "5rem 1.5rem", background: "oklch(1 0 0 / 1.5%)" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <motion.div
+            style={{ textAlign: "center", marginBottom: "3rem" }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <span style={{ display: "inline-block", fontSize: "0.75rem", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
+              {t.whyEyebrow}
+            </span>
+            <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.75rem" }}>
+              {t.whyTitle}
+            </h2>
+            <p style={{ fontSize: "1.0625rem", color: "var(--muted-foreground)", maxWidth: "560px", margin: "0 auto" }}>
+              {t.whySubtitle}
+            </p>
+          </motion.div>
+
+          <motion.div
+            style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem" }}
+            className="three-col-grid"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {t.whyCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <motion.div
+                  key={card.title}
+                  variants={itemVariants}
+                  whileHover={{ y: -8, boxShadow: "0 20px 40px oklch(0.623 0.214 259.815 / 0.12)" }}
+                  style={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "16px",
+                    padding: "2rem",
+                    transition: "box-shadow 0.3s"
+                  }}
+                >
+                  <motion.div
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      background: "oklch(0.623 0.214 259.815 / 0.12)",
+                      borderRadius: "12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: "1.25rem"
+                    }}
+                    whileHover={{ rotate: 10, scale: 1.1 }}
+                  >
+                    <Icon size={24} style={{ color: "var(--primary)" }} />
+                  </motion.div>
+                  <h3 style={{ fontSize: "1.125rem", fontWeight: 700, marginBottom: "0.5rem" }}>{card.title}</h3>
+                  <p style={{ fontSize: "0.9375rem", color: "var(--muted-foreground)", lineHeight: 1.6 }}>{card.body}</p>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         </div>
       </section>
 
       {/* ── How it works ─────────────────────── */}
-      <section id="how-it-works" className="page-shell sa-section">
-        <span className="eyebrow">{t.howEyebrow}</span>
-        <div className="sa-section-head">
-          <h2>{t.howTitle}</h2>
-        </div>
-        <div className="sa-steps-grid">
-          {t.howCards.map((step) => (
-            <article key={step.title} className="card sa-step-card">
-              <span className="sa-step-number">{step.step}</span>
-              <span className="sa-step-icon">{step.icon}</span>
-              <h3>{step.title}</h3>
-              <p>{step.body}</p>
-            </article>
-          ))}
-        </div>
-        <div className="card sa-cta-panel">
-          <div>
-            <h3>{t.howCtaTitle}</h3>
-            <p>{t.howCtaMeta}</p>
-          </div>
-          <Link href={primaryHref} className="sa-primary-button">
-            {t.cta}
-          </Link>
+      <section id="how-it-works" style={{ padding: "5rem 1.5rem" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <motion.div
+            style={{ textAlign: "center", marginBottom: "3rem" }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <span style={{ display: "inline-block", fontSize: "0.75rem", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
+              {t.howEyebrow}
+            </span>
+            <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.75rem" }}>
+              {t.howTitle}
+            </h2>
+            <p style={{ fontSize: "1.0625rem", color: "var(--muted-foreground)", maxWidth: "480px", margin: "0 auto" }}>
+              {t.howSubtitle}
+            </p>
+          </motion.div>
+
+          <motion.div
+            style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", maxWidth: "900px", margin: "0 auto 2.5rem" }}
+            className="three-col-grid"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {t.howCards.map((item, idx) => (
+              <motion.div
+                key={idx}
+                variants={itemVariants}
+                style={{ position: "relative" }}
+              >
+                <motion.div
+                  style={{
+                    background: "linear-gradient(135deg, oklch(0.623 0.214 259.815 / 0.08), oklch(0.71 0.18 165.41 / 0.08))",
+                    border: "1px solid var(--border)",
+                    borderRadius: "16px",
+                    padding: "2rem",
+                    textAlign: "center"
+                  }}
+                  whileHover={{ y: -6 }}
+                >
+                  <motion.div
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      background: "var(--primary)",
+                      color: "white",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto 1rem",
+                      fontWeight: 800,
+                      fontSize: "1.125rem"
+                    }}
+                    whileHover={{ scale: 1.2, rotate: 360 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {item.step}
+                  </motion.div>
+                  <h3 style={{ fontSize: "1.0625rem", fontWeight: 700, marginBottom: "0.5rem" }}>{item.title}</h3>
+                  <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)", lineHeight: 1.6 }}>{item.body}</p>
+                </motion.div>
+
+                {idx < 2 && (
+                  <motion.div
+                    style={{
+                      display: "none",
+                      position: "absolute",
+                      top: "50%",
+                      right: "-0.75rem",
+                      width: "1.5rem",
+                      height: "3px",
+                      background: "linear-gradient(90deg, var(--primary), var(--accent))",
+                      zIndex: 2
+                    }}
+                    className="step-connector"
+                    initial={{ scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
+                    viewport={{ once: true }}
+                  />
+                )}
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* CTA panel */}
+          <motion.div
+            style={{
+              background: "var(--card)",
+              border: "1px solid var(--border)",
+              borderRadius: "16px",
+              padding: "2rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1.5rem",
+              flexWrap: "wrap"
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            viewport={{ once: true }}
+          >
+            <div>
+              <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.375rem" }}>{t.howCtaTitle}</h3>
+              <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>{t.howCtaMeta}</p>
+            </div>
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+              <Link
+                href={primaryHref}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.75rem 1.5rem",
+                  fontSize: "0.9375rem",
+                  fontWeight: 700,
+                  color: "white",
+                  background: "var(--primary)",
+                  borderRadius: "10px",
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 0 24px oklch(0.623 0.214 259.815 / 0.3)"
+                }}
+              >
+                {t.cta}
+                <ArrowRight size={16} />
+              </Link>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       {/* ── Feature bento ────────────────────── */}
-      <section className="page-shell sa-section">
-        <span className="eyebrow">{t.featureEyebrow}</span>
-        <div className="sa-section-head">
-          <h2>{t.featureTitle}</h2>
-        </div>
-        <div className="sa-bento-grid">
-          {t.featureCards.map((item, index) => (
-            <article key={item.title} className={`card sa-bento-card is-${index + 1}`}>
-              <span className="sa-card-chip">{item.tag}</span>
-              <h3>{item.title}</h3>
-              <p>{item.body}</p>
-              <div className="sa-bento-decoration" />
-            </article>
-          ))}
+      <section style={{ padding: "5rem 1.5rem", background: "oklch(1 0 0 / 1.5%)" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <motion.div
+            style={{ textAlign: "center", marginBottom: "3rem" }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <span style={{ display: "inline-block", fontSize: "0.75rem", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
+              {t.featureEyebrow}
+            </span>
+            <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
+              {t.featureTitle}
+            </h2>
+          </motion.div>
+
+          <motion.div
+            style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "1rem" }}
+            className="two-col-grid"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {t.featureCards.map((item) => (
+              <motion.div
+                key={item.title}
+                variants={itemVariants}
+                whileHover={{ y: -5 }}
+                style={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "16px",
+                  padding: "1.75rem",
+                  position: "relative",
+                  overflow: "hidden"
+                }}
+              >
+                <span style={{
+                  display: "inline-block",
+                  padding: "0.25rem 0.75rem",
+                  fontSize: "0.6875rem",
+                  fontWeight: 700,
+                  color: "var(--primary)",
+                  background: "oklch(0.623 0.214 259.815 / 0.1)",
+                  border: "1px solid oklch(0.623 0.214 259.815 / 0.2)",
+                  borderRadius: "100px",
+                  marginBottom: "0.875rem",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase"
+                }}>
+                  {item.tag}
+                </span>
+                <h3 style={{ fontSize: "1.0625rem", fontWeight: 700, marginBottom: "0.5rem" }}>{item.title}</h3>
+                <p style={{ fontSize: "0.9rem", color: "var(--muted-foreground)", lineHeight: 1.6 }}>{item.body}</p>
+                <div style={{
+                  position: "absolute",
+                  bottom: "-1rem",
+                  right: "-1rem",
+                  width: "80px",
+                  height: "80px",
+                  background: "linear-gradient(135deg, var(--primary), var(--accent))",
+                  borderRadius: "50%",
+                  opacity: 0.05
+                }} />
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
       {/* ── Testimonials ─────────────────────── */}
-      <section className="page-shell sa-section">
-        <span className="eyebrow">{t.testEyebrow}</span>
-        <div className="sa-section-head">
-          <h2>{t.testTitle}</h2>
-        </div>
-        <div className="sa-testimonial-grid">
-          {weeklyTestimonials.map((item) => (
-            <article key={item.name} className="card sa-testimonial-card">
-              <div className="sa-testimonial-top">
-                <span className={`sa-avatar ${item.tone}`}>{item.initials}</span>
-                <div>
-                  <strong>{item.name}</strong>
-                  <span className="sa-testimonial-country">{item.country}</span>
+      <section style={{ padding: "5rem 1.5rem" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <motion.div
+            style={{ textAlign: "center", marginBottom: "3rem" }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <span style={{ display: "inline-block", fontSize: "0.75rem", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
+              {t.testEyebrow}
+            </span>
+            <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.75rem" }}>
+              {t.testTitle}
+            </h2>
+            <p style={{ fontSize: "1.0625rem", color: "var(--muted-foreground)" }}>{t.testSubtitle}</p>
+          </motion.div>
+
+          <motion.div
+            style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.25rem" }}
+            className="four-col-grid"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {weeklyTestimonials.map((item) => (
+              <motion.div
+                key={item.name}
+                variants={itemVariants}
+                whileHover={{ y: -8 }}
+                style={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "16px",
+                  padding: "1.5rem",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.875rem"
+                }}
+              >
+                <div style={{ display: "flex", gap: "0.25rem" }}>
+                  {[...Array(5)].map((_, i) => (
+                    <motion.span
+                      key={i}
+                      style={{ fontSize: "0.875rem" }}
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.1 * i }}
+                    >⭐</motion.span>
+                  ))}
                 </div>
-                <span className="sa-score-badge">Band {item.score}</span>
-              </div>
-              <div className="sa-stars">★★★★★</div>
-              <p className="sa-testimonial-quote">&ldquo;{item.quote}&rdquo;</p>
-            </article>
-          ))}
+                <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)", lineHeight: 1.6, flex: 1 }}>
+                  &ldquo;{item.text}&rdquo;
+                </p>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+                  <div>
+                    <strong style={{ display: "block", fontSize: "0.875rem" }}>{item.name}</strong>
+                    <span style={{ fontSize: "0.75rem", color: "var(--muted-foreground)" }}>{item.country}</span>
+                  </div>
+                  <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--accent)", background: "oklch(0.71 0.18 165.41 / 0.1)", padding: "0.25rem 0.625rem", borderRadius: "100px", whiteSpace: "nowrap" }}>
+                    {item.score}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
       {/* ── Inline promo ─────────────────────── */}
-      <section className="page-shell sa-section">
-        <div className="card sa-inline-promo">
-          <div>
-            <span className="eyebrow">Try a free IELTS speaking test</span>
-            <h2>See your transcript, estimated score, and next fix in one attempt.</h2>
-          </div>
-          <div className="sa-inline-promo-actions">
-            <Link href="/free-ielts-speaking-test" className="sa-primary-button">
-              Free test
-            </Link>
-            <Link href="/blog" className="sa-ghost-button">
-              Read guides →
-            </Link>
-          </div>
+      <section style={{ padding: "2rem 1.5rem" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <motion.div
+            style={{
+              background: "linear-gradient(135deg, oklch(0.623 0.214 259.815 / 0.1), oklch(0.71 0.18 165.41 / 0.1))",
+              border: "1px solid oklch(0.623 0.214 259.815 / 0.2)",
+              borderRadius: "20px",
+              padding: "2.5rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1.5rem",
+              flexWrap: "wrap"
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            viewport={{ once: true }}
+          >
+            <div>
+              <span style={{ display: "inline-block", fontSize: "0.75rem", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.5rem" }}>
+                Try a free IELTS speaking test
+              </span>
+              <h2 style={{ fontSize: "1.5rem", fontWeight: 800, maxWidth: "520px", lineHeight: 1.3 }}>
+                See your transcript, estimated score, and next fix in one attempt.
+              </h2>
+            </div>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <Link href="/free-ielts-speaking-test" style={{ display: "inline-flex", alignItems: "center", padding: "0.75rem 1.5rem", fontSize: "0.9375rem", fontWeight: 700, color: "white", background: "var(--primary)", borderRadius: "10px", textDecoration: "none" }}>
+                Free test
+              </Link>
+              <Link href="/blog" style={{ display: "inline-flex", alignItems: "center", padding: "0.75rem 1.5rem", fontSize: "0.9375rem", fontWeight: 600, color: "var(--foreground)", background: "oklch(1 0 0 / 8%)", border: "1px solid oklch(1 0 0 / 12%)", borderRadius: "10px", textDecoration: "none" }}>
+                Read guides →
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ── FAQ ──────────────────────────────── */}
-      <section className="page-shell sa-section">
-        <span className="eyebrow">{t.faqEyebrow}</span>
-        <div className="sa-section-head">
-          <h2>{t.faqTitle}</h2>
-        </div>
-        <div className="sa-faq-list">
-          {t.faqs.map((item) => (
-            <details key={item.q} className="card sa-faq-item">
-              <summary>{item.q}</summary>
-              <p>{item.a}</p>
-            </details>
-          ))}
+      <section style={{ padding: "5rem 1.5rem" }}>
+        <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+          <motion.div
+            style={{ textAlign: "center", marginBottom: "3rem" }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <span style={{ display: "inline-block", fontSize: "0.75rem", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
+              {t.faqEyebrow}
+            </span>
+            <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em" }}>
+              {t.faqTitle}
+            </h2>
+          </motion.div>
+
+          <motion.div
+            style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {t.faqs.map((item, idx) => (
+              <motion.div
+                key={idx}
+                variants={itemVariants}
+                onClick={() => setExpandedFaq(expandedFaq === idx ? null : idx)}
+                style={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  cursor: "pointer"
+                }}
+              >
+                <motion.div
+                  style={{
+                    padding: "1.125rem 1.25rem",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "1rem"
+                  }}
+                  whileHover={{ background: "oklch(1 0 0 / 3%)" }}
+                >
+                  <span style={{ fontSize: "0.9375rem", fontWeight: 600 }}>{item.q}</span>
+                  <motion.div
+                    animate={{ rotate: expandedFaq === idx ? 180 : 0 }}
+                    transition={{ duration: 0.25 }}
+                    style={{ flexShrink: 0 }}
+                  >
+                    <ChevronDown size={18} style={{ color: "var(--primary)" }} />
+                  </motion.div>
+                </motion.div>
+
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{
+                    height: expandedFaq === idx ? "auto" : 0,
+                    opacity: expandedFaq === idx ? 1 : 0
+                  }}
+                  transition={{ duration: 0.25 }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <div style={{ padding: "0 1.25rem 1.125rem", fontSize: "0.9rem", color: "var(--muted-foreground)", lineHeight: 1.7, borderTop: "1px solid var(--border)", paddingTop: "0.875rem" }}>
+                    {item.a}
+                  </div>
+                </motion.div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
-      {/* ── AdSense ──────────────────────────── */}
-      <section className="page-shell sa-section">
-        <AdSenseUnit className="sa-home-ad" />
+      {/* ── Final CTA ────────────────────────── */}
+      <section style={{ padding: "5rem 1.5rem", background: "linear-gradient(135deg, var(--primary), oklch(0.55 0.2 259.815))" }}>
+        <motion.div
+          style={{ maxWidth: "800px", margin: "0 auto", textAlign: "center" }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+        >
+          <h2 style={{ fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: 800, color: "white", letterSpacing: "-0.02em", marginBottom: "1rem" }}>
+            {t.ctaFinalTitle}
+          </h2>
+          <p style={{ fontSize: "1.125rem", color: "oklch(1 0 0 / 0.8)", marginBottom: "2rem" }}>
+            {t.ctaFinalBody}
+          </p>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
+            <Link
+              href={primaryHref}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.875rem 2rem",
+                fontSize: "1rem",
+                fontWeight: 700,
+                color: "var(--primary)",
+                background: "white",
+                borderRadius: "12px",
+                textDecoration: "none",
+                boxShadow: "0 10px 40px oklch(0 0 0 / 0.25)"
+              }}
+            >
+              {t.ctaFinalButton}
+              <ArrowRight size={18} />
+            </Link>
+          </motion.div>
+        </motion.div>
       </section>
+
+      {/* ── AdSense ──────────────────────────── */}
+      <section style={{ padding: "2rem 1.5rem" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <AdSenseUnit className="sa-home-ad" />
+        </div>
+      </section>
+
+      <style>{`
+        @media (max-width: 900px) {
+          .hero-grid { grid-template-columns: 1fr !important; }
+          .hero-card-wrap { display: none !important; }
+          .three-col-grid { grid-template-columns: 1fr !important; }
+          .four-col-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (max-width: 600px) {
+          .four-col-grid { grid-template-columns: 1fr !important; }
+          .two-col-grid { grid-template-columns: 1fr !important; }
+          .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (min-width: 768px) {
+          .step-connector { display: block !important; }
+        }
+      `}</style>
     </main>
   );
 }
