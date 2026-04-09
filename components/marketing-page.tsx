@@ -20,6 +20,7 @@ const sectionCopy = {
     badgeLive: "1,000+ learners practicing today",
     trusted: "Trusted by learners in 50+ countries.",
     cta: "Start Speaking Now",
+    ctaFree: "Try Free",
     demo: "Watch 60s demo →",
     trustBar: "Free • No signup required • Cancel anytime",
     scoreLabel: "Band score improved",
@@ -27,14 +28,17 @@ const sectionCopy = {
     whyTitle: "Why learners choose SpeakAce instead of generic tools",
     whyCards: [
       {
+        icon: "🎯",
         title: "Built for exam speaking",
         body: "Practice IELTS and TOEFL speaking tasks that feel like real prep instead of generic chat prompts."
       },
       {
+        icon: "📊",
         title: "Feedback you can act on",
         body: "See a band-style score, transcript, and clearer next steps after every attempt."
       },
       {
+        icon: "🔄",
         title: "A calmer study system",
         body: "Retry the same answer, compare improvement, and build a daily speaking rhythm that actually sticks."
       }
@@ -43,14 +47,20 @@ const sectionCopy = {
     howTitle: "Three steps to a better band score",
     howCards: [
       {
+        step: "01",
+        icon: "🎯",
         title: "Pick your exam and task",
         body: "Start with IELTS or TOEFL, then choose the speaking task you want to practice right now."
       },
       {
+        step: "02",
+        icon: "🎙️",
         title: "Record one focused answer",
         body: "Use one real question, one clear answer, and one attempt to see how your speaking holds up."
       },
       {
+        step: "03",
+        icon: "📈",
         title: "Review, fix, and retry",
         body: "Check the transcript, estimated score, and improvement notes, then record again with more control."
       }
@@ -60,13 +70,19 @@ const sectionCopy = {
     featureEyebrow: "Platform fit",
     featureTitle: "Everything speaks the same language: score improvement",
     featureCards: [
-      "Guided practice flows for IELTS and TOEFL",
-      "Transcript review with stronger retry direction",
-      "Teacher and class visibility when you need structure",
-      "Tools, prompts, and daily practice hooks that lead back into speaking"
+      { title: "Guided practice flows", body: "IELTS and TOEFL tasks with real exam structure and timed prompts.", tag: "Practice" },
+      { title: "Transcript review", body: "See exactly what you said, spot filler words, and find stronger retry direction.", tag: "Feedback" },
+      { title: "Teacher & class tools", body: "Visibility when you need structure — assign homework, track attempts.", tag: "Teachers" },
+      { title: "Daily practice hooks", body: "Tools, prompts, and habits that keep you speaking consistently.", tag: "Habits" }
     ],
-    testEyebrow: "Proof",
+    testEyebrow: "Results",
     testTitle: "What learners say after their first week",
+    statsRow: [
+      { value: "50+", label: "Countries" },
+      { value: "1,000+", label: "Daily learners" },
+      { value: "7.2", label: "Avg. band score" },
+      { value: "89%", label: "Satisfaction rate" }
+    ],
     faqEyebrow: "FAQ",
     faqTitle: "Questions learners ask before they start",
     faqs: [
@@ -97,6 +113,7 @@ const sectionCopy = {
     badgeLive: "Bugün 1.000+ öğrenci pratik yapıyor",
     trusted: "50+ ülkedeki öğrenciler tarafından kullanılıyor.",
     cta: "Hemen Konuşmaya Başla",
+    ctaFree: "Ücretsiz Dene",
     demo: "60 sn demoyu izle →",
     trustBar: "Ücretsiz • Kayıt gerektirmez • İstediğin zaman iptal et",
     scoreLabel: "Band skoru gelişti",
@@ -104,14 +121,17 @@ const sectionCopy = {
     whyTitle: "Öğrenciler neden genel araçlar yerine SpeakAce'i seçiyor",
     whyCards: [
       {
+        icon: "🎯",
         title: "Sınav speaking'i için tasarlandı",
         body: "Genel sohbet prompt'ları yerine gerçek IELTS ve TOEFL speaking görevleriyle çalışırsın."
       },
       {
+        icon: "📊",
         title: "Harekete geçirici geri bildirim",
         body: "Her denemeden sonra band benzeri skor, transcript ve bir sonraki net gelişim adımını görürsün."
       },
       {
+        icon: "🔄",
         title: "Daha sakin bir çalışma sistemi",
         body: "Aynı cevabı tekrar dene, farkı gör, günlük speaking düzenini daha kolay kur."
       }
@@ -120,14 +140,20 @@ const sectionCopy = {
     howTitle: "Daha iyi bir band skoruna giden üç adım",
     howCards: [
       {
+        step: "01",
+        icon: "🎯",
         title: "Sınav ve görevi seç",
         body: "Önce IELTS veya TOEFL'ı seç, sonra o anda çalışmak istediğin speaking görevini aç."
       },
       {
+        step: "02",
+        icon: "🎙️",
         title: "Tek bir odaklı cevap kaydet",
         body: "Gerçek bir soruya tek bir net cevap ver ve mevcut speaking seviyeni gör."
       },
       {
+        step: "03",
+        icon: "📈",
         title: "İncele, düzelt, tekrar dene",
         body: "Transcript'i, tahmini skoru ve geliştirme notlarını görüp daha kontrollü bir yeni deneme yap."
       }
@@ -137,13 +163,19 @@ const sectionCopy = {
     featureEyebrow: "Platform uyumu",
     featureTitle: "Buradaki her şey aynı hedefe çalışıyor: skor gelişimi",
     featureCards: [
-      "IELTS ve TOEFL için yönlendirmeli practice akışı",
-      "Transcript incelemesi ve daha güçlü retry yönü",
-      "Öğretmen ve sınıf görünürlüğü gerektiğinde hazır",
-      "Araçlar, prompt'lar ve günlük alışkanlık akışı tekrar speaking'e bağlanır"
+      { title: "Yönlendirmeli practice akışı", body: "Gerçek sınav yapısıyla IELTS ve TOEFL görevleri.", tag: "Pratik" },
+      { title: "Transcript incelemesi", body: "Ne söylediğini gör, gereksiz doldurma kelimelerini fark et.", tag: "Geri bildirim" },
+      { title: "Öğretmen ve sınıf araçları", body: "Ödev ver, denemeleri takip et.", tag: "Öğretmenler" },
+      { title: "Günlük pratik alışkanlığı", body: "Sürekli speaking'e bağlayan araçlar ve prompt'lar.", tag: "Alışkanlık" }
     ],
-    testEyebrow: "Kanıt",
+    testEyebrow: "Sonuçlar",
     testTitle: "İlk haftadan sonra öğrenciler ne diyor",
+    statsRow: [
+      { value: "50+", label: "Ülke" },
+      { value: "1.000+", label: "Günlük öğrenci" },
+      { value: "7,2", label: "Ort. band skoru" },
+      { value: "%89", label: "Memnuniyet" }
+    ],
     faqEyebrow: "SSS",
     faqTitle: "Başlamadan önce en çok sorulanlar",
     faqs: [
@@ -177,61 +209,36 @@ const weeklyTestimonials = [
     tone: "is-purple",
     name: "Ayşe T.",
     country: "🇹🇷 Turkey",
-    score: "Band 5.5 → 7.0",
-    quote:
-      "I practiced every morning for 10 days. The transcript review helped me see exactly where I was repeating myself."
+    score: "5.5 → 7.0",
+    quote: "I practiced every morning for 10 days. The transcript review helped me see exactly where I was repeating myself."
   },
   {
     initials: "KM",
     tone: "is-blue",
     name: "Kenji M.",
     country: "🇯🇵 Japan",
-    score: "Band 6.0 → 7.5",
-    quote:
-      "The retry feature is what makes this different. I could hear the improvement between attempt one and attempt three."
+    score: "6.0 → 7.5",
+    quote: "The retry feature is what makes this different. I could hear the improvement between attempt one and attempt three."
   },
   {
     initials: "PK",
     tone: "is-green",
     name: "Priya K.",
     country: "🇮🇳 India",
-    score: "Band 6.5 → 7.5",
-    quote:
-      "SpeakAce shows why your score is low, not just what it is. That changed my Part 2 answers completely."
+    score: "6.5 → 7.5",
+    quote: "SpeakAce shows why your score is low, not just what it is. That changed my Part 2 answers completely."
   },
   {
     initials: "AR",
     tone: "is-orange",
     name: "Ahmed R.",
     country: "🇪🇬 Egypt",
-    score: "Band 5.0 → 6.5",
-    quote:
-      "Three weeks of daily practice. My fluency improved because the daily prompt habit finally gave me consistency."
+    score: "5.0 → 6.5",
+    quote: "Three weeks of daily practice. My fluency improved because the daily prompt habit finally gave me consistency."
   }
 ] as const;
 
 type SectionLocale = (typeof sectionCopy)[keyof typeof sectionCopy];
-
-function HeroScoreCard({ focus, trust }: { focus: string; trust: SectionLocale }) {
-  return (
-    <div className="sa-hero-card">
-      <span className="sa-hero-card-badge">Band movement</span>
-      <div className="sa-hero-bandline">6.5 → 7.0</div>
-      <p className="sa-hero-bandnote">{trust.scoreLabel}</p>
-
-      <div className="sa-hero-progress">
-        <ProgressRow label="Fluency" value={78} />
-        <ProgressRow label="Pronunciation" value={72} />
-        <ProgressRow label="Structure" value={75} />
-      </div>
-
-      <div className="sa-hero-focus">
-        <span>Why this page exists</span>
-        <p>{focus}</p>
-      </div>
-    </div>
-  );
-}
 
 function ProgressRow({ label, value }: { label: string; value: number }) {
   return (
@@ -247,6 +254,27 @@ function ProgressRow({ label, value }: { label: string; value: number }) {
   );
 }
 
+function HeroScoreCard({ focus, trust }: { focus: string; trust: SectionLocale }) {
+  return (
+    <div className="sa-hero-card">
+      <div className="sa-hero-card-top">
+        <span className="sa-hero-card-badge">🎯 Band movement</span>
+        <div className="sa-hero-bandline">6.5 → 7.0</div>
+        <p className="sa-hero-bandnote">{trust.scoreLabel}</p>
+      </div>
+      <div className="sa-hero-progress">
+        <ProgressRow label="Fluency" value={78} />
+        <ProgressRow label="Pronunciation" value={72} />
+        <ProgressRow label="Structure" value={75} />
+      </div>
+      <div className="sa-hero-focus">
+        <span>Why this exists</span>
+        <p>{focus}</p>
+      </div>
+    </div>
+  );
+}
+
 export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: MarketingPageProps) {
   const { language } = useAppState();
   const t = sectionCopy[language === "tr" ? "tr" : "en"];
@@ -254,6 +282,8 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
 
   return (
     <main className="sa-home-shell">
+
+      {/* ── Hero ─────────────────────────────── */}
       <section className="page-shell sa-hero-grid">
         <div className="sa-hero-copy">
           <span className="sa-live-badge">
@@ -265,7 +295,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
           <p className="sa-hero-description">
             {description}
             <br />
-            {t.trusted}
+            <span className="sa-trusted-line">{t.trusted}</span>
           </p>
           <div className="sa-hero-actions">
             <Link href={primaryHref} className="sa-primary-button">
@@ -275,12 +305,25 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
               {t.demo}
             </a>
           </div>
-          <div className="sa-hero-trust">{t.trustBar}</div>
+          <p className="sa-hero-trust">{t.trustBar}</p>
         </div>
 
         <HeroScoreCard focus={focus} trust={t} />
       </section>
 
+      {/* ── Stats bar ────────────────────────── */}
+      <section className="page-shell sa-stats-bar-section">
+        <div className="sa-stats-bar">
+          {t.statsRow.map((stat) => (
+            <div key={stat.label} className="sa-stat-item">
+              <strong>{stat.value}</strong>
+              <span>{stat.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Why section ──────────────────────── */}
       <section className="page-shell sa-section">
         <span className="eyebrow">{t.whyEyebrow}</span>
         <div className="sa-section-head">
@@ -289,6 +332,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
         <div className="sa-why-grid">
           {t.whyCards.map((card) => (
             <article key={card.title} className="card sa-why-card">
+              <div className="sa-why-card-icon">{card.icon}</div>
               <span className="sa-card-chip">Score-focused</span>
               <h3>{card.title}</h3>
               <p>{card.body}</p>
@@ -297,16 +341,17 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
         </div>
       </section>
 
+      {/* ── How it works ─────────────────────── */}
       <section id="how-it-works" className="page-shell sa-section">
         <span className="eyebrow">{t.howEyebrow}</span>
         <div className="sa-section-head">
           <h2>{t.howTitle}</h2>
         </div>
         <div className="sa-steps-grid">
-          {t.howCards.map((step, index) => (
+          {t.howCards.map((step) => (
             <article key={step.title} className="card sa-step-card">
-              <span className="sa-step-number">0{index + 1}</span>
-              <span className="sa-step-icon">{index === 0 ? "🎯" : index === 1 ? "🎙️" : "📈"}</span>
+              <span className="sa-step-number">{step.step}</span>
+              <span className="sa-step-icon">{step.icon}</span>
               <h3>{step.title}</h3>
               <p>{step.body}</p>
             </article>
@@ -323,6 +368,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
         </div>
       </section>
 
+      {/* ── Feature bento ────────────────────── */}
       <section className="page-shell sa-section">
         <span className="eyebrow">{t.featureEyebrow}</span>
         <div className="sa-section-head">
@@ -330,15 +376,17 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
         </div>
         <div className="sa-bento-grid">
           {t.featureCards.map((item, index) => (
-            <article key={item} className={`card sa-bento-card is-${index + 1}`}>
-              <span className="sa-card-chip">SpeakAce</span>
-              <h3>{item}</h3>
-              <p>{index % 2 === 0 ? "Less friction, more speaking volume, and clearer score direction." : "Built to move users from prompt to result without losing context."}</p>
+            <article key={item.title} className={`card sa-bento-card is-${index + 1}`}>
+              <span className="sa-card-chip">{item.tag}</span>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+              <div className="sa-bento-decoration" />
             </article>
           ))}
         </div>
       </section>
 
+      {/* ── Testimonials ─────────────────────── */}
       <section className="page-shell sa-section">
         <span className="eyebrow">{t.testEyebrow}</span>
         <div className="sa-section-head">
@@ -351,34 +399,36 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                 <span className={`sa-avatar ${item.tone}`}>{item.initials}</span>
                 <div>
                   <strong>{item.name}</strong>
-                  <span>{item.country}</span>
+                  <span className="sa-testimonial-country">{item.country}</span>
                 </div>
-                <span className="sa-score-badge">{item.score}</span>
+                <span className="sa-score-badge">Band {item.score}</span>
               </div>
               <div className="sa-stars">★★★★★</div>
-              <p>{item.quote}</p>
+              <p className="sa-testimonial-quote">&ldquo;{item.quote}&rdquo;</p>
             </article>
           ))}
         </div>
       </section>
 
+      {/* ── Inline promo ─────────────────────── */}
       <section className="page-shell sa-section">
-        <div className="sa-inline-promo">
+        <div className="card sa-inline-promo">
           <div>
             <span className="eyebrow">Try a free IELTS speaking test</span>
             <h2>See your transcript, estimated score, and next fix in one attempt.</h2>
           </div>
           <div className="sa-inline-promo-actions">
-            <Link href="/free-ielts-speaking-test" className="sa-secondary-button">
+            <Link href="/free-ielts-speaking-test" className="sa-primary-button">
               Free test
             </Link>
             <Link href="/blog" className="sa-ghost-button">
-              Read guides
+              Read guides →
             </Link>
           </div>
         </div>
       </section>
 
+      {/* ── FAQ ──────────────────────────────── */}
       <section className="page-shell sa-section">
         <span className="eyebrow">{t.faqEyebrow}</span>
         <div className="sa-section-head">
@@ -394,6 +444,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
         </div>
       </section>
 
+      {/* ── AdSense ──────────────────────────── */}
       <section className="page-shell sa-section">
         <AdSenseUnit className="sa-home-ad" />
       </section>
