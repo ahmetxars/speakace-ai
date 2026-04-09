@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { LeadCaptureForm } from "@/components/lead-capture-form";
 import { getBlogChromeCopy, getLocalizedBlogPosts } from "@/lib/blog-content";
 import type { Language } from "@/lib/copy";
@@ -329,6 +330,8 @@ export default async function ResourcesPage() {
             </div>
           </div>
         </section>
+
+        <AdSenseUnit />
 
         <div className="marketing-grid">
           {resourceCards.map((card) => (

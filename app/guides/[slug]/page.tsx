@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { guidePages } from "@/lib/seo-growth";
 import { siteConfig } from "@/lib/site";
 
@@ -55,6 +56,8 @@ export default async function GuideDetailPage({
             </article>
           ))}
         </div>
+        <AdSenseUnit />
+
         <div className="card institution-cta">
           <div>
             <span className="eyebrow">Next step</span>

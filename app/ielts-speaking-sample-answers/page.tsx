@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { blogPosts } from "@/lib/marketing-content";
 import { seoTopicPages } from "@/lib/seo-topics";
 import { siteConfig } from "@/lib/site";
@@ -48,6 +49,8 @@ export default function IeltsSpeakingSampleAnswersPage() {
             </article>
           ))}
         </div>
+
+        <AdSenseUnit />
 
         {relatedBlogs.length ? (
           <section>

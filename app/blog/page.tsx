@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { getBlogChromeCopy, getFeaturedBlogPosts } from "@/lib/blog-content";
 import { getBlogPublicDescription, getBlogPublicTitle } from "@/lib/blog-seo";
 import { getServerLanguage } from "@/lib/language";
@@ -121,6 +122,8 @@ export default async function BlogIndexPage() {
             </article>
           </div>
         </section>
+
+        <AdSenseUnit />
 
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="section-head">

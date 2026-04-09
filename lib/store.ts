@@ -799,6 +799,57 @@ export async function applyBillingPlanByEmail(input: {
   return upsertMember({ ...member, plan: input.plan });
 }
 
+export async function applyInstitutionBillingByUserId(input: {
+  userId: string;
+  plan: "starter" | "team" | "campus";
+  billingStatus: string;
+  providerCustomerId?: string | null;
+  providerSubscriptionId?: string | null;
+  seatCount?: number;
+}) {
+  if (!hasDatabaseUrl()) return null;
+
+  const sql = getSql();
+  const planDefaults = {
+    starter: { monthlyPrice: 49, includedClasses: 3, includedStudents: 20, minimumSeats: 20 },
+    team: { monthlyPrice: 99, includedClasses: 8, includedStudents: 80, minimumSeats: 40 },
+    campus: { monthlyPrice: 249, includedClasses: 20, includedStudents: 250, minimumSeats: 120 }
+  };
+  const defaults = planDefaults[input.plan];
+  const seatCount = Math.max(defaults.minimumSeats, input.seatCount ?? defaults.minimumSeats);
+  const status = ["active", "on_trial"].includes(input.billingStatus) ? "active" : "draft";
+  const now = new Date().toISOString();
+
+  const rows = await sql`
+    insert into institution_billing (
+      teacher_id, plan, status, seat_count, monthly_price, included_classes, included_students,
+      lemon_customer_id, lemon_subscription_id, created_at, updated_at
+    ) values (
+      ${input.userId}, ${input.plan}, ${status}, ${seatCount},
+      ${defaults.monthlyPrice}, ${defaults.includedClasses}, ${Math.max(defaults.includedStudents, seatCount)},
+      ${input.providerCustomerId ?? null}, ${input.providerSubscriptionId ?? null}, ${now}, ${now}
+    )
+    on conflict (teacher_id)
+    do update set
+      plan = excluded.plan,
+      status = excluded.status,
+      seat_count = excluded.seat_count,
+      monthly_price = excluded.monthly_price,
+      included_classes = excluded.included_classes,
+      included_students = excluded.included_students,
+      lemon_customer_id = coalesce(excluded.lemon_customer_id, institution_billing.lemon_customer_id),
+      lemon_subscription_id = coalesce(excluded.lemon_subscription_id, institution_billing.lemon_subscription_id),
+      updated_at = excluded.updated_at
+    returning
+      teacher_id as "teacherId", plan, status,
+      seat_count as "seatCount", monthly_price as "monthlyPrice",
+      included_classes as "includedClasses", included_students as "includedStudents",
+      created_at as "createdAt", updated_at as "updatedAt"
+  `;
+
+  return rows[0] ?? null;
+}
+
 export async function resetStore() {
   if (hasDatabaseUrl()) {
     const sql = getSql();

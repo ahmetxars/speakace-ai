@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { LeadCaptureForm } from "@/components/lead-capture-form";
 import { siteConfig } from "@/lib/site";
 
@@ -49,6 +50,8 @@ export default function SchoolsPage() {
             <p>Class-based onboarding, approvals, homework, study lists, and reporting make it easier to support more learners.</p>
           </article>
         </div>
+
+        <AdSenseUnit />
 
         <div className="marketing-grid">
           <article className="card feature-card">

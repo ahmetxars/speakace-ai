@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { CompareHub } from "@/components/compare-hub";
 import { siteConfig } from "@/lib/site";
 
@@ -21,6 +22,9 @@ export default function CompareHubPage() {
   return (
     <>
       <CompareHub />
+      <div className="page-shell" style={{ paddingTop: 0 }}>
+        <AdSenseUnit />
+      </div>
     </>
   );
 }

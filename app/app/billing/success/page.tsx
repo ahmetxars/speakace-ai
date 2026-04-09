@@ -32,6 +32,20 @@ export default function BillingSuccessPage() {
         if (data.plan === "plus" || data.plan === "pro") {
           await refreshSession();
           setStatus("active");
+          // Fire GA4 purchase event
+          if (typeof window !== 'undefined' && (window as any).gtag) {
+            (window as any).gtag('event', 'purchase', {
+              transaction_id: Date.now().toString(),
+              value: 3.99,
+              currency: 'USD',
+              items: [{
+                item_id: 'plus_weekly',
+                item_name: 'SpeakAce Plus - Weekly',
+                price: 3.99,
+                quantity: 1
+              }]
+            });
+          }
           return;
         }
       } catch {

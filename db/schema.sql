@@ -318,6 +318,9 @@ alter table student_profiles add column if not exists discovery_source text;
 alter table homework_auto_assign_rules add column if not exists exam_type text;
 alter table homework_auto_assign_rules add column if not exists task_type text;
 alter table homework_auto_assign_rules add column if not exists focus_skill text;
+alter table users add column if not exists onboarding_emails_sent integer not null default 0;
+alter table institution_billing add column if not exists lemon_customer_id text;
+alter table institution_billing add column if not exists lemon_subscription_id text;
 
 create index if not exists idx_speaking_sessions_user_created_at
   on speaking_sessions(user_id, created_at desc);

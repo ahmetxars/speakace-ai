@@ -8,6 +8,7 @@ import {
 } from "@/lib/server/auth";
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
 import { sendWelcomePracticeEmail } from "@/lib/server/email";
+import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { isAdminEmail } from "@/lib/admin";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 
@@ -51,6 +52,14 @@ export async function POST(request: Request) {
     const verification = await createEmailVerificationFlow(profile.email);
     try {
       await sendWelcomePracticeEmail({ to: profile.email, name: profile.name });
+    } catch {
+      // non-blocking
+    }
+    try {
+      const result = await sendOnboardingEmail(profile.id, 1);
+      if (result.ok) {
+        await markOnboardingEmailSent(profile.id, 1);
+      }
     } catch {
       // non-blocking
     }

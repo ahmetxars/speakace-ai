@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { guidePages } from "@/lib/seo-growth";
 import { siteConfig } from "@/lib/site";
 
@@ -43,6 +44,8 @@ export default function GuidesHubPage() {
             </article>
           ))}
         </div>
+
+        <AdSenseUnit />
       </main>
     </>
   );

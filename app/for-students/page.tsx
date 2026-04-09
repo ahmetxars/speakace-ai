@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -46,6 +47,8 @@ export default function StudentsPage() {
             <p>Daily prompts, guided answer modes, and simple tools make it easier to speak more often.</p>
           </article>
         </div>
+
+        <AdSenseUnit />
 
         <div className="comparison-card card">
           <h2 style={{ marginBottom: "0.9rem" }}>Why students stay with SpeakAce</h2>

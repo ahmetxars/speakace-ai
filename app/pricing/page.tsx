@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MarketingSchema } from "@/components/marketing-schema";
+import { PricingCards } from "@/components/pricing-cards";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
 import type { Language } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
@@ -315,40 +316,7 @@ export default async function PricingPage() {
           </p>
         </div>
 
-        <div className="marketing-grid">
-          <article className="card pricing-card">
-            <h3>{copy.free}</h3>
-            <div className="price-tag">$0</div>
-            <ul>
-              <li>4 daily speaking sessions</li>
-              <li>8 daily speaking minutes</li>
-              <li>Starter score view and limited feedback</li>
-            </ul>
-            <Link className="button button-secondary" href="/auth">
-              {copy.start}
-            </Link>
-          </article>
-
-          <article className="card pricing-card" data-featured="true">
-            <div className="pill" style={{ marginBottom: "0.8rem", width: "fit-content" }}>Most Popular</div>
-            <h3>{commerceConfig.plusPlanName}</h3>
-            <div className="price-tag">{commerceConfig.plusMonthlyPrice}</div>
-            <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>$3.99/week = ~$16/month</div>
-            <ul>
-              <li>18 daily sessions</li>
-              <li>35 daily speaking minutes</li>
-              <li>Full feedback after each speaking attempt</li>
-              <li>Expanded IELTS-style score insight</li>
-              <li>Unlimited-feeling retry and improvement workflow</li>
-              <li>Built for serious exam score growth</li>
-            </ul>
-            <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "pricing_hero" })}>
-              Unlock full feedback
-            </a>
-            <div className="practice-meta">Try coupon: {couponCatalog.LAUNCH20.code}</div>
-            <div className="practice-meta">Cancel anytime. No questions.</div>
-          </article>
-        </div>
+        <PricingCards />
 
         <div className="marketing-grid">
           {Object.values(couponCatalog).map((coupon) => (
@@ -389,16 +357,23 @@ export default async function PricingPage() {
         </div>
 
         <div className="card comparison-card">
-          <h2 style={{ marginBottom: "0.9rem" }}>Free vs Plus</h2>
-          <div className="comparison-table">
+          <h2 style={{ marginBottom: "0.9rem" }}>Free vs Plus vs Pro</h2>
+          <div className="comparison-table" style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr" }}>
             <div className="comparison-head">Feature</div>
             <div className="comparison-head">Free</div>
             <div className="comparison-head">Plus</div>
+            <div className="comparison-head" style={{ color: "#b38600" }}>Pro</div>
             {comparison.map((item) => (
               <>
                 <div key={`${item.label}-label`} className="comparison-cell comparison-label">{item.label}</div>
                 <div key={`${item.label}-free`} className="comparison-cell">{item.free}</div>
                 <div key={`${item.label}-plus`} className="comparison-cell">{item.plus}</div>
+                <div key={`${item.label}-pro`} className="comparison-cell" style={{ fontWeight: 600, color: "#b38600" }}>
+                  {item.label.toLowerCase().includes("session") ? "40" :
+                   item.label.toLowerCase().includes("minute") || item.label.toLowerCase().includes("speaking") ? "90 min" :
+                   item.label.toLowerCase().includes("feedback") ? "Advanced" :
+                   "Full + trends"}
+                </div>
               </>
             ))}
           </div>
@@ -445,8 +420,11 @@ export default async function PricingPage() {
             <Link className="button button-primary" href="/app/billing/success">
               Open billing status
             </Link>
-            <a className="button button-secondary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "pricing_bottom" })}>
+            <a className="button button-secondary" href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "pricing_bottom" })}>
               Buy Plus
+            </a>
+            <a className="button button-secondary" href={buildPlanCheckoutPath({ plan: "pro", campaign: "pricing_bottom_pro" })} style={{ borderColor: "#c9a227", color: "#b38600" }}>
+              Get Pro
             </a>
             <Link className="button button-secondary" href="/reviews">
               Read reviews

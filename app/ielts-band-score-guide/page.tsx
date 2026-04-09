@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { siteConfig } from "@/lib/site";
 
 const scoreSignals = [
@@ -55,6 +56,8 @@ export default function IeltsBandScoreGuidePage() {
             </article>
           ))}
         </div>
+
+        <AdSenseUnit />
 
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="card comparison-card">

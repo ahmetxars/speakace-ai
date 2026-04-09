@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { siteConfig } from "@/lib/site";
 import { seoTopicPages } from "@/lib/seo-topics";
 
@@ -102,6 +103,8 @@ export default function IeltsSpeakingTopicsPage() {
             ))}
           </div>
         </section>
+
+        <AdSenseUnit />
 
         <section className="card" style={{ padding: "1.5rem" }}>
           <span className="eyebrow">Part 2</span>

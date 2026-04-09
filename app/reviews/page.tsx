@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { siteConfig } from "@/lib/site";
 
 const reviewGroups = [
@@ -120,6 +121,8 @@ export default function ReviewsPage() {
             </article>
           ))}
         </div>
+
+        <AdSenseUnit />
 
         <div className="card institution-cta">
           <div>

@@ -74,7 +74,7 @@ export function SiteFooter() {
   const pathname = usePathname();
   const { language } = useAppState();
   const [email, setEmail] = useState("");
-  const [done, setDone] = useState(false);
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   if (pathname?.startsWith("/app") || pathname?.startsWith("/admin")) {
     return null;
@@ -255,12 +255,28 @@ export function SiteFooter() {
             <p style={{ fontSize: "0.8125rem", color: "var(--muted-foreground)" }}>{t.newsletterBody}</p>
           </div>
           <form
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
-              if (!email.trim()) return;
-              setDone(true);
-              setEmail("");
-              window.setTimeout(() => setDone(false), 2500);
+              if (!email.trim() || status === "loading") return;
+              setStatus("loading");
+              try {
+                const response = await fetch("/api/marketing/lead", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ email: email.trim(), source: "footer-newsletter" })
+                });
+                if (response.ok) {
+                  setStatus("done");
+                  setEmail("");
+                  window.setTimeout(() => setStatus("idle"), 3000);
+                } else {
+                  setStatus("error");
+                  window.setTimeout(() => setStatus("idle"), 3000);
+                }
+              } catch {
+                setStatus("error");
+                window.setTimeout(() => setStatus("idle"), 3000);
+              }
             }}
             style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
           >
@@ -269,6 +285,7 @@ export function SiteFooter() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="your@email.com"
+              disabled={status === "loading" || status === "done"}
               style={{
                 padding: "0.625rem 1rem",
                 fontSize: "0.875rem",
@@ -277,24 +294,28 @@ export function SiteFooter() {
                 borderRadius: "8px",
                 color: "var(--foreground)",
                 outline: "none",
-                minWidth: "220px"
+                minWidth: "220px",
+                opacity: status === "loading" ? 0.6 : 1
               }}
             />
             <button
               type="submit"
+              disabled={status === "loading" || status === "done"}
               style={{
                 padding: "0.625rem 1.25rem",
                 fontSize: "0.875rem",
                 fontWeight: 700,
                 color: "white",
-                background: "var(--primary)",
+                background: status === "error" ? "var(--destructive, #e53e3e)" : "var(--primary)",
                 border: "none",
                 borderRadius: "8px",
-                cursor: "pointer",
-                whiteSpace: "nowrap"
+                cursor: status === "loading" || status === "done" ? "default" : "pointer",
+                whiteSpace: "nowrap",
+                opacity: status === "loading" ? 0.7 : 1,
+                transition: "background 0.2s, opacity 0.2s"
               }}
             >
-              {done ? t.subscribed : t.subscribe}
+              {status === "loading" ? "..." : status === "done" ? "Thanks!" : status === "error" ? "Try again" : t.subscribe}
             </button>
           </form>
         </div>

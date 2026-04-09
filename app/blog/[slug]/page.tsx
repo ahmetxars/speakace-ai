@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { BlogReadingEnhancements } from "@/components/blog-reading-enhancements";
 import { getBlogChromeCopy, getLocalizedBlogPost, getLocalizedBlogPosts } from "@/lib/blog-content";
 import { getBlogPublicDescription, getBlogPublicTitle, getBlogSeoEntry } from "@/lib/blog-seo";
@@ -180,6 +181,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             </section>
           ))}
         </article>
+
+        <AdSenseUnit />
 
         <section className="section" style={{ paddingBottom: 0 }}>
           <div className="section-head">

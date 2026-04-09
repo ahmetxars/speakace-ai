@@ -94,6 +94,11 @@ export function TeacherBilling() {
     setNotice(tr ? "Kurum paketi kaydedildi." : "Institution plan saved.");
   };
 
+  const goToCheckout = () => {
+    const params = new URLSearchParams({ plan, seats: String(effectiveSeatCount) });
+    window.location.href = `/api/payments/lemon/institution-checkout?${params.toString()}`;
+  };
+
   if (!currentUser?.isTeacher && !currentUser?.isAdmin) {
     return (
       <main className="page-shell section">
@@ -144,19 +149,24 @@ export function TeacherBilling() {
             />
           </label>
 
-          <button type="button" className="button button-primary" onClick={saveBilling}>
-            {tr ? "Kurumsal plani kaydet" : "Save institution plan"}
-          </button>
+          <div style={{ display: "grid", gap: "0.6rem" }}>
+            <button type="button" className="button button-primary" onClick={goToCheckout}>
+              {tr ? "Odemeye gec" : "Select plan & checkout"}
+            </button>
+            <button type="button" className="button" onClick={saveBilling} style={{ opacity: 0.75 }}>
+              {tr ? "Taslak olarak kaydet" : "Save as draft"}
+            </button>
+          </div>
           {notice ? <p style={{ margin: 0, color: "var(--success)" }}>{notice}</p> : null}
           {error ? <p style={{ margin: 0, color: "var(--accent-deep)" }}>{error}</p> : null}
         </div>
 
         <div className="grid" style={{ gap: "1rem" }}>
           <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.8rem" }}>
-            <SummaryCard label={tr ? "Aylik fiyat" : "Monthly price"} value={`$${draftSummary.monthlyPrice}`} note={tr ? "Mock kurum paketi" : "Mock institution package"} />
+            <SummaryCard label={tr ? "Aylik fiyat" : "Monthly price"} value={`$${draftSummary.monthlyPrice}`} note={tr ? "Kurum paketi" : "Institution package"} />
             <SummaryCard label={tr ? "Dahil sinif" : "Included classes"} value={String(draftSummary.includedClasses)} note={tr ? "Aktif sinif limiti" : "Active class allowance"} />
             <SummaryCard label={tr ? "Dahil ogrenci" : "Included students"} value={String(includedStudents)} note={tr ? "Seat tabanli kapasite" : "Seat-based capacity"} />
-            <SummaryCard label={tr ? "Durum" : "Status"} value={billing.status.toUpperCase()} note={tr ? "Odeme oncesi mock durum" : "Mock pre-checkout status"} />
+            <SummaryCard label={tr ? "Durum" : "Status"} value={billing.status.toUpperCase()} note={tr ? "Abonelik durumu" : "Subscription status"} />
           </div>
 
           <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.8rem" }}>

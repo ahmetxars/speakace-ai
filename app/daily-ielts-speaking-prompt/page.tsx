@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { siteConfig } from "@/lib/site";
 
 const prompts = [
@@ -83,6 +84,8 @@ export default function DailyIeltsSpeakingPromptPage() {
             </article>
           ))}
         </div>
+
+        <AdSenseUnit />
 
         <div className="card institution-cta">
           <div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdSenseUnit } from "@/components/adsense-unit";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -48,6 +49,8 @@ export default function TeachersPage() {
             <p>Use at-risk alerts and leaderboard views to focus attention where a student needs the most help.</p>
           </article>
         </div>
+
+        <AdSenseUnit />
 
         <div className="marketing-grid">
           <article className="card feature-card">
