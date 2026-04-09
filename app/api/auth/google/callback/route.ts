@@ -4,7 +4,7 @@ import { isAdminEmail, withAdminPrivileges } from "@/lib/admin";
 import { createMemberProfile } from "@/lib/membership";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { createAuthSession, getSessionCookieName, getSessionCookieOptions } from "@/lib/server/auth";
-import { upsertMember, getMember } from "@/lib/store";
+import { upsertMember } from "@/lib/store";
 import { MemberProfile } from "@/lib/types";
 
 /**

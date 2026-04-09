@@ -33,8 +33,8 @@ export default function BillingSuccessPage() {
           await refreshSession();
           setStatus("active");
           // Fire GA4 purchase event
-          if (typeof window !== 'undefined' && (window as any).gtag) {
-            (window as any).gtag('event', 'purchase', {
+          if (typeof window !== 'undefined' && (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag) {
+            (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'purchase', {
               transaction_id: Date.now().toString(),
               value: 3.99,
               currency: 'USD',

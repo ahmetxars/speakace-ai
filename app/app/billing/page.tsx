@@ -91,8 +91,8 @@ export default function BillingPage() {
                 className="button button-primary"
                 href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_buy_plus" })}
                 onClick={() => {
-                  if (typeof window !== 'undefined' && (window as any).gtag) {
-                    (window as any).gtag('event', 'begin_checkout', {
+                  if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
+                    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
                       currency: 'USD',
                       value: 3.99,
                       items: [{ item_id: 'plus_weekly', item_name: 'SpeakAce Plus - Weekly', price: 3.99, quantity: 1 }]
@@ -107,8 +107,8 @@ export default function BillingPage() {
                 href={buildPlanCheckoutPath({ plan: "pro", campaign: "billing_buy_pro" })}
                 style={{ background: "#c9a227", borderColor: "#c9a227" }}
                 onClick={() => {
-                  if (typeof window !== 'undefined' && (window as any).gtag) {
-                    (window as any).gtag('event', 'begin_checkout', {
+                  if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
+                    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
                       currency: 'USD',
                       value: 9.99,
                       items: [{ item_id: 'pro_monthly', item_name: 'SpeakAce Pro - Monthly', price: 9.99, quantity: 1 }]
@@ -126,8 +126,8 @@ export default function BillingPage() {
                 href={buildPlanCheckoutPath({ plan: "pro", campaign: "billing_upgrade_pro" })}
                 style={{ background: "#c9a227", borderColor: "#c9a227" }}
                 onClick={() => {
-                  if (typeof window !== 'undefined' && (window as any).gtag) {
-                    (window as any).gtag('event', 'begin_checkout', {
+                  if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
+                    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
                       currency: 'USD',
                       value: 9.99,
                       items: [{ item_id: 'pro_monthly', item_name: 'SpeakAce Pro - Monthly', price: 9.99, quantity: 1 }]
