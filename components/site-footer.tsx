@@ -4,7 +4,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Twitter, Linkedin, Instagram, Youtube, Mail } from "lucide-react";
+import { Twitter, Linkedin, Instagram, CirclePlay, Mail } from "lucide-react";
 import { buildPlanCheckoutPath } from "@/lib/commerce";
 import { copy } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
@@ -289,7 +289,7 @@ export function SiteFooter() {
               { href: "https://twitter.com/speakace", Icon: Twitter, label: "Twitter" },
               { href: "https://linkedin.com/company/speakace", Icon: Linkedin, label: "LinkedIn" },
               { href: "https://instagram.com/speakace", Icon: Instagram, label: "Instagram" },
-              { href: "https://youtube.com/@speakace", Icon: Youtube, label: "YouTube" },
+              { href: "https://youtube.com/@speakace", Icon: CirclePlay, label: "YouTube" },
               { href: "mailto:support@speakace.org", Icon: Mail, label: "Email" }
             ].map(({ href, Icon, label }) => (
               <a

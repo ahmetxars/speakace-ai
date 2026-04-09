@@ -464,7 +464,7 @@ const navGroups = (labels: HeaderLabels) => [
 
 export function SiteHeader() {
   const pathname = usePathname() ?? "/";
-  const { language, setLanguage, signedIn, currentUser, signOut } = useAppState();
+  const { language, setLanguage, signedIn, signOut } = useAppState();
   const content = copy[language];
   const labels = headerLabels[language];
   const locale = languageMeta[language];
