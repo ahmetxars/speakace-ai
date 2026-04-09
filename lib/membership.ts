@@ -18,6 +18,12 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     speakingMinutesPerDay: 90,
     label: "Pro",
     price: 12
+  },
+  lifetime: {
+    sessionsPerDay: 40,
+    speakingMinutesPerDay: 90,
+    label: "Lifetime",
+    price: 149
   }
 };
 

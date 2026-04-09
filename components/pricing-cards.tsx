@@ -225,6 +225,52 @@ export function PricingCards() {
           </a>
           <div className="practice-meta">Cancel anytime. No questions.</div>
         </article>
+
+        {/* Lifetime */}
+        <article
+          className="card pricing-card"
+          style={{
+            border: "2px solid oklch(0.71 0.18 165.41)",
+            background: "linear-gradient(135deg, oklch(0.71 0.18 165.41 / 0.07) 0%, var(--surface) 100%)"
+          }}
+        >
+          <div
+            className="pill"
+            style={{
+              marginBottom: "0.8rem",
+              width: "fit-content",
+              background: "oklch(0.71 0.18 165.41 / 0.15)",
+              color: "oklch(0.45 0.18 165.41)",
+              border: "1px solid oklch(0.71 0.18 165.41 / 0.4)"
+            }}
+          >
+            ⚡ One-time
+          </div>
+          <h3>{commerceConfig.lifetimePlanName}</h3>
+          <div className="price-tag" style={{ color: "oklch(0.45 0.18 165.41)" }}>
+            {commerceConfig.lifetimePrice}
+            <span style={{ fontSize: "0.5em", fontWeight: 400, color: "var(--muted)", marginLeft: "0.3rem" }}>once</span>
+          </div>
+          <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
+            Pay once, use forever. No subscriptions.
+          </div>
+          <ul>
+            <li>Everything in Pro, forever</li>
+            <li>40 daily sessions</li>
+            <li>90 daily speaking minutes</li>
+            <li>All future feature updates included</li>
+            <li>Priority support, lifetime</li>
+            <li>Best deal for serious learners</li>
+          </ul>
+          <a
+            className="button button-primary"
+            href={buildPlanCheckoutPath({ plan: "lifetime", campaign: "pricing_hero_lifetime" })}
+            style={{ background: "oklch(0.55 0.18 165.41)", borderColor: "oklch(0.55 0.18 165.41)" }}
+          >
+            Get Lifetime Access
+          </a>
+          <div className="practice-meta">One payment. Lifetime access. No renewal.</div>
+        </article>
       </div>
     </div>
   );

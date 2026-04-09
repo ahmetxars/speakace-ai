@@ -1,26 +1,34 @@
 export const commerceConfig = {
+  // Plus — weekly & annual
   plusMonthlyCheckout:
+    process.env.LEMON_SQUEEZY_PLUS_CHECKOUT_URL ??
     "https://speakace.lemonsqueezy.com/checkout/buy/b4c5f62b-17a3-4f53-82a1-bed7b2925084",
   plusMonthlyPrice: "$3.99",
-  plusPlanName: "SpeakAce Plus Weekly",
+  plusPlanName: "SpeakAce Plus",
   plusCheckoutPath: "/api/payments/lemon/checkout?plan=plus",
-  // Pro plan — configure LEMON_SQUEEZY_PRO_CHECKOUT_URL in your environment
+  plusAnnualCheckout:
+    process.env.LEMON_SQUEEZY_PLUS_ANNUAL_CHECKOUT_URL ??
+    "https://speakace.lemonsqueezy.com/checkout/buy/adc582d9-6b58-45ed-aafb-517f21059b2e",
+  plusAnnualPrice: "$49",
+  // Pro — monthly & annual
   proMonthlyCheckout:
     process.env.LEMON_SQUEEZY_PRO_CHECKOUT_URL ??
-    "https://speakace.lemonsqueezy.com/checkout/buy/pro-plan-placeholder",
+    "https://speakace.lemonsqueezy.com/checkout/buy/f2a9b0dd-88f7-48b9-9b3b-2069b2324cc7",
   proMonthlyPrice: "$12",
   proPlanName: "SpeakAce Pro",
   proCheckoutPath: "/api/payments/lemon/checkout?plan=pro",
-  // Annual plans — configure via LEMON_SQUEEZY_PLUS_ANNUAL_CHECKOUT_URL and LEMON_SQUEEZY_PRO_ANNUAL_CHECKOUT_URL
-  plusAnnualCheckout:
-    process.env.LEMON_SQUEEZY_PLUS_ANNUAL_CHECKOUT_URL ??
-    "https://speakace.lemonsqueezy.com/checkout/buy/b4c5f62b-17a3-4f53-82a1-bed7b2925084",
-  plusAnnualPrice: "$49",
   proAnnualCheckout:
     process.env.LEMON_SQUEEZY_PRO_ANNUAL_CHECKOUT_URL ??
-    "https://speakace.lemonsqueezy.com/checkout/buy/pro-plan-placeholder",
+    "https://speakace.lemonsqueezy.com/checkout/buy/a00764fa-adb5-4245-97ef-6f2f9d5c0bb6",
   proAnnualPrice: "$99",
-  // Institution plans — configure via LEMON_SQUEEZY_INSTITUTION_* env variables
+  // Lifetime — one-time purchase, permanent Pro access
+  lifetimeCheckout:
+    process.env.LEMON_SQUEEZY_LIFETIME_CHECKOUT_URL ??
+    "https://speakace.lemonsqueezy.com/checkout/buy/e6ab7696-0c87-46c2-87dd-ecd66f0f3344",
+  lifetimePrice: "$149",
+  lifetimePlanName: "SpeakAce Lifetime",
+  lifetimeCheckoutPath: "/api/payments/lemon/checkout?plan=lifetime",
+  // Institution plans
   institutionStarterCheckout:
     process.env.LEMON_SQUEEZY_INSTITUTION_STARTER_URL ??
     "https://speakace.lemonsqueezy.com/checkout/buy/institution-starter-placeholder",
@@ -48,7 +56,7 @@ export const couponCatalog = {
   }
 } as const;
 
-export function buildPlanCheckoutPath(input?: { plan?: "plus" | "pro"; coupon?: string; campaign?: string; billing?: "weekly" | "annual" }) {
+export function buildPlanCheckoutPath(input?: { plan?: "plus" | "pro" | "lifetime"; coupon?: string; campaign?: string; billing?: "weekly" | "annual" }) {
   const plan = input?.plan ?? "plus";
   const params = new URLSearchParams({ plan });
   if (input?.coupon) {
@@ -64,7 +72,7 @@ export function buildPlanCheckoutPath(input?: { plan?: "plus" | "pro"; coupon?: 
 }
 
 export function buildLemonCheckoutUrl(input?: {
-  plan?: "plus" | "pro";
+  plan?: "plus" | "pro" | "lifetime";
   billing?: "weekly" | "annual";
   email?: string;
   name?: string;
@@ -73,7 +81,9 @@ export function buildLemonCheckoutUrl(input?: {
   campaign?: string;
 }) {
   let baseCheckout: string;
-  if (input?.plan === "pro") {
+  if (input?.plan === "lifetime") {
+    baseCheckout = commerceConfig.lifetimeCheckout;
+  } else if (input?.plan === "pro") {
     baseCheckout = input.billing === "annual" ? commerceConfig.proAnnualCheckout : commerceConfig.proMonthlyCheckout;
   } else {
     baseCheckout = input?.billing === "annual" ? commerceConfig.plusAnnualCheckout : commerceConfig.plusMonthlyCheckout;

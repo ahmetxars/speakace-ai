@@ -6,7 +6,7 @@ import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const rawPlan = searchParams.get("plan");
-  const plan: "plus" | "pro" = rawPlan === "pro" ? "pro" : "plus";
+  const plan: "plus" | "pro" | "lifetime" = rawPlan === "pro" ? "pro" : rawPlan === "lifetime" ? "lifetime" : "plus";
   const rawBilling = searchParams.get("billing");
   const billing: "weekly" | "annual" = rawBilling === "annual" ? "annual" : "weekly";
   const coupon = searchParams.get("coupon") ?? undefined;

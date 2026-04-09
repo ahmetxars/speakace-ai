@@ -13,7 +13,7 @@ export type TaskType =
 
 export type Difficulty = "Starter" | "Target" | "Stretch";
 
-export type SubscriptionPlan = "free" | "plus" | "pro";
+export type SubscriptionPlan = "free" | "plus" | "pro" | "lifetime";
 export type BillingStatus =
   | "free"
   | "active"

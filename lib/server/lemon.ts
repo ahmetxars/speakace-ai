@@ -75,6 +75,7 @@ export function resolvePlanFromLemonPayload(payload: LemonPayload): Subscription
     .join(" ")
     .toLowerCase();
 
+  if (sourceText.includes("lifetime")) return "lifetime";
   if (sourceText.includes("pro")) return "pro";
   if (sourceText.includes("plus")) return "plus";
   return "plus";
@@ -105,6 +106,8 @@ export function resolveBillingStatusFromEvent(eventName: string, payload: LemonP
 }
 
 export function resolvePlanForStatus(plan: SubscriptionPlan, status: BillingStatus): SubscriptionPlan {
+  // Lifetime purchases never expire — ignore cancellation/expiry events
+  if (plan === "lifetime") return "lifetime";
   if (["expired", "refunded"].includes(status)) return "free";
   return plan;
 }
