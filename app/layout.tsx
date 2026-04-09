@@ -14,28 +14,54 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.domain),
   title: {
-    default: "SpeakAce AI",
+    default: "SpeakAce AI — Practice English Speaking with AI",
     template: "%s | SpeakAce AI"
   },
   description: siteConfig.description,
   keywords: siteConfig.keywords,
   category: "education",
   applicationName: "SpeakAce AI",
+  authors: [{ name: "SpeakAce", url: siteConfig.domain }],
+  creator: "SpeakAce",
+  publisher: "SpeakAce",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1
+    }
+  },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION
   },
   openGraph: {
-    title: "SpeakAce AI",
+    title: "SpeakAce AI — Practice English Speaking with AI",
     description: siteConfig.description,
     url: siteConfig.domain,
     siteName: siteConfig.name,
     locale: "en_US",
-    type: "website"
+    type: "website",
+    images: [
+      {
+        url: `${siteConfig.domain}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "SpeakAce AI — English Speaking Practice"
+      }
+    ]
   },
   twitter: {
     card: "summary_large_image",
-    title: "SpeakAce AI",
-    description: siteConfig.description
+    title: "SpeakAce AI — Practice English Speaking with AI",
+    description: siteConfig.description,
+    images: [`${siteConfig.domain}/og-image.png`]
+  },
+  alternates: {
+    canonical: siteConfig.domain
   },
   manifest: "/manifest.webmanifest"
 };
@@ -98,8 +124,58 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 "@type": "Organization",
                 name: siteConfig.name,
                 url: siteConfig.domain,
-                sameAs: [],
+                logo: `${siteConfig.domain}/logo.png`,
+                sameAs: [
+                  "https://twitter.com/speakace",
+                  "https://linkedin.com/company/speakace",
+                  "https://youtube.com/@speakace"
+                ],
+                contactPoint: {
+                  "@type": "ContactPoint",
+                  email: siteConfig.contactEmail,
+                  contactType: "customer support"
+                },
                 description: siteConfig.description
+              })
+            }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                name: siteConfig.name,
+                url: siteConfig.domain,
+                description: siteConfig.description,
+                potentialAction: {
+                  "@type": "SearchAction",
+                  target: {
+                    "@type": "EntryPoint",
+                    urlTemplate: `${siteConfig.domain}/blog?q={search_term_string}`
+                  },
+                  "query-input": "required name=search_term_string"
+                }
+              })
+            }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "SoftwareApplication",
+                name: siteConfig.name,
+                applicationCategory: "EducationalApplication",
+                operatingSystem: "Web",
+                url: siteConfig.domain,
+                description: siteConfig.description,
+                offers: {
+                  "@type": "Offer",
+                  price: "0",
+                  priceCurrency: "USD",
+                  availability: "https://schema.org/InStock"
+                }
               })
             }}
           />

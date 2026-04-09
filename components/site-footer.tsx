@@ -182,8 +182,8 @@ export function SiteFooter() {
                   fontSize: "0.8125rem",
                   fontWeight: 600,
                   color: "var(--foreground)",
-                  background: "oklch(1 0 0 / 6%)",
-                  border: "1px solid oklch(1 0 0 / 10%)",
+                  background: "var(--secondary)",
+                  border: "1px solid var(--border)",
                   borderRadius: "8px",
                   textDecoration: "none",
                   opacity: 0.8
@@ -235,8 +235,8 @@ export function SiteFooter() {
         {/* Newsletter */}
         <div
           style={{
-            background: "oklch(1 0 0 / 3%)",
-            border: "1px solid oklch(1 0 0 / 7%)",
+            background: "var(--secondary)",
+            border: "1px solid var(--border)",
             borderRadius: "14px",
             padding: "1.75rem",
             display: "flex",
@@ -272,8 +272,8 @@ export function SiteFooter() {
               style={{
                 padding: "0.625rem 1rem",
                 fontSize: "0.875rem",
-                background: "oklch(1 0 0 / 6%)",
-                border: "1px solid oklch(1 0 0 / 12%)",
+                background: "var(--input-bg)",
+                border: "1px solid var(--border)",
                 borderRadius: "8px",
                 color: "var(--foreground)",
                 outline: "none",

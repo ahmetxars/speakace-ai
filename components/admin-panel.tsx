@@ -33,7 +33,7 @@ import {
   ReferralCodeRecord
 } from "@/lib/types";
 
-type AdminTab = "overview" | "members" | "content" | "referrals" | "activity";
+type AdminTab = "overview" | "members" | "content" | "referrals" | "activity" | "system";
 
 function formatDate(value?: string | null) {
   if (!value) return "—";
@@ -111,7 +111,7 @@ const navItems: Array<{ id: AdminTab | null; label: string; icon: React.FC<{ siz
   { id: null, label: "Reviews", icon: Star },
   { id: null, label: "Analytics", icon: BarChart2 },
   { id: "referrals", label: "Referrals", icon: Tag },
-  { id: null, label: "Settings", icon: Settings }
+  { id: "system", label: "System", icon: Settings }
 ];
 
 const tabTitles: Record<AdminTab, string> = {
@@ -119,7 +119,8 @@ const tabTitles: Record<AdminTab, string> = {
   members: "Users",
   content: "Blog Posts",
   referrals: "Referrals",
-  activity: "Sessions"
+  activity: "Sessions",
+  system: "System Status"
 };
 
 export function AdminPanel(props: {
@@ -920,6 +921,100 @@ export function AdminPanel(props: {
                       </div>
                     ))
                   )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── SYSTEM TAB ───────────────────────── */}
+          {activeTab === "system" && (
+            <div className="adm-grid-2">
+              <div className="adm-panel-card">
+                <div className="adm-panel-card-head">
+                  <h3>Environment</h3>
+                </div>
+                <div className="adm-overview-list">
+                  {[
+                    { label: "NODE_ENV", value: process.env.NODE_ENV ?? "—" },
+                    { label: "Next.js", value: "15 (App Router)" },
+                    { label: "Site URL", value: process.env.NEXT_PUBLIC_SITE_URL ?? "—" },
+                    { label: "Vercel env", value: process.env.VERCEL_ENV ?? "local" },
+                    { label: "Region", value: process.env.VERCEL_REGION ?? "—" },
+                    { label: "Admin session", value: props.sessionLabel }
+                  ].map(({ label, value }) => (
+                    <div key={label} className="adm-overview-item">
+                      <strong style={{ fontFamily: "monospace", fontSize: "0.8rem" }}>{label}</strong>
+                      <span style={{ fontFamily: "monospace", fontSize: "0.8rem", color: "var(--adm-muted)" }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="adm-panel-card">
+                <div className="adm-panel-card-head">
+                  <h3>Platform Overview</h3>
+                </div>
+                <div className="adm-overview-list">
+                  {[
+                    { label: "Total users", value: String(props.overview.totalUsers) },
+                    { label: "Students", value: String(props.overview.totalStudents) },
+                    { label: "Teachers", value: String(props.overview.totalTeachers) },
+                    { label: "Schools", value: String(props.overview.totalSchools) },
+                    { label: "Paid members", value: String(props.overview.paidMembers) },
+                    { label: "On trial", value: String(props.overview.trialMembers) },
+                    { label: "Active sessions", value: String(props.overview.activeSessions) },
+                    { label: "Weekly revenue est.", value: formatMoney(props.overview.monthlyRevenueEstimate) },
+                    { label: "Live users (5m)", value: String(props.overview.liveUsers5m) },
+                    { label: "Last request", value: formatRelativeDate(props.overview.lastRequestAt) }
+                  ].map(({ label, value }) => (
+                    <div key={label} className="adm-overview-item">
+                      <strong>{label}</strong>
+                      <span>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="adm-panel-card">
+                <div className="adm-panel-card-head">
+                  <h3>Quick Actions</h3>
+                </div>
+                <div className="adm-stack-list">
+                  {[
+                    { label: "View public site", href: "/" },
+                    { label: "Open blog", href: "/blog" },
+                    { label: "Pricing page", href: "/pricing" },
+                    { label: "Admin login", href: "/admin/login" }
+                  ].map(({ label, href }) => (
+                    <div key={label} className="adm-list-row">
+                      <span className="adm-table-name">{label}</span>
+                      <a className="adm-secondary-btn" href={href} target="_blank" rel="noreferrer">
+                        Open <ExternalLink size={13} />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="adm-panel-card">
+                <div className="adm-panel-card-head">
+                  <h3>Data Summary</h3>
+                </div>
+                <div className="adm-overview-list">
+                  {[
+                    { label: "Members loaded", value: String(props.members.length) },
+                    { label: "Billing events", value: String(props.billingEvents.length) },
+                    { label: "Auth activity records", value: String(props.authActivity.length) },
+                    { label: "Referral codes", value: String(props.referralCodes.length) },
+                    { label: "Institutions", value: String(props.institutions.length) },
+                    { label: "Custom blog posts", value: String(props.customPosts.length) },
+                    { label: "Published posts", value: String(props.customPosts.filter((p) => p.status === "published").length) }
+                  ].map(({ label, value }) => (
+                    <div key={label} className="adm-overview-item">
+                      <strong>{label}</strong>
+                      <span>{value}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

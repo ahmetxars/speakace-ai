@@ -51,10 +51,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const guideRoutes = guidePages.map((item) => `/guides/${item.slug}`);
   const allRoutes = [...routes, ...blogRoutes, ...customBlogRoutes, ...topicRoutes, ...comparisonRoutes, ...toolRoutes, ...guideRoutes];
 
+  const highPriorityRoutes = new Set([
+    "",
+    "/pricing",
+    "/ai-english-speaking-practice",
+    "/ielts-speaking-ai",
+    "/ielts-speaking-practice",
+    "/improve-ielts-speaking-score",
+    "/toefl-speaking-practice",
+    "/speaking-test-simulator-ielts",
+    "/free-ielts-speaking-test",
+    "/blog"
+  ]);
+
+  const frequentRoutes = new Set(["", "/blog", "/daily-ielts-speaking-prompt", "/weekly-ielts-speaking-challenge"]);
+
   return allRoutes.map((route) => ({
     url: `${siteConfig.domain}${route}`,
     lastModified: new Date(),
-    changeFrequency: route === "" || route === "/blog" ? "weekly" : "monthly",
-    priority: route === "" ? 1 : route.startsWith("/blog/") ? 0.82 : 0.8
+    changeFrequency: (frequentRoutes.has(route) ? "weekly" : "monthly") as "weekly" | "monthly",
+    priority: route === ""
+      ? 1
+      : highPriorityRoutes.has(route)
+        ? 0.95
+        : route.startsWith("/blog/")
+          ? 0.82
+          : route.startsWith("/ielts-speaking-topics/")
+            ? 0.78
+            : route.startsWith("/compare/") || route.startsWith("/tools/") || route.startsWith("/guides/")
+              ? 0.75
+              : 0.8
   }));
 }
