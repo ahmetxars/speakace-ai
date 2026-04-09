@@ -14,8 +14,6 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     session.report?.scaleLabel === "Response too short to score reliably";
   const previousSession = summary.recentSessions.find((item) => item.id !== session.id && item.report);
   const delta = session.report && previousSession?.report ? Number((session.report.overall - previousSession.report.overall).toFixed(1)) : null;
-  const weakestCategory = session.report?.categories.slice().sort((a, b) => a.score - b.score)[0];
-  const strongestCategory = session.report?.categories.slice().sort((a, b) => b.score - a.score)[0];
   const qualityScore = session.transcriptQualityScore ?? 0;
   const qualityLabel = session.transcriptQualityLabel ?? (tr ? "Bilinmiyor" : "Unknown");
   const qualityTone = qualityScore >= 85 ? "strong" : qualityScore >= 65 ? "usable" : qualityScore >= 40 ? "weak" : "retry";
@@ -29,29 +27,17 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     }
   };
   const displayedRawTranscript = session.rawTranscript ?? session.transcript;
-  const showCleanedTranscript = Boolean(session.transcript && session.rawTranscript && session.transcript !== session.rawTranscript);
   const examMeta = getExamMeta(session, tr);
-  const [targetScore, setTargetScore] = useState<string>("");
   const [audioSource, setAudioSource] = useState<string>("");
-  const [savedRetry, setSavedRetry] = useState(false);
-  const [savedBookmark, setSavedBookmark] = useState(false);
   const [savedStudyList, setSavedStudyList] = useState(false);
-  const [sessionMode, setSessionMode] = useState<"drill" | "simulation" | "pronunciation">("drill");
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [activeTab, setActiveTab] = useState<"feedback" | "transcript" | "compare" | "history">("feedback");
-  const targetStorageKey = currentUser ? `speakace-target-${currentUser.id}` : "speakace-target-guest";
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setTargetScore(window.localStorage.getItem(targetStorageKey) ?? "");
     setAudioSource(window.localStorage.getItem(`speakace-audio-${session.id}`) ?? "");
-    setSessionMode((window.localStorage.getItem(`speakace-session-mode-${session.id}`) as "drill" | "simulation" | "pronunciation" | null) ?? "drill");
-    const queue = readRetryQueue();
-    setSavedRetry(queue.some((item) => item.promptId === session.prompt.id));
-    const bookmarks = readPromptBookmarks();
-    setSavedBookmark(bookmarks.some((item) => item.promptId === session.prompt.id));
     const studyItems = readStudyItems();
     setSavedStudyList(studyItems.some((item) => item.promptId === session.prompt.id));
     void (async () => {
@@ -66,31 +52,8 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         // local fallback is already applied above
       }
     })();
-  }, [session.id, session.prompt.id, targetStorageKey]);
+  }, [session.id, session.prompt.id]);
 
-  const numericTarget = Number(targetScore || 0);
-  const targetGap = numericTarget && session.report ? Number((numericTarget - session.report.overall).toFixed(1)) : null;
-  const nextAction = useMemo(
-    () =>
-      buildNextAction({
-        tr,
-        retryRequired,
-        report: session.report,
-        weakestLabel: weakestCategory?.label,
-        examType: session.examType
-      }),
-    [retryRequired, session.examType, session.report, tr, weakestCategory?.label]
-  );
-  const targetProgressNote = useMemo(
-    () =>
-      buildTargetProgressNote({
-        tr,
-        targetScore,
-        targetGap,
-        overall: session.report?.overall ?? null
-      }),
-    [session.report?.overall, targetGap, targetScore, tr]
-  );
   const sentencePairs = useMemo(() => buildSentenceComparePairs(displayedRawTranscript ?? "", session.report?.improvedAnswer ?? ""), [displayedRawTranscript, session.report?.improvedAnswer]);
   const samePromptHistory = useMemo(
     () =>
@@ -104,41 +67,6 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     if (!transcriptSegments.length) return [];
     return allocateSegmentTimings(transcriptSegments, audioDuration);
   }, [audioDuration, transcriptSegments]);
-
-  const saveToRetryQueue = () => {
-    if (typeof window === "undefined") return;
-    const queue = readRetryQueue();
-    const next = [
-      {
-        promptId: session.prompt.id,
-        examType: session.examType,
-        taskType: session.taskType,
-        difficulty: session.difficulty,
-        title: session.prompt.title,
-        createdAt: new Date().toISOString()
-      },
-      ...queue.filter((item) => item.promptId !== session.prompt.id)
-    ].slice(0, 12);
-    window.localStorage.setItem("speakace-retry-queue", JSON.stringify(next));
-    setSavedRetry(true);
-  };
-
-  const saveToBookmarks = () => {
-    if (typeof window === "undefined") return;
-    const next = [
-      {
-        promptId: session.prompt.id,
-        examType: session.examType,
-        taskType: session.taskType,
-        difficulty: session.difficulty,
-        title: session.prompt.title,
-        createdAt: new Date().toISOString()
-      },
-      ...readPromptBookmarks().filter((item) => item.promptId !== session.prompt.id)
-    ].slice(0, 16);
-    window.localStorage.setItem("speakace-bookmarks", JSON.stringify(next));
-    setSavedBookmark(true);
-  };
 
   const saveToStudyList = () => {
     if (typeof window === "undefined") return;
@@ -218,13 +146,6 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     if (matchIndex >= 0 && matchIndex !== activeSentenceIndex) {
       setActiveSentenceIndex(matchIndex);
     }
-  };
-
-  const jumpToSegment = (index: number) => {
-    if (!audioRef.current || !syncedSegments[index]) return;
-    audioRef.current.currentTime = syncedSegments[index].start;
-    audioRef.current.play().catch(() => undefined);
-    setActiveSentenceIndex(index);
   };
 
   return (
@@ -475,41 +396,6 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
   );
 }
 
-function readPromptBookmarks() {
-  if (typeof window === "undefined") return [] as Array<{ promptId: string }>;
-  try {
-    const raw = window.localStorage.getItem("speakace-bookmarks");
-    return raw ? (JSON.parse(raw) as Array<{ promptId: string }>) : [];
-  } catch {
-    return [];
-  }
-}
-
-function InsightCard({ title, value, note }: { title: string; value: string; note: string }) {
-  return (
-    <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
-      <div style={{ color: "var(--muted)", marginBottom: "0.4rem" }}>{title}</div>
-      <div style={{ fontSize: "1.8rem", fontWeight: 800 }}>{value}</div>
-      <div style={{ color: "var(--muted)", marginTop: "0.35rem", lineHeight: 1.5 }}>{note}</div>
-    </div>
-  );
-}
-
-function DetailList({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div className="card" style={{ padding: "1rem" }}>
-      <strong>{title}</strong>
-      <ul style={{ marginBottom: 0 }}>
-        {items.map((item) => (
-          <li key={item} style={{ marginTop: "0.5rem" }}>
-            {item}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 function getExamMeta(session: SpeakingSession, tr: boolean) {
   if (session.examType === "IELTS") {
     return {
@@ -593,102 +479,6 @@ function buildToeflStructureHint(taskType: string, tr: boolean) {
   return tr ? "TOEFL Task 4'te dersi ana konu ve 2 ana nokta halinde ozetlemek en temiz yapidir." : "TOEFL Task 4 is strongest when you summarize the lecture as one main topic plus two organized key points.";
 }
 
-function buildTrendNote(delta: number | null, tr: boolean) {
-  if (delta === null) {
-    return tr ? "Karsilastirma icin daha fazla deneme lazim" : "Need another scored attempt";
-  }
-  if (delta > 0) {
-    return tr ? "Bir onceki denemeden daha iyi" : "Better than the previous scored attempt";
-  }
-  return tr ? "Bir onceki denemeye gore dusus var" : "Below the previous scored attempt";
-}
-
-function buildTargetProgressNote({
-  tr,
-  targetScore,
-  targetGap,
-  overall
-}: {
-  tr: boolean;
-  targetScore: string;
-  targetGap: number | null;
-  overall: number | null;
-}) {
-  if (!targetScore) {
-    return tr
-      ? "Dashboard'dan istege bagli hedef skor secersen bu denemenin seni hedefine ne kadar yaklastirdigini burada gorebilirsin."
-      : "Pick an optional target score in the dashboard to see how much this attempt moves you toward that goal.";
-  }
-
-  if (overall === null) {
-    return tr ? "Hedef karsilastirmasi icin once puan gerekli." : "A scored result is needed before target comparison appears.";
-  }
-
-  if ((targetGap ?? 0) <= 0) {
-    return tr
-      ? `Bu deneme secili hedefin olan ${targetScore} seviyesine ulasiyor ya da onu geciyor. Siradaki amac bunu daha istikrarli hale getirmek olmali.`
-      : `This attempt already reaches or exceeds your selected target of ${targetScore}. The next goal is to make that level more consistent.`;
-  }
-
-  return tr
-    ? `Bu deneme seni hedefinden ${targetGap} puan uzakta birakti. Dogru odakla bu fark parcali olarak kapanabilir.`
-    : `This attempt leaves you ${targetGap} points away from your target. With the right focus, that gap can close step by step.`;
-}
-
-function buildNextAction({
-  tr,
-  retryRequired,
-  report,
-  weakestLabel,
-  examType
-}: {
-  tr: boolean;
-  retryRequired: boolean;
-  report: SpeakingSession["report"];
-  weakestLabel?: string;
-  examType: SpeakingSession["examType"];
-}) {
-  if (!report) {
-    return tr ? "Sonuc hazir olduktan sonra burada tek bir sonraki gorev goreceksin." : "Once the result is ready, you will see one clear next task here.";
-  }
-
-  if (retryRequired) {
-    return tr
-      ? "Ayni soruyu tekrar cozerken sadece Ingilizce konus ve cevabini en az bir neden ile uzat."
-      : "Retry the same question in English only and extend the answer with at least one reason.";
-  }
-
-  const weakest = weakestLabel ?? (examType === "IELTS" ? "Fluency and Coherence" : "Topic Development");
-
-  if (weakest.includes("Fluency") || weakest.includes("Coherence") || weakest.includes("Delivery")) {
-    return tr
-      ? "Bir sonraki denemede daha yavas basla, iki fikrini baglanti kelimeleriyle birlestir ve gereksiz duraksamalari azalt."
-      : "In the next attempt, start slightly slower, connect your ideas with clear linking words, and reduce unnecessary pauses.";
-  }
-
-  if (weakest.includes("Lexical") || weakest.includes("Language Use")) {
-    return tr
-      ? "Ayni soruyu tekrar dene ama bu kez iki anahtar kelimeyi daha guclu es anlamlilarla degistir ve tekrar oranini azalt."
-      : "Retry the same prompt, but replace two repeated words with stronger alternatives and reduce repetition.";
-  }
-
-  if (weakest.includes("Grammatical")) {
-    return tr
-      ? "Bir sonraki practice'te daha kisa ama daha temiz cumleler kur; hiz yerine dogrulugu onceliklendir."
-      : "In the next practice, use slightly shorter but cleaner sentences and prioritize accuracy over speed.";
-  }
-
-  if (weakest.includes("Pronunciation")) {
-    return tr
-      ? "Ayni soruyu tekrar kaydetmeden once anahtar kelimeleri yavasca bir kez sesli prova et, sonra daha net vurgu ile konus."
-      : "Before retrying the same question, rehearse the key words once out loud, then speak again with clearer stress and endings.";
-  }
-
-  return tr
-    ? "Bir sonraki denemede ana fikrini ilk 10 saniyede netlestir, sonra bir neden ve bir ornekle cevabi tamamla."
-    : "In the next attempt, make your main point clear in the first 10 seconds, then finish with one reason and one example.";
-}
-
 function translateCategoryLabel(label: string) {
   const labels: Record<string, string> = {
     "Fluency and Coherence": "Akicilik ve Tutarlilik",
@@ -711,103 +501,6 @@ function translateQualityLabel(label: string, tr: boolean) {
   if (label === "Weak") return "Zayif";
   if (label === "Retry needed") return "Tekrar gerekli";
   return label;
-}
-
-function buildQualityHelperText(score: number, tr: boolean) {
-  if (score >= 85) {
-    return tr ? "Transcript temiz gorunuyor. Bu analiz icin saglam bir temel." : "This transcript looks clean and is a strong base for analysis.";
-  }
-  if (score >= 65) {
-    return tr ? "Transcript kullanilabilir durumda. Kucuk kelime kacirmalari olsa da analiz genel olarak guvenilir." : "The transcript is usable. A few missed words are possible, but the overall analysis should still be reliable.";
-  }
-  if (score >= 40) {
-    return tr ? "Transcript zayif gorunuyor. Sonucu yorumlarken dikkatli olmakta fayda var; bir tekrar daha daha guvenilir olabilir." : "The transcript looks weak. Treat the result carefully; retrying once may give a more reliable report.";
-  }
-  return tr ? "Bu transcript tekrar gerektiriyor. Net Ingilizce ve biraz daha uzun cevapla yeniden denemek en iyi sonuc verir." : "This transcript needs a retry. A clearer, longer English response will produce a much better result.";
-}
-
-function buildCoachSummary({
-  tr,
-  retryRequired,
-  report,
-  strongestLabel,
-  weakestLabel,
-  examType
-}: {
-  tr: boolean;
-  retryRequired: boolean;
-  report: SpeakingSession["report"];
-  strongestLabel?: string;
-  weakestLabel?: string;
-  examType: SpeakingSession["examType"];
-}) {
-  if (!report) {
-    return tr ? "Sonuc hazir oldugunda burada daha net bir koç yorumu goreceksin." : "You will see a clearer coach summary here once the result is ready.";
-  }
-
-  if (retryRequired) {
-    return report.scaleLabel === "Please respond in English"
-      ? tr
-        ? "Sistem bu cevabin agirlikli olarak Ingilizce olmadigini algiladi. Bu yuzden sinav mantigina gore puanlama yapilmadi. Morali bozma; ayni soruyu sadece Ingilizce ve biraz daha net bir telaffuzla tekrar denersen cok daha faydali bir analiz alirsin."
-        : "The system detected that this answer was not primarily in English, so it was not scored normally against the exam rubric. Do not let that discourage you; if you retry the same question in English with calmer, clearer delivery, you will get a much more useful analysis."
-      : tr
-        ? "Bu cevap guvenilir puanlama icin fazla kisaydi. Bu kotu oldugun anlamina gelmez; sadece sistemin yeterli dil verisi alamadigi anlamina gelir. Bir sonraki denemede daha uzun ve tam cumlelerle konusursan cok daha iyi geri bildirim alirsin."
-        : "This response was too short for reliable scoring. That does not mean you are bad at speaking; it means the system did not receive enough language to judge fairly. In the next attempt, speak longer in complete sentences and you will get much better feedback.";
-  }
-
-  const lowThreshold = examType === "IELTS" ? 4 : 2;
-  if (report.overall <= lowThreshold) {
-    return tr
-      ? `Bu deneme su an hedef seviyenin belirgin sekilde altinda. En zayif nokta ${weakestLabel ?? "yanit gelistirme"} tarafinda gorunuyor ve cevap daha net, daha uzun ve daha Ingilizce odakli olmali. Yine de bu cok duzeltilebilir bir durum; eger bu sekilde duzenli calisip her cevapta tek bir fikri ornekle desteklersen hizli ilerleme gorebilirsin.`
-      : `This attempt is clearly below the current target level. The weakest area appears to be ${weakestLabel ?? "response development"}, and the answer needs to be clearer, fuller, and more controlled. Even so, this is very fixable; if you keep practicing consistently and support each answer with one clear example, you can improve quickly.`;
-  }
-
-  return tr
-    ? `Bu cevapta en guclu alanin ${strongestLabel ?? "genel yapi"} tarafinda gorunuyor. En fazla puan artisi potansiyeli ise ${weakestLabel ?? "detay kullanimi"} tarafinda. Bir sonraki denemede cevaplarini biraz daha detaylandirip daha temiz baglaclarla ilerlersen daha dengeli bir sonuc alirsin.`
-    : `Your strongest area in this attempt appears to be ${strongestLabel ?? "overall structure"}. The clearest room for growth is ${weakestLabel ?? "detail support"}. In the next attempt, add one more concrete detail and connect ideas more cleanly to produce a more balanced score.`;
-}
-
-
-function ChecklistCard({
-  title,
-  items
-}: {
-  title: string;
-  items: Array<{ label: string; text: string }>;
-}) {
-  return (
-    <div className="card" style={{ padding: "1rem", display: "grid", gap: "0.75rem" }}>
-      <strong>{title}</strong>
-      <div style={{ display: "grid", gap: "0.7rem" }}>
-        {items.map((item) => (
-          <div key={`${item.label}-${item.text}`} className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)" }}>
-            <div style={{ fontWeight: 700, marginBottom: "0.35rem" }}>{item.label}</div>
-            <div style={{ color: "var(--muted)", lineHeight: 1.6 }}>{item.text}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-type RetryQueueItem = {
-  promptId: string;
-  examType: SpeakingSession["examType"];
-  taskType: SpeakingSession["taskType"];
-  difficulty: SpeakingSession["difficulty"];
-  title: string;
-  createdAt: string;
-};
-
-function readRetryQueue(): RetryQueueItem[] {
-  if (typeof window === "undefined") return [];
-  const raw = window.localStorage.getItem("speakace-retry-queue");
-  if (!raw) return [];
-  try {
-    return JSON.parse(raw) as RetryQueueItem[];
-  } catch {
-    return [];
-  }
 }
 
 function buildTranscriptSegments(transcript: string) {
@@ -860,83 +553,6 @@ function buildSentenceUpgradeReason(mine: string, stronger: string, tr: boolean)
     : "The stronger version keeps the same core idea but expresses it in a clearer, more natural, and more exam-ready way.";
 }
 
-function buildSessionChecklist({
-  tr,
-  retryRequired,
-  report,
-  strongestLabel,
-  weakestLabel,
-  examType
-}: {
-  tr: boolean;
-  retryRequired: boolean;
-  report: SpeakingSession["report"];
-  strongestLabel?: string;
-  weakestLabel?: string;
-  examType: SpeakingSession["examType"];
-}) {
-  if (!report) {
-    return [
-      {
-        label: tr ? "Hazirlan" : "Get ready",
-        text: tr ? "Sonuc olustuktan sonra bu denemeyi 3 satirda ozetleyen hizli bir checklist burada gorunecek." : "Once the result is ready, you will see a fast 3-line checklist that summarizes this attempt."
-      }
-    ];
-  }
-
-  if (retryRequired) {
-    return [
-      {
-        label: tr ? "Iyi taraf" : "Worked well",
-        text: tr ? "Sisteme bir cevap verdin ve analiz akisini tamamladin; bu tekrar denemek icin iyi bir temel." : "You completed the response flow, which is already a useful base for a retry."
-      },
-      {
-        label: tr ? "Kacan nokta" : "Missed point",
-        text: tr ? "Bu deneme guvenilir puanlama icin ya yeterince Ingilizce degildi ya da yeterince uzun degildi." : "This attempt was either not English enough or not long enough for reliable scoring."
-      },
-      {
-        label: tr ? "Bir sonrakinde" : "Fix next",
-        text: tr ? "Ayni soruyu tekrar cozerken sadece Ingilizce konus ve cevabini en az bir neden ile uzat." : "On the next try, answer in English only and extend the response with at least one reason."
-      }
-    ];
-  }
-
-  const strongest = strongestLabel ? (tr ? translateCategoryLabel(strongestLabel) : strongestLabel) : tr ? "genel yapi" : "overall structure";
-  const weakest = weakestLabel ? (tr ? translateCategoryLabel(weakestLabel) : weakestLabel) : tr ? "yanit gelistirme" : "response development";
-  const lowThreshold = examType === "IELTS" ? 4 : 2;
-
-  if (report.overall <= lowThreshold) {
-    return [
-      {
-        label: tr ? "Iyi taraf" : "Worked well",
-        text: tr ? `Bu denemede en azindan ${strongest} tarafinda bir temel var; yani sifirdan baslamiyorsun.` : `There is still a base in ${strongest}, so you are not starting from zero.`
-      },
-      {
-        label: tr ? "Kacan nokta" : "Missed point",
-        text: tr ? `${weakest} ve cevap gelisimi su an skoru en cok asagi ceken alanlar.` : `${weakest} and response development are the main areas holding the score down right now.`
-      },
-      {
-        label: tr ? "Bir sonrakinde" : "Fix next",
-        text: tr ? "Bir sonraki denemede ana fikrini ilk cümlede netlestir, sonra tek bir neden ve tek bir ornekle cevabi tamamla." : "In the next attempt, make the main point clear in the first sentence, then complete the answer with one reason and one example."
-      }
-    ];
-  }
-
-  return [
-    {
-      label: tr ? "Iyi taraf" : "Worked well",
-      text: tr ? `Bu denemede en guclu tarafin ${strongest} oldu.` : `Your strongest area in this attempt was ${strongest}.`
-    },
-    {
-      label: tr ? "Kacan nokta" : "Missed point",
-      text: tr ? `En fazla puan kaybi ${weakest} tarafinda gorunuyor.` : `The clearest score loss shows up in ${weakest}.`
-    },
-    {
-      label: tr ? "Bir sonrakinde" : "Fix next",
-      text: tr ? `Bir sonraki denemede ${weakest} tarafini duzeltmek icin ayni soruda bir neden ve bir ornek daha temiz bagla.` : `In the next attempt, improve ${weakest} by linking one reason and one example more cleanly in the same prompt.`
-    }
-  ];
-}
 
 function buildSentenceComparePairs(rawTranscript: string, improvedAnswer: string) {
   const split = (text: string) =>
