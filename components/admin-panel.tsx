@@ -21,8 +21,6 @@ import {
   ChevronLeft,
   ArrowUpRight,
   Tag,
-  Activity,
-  Globe,
   Building2,
   ExternalLink
 } from "lucide-react";
@@ -181,11 +179,6 @@ export function AdminPanel(props: {
     body: "## What this guide covers\n\nAdd the first key explanation here.\n\n## Common mistakes\n\nExplain what usually goes wrong.\n\n## Better answer pattern\n\nShow what a stronger answer sounds like.\n\n## How to practice it\n\nGive the learner a repeatable action plan.",
     status: "draft"
   });
-
-  const teacherCount = useMemo(
-    () => props.members.filter((member) => member.memberType === "teacher").length,
-    [props.members]
-  );
 
   const referralOverview = useMemo(() => {
     const totalCodes = props.referralCodes.length;
