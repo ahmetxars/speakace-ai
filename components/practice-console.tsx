@@ -1416,6 +1416,14 @@ function buildTaskLayout(examType: ExamType, taskType: TaskType, prompt: string,
   };
 }
 
+function sentenceBullets(text: string) {
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((item) => item.trim().replace(/[.]+$/, ""))
+    .filter(Boolean)
+    .slice(0, 4);
+}
+
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
