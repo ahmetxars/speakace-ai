@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 
 const stories = [
@@ -36,7 +35,6 @@ export const metadata: Metadata = {
 export default function SuccessStoriesPage() {
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section">
         <div className="section-head">
           <span className="eyebrow">Success stories</span>

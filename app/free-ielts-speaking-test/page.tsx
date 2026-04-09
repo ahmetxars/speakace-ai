@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdSenseUnit } from "@/components/adsense-unit";
-import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -89,7 +88,6 @@ const faqJsonLd = {
 export default function FreeIeltsSpeakingTestPage() {
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">Free test</span>

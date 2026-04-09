@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { MarketingPage } from "@/components/marketing-page";
-import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
   title: "TOEFL Speaking Practice With AI",
@@ -21,7 +20,6 @@ export const metadata: Metadata = {
 export default function TOEFLPage() {
   return (
     <>
-      <SiteHeader />
       <MarketingPage
         eyebrow="TOEFL speaking practice"
         title="TOEFL speaking practice with AI transcript review and timed response drills."

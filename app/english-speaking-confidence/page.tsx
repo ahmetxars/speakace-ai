@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 
 const tips = [
@@ -29,7 +28,6 @@ export const metadata: Metadata = {
 export default function EnglishSpeakingConfidencePage() {
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section">
         <div className="section-head">
           <span className="eyebrow">Confidence guide</span>

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 import { blogPosts } from "@/lib/marketing-content";
 import { seoTopicPages } from "@/lib/seo-topics";
 import { siteConfig } from "@/lib/site";
@@ -25,7 +24,6 @@ export default function IeltsSpeakingSampleAnswersPage() {
 
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">Sample answers</span>

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 import { seoTopicPages } from "@/lib/seo-topics";
 
@@ -47,7 +46,6 @@ export default async function TopicDetailPage({
 
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section">
         <div className="section-head">
           <span className="eyebrow">IELTS topic page</span>

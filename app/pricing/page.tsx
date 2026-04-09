@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MarketingSchema } from "@/components/marketing-schema";
-import { SiteHeader } from "@/components/site-header";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
 import type { Language } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
@@ -259,7 +258,6 @@ export default async function PricingPage() {
   return (
     <>
       <MarketingSchema />
-      <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">{copy.eyebrow}</span>

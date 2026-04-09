@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site-header";
 import { MarketingPage } from "@/components/marketing-page";
 import { siteConfig } from "@/lib/site";
 
@@ -23,7 +22,6 @@ export const metadata: Metadata = {
 export default function SpeakingTestSimulatorIeltsPage() {
   return (
     <>
-      <SiteHeader />
       <MarketingPage
         eyebrow="Speaking test simulator IELTS"
         title="Use a speaking test simulator IELTS learners can train with before the real exam."

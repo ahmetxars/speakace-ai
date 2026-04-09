@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site-header";
 import { CompareHub } from "@/components/compare-hub";
 import { siteConfig } from "@/lib/site";
 
@@ -21,7 +20,6 @@ export const metadata: Metadata = {
 export default function CompareHubPage() {
   return (
     <>
-      <SiteHeader />
       <CompareHub />
     </>
   );

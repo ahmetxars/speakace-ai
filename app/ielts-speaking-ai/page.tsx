@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site-header";
 import { MarketingPage } from "@/components/marketing-page";
 import { siteConfig } from "@/lib/site";
 
@@ -23,7 +22,6 @@ export const metadata: Metadata = {
 export default function IeltsSpeakingAiPage() {
   return (
     <>
-      <SiteHeader />
       <MarketingPage
         eyebrow="IELTS speaking AI"
         title="IELTS speaking AI that helps you sound clearer, more fluent, and more exam-ready."

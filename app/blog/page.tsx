@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 import { getBlogChromeCopy, getFeaturedBlogPosts } from "@/lib/blog-content";
 import { getBlogPublicDescription, getBlogPublicTitle } from "@/lib/blog-seo";
 import { getServerLanguage } from "@/lib/language";
@@ -65,7 +64,6 @@ export default async function BlogIndexPage() {
 
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section">
         <div className="section-head">
           <span className="eyebrow">{chrome.cta.blog}</span>

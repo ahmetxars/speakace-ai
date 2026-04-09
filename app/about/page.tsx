@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 import type { Language } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
@@ -140,7 +139,6 @@ export default async function AboutPage() {
 
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">{copy.eyebrow}</span>

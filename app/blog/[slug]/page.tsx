@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BlogReadingEnhancements } from "@/components/blog-reading-enhancements";
-import { SiteHeader } from "@/components/site-header";
 import { getBlogChromeCopy, getLocalizedBlogPost, getLocalizedBlogPosts } from "@/lib/blog-content";
 import { getBlogPublicDescription, getBlogPublicTitle, getBlogSeoEntry } from "@/lib/blog-seo";
 import { getServerLanguage } from "@/lib/language";
@@ -115,7 +114,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <>
-      <SiteHeader />
       <BlogReadingEnhancements
         ctaLabel={ctaLabels.title}
         ctaDescription={ctaLabels.description}

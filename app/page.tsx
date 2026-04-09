@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { MarketingSchema } from "@/components/marketing-schema";
-import { SiteHeader } from "@/components/site-header";
 import { MarketingPage } from "@/components/marketing-page";
 import { getServerLanguage } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
@@ -185,7 +184,6 @@ export default async function HomePage() {
   return (
     <>
       <MarketingSchema />
-      <SiteHeader />
       <MarketingPage
         eyebrow={shellCopy.eyebrow}
         title={shellCopy.title}

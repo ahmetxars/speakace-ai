@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import Script from "next/script";
 import { FloatingThemeToggle } from "@/components/floating-theme-toggle";
+import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MarketingStickyCta } from "@/components/marketing-sticky-cta";
 import { Providers } from "@/components/providers";
@@ -48,6 +49,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const canonicalUrl = `${siteConfig.domain}${currentPath === "/" ? "" : currentPath}`;
   const isMaintenancePage = currentPath === "/maintenance";
   const hideGlobalChrome = isMaintenancePage;
+  const showMarketingHeader =
+    !hideGlobalChrome &&
+    !currentPath.startsWith("/app") &&
+    !currentPath.startsWith("/admin") &&
+    currentPath !== "/auth";
 
   return (
     <html lang={language} dir={direction}>
@@ -97,6 +103,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               })
             }}
           />
+          {showMarketingHeader ? <SiteHeader /> : null}
           {children}
           {!hideGlobalChrome ? <FloatingThemeToggle /> : null}
           {!hideGlobalChrome ? <MarketingStickyCta /> : null}

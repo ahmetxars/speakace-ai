@@ -1,19 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap');
+
+/* ── Playground OKLch design system ── */
 :root {
-  --bg: #f6efe6;
-  --bg-strong: #e8d7c5;
-  --surface: rgba(255, 249, 242, 0.9);
-  --surface-strong: #fff7ee;
-  --text: #241914;
-  --muted: #766459;
-  --line: rgba(64, 36, 18, 0.14);
-  --accent: #d95d39;
-  --accent-deep: #aa4120;
-  --accent-cool: #1d6f75;
-  --success: #2f7d4b;
-  --shadow: 0 8px 20px rgba(53, 28, 15, 0.035);
-  --radius-xl: 28px;
-  --radius-lg: 20px;
-  --radius-md: 14px;
+  /* OKLch Tailwind-compatible variables */
+  --background: oklch(0.08 0.01 280);
+  --foreground: oklch(0.92 0.005 65);
+  --card: oklch(0.12 0.015 280);
+  --card-foreground: oklch(0.92 0.005 65);
+  --popover: oklch(0.12 0.015 280);
+  --popover-foreground: oklch(0.92 0.005 65);
+  --primary: oklch(0.623 0.214 259.815);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.17 0.02 280);
+  --secondary-foreground: oklch(0.85 0.005 65);
+  --muted: oklch(0.65 0.015 286);
+  --muted-foreground: oklch(0.65 0.015 286);
+  --accent: oklch(0.71 0.18 165.41);
+  --accent-foreground: oklch(0.08 0.01 280);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.7 0.2 259.815);
+  --radius: 0.65rem;
+  --chart-1: oklch(0.623 0.214 259.815);
+  --chart-2: oklch(0.71 0.18 165.41);
+  --chart-3: oklch(0.65 0.15 200);
+  --chart-4: oklch(0.55 0.12 280);
+  --chart-5: oklch(0.45 0.1 320);
+
+  /* Legacy compatibility variables */
+  --bg: oklch(0.08 0.01 280);
+  --bg-strong: oklch(0.1 0.01 280);
+  --surface: oklch(0.12 0.015 280);
+  --surface-strong: oklch(0.17 0.02 280);
+  --text: oklch(0.92 0.005 65);
+  --line: oklch(1 0 0 / 10%);
+  --sa-accent: oklch(0.623 0.214 259.815);
+  --sa-accent-deep: oklch(0.72 0.18 259.815);
+  --sa-accent-cool: oklch(0.71 0.18 165.41);
+  --success: oklch(0.65 0.18 140);
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  --radius-xl: 16px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
   --max-width: 1180px;
 }
 
@@ -204,25 +234,25 @@
 }
 
 .sa-primary-button {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+  background: var(--primary);
   color: #fff;
-  box-shadow: 0 14px 30px rgba(217, 93, 57, 0.2);
+  box-shadow: 0 0 24px oklch(0.623 0.214 259.815 / 0.35);
 }
 
 .sa-primary-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 18px 34px rgba(217, 93, 57, 0.26);
+  box-shadow: 0 0 32px oklch(0.623 0.214 259.815 / 0.5);
 }
 
 .sa-secondary-button {
-  border: 1px solid rgba(33, 23, 17, 0.1);
-  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid oklch(1 0 0 / 15%);
+  background: oklch(1 0 0 / 8%);
   color: var(--text);
 }
 
 .sa-secondary-button:hover {
   transform: translateY(-1px);
-  background: #fff;
+  background: oklch(1 0 0 / 13%);
 }
 
 .sa-ghost-button {
@@ -860,8 +890,8 @@
 }
 
 .sa-inline-promo {
-  border: 1px solid rgba(33, 23, 17, 0.08);
-  background: #f9fafb;
+  border: 1px solid var(--line);
+  background: var(--surface);
 }
 
 .sa-inline-promo-actions {
@@ -1431,20 +1461,51 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(217, 93, 57, 0.035), transparent 20%),
-    radial-gradient(circle at right 12% top 12%, rgba(29, 111, 117, 0.03), transparent 14%),
-    linear-gradient(180deg, #fbf7f2 0%, var(--bg) 56%, #f3eadf 100%);
-  color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.6;
 }
 
-body[data-theme="dark"] {
-  background:
-    radial-gradient(circle at top left, rgba(234, 122, 82, 0.12), transparent 24%),
-    radial-gradient(circle at right 12% top 12%, rgba(115, 193, 199, 0.09), transparent 18%),
-    linear-gradient(180deg, #0d1217 0%, var(--bg) 55%, #141a20 100%);
+/* ═══════════════════════════════════════════════════════
+   PLAYGROUND UTILITIES
+   ═══════════════════════════════════════════════════════ */
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 50%, var(--primary) 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 4s ease infinite;
+}
+
+.card-shadow {
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.08), 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.card-shadow-elevated {
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.18), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.card-shadow-glow {
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.25);
+}
+
+.pulse-ring {
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+  70%  { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -2816,7 +2877,7 @@ img {
 
 .case-study-list-card {
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.58);
+  background: var(--surface);
 }
 
 .case-study-list {
@@ -3590,18 +3651,20 @@ body[data-theme="dark"] .card {
 }
 
 .button-primary {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 95%, white 5%), var(--accent-deep));
-  color: #fff7ef;
-  box-shadow: 0 10px 24px rgba(217, 93, 57, 0.18);
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 0 24px oklch(0.623 0.214 259.815 / 0.35);
 }
 
 .button-secondary {
-  background: rgba(255, 255, 255, 0.65);
-  border-color: var(--line);
+  background: oklch(1 0 0 / 8%);
+  border-color: oklch(1 0 0 / 15%);
+  color: var(--text);
 }
 
 .button-secondary:hover {
-  border-color: rgba(29, 111, 117, 0.22);
+  background: oklch(1 0 0 / 13%);
+  border-color: oklch(1 0 0 / 25%);
 }
 
 body[data-theme="dark"] .button-secondary:hover {
@@ -3994,7 +4057,7 @@ body[data-theme="dark"] .testimonial-week-card {
   left: 12%;
   right: 12%;
   top: 3.1rem;
-  border-top: 2px dashed #d1d5db;
+  border-top: 2px dashed var(--line);
   z-index: 0;
 }
 
@@ -4019,7 +4082,7 @@ body[data-theme="dark"] .testimonial-week-card {
   font-size: 48px;
   font-weight: 800;
   line-height: 1;
-  color: #f3f4f6;
+  color: oklch(1 0 0 / 0.06);
   letter-spacing: -0.05em;
   pointer-events: none;
 }
@@ -4058,7 +4121,8 @@ body[data-theme="dark"] .testimonial-week-card {
   margin-top: 1.2rem;
   padding: 2rem;
   border-radius: 16px;
-  background: #f9fafb;
+  background: var(--surface);
+  border: 1px solid var(--line);
   text-align: center;
 }
 
@@ -4155,8 +4219,8 @@ body[data-theme="dark"] .how-steps-cta {
 }
 
 .pricing-card[data-featured="true"] {
-  background: linear-gradient(180deg, rgba(217, 93, 57, 0.12), rgba(255, 249, 242, 0.94));
-  border-color: rgba(217, 93, 57, 0.28);
+  background: linear-gradient(180deg, oklch(0.623 0.214 259.815 / 0.15), var(--surface));
+  border-color: oklch(0.623 0.214 259.815 / 0.35);
 }
 
 body[data-theme="dark"] .pricing-card[data-featured="true"] {
@@ -4704,7 +4768,8 @@ body[data-theme="dark"] .interactive-link-card-tag {
   gap: 1rem;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   align-items: center;
-  background: linear-gradient(180deg, rgba(29, 111, 117, 0.08), rgba(255, 249, 242, 0.94));
+  background: linear-gradient(180deg, oklch(0.623 0.214 259.815 / 0.1), var(--surface));
+  border-color: oklch(0.623 0.214 259.815 / 0.2);
 }
 
 body[data-theme="dark"] .institution-cta {
@@ -4962,13 +5027,13 @@ body[data-theme="dark"] .compare-table-cell-accent {
 .comparison-head,
 .comparison-cell {
   padding: 0.9rem 1rem;
-  background: rgba(255, 255, 255, 0.7);
+  background: oklch(1 0 0 / 0.04);
   border-bottom: 1px solid var(--line);
 }
 
 .comparison-head {
   font-weight: 800;
-  background: rgba(29, 111, 117, 0.08);
+  background: oklch(0.623 0.214 259.815 / 0.1);
 }
 
 .comparison-table > :nth-last-child(-n + 2) {

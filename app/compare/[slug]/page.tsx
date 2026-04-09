@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SiteHeader } from "@/components/site-header";
 import { comparisonPages } from "@/lib/seo-growth";
 import { siteConfig } from "@/lib/site";
 
@@ -42,7 +41,6 @@ export default async function ComparisonDetailPage({
 
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">Comparison</span>

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 
 const reviewGroups = [
@@ -92,7 +91,6 @@ export default function ReviewsPage() {
 
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section reviews-page">
         <div className="section-head">
           <span className="eyebrow">Reviews</span>

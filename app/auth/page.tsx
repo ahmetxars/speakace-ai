@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { SiteHeader } from "@/components/site-header";
 import { useAppState } from "@/components/providers";
 
 export default function AuthPage() {
@@ -140,7 +139,6 @@ function AuthPageInner() {
 
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section">
         <div className="card" style={{ padding: "1.5rem", maxWidth: 620, margin: "0 auto", display: "grid", gap: "1rem" }}>
           {successToast ? (

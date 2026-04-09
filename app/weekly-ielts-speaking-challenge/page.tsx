@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 import { seoTopicPages } from "@/lib/seo-topics";
 import { siteConfig } from "@/lib/site";
 
@@ -24,7 +23,6 @@ export const metadata: Metadata = {
 export default function WeeklyIeltsSpeakingChallengePage() {
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">Weekly challenge</span>

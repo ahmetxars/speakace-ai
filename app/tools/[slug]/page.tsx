@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { SiteHeader } from "@/components/site-header";
 import { ToolWorkbench } from "@/components/tool-workbench";
 import { siteConfig } from "@/lib/site";
 import { toolPages } from "@/lib/seo-growth";
@@ -45,7 +44,6 @@ export default async function ToolDetailPage({
 
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">Free tool</span>

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 import { guidePages } from "@/lib/seo-growth";
 import { siteConfig } from "@/lib/site";
 
@@ -22,7 +21,6 @@ export const metadata: Metadata = {
 export default function GuidesHubPage() {
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">Guides</span>

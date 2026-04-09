@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { MarketingPage } from "@/components/marketing-page";
-import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
   title: "IELTS Speaking Practice with AI Feedback",
@@ -21,7 +20,6 @@ export const metadata: Metadata = {
 export default function IELTSPage() {
   return (
     <>
-      <SiteHeader />
       <MarketingPage
         eyebrow="IELTS speaking practice"
         title="IELTS speaking practice with AI feedback, timed cue cards, and transcript review."

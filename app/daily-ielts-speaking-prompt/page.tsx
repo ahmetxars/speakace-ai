@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 
 const prompts = [
@@ -33,7 +32,6 @@ export const metadata: Metadata = {
 export default function DailyIeltsSpeakingPromptPage() {
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem", paddingBottom: "10rem" }}>
         <div className="card" style={{ display: "grid", gap: "1.2rem", padding: "1.5rem" }}>
           <div className="section-head" style={{ marginBottom: 0 }}>

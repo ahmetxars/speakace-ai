@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 import { toolPages } from "@/lib/seo-growth";
 import { getToolVisual } from "@/lib/tool-visuals";
@@ -23,7 +22,6 @@ export const metadata: Metadata = {
 export default function ToolsHubPage() {
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">Tools</span>

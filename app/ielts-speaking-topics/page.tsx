@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
-import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 import { seoTopicPages } from "@/lib/seo-topics";
 
@@ -65,7 +64,6 @@ export const metadata: Metadata = {
 export default function IeltsSpeakingTopicsPage() {
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">IELTS topics</span>

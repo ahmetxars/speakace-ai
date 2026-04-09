@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
 import { LeadCaptureForm } from "@/components/lead-capture-form";
-import { SiteHeader } from "@/components/site-header";
 import { getBlogChromeCopy, getLocalizedBlogPosts } from "@/lib/blog-content";
 import type { Language } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
@@ -286,7 +285,6 @@ export default async function ResourcesPage() {
 
   return (
     <>
-      <SiteHeader />
       <main className="page-shell section">
         <div className="section-head">
           <span className="eyebrow">{copy.eyebrow}</span>
