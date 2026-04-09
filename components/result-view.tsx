@@ -39,6 +39,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
   const [sessionMode, setSessionMode] = useState<"drill" | "simulation" | "pronunciation">("drill");
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [activeTab, setActiveTab] = useState<"feedback" | "transcript" | "compare" | "history">("feedback");
   const targetStorageKey = currentUser ? `speakace-target-${currentUser.id}` : "speakace-target-guest";
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -227,260 +228,249 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
   };
 
   return (
-    <div className="page-shell section">
-      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", alignItems: "start" }}>
-        <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "1rem" }}>
-          <div>
-            <span className="eyebrow">{examMeta.leftEyebrow}</span>
-            <h1 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", marginBottom: "0.5rem" }}>{session.prompt.title}</h1>
-            <p style={{ color: "var(--muted)" }}>
-              {examMeta.headerLine}
-            </p>
-          </div>
+    <div style={{ maxWidth: 820, margin: "0 auto", padding: "2rem 1.5rem" }}>
 
-          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
-            <strong>{examMeta.promptLabel}</strong>
-            <p>{session.prompt.prompt}</p>
-          </div>
+      {/* HERO: Score + summary */}
+      <div style={{ textAlign: "center", padding: "2rem 0 1.5rem" }}>
+        <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>
+          {examMeta.leftEyebrow}
+        </div>
+        <h1 style={{ fontSize: "clamp(1.2rem, 2.5vw, 1.6rem)", margin: "0 0 1.5rem", fontWeight: 700, color: "var(--foreground)" }}>
+          {session.prompt.title}
+        </h1>
 
-          <div className="card" style={{ padding: "1rem", display: "grid", gap: "0.8rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
-              <strong>{examMeta.qualityLabel}</strong>
-              <span className={`quality-pill quality-${qualityTone}`}>{qualityScore}/100 · {translateQualityLabel(qualityLabel, tr)}</span>
+        {session.report ? (
+          <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: "0.3rem" }}>
+            <div style={{ fontSize: "clamp(4rem, 8vw, 6rem)", fontWeight: 900, lineHeight: 1, color: "var(--primary)" }}>
+              {session.report.overall}
             </div>
-            <p style={{ color: "var(--muted)", margin: 0, lineHeight: 1.7 }}>{buildQualityHelperText(qualityScore, tr)}</p>
-          </div>
-
-          <div className="card" style={{ padding: "1rem" }}>
-            <strong>{examMeta.rawTranscriptLabel}</strong>
-            <p style={{ lineHeight: "1.8", marginTop: "0.7rem" }}>{displayedRawTranscript ?? examMeta.noTranscriptText}</p>
-            {audioSource ? (
-              <div style={{ marginTop: "0.9rem", display: "grid", gap: "0.45rem" }}>
-                <strong style={{ fontSize: "0.95rem" }}>{tr ? "Ses kaydini dinle" : "Listen to your recording"}</strong>
-                <audio
-                  ref={audioRef}
-                  controls
-                  preload="metadata"
-                  src={audioSource}
-                  style={{ width: "100%" }}
-                  onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
-                  onTimeUpdate={handleAudioTimeUpdate}
-                />
-                <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
-                  <Link href={`/app/replay/${session.id}`} className="button button-secondary">
-                    {tr ? "Session replay" : "Session replay"}
-                  </Link>
-                </div>
+            <div style={{ fontSize: "1rem", color: "var(--muted-foreground)", fontWeight: 500 }}>
+              {session.report.scaleLabel}
+            </div>
+            {delta !== null ? (
+              <div style={{ fontSize: "0.9rem", fontWeight: 700, color: delta > 0 ? "oklch(0.55 0.18 165)" : delta < 0 ? "oklch(0.55 0.2 20)" : "var(--muted-foreground)" }}>
+                {delta > 0 ? `↑ +${delta}` : delta < 0 ? `↓ ${delta}` : "→ No change"} {tr ? "öncekine göre" : "vs last attempt"}
               </div>
             ) : null}
           </div>
+        ) : (
+          <p style={{ color: "var(--muted-foreground)" }}>{tr ? "Henüz skor yok." : "No score yet."}</p>
+        )}
+      </div>
 
-          {audioSource && syncedSegments.length ? (
-            <div className="card" style={{ padding: "1rem", display: "grid", gap: "0.75rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "center", flexWrap: "wrap" }}>
-                <strong>{tr ? "Ses + transcript senkronu" : "Audio + transcript sync"}</strong>
-                <span className="pill">{tr ? "Cumleye tikla" : "Tap a sentence"}</span>
+      {/* CATEGORY BARS */}
+      {session.report ? (
+        <div style={{ display: "grid", gap: "0.75rem", marginBottom: "2rem" }}>
+          {session.report.categories.map(cat => {
+            const max = session.examType === "TOEFL" ? 4 : 9;
+            const pct = Math.round((cat.score / max) * 100);
+            return (
+              <div key={cat.category} style={{ display: "grid", gap: "0.35rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "0.88rem", fontWeight: 600 }}>{tr ? translateCategoryLabel(cat.label) : cat.label}</span>
+                  <span style={{ fontSize: "0.95rem", fontWeight: 800 }}>{cat.score}</span>
+                </div>
+                <div style={{ height: 8, borderRadius: 999, background: "var(--border)", overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: "var(--primary)", transition: "width 0.6s ease" }} />
+                </div>
               </div>
-              <div style={{ display: "grid", gap: "0.65rem" }}>
-                {syncedSegments.map((segment, index) => (
-                  <button
-                    key={`${segment.text}-${index}`}
-                    type="button"
-                    className="button button-secondary"
-                    onClick={() => jumpToSegment(index)}
-                    style={{
-                      justifyContent: "flex-start",
-                      textAlign: "left",
-                      whiteSpace: "normal",
-                      padding: "0.85rem 1rem",
-                      background: activeSentenceIndex === index ? "rgba(29, 111, 117, 0.12)" : "rgba(255,255,255,0.65)",
-                      borderColor: activeSentenceIndex === index ? "rgba(29, 111, 117, 0.3)" : "var(--line)"
-                    }}
-                  >
-                    <span style={{ fontWeight: 600 }}>{segment.text}</span>
-                  </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {/* TAB NAV */}
+      <div style={{ display: "flex", gap: 0, marginBottom: "1.5rem", borderBottom: "2px solid var(--border)" }}>
+        {[
+          { key: "feedback", label: tr ? "Geri Bildirim" : "Feedback" },
+          { key: "transcript", label: tr ? "Transkript" : "Transcript" },
+          { key: "compare", label: tr ? "Karşılaştır" : "Compare" },
+          { key: "history", label: tr ? "Geçmiş" : "History" }
+        ].map(tab => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key as "feedback" | "transcript" | "compare" | "history")}
+            style={{
+              padding: "0.7rem 1.2rem",
+              border: "none",
+              borderBottom: activeTab === tab.key ? "2px solid var(--primary)" : "2px solid transparent",
+              background: "transparent",
+              color: activeTab === tab.key ? "var(--primary)" : "var(--muted-foreground)",
+              fontWeight: activeTab === tab.key ? 700 : 500,
+              fontSize: "0.9rem",
+              cursor: "pointer",
+              marginBottom: "-2px",
+              transition: "all 0.15s"
+            }}
+          >{tab.label}</button>
+        ))}
+      </div>
+
+      {/* TAB CONTENT: Feedback */}
+      {activeTab === "feedback" && session.report ? (
+        <div style={{ display: "grid", gap: "1.5rem" }}>
+          <div style={{ padding: "1.2rem", borderRadius: 14, background: "oklch(0.71 0.18 165.41 / 0.07)", border: "1px solid oklch(0.71 0.18 165.41 / 0.2)" }}>
+            <div style={{ fontWeight: 700, marginBottom: "0.8rem", color: "oklch(0.45 0.18 165)" }}>
+              ✓ {examMeta.strengthsLabel}
+            </div>
+            <ul style={{ margin: 0, padding: "0 0 0 1.2rem", display: "grid", gap: "0.4rem" }}>
+              {session.report.strengths.map((s, i) => <li key={i} style={{ lineHeight: 1.6, fontSize: "0.9rem" }}>{s}</li>)}
+            </ul>
+          </div>
+
+          <div style={{ padding: "1.2rem", borderRadius: 14, background: "oklch(0.55 0.2 20 / 0.05)", border: "1px solid oklch(0.55 0.2 20 / 0.15)" }}>
+            <div style={{ fontWeight: 700, marginBottom: "0.8rem", color: "oklch(0.45 0.18 20)" }}>
+              ↗ {examMeta.improvementsLabel}
+            </div>
+            <ul style={{ margin: 0, padding: "0 0 0 1.2rem", display: "grid", gap: "0.4rem" }}>
+              {session.report.improvements.map((s, i) => <li key={i} style={{ lineHeight: 1.6, fontSize: "0.9rem" }}>{s}</li>)}
+            </ul>
+          </div>
+
+          <div style={{ padding: "1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }}>
+            <div style={{ fontWeight: 700, marginBottom: "0.5rem", fontSize: "0.9rem" }}>🎯 {examMeta.nextExerciseLabel}</div>
+            <p style={{ margin: 0, color: "var(--foreground)", lineHeight: 1.7, fontSize: "0.9rem" }}>{session.report.nextExercise}</p>
+          </div>
+
+          {session.report.fillerWords.length > 0 ? (
+            <div style={{ padding: "1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }}>
+              <div style={{ fontWeight: 700, marginBottom: "0.5rem", fontSize: "0.9rem" }}>{examMeta.fillerWordsLabel}</div>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                {session.report.fillerWords.map(w => (
+                  <span key={w} style={{ padding: "0.25rem 0.75rem", borderRadius: 999, background: "var(--secondary)", border: "1px solid var(--border)", fontSize: "0.85rem", fontWeight: 600 }}>{w}</span>
                 ))}
               </div>
             </div>
           ) : null}
+        </div>
+      ) : activeTab === "feedback" ? (
+        <p style={{ color: "var(--muted-foreground)" }}>{tr ? "Henüz AI raporu yok." : "No AI report yet."}</p>
+      ) : null}
 
-          {showCleanedTranscript ? (
-            <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)" }}>
-              <strong>{examMeta.cleanedTranscriptLabel}</strong>
-              <p style={{ lineHeight: "1.8", marginTop: "0.7rem", color: "var(--muted)" }}>{session.transcript}</p>
+      {/* TAB CONTENT: Transcript */}
+      {activeTab === "transcript" ? (
+        <div style={{ display: "grid", gap: "1.2rem" }}>
+          {audioSource ? (
+            <div style={{ padding: "1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.7rem", fontSize: "0.9rem" }}>{tr ? "🎧 Kaydını dinle" : "🎧 Listen to your recording"}</div>
+              <audio
+                ref={audioRef}
+                controls
+                preload="metadata"
+                src={audioSource}
+                style={{ width: "100%", borderRadius: 8 }}
+                onLoadedMetadata={e => setAudioDuration(e.currentTarget.duration || 0)}
+                onTimeUpdate={handleAudioTimeUpdate}
+              />
             </div>
           ) : null}
 
+          <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", padding: "0.8rem 1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }}>
+            <span style={{ fontWeight: 600, fontSize: "0.88rem" }}>{examMeta.qualityLabel}</span>
+            <span className={`quality-pill quality-${qualityTone}`}>{qualityScore}/100 · {translateQualityLabel(qualityLabel, tr)}</span>
+          </div>
+
+          <div style={{ padding: "1.1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }}>
+            <div style={{ fontWeight: 700, marginBottom: "0.75rem", fontSize: "0.9rem" }}>{examMeta.rawTranscriptLabel}</div>
+            <p style={{ margin: 0, lineHeight: 1.8, fontSize: "0.92rem" }}>{displayedRawTranscript ?? examMeta.noTranscriptText}</p>
+          </div>
+
           {session.report?.improvedAnswer ? (
-            <>
-              <div className="card" style={{ padding: "1rem", background: "rgba(47, 125, 75, 0.08)" }}>
-                <strong>{examMeta.improvedAnswerLabel}</strong>
-                <p style={{ lineHeight: "1.8", marginTop: "0.7rem" }}>{session.report.improvedAnswer}</p>
-              </div>
-              {sentencePairs.length ? (
-                <div className="card" style={{ padding: "1rem" }}>
-                  <strong>{tr ? "Cumle karsilastirmasi" : "Sentence compare"}</strong>
-                  <div className="grid" style={{ gap: "0.75rem", marginTop: "0.85rem" }}>
-                    {sentencePairs.map((pair, index) => (
-                      <div key={`${pair.mine}-${pair.stronger}-${index}`} className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>
-                        <div className="card" style={{ padding: "0.9rem", background: "rgba(255,255,255,0.58)" }}>
-                          <strong style={{ display: "block", marginBottom: "0.45rem" }}>{tr ? "Senin cumlen" : "Your line"}</strong>
-                          <p style={{ margin: 0, lineHeight: 1.7 }}>{pair.mine || (tr ? "Bu bolumde net bir cumle yok." : "No clear sentence captured here.")}</p>
-                        </div>
-                        <div className="card" style={{ padding: "0.9rem", background: "rgba(29, 111, 117, 0.08)" }}>
-                          <strong style={{ display: "block", marginBottom: "0.45rem" }}>{tr ? "Daha guclu versiyon" : "Stronger version"}</strong>
-                          <p style={{ margin: 0, lineHeight: 1.7 }}>{pair.stronger || (tr ? "Bu kisim guclendirilmemis." : "No upgraded sentence here.")}</p>
-                        </div>
-                        <div className="card" style={{ padding: "0.9rem", background: "rgba(217, 93, 57, 0.06)", gridColumn: "1 / -1" }}>
-                          <strong style={{ display: "block", marginBottom: "0.45rem" }}>{tr ? "Neden daha iyi?" : "Why this is stronger"}</strong>
-                          <p style={{ margin: 0, lineHeight: 1.7 }}>{buildSentenceUpgradeReason(pair.mine, pair.stronger, tr)}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </>
+            <div style={{ padding: "1.1rem", borderRadius: 12, border: "1px solid oklch(0.71 0.18 165.41 / 0.3)", background: "oklch(0.71 0.18 165.41 / 0.05)" }}>
+              <div style={{ fontWeight: 700, marginBottom: "0.75rem", fontSize: "0.9rem", color: "oklch(0.45 0.18 165)" }}>{examMeta.improvedAnswerLabel}</div>
+              <p style={{ margin: 0, lineHeight: 1.8, fontSize: "0.92rem" }}>{session.report.improvedAnswer}</p>
+            </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {/* TAB CONTENT: Compare */}
+      {activeTab === "compare" && session.report?.improvedAnswer ? (
+        <div style={{ display: "grid", gap: "1rem" }}>
+          <p style={{ color: "var(--muted-foreground)", fontSize: "0.88rem", margin: 0 }}>
+            {tr ? "Her cümlenin güçlendirilmiş versiyonuyla karşılaştır." : "Compare each sentence with its stronger version."}
+          </p>
+          {sentencePairs.map((pair, index) => (
+            <div key={index} style={{ borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+                <div style={{ padding: "1rem", borderRight: "1px solid var(--border)", background: "var(--card)" }}>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted-foreground)", marginBottom: "0.5rem", textTransform: "uppercase" }}>{tr ? "Senin cümlen" : "Your line"}</div>
+                  <p style={{ margin: 0, lineHeight: 1.65, fontSize: "0.88rem" }}>{pair.mine || "—"}</p>
+                </div>
+                <div style={{ padding: "1rem", background: "oklch(0.71 0.18 165.41 / 0.05)" }}>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "oklch(0.45 0.18 165)", marginBottom: "0.5rem", textTransform: "uppercase" }}>{tr ? "Güçlü versiyon" : "Stronger version"}</div>
+                  <p style={{ margin: 0, lineHeight: 1.65, fontSize: "0.88rem" }}>{pair.stronger || "—"}</p>
+                </div>
+              </div>
+              <div style={{ padding: "0.75rem 1rem", background: "var(--secondary)", borderTop: "1px solid var(--border)", fontSize: "0.82rem", color: "var(--muted-foreground)", lineHeight: 1.6 }}>
+                {buildSentenceUpgradeReason(pair.mine, pair.stronger, tr)}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : activeTab === "compare" ? (
+        <p style={{ color: "var(--muted-foreground)" }}>{tr ? "Karşılaştırma için gelişmiş cevap gerekli." : "No improved answer available to compare."}</p>
+      ) : null}
+
+      {/* TAB CONTENT: History */}
+      {activeTab === "history" ? (
+        <div style={{ display: "grid", gap: "1rem" }}>
+          <div style={{ padding: "1.1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }}>
+            <div style={{ fontWeight: 700, marginBottom: "1rem", fontSize: "0.9rem" }}>{examMeta.trendPanelLabel}</div>
+            <div style={{ display: "grid", gap: "0.65rem" }}>
+              {summary.recentSessions.slice(0, 5).map(item => {
+                const max = session.examType === "TOEFL" ? 4 : 9;
+                const pct = Math.round(((item.report?.overall ?? 0) / max) * 100);
+                return (
+                  <div key={item.id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "0.8rem", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: "0.85rem", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.prompt.title}</div>
+                      <div style={{ height: 6, borderRadius: 999, background: "var(--border)", marginTop: "0.3rem", overflow: "hidden" }}>
+                        <div style={{ width: `${pct}%`, height: "100%", background: "var(--primary)", borderRadius: 999 }} />
+                      </div>
+                    </div>
+                    <strong style={{ fontSize: "1rem" }}>{item.report?.overall ?? "-"}</strong>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
           {samePromptHistory.length ? (
-            <div className="card" style={{ padding: "1rem" }}>
-              <strong>{tr ? "Ayni sorudaki onceki denemeler" : "Retry compare history"}</strong>
-              <div className="grid" style={{ gap: "0.75rem", marginTop: "0.8rem" }}>
-                {samePromptHistory.map((item) => (
-                  <div key={item.id} className="card" style={{ padding: "0.9rem", background: "rgba(255,255,255,0.58)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "center", flexWrap: "wrap" }}>
-                      <strong>{new Date(item.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</strong>
-                      <span className="pill">
-                        {item.report?.overall ?? "-"} {session.report && item.report ? `→ ${Number((session.report.overall - item.report.overall).toFixed(1)) > 0 ? "+" : ""}${Number((session.report.overall - item.report.overall).toFixed(1))}` : ""}
-                      </span>
+            <div style={{ padding: "1.1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }}>
+              <div style={{ fontWeight: 700, marginBottom: "0.8rem", fontSize: "0.9rem" }}>{tr ? "Bu soruda önceki denemeler" : "Previous attempts on this topic"}</div>
+              <div style={{ display: "grid", gap: "0.75rem" }}>
+                {samePromptHistory.map(item => (
+                  <div key={item.id} style={{ padding: "0.9rem", borderRadius: 10, background: "var(--secondary)", border: "1px solid var(--border)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                      <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>{new Date(item.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</span>
+                      <span className="pill">{item.report?.overall ?? "-"}</span>
                     </div>
-                    <p style={{ margin: "0.65rem 0 0", lineHeight: 1.7, color: "var(--muted)" }}>
-                      {item.rawTranscript ?? item.transcript ?? (tr ? "Transcript yok." : "No transcript.")}
+                    <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--muted-foreground)", lineHeight: 1.6 }}>
+                      {(item.rawTranscript ?? item.transcript ?? "").slice(0, 120)}{(item.rawTranscript ?? item.transcript ?? "").length > 120 ? "..." : ""}
                     </p>
                   </div>
                 ))}
               </div>
             </div>
           ) : null}
+        </div>
+      ) : null}
 
-          <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
-            <strong>{examMeta.coachLabel}</strong>
-            <p style={{ marginTop: "0.7rem", lineHeight: 1.8 }}>
-              {buildCoachSummary({
-                tr,
-                retryRequired,
-                report: session.report,
-                strongestLabel: strongestCategory?.label,
-                weakestLabel: weakestCategory?.label,
-                examType: session.examType
-              })}
-            </p>
-          </div>
-
-          <div className="card" style={{ padding: "1rem", background: "rgba(217, 93, 57, 0.06)" }}>
-            <strong>{examMeta.structureLabel}</strong>
-            <p style={{ marginTop: "0.7rem", lineHeight: 1.8 }}>{examMeta.structureHint}</p>
-          </div>
-        </section>
-
-        <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "1rem" }}>
-          <span className="eyebrow">{examMeta.rightEyebrow}</span>
-          {session.report ? (
-            <>
-              <div>
-                <div style={{ fontSize: "3rem", fontWeight: 800 }}>{session.report.overall}</div>
-                <div style={{ color: "var(--muted)" }}>{session.report.scaleLabel}</div>
-              </div>
-              <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
-                <InsightCard title={examMeta.totalSessionsLabel} value={String(summary.totalSessions)} note={examMeta.totalSessionsNote} />
-                <InsightCard title={examMeta.averageLabel} value={summary.averageScore ? String(summary.averageScore) : "-"} note={examMeta.averageNote} />
-                <InsightCard title={examMeta.trendLabel} value={delta === null ? "-" : delta > 0 ? `+${delta}` : String(delta)} note={buildTrendNote(delta, tr)} />
-              </div>
-              <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-                <InsightCard title={tr ? "Hedefe mesafe" : "Distance to target"} value={targetScore || "-"} note={targetProgressNote} />
-                <InsightCard title={tr ? "Bir sonraki net gorev" : "One clear next task"} value={tr ? "Sonraki adim" : "Next step"} note={nextAction} />
-              </div>
-              <ChecklistCard
-                title={tr ? "Session checklist" : "Session checklist"}
-                items={buildSessionChecklist({
-                  tr,
-                  retryRequired,
-                  report: session.report,
-                  strongestLabel: strongestCategory?.label,
-                  weakestLabel: weakestCategory?.label,
-                  examType: session.examType
-                })}
-              />
-              <div className="grid" style={{ gridTemplateColumns: "1fr" }}>
-                {session.report.categories.map((category) => (
-                  <div key={category.category} className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem" }}>
-                      <span>{tr ? translateCategoryLabel(category.label) : category.label}</span>
-                      <strong>{category.score}</strong>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <DetailList title={examMeta.strengthsLabel} items={session.report.strengths} />
-              <DetailList title={examMeta.improvementsLabel} items={session.report.improvements} />
-              <div className="card" style={{ padding: "1rem" }}>
-                <strong>{examMeta.nextExerciseLabel}</strong>
-                <p>{session.report.nextExercise}</p>
-              </div>
-              <div className="card" style={{ padding: "1rem" }}>
-                <strong>{examMeta.trendPanelLabel}</strong>
-                <div style={{ display: "grid", gap: "0.65rem", marginTop: "0.8rem" }}>
-                  {summary.recentSessions.slice(0, 4).map((item) => (
-                    <div key={item.id} style={{ display: "grid", gridTemplateColumns: "140px 1fr 60px", gap: "0.8rem", alignItems: "center" }}>
-                      <span style={{ color: "var(--muted)", fontSize: "0.92rem" }}>{item.prompt.title}</span>
-                      <div style={{ height: 10, borderRadius: 999, background: "rgba(29, 111, 117, 0.12)", overflow: "hidden" }}>
-                        <div style={{ width: `${Math.max(((item.report?.overall ?? 0) / examMeta.scoreMax) * 100, 8)}%`, height: "100%", background: "linear-gradient(90deg, var(--accent), var(--accent-cool))" }} />
-                      </div>
-                      <strong>{item.report?.overall ?? "-"}</strong>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
-                <strong>{examMeta.fillerWordsLabel}</strong>
-                <p>{session.report.fillerWords.join(", ") || (tr ? "Yok" : "None")}</p>
-                <p style={{ color: "var(--muted)" }}>{session.report.caution}</p>
-              </div>
-            </>
-          ) : (
-            <p>{tr ? "Henuz AI raporu yok." : "No AI report yet."}</p>
-          )}
-
-          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-            <Link href={retryHref} className="button button-primary">
-              {examMeta.retryLabel}
-            </Link>
-            <button type="button" className="button button-secondary" onClick={saveToRetryQueue} disabled={savedRetry}>
-              {savedRetry ? (tr ? "Retry listesine eklendi" : "Saved to retry queue") : tr ? "Retry listesine kaydet" : "Save to retry queue"}
-            </button>
-            <button type="button" className="button button-secondary" onClick={saveToBookmarks} disabled={savedBookmark}>
-              {savedBookmark ? (tr ? "Soru kaydedildi" : "Prompt bookmarked") : tr ? "Soruyu kaydet" : "Bookmark prompt"}
-            </button>
-            <button type="button" className="button button-secondary" onClick={saveToStudyList} disabled={savedStudyList}>
-              {savedStudyList ? (tr ? "Study list'e eklendi" : "Added to study list") : tr ? "Study list'e ekle" : "Add to study list"}
-            </button>
-            <Link href="/app/practice" className="button button-secondary">
-              {examMeta.newPracticeLabel}
-            </Link>
-          </div>
-          {sessionMode === "pronunciation" ? (
-            <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
-              <strong>{tr ? "Pronunciation mode notu" : "Pronunciation mode note"}</strong>
-              <p style={{ marginTop: "0.65rem", lineHeight: 1.75 }}>
-                {tr
-                  ? "Bu deneme telaffuz odakli modda kaydedildi. Sonraki denemede kelime sonlarini daha net bitirmeye, vurgu yerlerini belirginlestirmeye ve hizini bir tik dusurmeye calis."
-                  : "This attempt was recorded in pronunciation mode. In the next attempt, focus on clearer word endings, stronger stress, and a slightly slower pace."}
-              </p>
-            </div>
-          ) : null}
-        </section>
+      {/* ACTION BUTTONS */}
+      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px solid var(--border)" }}>
+        <Link href={retryHref} className="button button-primary" style={{ flex: 1, textAlign: "center" }}>
+          {examMeta.retryLabel}
+        </Link>
+        <Link href="/app/practice" className="button button-secondary" style={{ flex: 1, textAlign: "center" }}>
+          {examMeta.newPracticeLabel}
+        </Link>
+        <button type="button" className="button button-secondary" onClick={saveToStudyList} disabled={savedStudyList} style={{ flex: 1 }}>
+          {savedStudyList ? (tr ? "✓ Kaydedildi" : "✓ Saved") : (tr ? "Kaydet" : "Save")}
+        </button>
       </div>
+
     </div>
   );
 }

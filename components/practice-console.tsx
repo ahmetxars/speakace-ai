@@ -779,583 +779,250 @@ export function PracticeConsole() {
   };
 
   return (
-    <div className="page-shell section practice-page-shell">
+    <div className="page-shell section">
+
       {currentUser?.plan === "free" && summary.totalSessions > 0 ? (
-        <section className="card free-plan-banner">
-          <div>
-            <span className="eyebrow">{tr ? "Free plan" : "Free plan"}</span>
-            <h2 style={{ margin: "0.7rem 0 0.35rem" }}>{tr ? "Skoru gördün, şimdi tam geri bildirimi aç" : "You saw the score, now unlock full feedback"}</h2>
-            <p className="practice-copy">
-              {tr
-                ? "İlk deneme değeri gösterir. Plus ile daha fazla speaking süresi, daha fazla tekrar ve tam analiz açılır."
-                : "The first attempt shows the value. Plus unlocks more speaking time, more retries, and the full review."}
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-            <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "practice_banner" })}>
+        <div style={{ maxWidth: 700, margin: "0 auto 1rem", padding: "0.7rem 1rem", borderRadius: 10, border: "1px solid var(--border)", background: "var(--card)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "0.88rem", color: "var(--muted-foreground)" }}>
+            {tr ? "Plus ile tam geri bildirim ve sınırsız deneme." : "Unlock full feedback and unlimited sessions with Plus."}
+          </span>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "practice_banner" })} style={{ padding: "0.4rem 0.9rem", fontSize: "0.85rem" }}>
               {tr ? "Plus'i aç" : "Unlock Plus"}
             </a>
-            <Link className="button button-secondary" href="/pricing">
-              {tr ? "Planlari gor" : "See plans"}
+            <Link className="button button-secondary" href="/pricing" style={{ padding: "0.4rem 0.9rem", fontSize: "0.85rem" }}>
+              {tr ? "Planlar" : "Plans"}
             </Link>
           </div>
-        </section>
+        </div>
       ) : null}
 
-      <div className="practice-shell practice-shell-simple practice-shell-dashboard">
-        <section className="card practice-panel practice-main-column">
-          {summary.totalSessions === 0 ? (
-            <div className="card practice-simulation-card">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-                <strong>{tr ? "İlk speaking testin" : "Your first speaking test"}</strong>
-                <span className="pill">{tr ? "30 saniye" : "30 seconds"}</span>
-              </div>
-              <p className="practice-meta" style={{ margin: "0.45rem 0 0.8rem" }}>
-                {tr
-                  ? "İlk denemeyi başlat, skorunu gör ve istersen ardından tam geri bildirimi aç."
-                  : "Start the first attempt, see your score, and unlock full feedback afterwards if you want more."}
-              </p>
-              <button className="button button-primary" type="button" onClick={() => void startSession()} disabled={!currentUser || mode !== "idle"}>
-                {tr ? "Konuşmaya başla" : "Start Speaking Now"}
-              </button>
-            </div>
-          ) : null}
+      <div style={{ maxWidth: 700, margin: "0 auto", display: "grid", gap: "2rem" }}>
 
-          <div>
-            <span className="eyebrow">{tr ? "Speaking practice" : "Speaking practice"}</span>
-            <h1 className="practice-title">{tr ? "Adım adım speaking pratiğine başla" : "Start speaking with a guided flow"}</h1>
-            <p className="practice-copy">
-              {tr
-                ? "Önce sınavı seç, sonra görev tipini belirle, en son bir konuyla konuşmaya başla. Böylece tek ekranda çok fazla karar vermen gerekmez."
-                : "Choose the exam first, then the task type, and then one topic. This keeps the path from landing to recording much easier to follow."}
-            </p>
-          </div>
-
-          <div className="card practice-setup-card">
-            <div className="practice-stepper" aria-label={tr ? "Practice adimlari" : "Practice steps"}>
-              {[
-                { step: 1, label: tr ? "Sınav" : "Exam" },
-                { step: 2, label: tr ? "Görev" : "Task" },
-                { step: 3, label: tr ? "Konu" : "Topic" }
-              ].map((item) => (
-                <div
-                  key={item.step}
-                  className={`practice-stepper-item ${wizardStep === item.step ? "is-active" : wizardStep > item.step ? "is-complete" : ""}`}
-                >
-                  <span className="practice-stepper-badge">{item.step}</span>
-                  <span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-              <strong>{tr ? "Yönlendirmeli seçim" : "Guided selection"}</strong>
-              <span className="pill">{retryMode ? (tr ? "Aynı konu seçildi" : "Same prompt selected") : progressLabel}</span>
-            </div>
-
-            <div className="practice-wizard">
-              <div className="practice-wizard-grid">
-                <button
-                  type="button"
-                  className={`practice-choice-card ${examType === "IELTS" ? "is-selected" : ""}`}
-                  onClick={() => handleExamChange("IELTS")}
-                  disabled={mode !== "idle"}
-                >
-                  <span className="practice-choice-icon">🎯</span>
-                  <strong>IELTS</strong>
-                  <p>{tr ? "Part 1, cue card ve discussion akışıyla band odaklı çalış." : "Practice Part 1, cue cards, and discussion with band-style scoring."}</p>
-                </button>
-                <button
-                  type="button"
-                  className={`practice-choice-card ${examType === "TOEFL" ? "is-selected" : ""}`}
-                  onClick={() => handleExamChange("TOEFL")}
-                  disabled={mode !== "idle"}
-                >
-                  <span className="practice-choice-icon">🗣️</span>
-                  <strong>TOEFL</strong>
-                  <p>{tr ? "Independent ve integrated speaking görevleriyle daha düzenli çalış." : "Train with independent and integrated speaking tasks more clearly."}</p>
-                </button>
-              </div>
-
-              <div className="practice-wizard-grid">
-                {taskOptions[examType].map((option) => {
-                  const meta = getTaskCardMeta(option, tr);
-                  return (
-                    <button
-                      key={option}
-                      type="button"
-                      className={`practice-choice-card ${taskType === option ? "is-selected" : ""}`}
-                      onClick={() => handleTaskChange(option)}
-                      disabled={mode !== "idle"}
-                    >
-                      <span className="practice-choice-icon">{meta.icon}</span>
-                      <strong>{meta.title}</strong>
-                      <p>{meta.description}</p>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="practice-topic-panel">
-                <div className="practice-topic-head">
-                  <div>
-                    <strong>{tr ? "Sana önerilen konular" : "Recommended for you"}</strong>
-                    <p className="practice-meta">
-                      {tr ? "Önce bunlardan biriyle başla, sonra istersen tüm konulara göz at." : "Start with one of these, then browse all topics if you want more control."}
-                    </p>
-                  </div>
-                  <div className="practice-topic-actions">
-                    <button type="button" className="button button-secondary" onClick={surpriseMe} disabled={!availablePrompts.length || mode !== "idle"}>
-                      {tr ? "Sürpriz başlat" : "Surprise Me"}
-                    </button>
-                    <button
-                      type="button"
-                      className="button button-secondary"
-                      onClick={() => setShowAllTopics((current) => !current)}
-                      disabled={mode !== "idle"}
-                    >
-                      {showAllTopics ? (tr ? "Listeyi kapat" : "Hide all") : (tr ? "Ara / tümünü gör" : "Search / Browse all")}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="practice-wizard-grid">
-                  {recommendedPrompts.map((prompt) => (
-                    <article key={prompt.id} className={`practice-topic-card ${preferredPromptId === prompt.id ? "is-selected" : ""}`}>
-                      <div className="practice-topic-card-copy">
-                        <span className="pill">{tr ? translateDifficulty(prompt.difficulty) : prompt.difficulty}</span>
-                        <strong>{prompt.title}</strong>
-                        <p className="practice-meta">{humanizeTaskType(prompt.taskType, tr)}</p>
-                      </div>
-                      <button
-                        type="button"
-                        className="button button-primary"
-                        onClick={() => void pickPromptAndStart(prompt.id)}
-                        disabled={!currentUser || mode !== "idle"}
-                      >
-                        {tr ? "Bu konuyla başla" : "Start"}
-                      </button>
-                    </article>
-                  ))}
-                </div>
-
-                {showAllTopics ? (
-                  <div className="practice-topic-browser">
-                    <input
-                      className="practice-topic-search"
-                      value={topicSearch}
-                      onChange={(event) => setTopicSearch(event.target.value)}
-                      placeholder={tr ? "Konu veya görev ara" : "Search topics or task types"}
-                    />
-                    <div className="practice-topic-list">
-                      {filteredPrompts.map((prompt) => (
-                        <article key={`browse-${prompt.id}`} className={`practice-topic-row ${preferredPromptId === prompt.id ? "is-selected" : ""}`}>
-                          <div>
-                            <strong>{prompt.title}</strong>
-                            <div className="practice-meta">{humanizeTaskType(prompt.taskType, tr)} · {tr ? translateDifficulty(prompt.difficulty) : prompt.difficulty}</div>
-                          </div>
-                          <button
-                            type="button"
-                            className="button button-secondary"
-                            onClick={() => void pickPromptAndStart(prompt.id)}
-                            disabled={!currentUser || mode !== "idle"}
-                          >
-                            {tr ? "Başlat" : "Start"}
-                          </button>
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
-          </div>
-
-          <div className="practice-main-insights">
-            <div className="card practice-tone-card practice-tone-card-cool practice-focus-card">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-                <strong>{tr ? "Bugünkü odak" : "Today's focus"}</strong>
-                <span className="pill">{focusInsight.badge}</span>
-              </div>
-              <p style={{ margin: 0, lineHeight: 1.7 }}>{focusInsight.primary}</p>
-              <p className="practice-meta" style={{ margin: 0 }}>{focusInsight.secondary}</p>
-            </div>
-
-            <div className="card practice-tone-card practice-tone-card-warm practice-answer-plan-card">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-                <strong>{tr ? "Cevap planı" : "Answer plan"}</strong>
-                <span className="pill">{answerModeGuide.badge}</span>
-              </div>
-              <p style={{ margin: 0, lineHeight: 1.7 }}>{answerModeGuide.primary}</p>
-              <div className="simulation-queue practice-answer-moves" style={{ marginTop: "0.8rem" }}>
-                {answerModeGuide.moves.map((move) => (
-                  <span key={move} className="simulation-step is-active">{move}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="card practice-panel practice-sidebar">
-          <div className="card practice-tone-card practice-tone-card-warm practice-sidebar-card">
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-              <strong>{tr ? "Drill ayarı" : "Drill goal"}</strong>
-              <span className="pill">{tr ? "Kontrol" : "Control"}</span>
-            </div>
-            <div className="practice-sidebar-selects">
-              <SelectField
-                label={tr ? "Drill hedefi" : "Drill goal"}
-                value={drillGoal}
-                onChange={(value) => setDrillGoal(value as DrillGoal)}
-                options={[
-                  { value: "balanced", label: tr ? "Dengeli" : "Balanced" },
-                  { value: "fluency", label: tr ? "Akıcılık" : "Fluency" },
-                  { value: "pronunciation", label: tr ? "Telaffuz" : "Pronunciation" },
-                  { value: "topicDevelopment", label: tr ? "İçerik gelişimi" : "Topic development" }
-                ]}
-                disabled={runMode === "simulation"}
-              />
-              <SelectField
-                label={tr ? "Cevap modu" : "Answer mode"}
-                value={answerMode}
-                onChange={(value) => setAnswerMode(value as AnswerMode)}
-                options={[
-                  { value: "safe", label: tr ? "Güvenli" : "Safe" },
-                  { value: "natural", label: tr ? "Doğal" : "Natural" },
-                  { value: "bold", label: tr ? "Cesur" : "Bold" }
-                ]}
-                disabled={runMode === "simulation"}
-              />
-            </div>
-            <div className="practice-run-modes practice-run-modes-compact">
-              <button
-                className={`button ${runMode === "drill" ? "button-primary" : "button-secondary"}`}
-                type="button"
-                onClick={() => {
-                  setRunMode("drill");
-                  setSimulationState(null);
-                }}
-                disabled={mode !== "idle"}
-              >
-                {tr ? "Tek görev" : "Drill"}
-              </button>
-              <button
-                className={`button ${runMode === "simulation" ? "button-primary" : "button-secondary"}`}
-                type="button"
-                onClick={() => {
-                  setRunMode("simulation");
-                  setPreferredPromptId(undefined);
-                }}
-                disabled={mode !== "idle"}
-              >
-                {tr ? "Simülasyon" : "Simulation"}
-              </button>
-              <button
-                className={`button ${runMode === "pronunciation" ? "button-primary" : "button-secondary"}`}
-                type="button"
-                onClick={() => {
-                  setRunMode("pronunciation");
-                  setSimulationState(null);
-                }}
-                disabled={mode !== "idle"}
-              >
-                {tr ? "Telaffuz" : "Pronunciation"}
-              </button>
-            </div>
-            <details className="practice-collapsible practice-collapsible-compact">
-              <summary>
-                <strong>{tr ? "Gelişmiş ayarlar" : "Advanced options"}</strong>
-                <span className="pill">{tr ? "İsteğe bağlı" : "Optional"}</span>
-              </summary>
-              <div className="practice-form-grid practice-form-grid-compact" style={{ marginTop: "0.8rem" }}>
-                <SelectField label={tr ? "Sınav" : "Exam"} value={examType} onChange={handleExamChange} options={[{ value: "IELTS", label: "IELTS" }, { value: "TOEFL", label: "TOEFL" }]} />
-                <SelectField label={tr ? "Görev tipi" : "Task type"} value={effectiveTaskType} onChange={handleTaskChange} options={taskOptions[examType].map((option) => ({ value: option, label: humanizeTaskType(option, tr) }))} disabled={runMode === "simulation"} />
-                <SelectField label={tr ? "Seviye" : "Difficulty"} value={difficulty} onChange={handleDifficultyChange} options={["Starter", "Target", "Stretch"].map((option) => ({ value: option, label: tr ? translateDifficulty(option as Difficulty) : option }))} />
-                <SelectField label={tr ? "Plan" : "Plan"} value={currentUser?.plan ?? "free"} onChange={() => undefined} options={[{ value: currentUser?.plan ?? "free", label: humanizePlan(currentUser?.plan ?? "free", tr) }]} disabled />
-              </div>
-            </details>
-          </div>
-
-          <div className="card practice-status-card practice-sidebar-card">
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-              <strong>{tr ? "Sıradaki adım" : "Next steps"}</strong>
-              {liveMicVisible ? (
-                <span className={`mic-pill ${recordingLive ? "is-live" : "is-ready"}`}>
-                  <span className="mic-pill-dot" />
-                  {recordingLive
-                    ? tr ? "Mikrofon canlı" : "Mic live"
-                    : micReady
-                      ? tr ? "Mikrofon hazır" : "Mic ready"
-                      : tr ? "Mikrofon bekleniyor" : "Waiting for mic"}
-                </span>
-              ) : (
-                <span className="pill">{progressLabel}</span>
-              )}
-            </div>
-            <p className="practice-status-copy">{status}</p>
-            {currentUser ? (
-              <p className="practice-meta practice-meta-compact">
-                {tr ? `Aktif plan: ${humanizePlan(currentUser.plan, tr)}` : `Active plan: ${humanizePlan(currentUser.plan, tr)}`}
-              </p>
-            ) : null}
-            {session?.transcriptStatus ? <p className="practice-meta practice-meta-compact">{session.transcriptStatus}</p> : null}
-            {preferredPromptId && mode === "idle" ? (
-              <p className="practice-meta practice-meta-compact">{tr ? "Bu oturum aynı soruyu tekrar denemek için hazırlandı." : "This session is preloaded to retry the same prompt."}</p>
-            ) : null}
-            {error ? <p className="practice-error">{error}</p> : null}
-          </div>
-
-          <div className="card practice-simulation-card practice-sidebar-card">
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-              <strong>{tr ? "Bu deneme için yönlendirme" : "Guidance for this attempt"}</strong>
-              <span className="pill">{runMode === "simulation" ? (tr ? "Tam akış" : "Full flow") : runMode === "pronunciation" ? (tr ? "Net söyleyiş" : "Clear speech") : (tr ? "Akıllı seçim" : "Smart pick")}</span>
-            </div>
-            {runMode !== "simulation" && adaptivePlanPreview ? (
-              <p className="practice-meta practice-meta-compact" style={{ margin: "0.45rem 0 0.8rem" }}>{adaptivePlanPreview.reason}</p>
-            ) : null}
-            {runMode === "simulation" ? (
-              <p className="practice-meta practice-meta-compact" style={{ margin: "0.45rem 0 0.8rem" }}>
-                {tr ? `${examType} simülasyonu resmi görev sırasını takip eder. Tek soru yerine tüm akış çalışır.` : `${examType} simulation follows the official task order. The full sequence runs instead of a single prompt.`}
-              </p>
-            ) : null}
-            {runMode === "pronunciation" ? (
-              <p className="practice-meta practice-meta-compact" style={{ margin: "0.45rem 0 0.8rem" }}>{pronunciationGuide.lead}</p>
-            ) : null}
-            <div className="simulation-queue practice-answer-moves">
-              {runMode === "simulation"
-                ? simulationQueue.map((queuedTask, index) => {
-                    const completed = Boolean(simulationState?.completed[index]);
-                    const active = !completed && (simulationState ? index === simulationState.currentIndex : index === 0);
-                    return (
-                      <span key={queuedTask} className={`simulation-step ${completed ? "is-complete" : active ? "is-active" : ""}`}>
-                        {index + 1}. {humanizeTaskType(queuedTask, tr)}
-                      </span>
-                    );
-                  })
-                : runMode === "pronunciation"
-                  ? pronunciationGuide.focusWords.map((word) => (
-                      <span key={word} className="simulation-step is-active">{word}</span>
-                    ))
-                  : answerModeGuide.moves.map((move) => (
-                      <span key={move} className="simulation-step is-active">{move}</span>
-                    ))}
-            </div>
-          </div>
-
-          <span className="eyebrow">{runMode === "simulation" ? (tr ? "Simülasyon durumu" : "Simulation status") : tr ? "Aktif görev" : "Active task"}</span>
-          {runMode === "simulation" ? (
-            <div className="card practice-simulation-card" style={{ marginBottom: "1rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap", alignItems: "center" }}>
-                <strong>{tr ? `${examType} speaking simulasyonu` : `${examType} speaking simulation`}</strong>
-                <span className="pill">{simulationState?.completed.length ?? 0}/{simulationQueue.length}</span>
-              </div>
-              <p className="practice-meta" style={{ margin: "0.5rem 0 0.8rem" }}>
-                {simulationState?.finishedAt
-                  ? tr ? "Tum gorevler bitti. Ortalama ve gorev bazli performans asagida." : "All tasks are complete. Your average and task-level performance appear below."
-                  : tr ? `${humanizeTaskType(activeSimulationTask ?? simulationQueue[0], true)} siradaki resmi gorev.` : `${humanizeTaskType(activeSimulationTask ?? simulationQueue[0], false)} is the next official task.`}
-              </p>
-              <div className="simulation-queue">
-                {simulationQueue.map((queuedTask, index) => {
-                  const completed = Boolean(simulationState?.completed[index]);
-                  const active = !completed && (simulationState ? index === simulationState.currentIndex : index === 0);
-                  return (
-                    <span key={`sidebar-${queuedTask}`} className={`simulation-step ${completed ? "is-complete" : active ? "is-active" : ""}`}>
-                      {index + 1}. {humanizeTaskType(queuedTask, tr)}
-                    </span>
-                  );
-                })}
-              </div>
-              {simulationState?.completed.length ? (
-                <div className="simulation-results">
-                  {simulationState.completed.map((item, index) => (
-                    <div key={item.sessionId} className="simulation-result-row">
-                      <span>{index + 1}. {humanizeTaskType(item.taskType, tr)}</span>
-                      <span>{item.score?.toFixed(1) ?? "-"}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-              {simulationState?.finishedAt && simulationAverage ? (
-                <>
-                  <div className="card practice-result-preview" style={{ marginTop: "0.9rem" }}>
-                    <div style={{ fontWeight: 800, fontSize: "1.6rem" }}>{simulationAverage}</div>
-                    <div className="practice-meta">{tr ? "Simulasyon ortalamasi" : "Simulation average"}</div>
-                  </div>
-                  <div className="card practice-simulation-card" style={{ marginTop: "0.9rem" }}>
-                    <div style={{ display: "grid", gap: "0.45rem" }}>
-                      <strong>{tr ? "Mock exam summary" : "Mock exam summary"}</strong>
-                      <p className="practice-meta" style={{ margin: 0 }}>{simulationSummary.headline}</p>
-                    </div>
-                    <div className="simulation-summary-grid">
-                      <div className="simulation-summary-tile">
-                        <span className="practice-meta">{tr ? "Hazirlik seviyesi" : "Readiness"}</span>
-                        <strong>{simulationSummary.readinessLabel}</strong>
-                      </div>
-                      <div className="simulation-summary-tile">
-                        <span className="practice-meta">{tr ? "Hedef mesafesi" : "Target gap"}</span>
-                        <strong>{simulationSummary.gapLabel}</strong>
-                      </div>
-                    </div>
-                    <p style={{ margin: 0, lineHeight: 1.7 }}>{simulationSummary.body}</p>
-                    <div className="card practice-tone-card practice-tone-card-cool practice-tone-card-inline">
-                      <strong style={{ display: "block", marginBottom: "0.35rem" }}>{tr ? "Bir sonraki net odak" : "One clear next focus"}</strong>
-                      <p style={{ margin: 0, lineHeight: 1.65 }}>{simulationSummary.nextStep}</p>
-                    </div>
-                    <Link href="/app/mock-results" className="button button-primary" style={{ width: "100%" }}>
-                      {tr ? "Tam mock raporunu ac" : "Open full mock report"}
-                    </Link>
-                  </div>
-                </>
-              ) : null}
-            </div>
-          ) : null}
-          {session ? (
-            <>
-              <div>
-                <div className="practice-meta" style={{ marginBottom: "0.5rem" }}>
-                  {session.examType} · {humanizeTaskType(session.taskType, tr)} · {tr ? translateDifficulty(session.difficulty) : session.difficulty}
-                </div>
-                <h2 className="practice-task-title">{session.prompt.title}</h2>
-              </div>
-              <TaskPromptLayout layout={activeTaskLayout} />
-              {runMode === "pronunciation" ? (
-                <div className="card practice-simulation-card" style={{ marginTop: "1rem" }}>
-                  <strong>{tr ? "Telaffuz rehberi" : "Pronunciation guide"}</strong>
-                  <p className="practice-meta" style={{ margin: "0.45rem 0 0.8rem" }}>{pronunciationGuide.lead}</p>
-                  <div className="simulation-queue">
-                    {pronunciationGuide.focusWords.map((word) => (
-                      <span key={`guide-${word}`} className="simulation-step is-active">{word}</span>
-                    ))}
-                  </div>
-                  <ul style={{ margin: "0.8rem 0 0", paddingLeft: "1.15rem" }}>
-                    {pronunciationGuide.tips.map((tip) => (
-                      <li key={tip} style={{ marginTop: "0.35rem", lineHeight: 1.6 }}>{tip}</li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              <NotePad
-                layout={activeTaskLayout}
-                value={noteDraft}
-                onChange={setNoteDraft}
-                tr={tr}
-              />
-              <TaskBriefCard briefing={activeBriefing} />
-              <div className="practice-metrics">
-                <Metric label={tr ? "Hazirlik suresi" : "Prep time"} value={`${session.prompt.prepSeconds}s`} />
-                <Metric label={tr ? "Konusma suresi" : "Speaking time"} value={`${session.prompt.speakingSeconds}s`} />
-              </div>
-              {session.report ? (
-                <div className="card practice-result-preview">
-                  <div style={{ fontWeight: 800, fontSize: "1.6rem" }}>{session.report.overall}</div>
-                  <div className="practice-meta">{session.report.scaleLabel}</div>
-                  <Link href={`/app/results/${session.id}`} style={{ color: "var(--accent-deep)", fontWeight: 700 }}>
-                    {tr ? "Tum sonucu ac" : "Open full result"}
-                  </Link>
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <div className="practice-empty-state">
-              <strong>{tr ? "Siradaki session burada gorunecek" : "Your next session will appear here"}</strong>
-              <p>{tr ? "Soru, sureler ve kayit akisinin yuklenmesi icin bir session baslat." : "Create a session to load the speaking prompt, timers, and recording flow."}</p>
-              <TaskBriefCard briefing={activeBriefing} compact />
-              <TaskPromptLayout layout={activeTaskLayout} compact />
-              {runMode === "pronunciation" ? (
-                <div className="card practice-simulation-card">
-                  <strong>{tr ? "Telaffuz rehberi" : "Pronunciation guide"}</strong>
-                  <p className="practice-meta" style={{ margin: "0.45rem 0 0.8rem" }}>{pronunciationGuide.lead}</p>
-                  <div className="simulation-queue">
-                    {pronunciationGuide.focusWords.map((word) => (
-                      <span key={`empty-guide-${word}`} className="simulation-step is-active">{word}</span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              <NotePad layout={activeTaskLayout} value={noteDraft} onChange={setNoteDraft} tr={tr} compact />
-            </div>
-          )}
-          {retryQueue.length ? (
-            <details className="card practice-simulation-card practice-collapsible practice-sidebar-card">
-              <summary>
-                <strong>{tr ? "Kaydedilen retry listesi" : "Saved retry queue"}</strong>
-                <span className="pill">{retryQueue.length}</span>
-              </summary>
-              <div className="grid" style={{ gap: "0.65rem", marginTop: "0.8rem" }}>
-                {retryQueue.slice(0, 6).map((item) => (
-                  <div key={`${item.promptId}-${item.createdAt}`} className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)", display: "grid", gap: "0.55rem" }}>
-                    <strong>{item.title}</strong>
-                    <div className="practice-meta">{item.examType} · {humanizeTaskType(item.taskType, tr)}</div>
-                    <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-                      <Link
-                        href={{ pathname: "/app/practice", query: { promptId: item.promptId, examType: item.examType, taskType: item.taskType, difficulty: item.difficulty } }}
-                        className="button button-secondary"
-                        style={{ padding: "0.55rem 0.9rem" }}
-                      >
-                        {tr ? "Tekrar aç" : "Open retry"}
-                      </Link>
-                      <button type="button" className="button button-secondary" style={{ padding: "0.55rem 0.9rem" }} onClick={() => removeRetryItem(item.promptId)}>
-                        {tr ? "Kaldır" : "Remove"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </details>
-          ) : null}
-
-          {bookmarks.length ? (
-            <details className="card practice-simulation-card practice-collapsible practice-sidebar-card">
-              <summary>
-                <strong>{tr ? "Kaydedilen sorular" : "Bookmarked prompts"}</strong>
-                <span className="pill">{bookmarks.length}</span>
-              </summary>
-              <div className="grid" style={{ gap: "0.65rem", marginTop: "0.75rem" }}>
-                {bookmarks.slice(0, 6).map((item) => (
-                  <div key={item.promptId} className="card practice-bookmark-card">
-                    <strong>{item.title}</strong>
-                    <div className="practice-meta">{item.examType} · {humanizeTaskType(item.taskType, tr)}</div>
-                    <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-                      <button type="button" className="button button-secondary" onClick={() => loadBookmark(item)}>
-                        {tr ? "Yükle" : "Load"}
-                      </button>
-                      <button type="button" className="button button-secondary" onClick={() => removeBookmark(item.promptId)}>
-                        {tr ? "Sil" : "Remove"}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </details>
-          ) : null}
-        </section>
-      </div>
-
-      <div className="practice-action-bar">
-        <div className="page-shell practice-action-bar-shell">
-          <button className="button button-primary" type="button" onClick={() => void startSession()} disabled={!currentUser || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}>
-            {runMode === "simulation"
-              ? simulationState?.finishedAt
-                ? tr ? "Simülasyonu yeniden başlat" : "Restart simulation"
-                : simulationState?.completed.length
-                  ? tr ? "Sıradaki göreve geç" : "Continue simulation"
-                  : tr ? "Simülasyonu başlat" : "Start simulation"
-              : runMode === "pronunciation"
-                ? tr ? "Telaffuz denemesini başlat" : "Start pronunciation drill"
-                : tr ? "Konuşmayı başlat" : retryMode ? "Retry same prompt" : "Start Speaking Now"}
-          </button>
-          <button className="button button-secondary" type="button" onClick={endEarly} disabled={(mode !== "permission" && mode !== "prep" && mode !== "speak") && !simulationIdle}>
-            {simulationIdle && runMode === "simulation"
-              ? tr ? "Simülasyonu bitir" : "End simulation"
-              : mode === "speak"
-                ? tr ? "Cevabı bitir" : "Finish answer"
-                : tr ? "Çıkış" : "Exit"}
-          </button>
-          <button className="button button-secondary" type="button" onClick={saveBookmark} disabled={runMode === "simulation" && !session}>
-            {tr ? "Soruyu kaydet" : "Bookmark prompt"}
-          </button>
+        {/* HEADER */}
+        <div style={{ textAlign: "center" }}>
+          <h1 style={{ fontSize: "clamp(1.5rem, 3vw, 2.2rem)", fontWeight: 800, margin: "0 0 0.5rem" }}>
+            {tr ? "Speaking Pratik" : "Speaking Practice"}
+          </h1>
+          <p style={{ color: "var(--muted-foreground)", margin: 0, fontSize: "0.95rem" }}>
+            {tr ? "Sınavı seç, konu seç, başla." : "Pick your exam, choose a topic, start speaking."}
+          </p>
         </div>
+
+        {/* EXAM + TASK SELECTOR */}
+        <div style={{ display: "grid", gap: "1rem" }}>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            {(["IELTS", "TOEFL"] as ExamType[]).map(exam => (
+              <button
+                key={exam}
+                type="button"
+                onClick={() => handleExamChange(exam)}
+                disabled={mode !== "idle"}
+                style={{
+                  padding: "0.55rem 1.5rem",
+                  borderRadius: 999,
+                  border: "2px solid",
+                  borderColor: examType === exam ? "var(--primary)" : "var(--border)",
+                  background: examType === exam ? "var(--primary)" : "transparent",
+                  color: examType === exam ? "#fff" : "var(--foreground)",
+                  fontWeight: 700,
+                  fontSize: "0.9rem",
+                  cursor: "pointer",
+                  transition: "all 0.15s"
+                }}
+              >{exam}</button>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {taskOptions[examType].map(option => {
+              const meta = getTaskCardMeta(option, tr);
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => handleTaskChange(option)}
+                  disabled={mode !== "idle"}
+                  style={{
+                    padding: "0.45rem 1.1rem",
+                    borderRadius: 999,
+                    border: "1.5px solid",
+                    borderColor: taskType === option ? "var(--primary)" : "var(--border)",
+                    background: taskType === option ? "oklch(0.623 0.214 259.815 / 0.1)" : "transparent",
+                    color: taskType === option ? "var(--primary)" : "var(--foreground)",
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    transition: "all 0.15s"
+                  }}
+                >{meta.title}</button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* TOPIC SELECTION */}
+        <div style={{ display: "grid", gap: "1rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
+            <strong style={{ fontSize: "0.95rem" }}>
+              {tr ? "Konu seç" : "Choose a topic"}
+            </strong>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button type="button" className="button button-secondary" onClick={surpriseMe} disabled={!availablePrompts.length || mode !== "idle"} style={{ padding: "0.45rem 1rem", fontSize: "0.85rem" }}>
+                {tr ? "🎲 Sürpriz" : "🎲 Surprise"}
+              </button>
+              <button type="button" className="button button-secondary" onClick={() => setShowAllTopics(c => !c)} disabled={mode !== "idle"} style={{ padding: "0.45rem 1rem", fontSize: "0.85rem" }}>
+                {showAllTopics ? (tr ? "Gizle" : "Hide") : (tr ? "Tümü" : "Browse all")}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gap: "0.6rem" }}>
+            {recommendedPrompts.map(prompt => (
+              <div
+                key={prompt.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "1rem",
+                  padding: "0.9rem 1.1rem",
+                  borderRadius: 12,
+                  border: "1.5px solid",
+                  borderColor: preferredPromptId === prompt.id ? "var(--primary)" : "var(--border)",
+                  background: preferredPromptId === prompt.id ? "oklch(0.623 0.214 259.815 / 0.06)" : "var(--card)",
+                  transition: "all 0.15s",
+                  cursor: "pointer"
+                }}
+                onClick={() => !currentUser || mode !== "idle" ? undefined : void pickPromptAndStart(prompt.id)}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, marginBottom: "0.2rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prompt.title}</div>
+                  <div style={{ fontSize: "0.8rem", color: "var(--muted-foreground)" }}>{humanizeTaskType(prompt.taskType, tr)} · {tr ? translateDifficulty(prompt.difficulty) : prompt.difficulty}</div>
+                </div>
+                <button
+                  type="button"
+                  className="button button-primary"
+                  onClick={e => { e.stopPropagation(); void pickPromptAndStart(prompt.id); }}
+                  disabled={!currentUser || mode !== "idle"}
+                  style={{ flexShrink: 0, padding: "0.45rem 1rem", fontSize: "0.85rem" }}
+                >
+                  {tr ? "Başla" : "Start"}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {showAllTopics ? (
+            <div style={{ display: "grid", gap: "0.6rem" }}>
+              <input
+                className="practice-topic-search"
+                value={topicSearch}
+                onChange={e => setTopicSearch(e.target.value)}
+                placeholder={tr ? "Konu veya görev ara..." : "Search topics..."}
+                style={{ padding: "0.65rem 1rem", borderRadius: 10, border: "1.5px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: "0.9rem", outline: "none" }}
+              />
+              <div style={{ display: "grid", gap: "0.5rem", maxHeight: "40vh", overflowY: "auto" }}>
+                {filteredPrompts.map(prompt => (
+                  <div
+                    key={`browse-${prompt.id}`}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", padding: "0.75rem 1rem", borderRadius: 10, border: "1px solid var(--border)", background: "var(--card)" }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: "0.9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prompt.title}</div>
+                      <div style={{ fontSize: "0.78rem", color: "var(--muted-foreground)" }}>{humanizeTaskType(prompt.taskType, tr)} · {tr ? translateDifficulty(prompt.difficulty) : prompt.difficulty}</div>
+                    </div>
+                    <button type="button" className="button button-secondary" onClick={() => void pickPromptAndStart(prompt.id)} disabled={!currentUser || mode !== "idle"} style={{ padding: "0.4rem 0.9rem", fontSize: "0.82rem", flexShrink: 0 }}>
+                      {tr ? "Başlat" : "Start"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* STATS ROW */}
+        {summary.totalSessions > 0 ? (
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+            {[
+              { label: tr ? "Toplam" : "Sessions", value: summary.totalSessions },
+              { label: tr ? "Ort. skor" : "Avg score", value: summary.averageScore || "-" },
+              { label: tr ? "Kalan" : "Remaining", value: `${summary.freeSessionsRemaining}` }
+            ].map(stat => (
+              <div key={stat.label} style={{ flex: 1, minWidth: 100, padding: "0.8rem 1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", textAlign: "center" }}>
+                <div style={{ fontSize: "1.4rem", fontWeight: 800 }}>{stat.value}</div>
+                <div style={{ fontSize: "0.78rem", color: "var(--muted-foreground)", marginTop: "0.2rem" }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {/* ADVANCED OPTIONS */}
+        <details style={{ borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden" }}>
+          <summary style={{ padding: "0.8rem 1.1rem", cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--card)" }}>
+            <span>{tr ? "⚙ Gelişmiş ayarlar" : "⚙ Advanced options"}</span>
+            <span style={{ fontSize: "0.75rem", color: "var(--muted-foreground)" }}>{tr ? "Drill hedefi, cevap modu" : "Drill goal, answer mode"}</span>
+          </summary>
+          <div style={{ padding: "1rem 1.1rem", background: "var(--card)", display: "grid", gap: "0.8rem", borderTop: "1px solid var(--border)" }}>
+            <SelectField
+              label={tr ? "Drill hedefi" : "Drill goal"}
+              value={drillGoal}
+              onChange={v => setDrillGoal(v as DrillGoal)}
+              options={[
+                { value: "balanced", label: tr ? "Dengeli" : "Balanced" },
+                { value: "fluency", label: tr ? "Akıcılık" : "Fluency" },
+                { value: "pronunciation", label: tr ? "Telaffuz" : "Pronunciation" },
+                { value: "topicDevelopment", label: tr ? "İçerik" : "Topic dev" }
+              ]}
+              disabled={runMode === "simulation"}
+            />
+            <SelectField
+              label={tr ? "Cevap modu" : "Answer mode"}
+              value={answerMode}
+              onChange={v => setAnswerMode(v as AnswerMode)}
+              options={[
+                { value: "safe", label: tr ? "Güvenli" : "Safe" },
+                { value: "natural", label: tr ? "Doğal" : "Natural" },
+                { value: "bold", label: tr ? "Cesur" : "Bold" }
+              ]}
+              disabled={runMode === "simulation"}
+            />
+          </div>
+        </details>
+
+        {/* PREVIOUS RESULT PREVIEW */}
+        {mode === "done" && session?.report ? (
+          <div style={{ padding: "1.2rem", borderRadius: 14, border: "2px solid var(--primary)", background: "oklch(0.623 0.214 259.815 / 0.06)", display: "grid", gap: "0.5rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <strong>{tr ? "Son sonuç" : "Last result"}</strong>
+              <span style={{ fontSize: "2rem", fontWeight: 800 }}>{session.report.overall}</span>
+            </div>
+            <div style={{ color: "var(--muted-foreground)", fontSize: "0.9rem" }}>{session.report.scaleLabel}</div>
+            <Link href={`/app/results/${session.id}`} className="button button-primary" style={{ marginTop: "0.4rem", textAlign: "center" }}>
+              {tr ? "Tam raporu gör →" : "View full report →"}
+            </Link>
+          </div>
+        ) : null}
+
+        {/* ERROR */}
+        {error ? (
+          <div style={{ padding: "1rem", borderRadius: 12, background: "oklch(0.55 0.2 20 / 0.08)", border: "1px solid oklch(0.55 0.2 20 / 0.2)", color: "oklch(0.45 0.18 20)" }}>
+            {error}
+          </div>
+        ) : null}
+
+        {/* MAIN ACTION BUTTON */}
+        <button
+          className="button button-primary"
+          type="button"
+          onClick={() => void startSession()}
+          disabled={!currentUser || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
+          style={{ width: "100%", padding: "1rem", fontSize: "1rem", fontWeight: 700, borderRadius: 14 }}
+        >
+          {mode === "saving" ? (tr ? "Kaydediliyor..." : "Saving...") : (tr ? "🎙 Konuşmaya Başla" : "🎙 Start Speaking")}
+        </button>
+
       </div>
 
       {session && (mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving") ? (
