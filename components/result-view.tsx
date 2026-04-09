@@ -7,11 +7,8 @@ import { ProgressSummary, SpeakingSession } from "@/lib/types";
 import { readStudyFolders, readStudyItems, writeStudyFolders, writeStudyItems } from "@/lib/study-lists";
 
 export function ResultView({ session, summary }: { session: SpeakingSession; summary: ProgressSummary }) {
-  const { language, currentUser } = useAppState();
+  const { language } = useAppState();
   const tr = language === "tr";
-  const retryRequired =
-    session.report?.scaleLabel === "Please respond in English" ||
-    session.report?.scaleLabel === "Response too short to score reliably";
   const previousSession = summary.recentSessions.find((item) => item.id !== session.id && item.report);
   const delta = session.report && previousSession?.report ? Number((session.report.overall - previousSession.report.overall).toFixed(1)) : null;
   const qualityScore = session.transcriptQualityScore ?? 0;

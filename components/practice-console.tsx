@@ -633,12 +633,9 @@ export function PracticeConsole() {
     setNoteDraft("");
   }, [session?.id, examType, taskType]);
 
-  const retryMode = Boolean(preferredPromptId);
-  const liveMicVisible = mode === "permission" || mode === "prep" || mode === "speak";
   const simulationQueue = useMemo(() => buildSimulationQueue(examType), [examType]);
   const activeSimulationTask = simulationState ? simulationState.queue[Math.min(simulationState.currentIndex, simulationState.queue.length - 1)] : null;
   const effectiveTaskType = runMode === "simulation" ? activeSimulationTask ?? simulationQueue[0] : taskType;
-  const activeBriefing = buildTaskBriefing(session?.examType ?? examType, session?.taskType ?? effectiveTaskType, tr);
   const activeTaskLayout = buildTaskLayout(session?.examType ?? examType, session?.taskType ?? effectiveTaskType, session?.prompt.prompt ?? "", tr);
   const focusInsight = useMemo(() => buildPracticeFocus({ summary, examType, taskType: effectiveTaskType, tr, targetScore }), [summary, examType, effectiveTaskType, tr, targetScore]);
   const adaptivePlanPreview = useMemo(
@@ -670,63 +667,8 @@ export function PracticeConsole() {
     }),
     [examType, focusInsight.primary, simulationAverage, simulationQueue.length, simulationState?.completed.length, targetScore, tr]
   );
-  const simulationIdle = runMode === "simulation" && mode === "idle";
   const mockReportStorageKey = currentUser ? `speakace-mock-report-${currentUser.id}` : "speakace-mock-report-guest";
   const pronunciationGuide = useMemo(() => buildPronunciationGuide(session?.prompt.prompt ?? activeTaskLayout.overlayPrompt, tr), [activeTaskLayout.overlayPrompt, session?.prompt.prompt, tr]);
-  const answerModeGuide = useMemo(
-    () => buildAnswerModeGuide({ mode: answerMode, taskType: effectiveTaskType, tr }),
-    [answerMode, effectiveTaskType, tr]
-  );
-
-  const removeRetryItem = (promptId: string) => {
-    if (typeof window === "undefined") return;
-    const next = readRetryQueue().filter((item) => item.promptId !== promptId);
-    window.localStorage.setItem("speakace-retry-queue", JSON.stringify(next));
-    setRetryQueue(next);
-  };
-
-  const saveBookmark = () => {
-    const candidate = session?.prompt
-      ? {
-          promptId: session.prompt.id,
-          examType: session.examType,
-          taskType: session.taskType,
-          difficulty: session.difficulty,
-          title: session.prompt.title,
-          createdAt: new Date().toISOString()
-        }
-      : adaptivePlanPreview
-        ? {
-            promptId: adaptivePlanPreview.promptId,
-            examType,
-            taskType: adaptivePlanPreview.taskType,
-            difficulty: adaptivePlanPreview.difficulty,
-            title: adaptivePlanPreview.title,
-            createdAt: new Date().toISOString()
-          }
-        : null;
-    if (!candidate || typeof window === "undefined") return;
-    const next = [candidate, ...readBookmarks().filter((item) => item.promptId !== candidate.promptId)].slice(0, 16);
-    window.localStorage.setItem("speakace-bookmarks", JSON.stringify(next));
-    setBookmarks(next);
-  };
-
-  const removeBookmark = (promptId: string) => {
-    if (typeof window === "undefined") return;
-    const next = readBookmarks().filter((item) => item.promptId !== promptId);
-    window.localStorage.setItem("speakace-bookmarks", JSON.stringify(next));
-    setBookmarks(next);
-  };
-
-  const loadBookmark = (item: PromptBookmark) => {
-    setExamType(item.examType);
-    setTaskType(item.taskType);
-    setDifficulty(item.difficulty);
-    setPreferredPromptId(item.promptId);
-    setRunMode(item.taskType.includes("toefl") || item.taskType.includes("ielts") ? "drill" : "drill");
-    setStatus(tr ? "Kaydedilen soru yuklendi. Bu soruyla yeni deneme baslatabilirsin." : "Saved prompt loaded. You can start a new attempt with this prompt.");
-  };
-
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!simulationState?.finishedAt || !simulationAverage) return;
@@ -1190,12 +1132,6 @@ function humanizeTaskType(taskType: TaskType, tr: boolean) {
   return tr ? labels[taskType].tr : labels[taskType].en;
 }
 
-function humanizePlan(plan: string, tr: boolean) {
-  if (plan === "pro") return "Pro";
-  if (plan === "plus") return "Plus";
-  return tr ? "Ucretsiz" : "Free";
-}
-
 function getTaskCardMeta(taskType: TaskType, tr: boolean) {
   const meta: Record<TaskType, { icon: string; titleEn: string; titleTr: string; descriptionEn: string; descriptionTr: string }> = {
     "ielts-part-1": {
@@ -1282,20 +1218,6 @@ type TaskBriefing = {
   focus: string;
   bullets: string[];
 };
-
-function TaskBriefCard({ briefing, compact = false }: { briefing: TaskBriefing; compact?: boolean }) {
-  return (
-    <div className={`card practice-brief-card ${compact ? "is-compact" : ""}`}>
-      <strong>{briefing.title}</strong>
-      <p className="practice-meta" style={{ marginTop: "0.55rem" }}>{briefing.focus}</p>
-      <ul style={{ margin: "0.7rem 0 0", paddingLeft: "1.15rem" }}>
-        {briefing.bullets.map((bullet) => (
-          <li key={bullet} style={{ marginTop: "0.35rem", lineHeight: 1.55 }}>{bullet}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
 
 function buildTaskBriefing(examType: ExamType, taskType: TaskType, tr: boolean): TaskBriefing {
   if (examType === "IELTS") {
@@ -1412,39 +1334,6 @@ function TaskPromptLayout({ layout, compact = false }: { layout: TaskPromptLayou
   );
 }
 
-function NotePad({
-  layout,
-  value,
-  onChange,
-  tr,
-  compact = false
-}: {
-  layout: TaskPromptLayout;
-  value: string;
-  onChange: (value: string) => void;
-  tr: boolean;
-  compact?: boolean;
-}) {
-  if (!layout.noteTitle) {
-    return null;
-  }
-
-  return (
-    <div className={`task-note-card ${compact ? "is-compact" : ""}`}>
-      <div className="task-note-header">
-        <strong>{layout.noteTitle}</strong>
-        {layout.noteHint ? <span className="practice-meta">{layout.noteHint}</span> : null}
-      </div>
-      <textarea
-        className="task-note-input"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={layout.notePlaceholder ?? (tr ? "Kisa notlarini buraya yaz" : "Write quick notes here")}
-      />
-    </div>
-  );
-}
-
 function buildTaskLayout(examType: ExamType, taskType: TaskType, prompt: string, tr: boolean): TaskPromptLayout {
   const normalizedPrompt = prompt.trim();
 
@@ -1525,23 +1414,6 @@ function buildTaskLayout(examType: ExamType, taskType: TaskType, prompt: string,
     overlayPrompt: normalizedPrompt,
     lead: normalizedPrompt
   };
-}
-
-function sentenceBullets(text: string) {
-  return text
-    .split(/(?<=[.!?])\s+/)
-    .map((item) => item.trim().replace(/[.]+$/, ""))
-    .filter(Boolean)
-    .slice(0, 4);
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="card practice-metric-card">
-      <div className="practice-meta">{label}</div>
-      <div style={{ fontSize: "1.4rem", fontWeight: 800 }}>{value}</div>
-    </div>
-  );
 }
 
 function blobToBase64(blob: Blob): Promise<string> {
