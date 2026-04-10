@@ -413,6 +413,14 @@ export interface AdminMemberRecord {
   totalPracticeSessions: number;
   averageScore?: number | null;
   teacherNoteCount: number;
+  emailLog?: Array<{
+    id: string;
+    template: string;
+    subject: string;
+    status: string;
+    sentAt: string;
+    errorMessage?: string | null;
+  }>;
 }
 
 export interface AdminAuthActivityRecord {

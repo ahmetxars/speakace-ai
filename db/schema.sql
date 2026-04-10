@@ -488,3 +488,17 @@ begin
       check (status in ('pending', 'approved'));
   end if;
 end $$;
+
+create table if not exists email_log (
+  id text primary key default gen_random_uuid()::text,
+  user_id text references users(id) on delete cascade,
+  user_email text not null,
+  template text not null,
+  subject text not null,
+  status text not null default 'sent',
+  error_message text,
+  sent_at timestamptz not null default now()
+);
+
+create index if not exists idx_email_log_user_id
+  on email_log(user_id, sent_at desc);

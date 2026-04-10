@@ -141,6 +141,22 @@ function buildEmail5(name: string) {
   };
 }
 
+async function logEmail(params: {
+  userId: string;
+  userEmail: string;
+  template: string;
+  subject: string;
+  status: "sent" | "failed";
+  errorMessage?: string;
+}): Promise<void> {
+  if (!hasDatabaseUrl()) return;
+  const sql = getSql();
+  await sql`
+    insert into email_log (user_id, user_email, template, subject, status, error_message)
+    values (${params.userId}, ${params.userEmail}, ${params.template}, ${params.subject}, ${params.status}, ${params.errorMessage ?? null})
+  `.catch(() => { /* non-blocking */ });
+}
+
 export async function sendOnboardingEmail(
   userId: string,
   emailNumber: number
@@ -164,7 +180,17 @@ export async function sendOnboardingEmail(
   else if (emailNumber === 5) emailContent = buildEmail5(user.name);
   else return { ok: false };
 
-  return sendEmail({ to: user.email, ...emailContent });
+  const templateName = `onboarding_${emailNumber}`;
+  const result = await sendEmail({ to: user.email, ...emailContent });
+  await logEmail({
+    userId,
+    userEmail: user.email,
+    template: templateName,
+    subject: emailContent.subject,
+    status: result.ok ? "sent" : "failed",
+    errorMessage: result.ok ? undefined : "send failed"
+  });
+  return result;
 }
 
 export async function getUsersForOnboardingEmail(dayOffset: number): Promise<Array<{ id: string; onboardingEmailsSent: number }>> {

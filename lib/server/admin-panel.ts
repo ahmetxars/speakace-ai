@@ -431,7 +431,7 @@ export async function listAdminMembers(): Promise<AdminMemberRecord[]> {
     order by u.created_at desc
   `;
 
-  return rows.map((row) => ({
+  const members = rows.map((row) => ({
     id: row.id,
     name: row.name,
     email: row.email,
@@ -443,7 +443,7 @@ export async function listAdminMembers(): Promise<AdminMemberRecord[]> {
     trialEndsAt: row.trial_ends_at,
     referralCodeUsed: row.referral_code_used,
     emailVerified: row.email_verified,
-    passwordStatus: row.password_hash ? "protected" : "no_password",
+    passwordStatus: (row.password_hash ? "protected" : "no_password") as "protected" | "no_password",
     createdAt: row.created_at,
     monthlyValue: planWeeklyValue(row.plan, row.member_type, row.institution_price),
     activeSessionCount: row.active_session_count,
@@ -451,8 +451,44 @@ export async function listAdminMembers(): Promise<AdminMemberRecord[]> {
     lastSignOutAt: row.last_signout_at,
     totalPracticeSessions: row.total_practice_sessions,
     averageScore: row.average_score,
-    teacherNoteCount: row.teacher_note_count
+    teacherNoteCount: row.teacher_note_count,
+    emailLog: [] as Array<{ id: string; template: string; subject: string; status: string; sentAt: string; errorMessage?: string | null }>
   }));
+
+  // Fetch email logs for all members in one query
+  const memberIds = rows.map(r => r.id);
+  let emailLogMap: Record<string, Array<{ id: string; template: string; subject: string; status: string; sentAt: string; errorMessage?: string | null }>> = {};
+
+  if (memberIds.length > 0) {
+    const logRows = await sql<Array<{
+      id: string;
+      user_id: string;
+      template: string;
+      subject: string;
+      status: string;
+      sent_at: string;
+      error_message: string | null;
+    }>>`
+      select id, user_id, template, subject, status, sent_at::text, error_message
+      from email_log
+      where user_id = any(${memberIds})
+      order by sent_at desc
+    `.catch(() => [] as Array<{ id: string; user_id: string; template: string; subject: string; status: string; sent_at: string; error_message: string | null }>);
+
+    for (const log of logRows) {
+      if (!emailLogMap[log.user_id]) emailLogMap[log.user_id] = [];
+      emailLogMap[log.user_id].push({
+        id: log.id,
+        template: log.template,
+        subject: log.subject,
+        status: log.status,
+        sentAt: log.sent_at,
+        errorMessage: log.error_message
+      });
+    }
+  }
+
+  return members.map(m => ({ ...m, emailLog: emailLogMap[m.id] ?? [] }));
 }
 
 export async function listAdminBillingEvents(limit = 20) {
@@ -688,5 +724,39 @@ export async function listInstitutionBreakdown(): Promise<AdminInstitutionRecord
     schools: Number(row.schools ?? 0),
     averageScore: row.averageScore === null || row.averageScore === undefined ? null : Number(row.averageScore),
     totalSessions: Number(row.totalSessions ?? 0)
+  }));
+}
+
+export async function listUserEmailLog(userId: string): Promise<Array<{
+  id: string;
+  template: string;
+  subject: string;
+  status: string;
+  sentAt: string;
+  errorMessage?: string | null;
+}>> {
+  if (!hasDatabaseUrl()) return [];
+  const sql = getSql();
+  const rows = await sql<Array<{
+    id: string;
+    template: string;
+    subject: string;
+    status: string;
+    sent_at: string;
+    error_message: string | null;
+  }>>`
+    select id, template, subject, status, sent_at::text, error_message
+    from email_log
+    where user_id = ${userId}
+    order by sent_at desc
+    limit 50
+  `.catch(() => [] as Array<{ id: string; template: string; subject: string; status: string; sent_at: string; error_message: string | null }>);
+  return rows.map(r => ({
+    id: r.id,
+    template: r.template,
+    subject: r.subject,
+    status: r.status,
+    sentAt: r.sent_at,
+    errorMessage: r.error_message
   }));
 }

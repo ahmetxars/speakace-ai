@@ -761,6 +761,53 @@ export function AdminPanel(props: {
                           {memberBusyId === member.id ? "Saving..." : "Save access"}
                         </button>
                       </div>
+
+                      {member.emailLog && member.emailLog.length > 0 && (
+                        <div className="adm-email-log">
+                          <p className="adm-muted" style={{ marginBottom: "0.5rem", fontWeight: 600 }}>Email history</p>
+                          <table style={{ width: "100%", fontSize: "0.8rem", borderCollapse: "collapse" }}>
+                            <thead>
+                              <tr style={{ textAlign: "left", color: "#888" }}>
+                                <th style={{ padding: "4px 8px" }}>Template</th>
+                                <th style={{ padding: "4px 8px" }}>Subject</th>
+                                <th style={{ padding: "4px 8px" }}>Status</th>
+                                <th style={{ padding: "4px 8px" }}>Sent</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {member.emailLog.map((log) => {
+                                const templateLabels: Record<string, string> = {
+                                  onboarding_1: "Welcome",
+                                  onboarding_2: "Day 2 tip",
+                                  onboarding_3: "Week 1 checklist",
+                                  onboarding_4: "1-week milestone",
+                                  onboarding_5: "Daily practice"
+                                };
+                                const templateLabel = templateLabels[log.template] ?? log.template;
+                                return (
+                                  <tr key={log.id} style={{ borderTop: "1px solid #f0ece8" }}>
+                                    <td style={{ padding: "4px 8px" }}>{templateLabel}</td>
+                                    <td style={{ padding: "4px 8px", color: "#555" }}>{log.subject}</td>
+                                    <td style={{ padding: "4px 8px" }}>
+                                      <span style={{
+                                        padding: "2px 8px",
+                                        borderRadius: "999px",
+                                        fontSize: "0.75rem",
+                                        fontWeight: 600,
+                                        background: log.status === "sent" ? "#d1fae5" : "#fee2e2",
+                                        color: log.status === "sent" ? "#065f46" : "#991b1b"
+                                      }}>
+                                        {log.status === "sent" ? "Sent" : "Failed"}
+                                      </span>
+                                    </td>
+                                    <td style={{ padding: "4px 8px", color: "#888" }}>{formatDate(log.sentAt)}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
                     </article>
                   ))
                 )}
