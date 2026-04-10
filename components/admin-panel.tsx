@@ -33,7 +33,7 @@ import {
   ReferralCodeRecord
 } from "@/lib/types";
 
-type AdminTab = "overview" | "members" | "content" | "referrals" | "activity" | "system";
+type AdminTab = "overview" | "members" | "billing" | "institutions" | "content" | "referrals" | "activity" | "system";
 
 function formatDate(value?: string | null) {
   if (!value) return "—";
@@ -108,8 +108,8 @@ const navItems: Array<{ id: AdminTab | null; label: string; icon: React.FC<{ siz
   { id: "members", label: "Users", icon: Users },
   { id: "activity", label: "Sessions", icon: Mic2 },
   { id: "content", label: "Blog Posts", icon: FileText },
-  { id: null, label: "Reviews", icon: Star },
-  { id: null, label: "Analytics", icon: BarChart2 },
+  { id: "billing" as AdminTab, label: "Billing", icon: TrendingUp },
+  { id: "institutions" as AdminTab, label: "Institutions", icon: Building2 },
   { id: "referrals", label: "Referrals", icon: Tag },
   { id: "system", label: "System", icon: Settings }
 ];
@@ -117,6 +117,8 @@ const navItems: Array<{ id: AdminTab | null; label: string; icon: React.FC<{ siz
 const tabTitles: Record<AdminTab, string> = {
   overview: "Dashboard",
   members: "Users",
+  billing: "Billing Events",
+  institutions: "Institutions",
   content: "Blog Posts",
   referrals: "Referrals",
   activity: "Sessions",
@@ -425,12 +427,12 @@ export function AdminPanel(props: {
                   icon={<FileText size={20} color="#818cf8" />}
                 />
                 <AdmStatCard
-                  label="Reviews"
-                  value={0}
-                  trend="-2.3%"
-                  trendUp={false}
-                  iconBg="rgba(251,191,36,0.15)"
-                  icon={<Star size={20} color="#fbbf24" />}
+                  label="Monthly Revenue"
+                  value={formatMoney(props.overview.monthlyRevenueEstimate)}
+                  trend="+5.3%"
+                  trendUp={true}
+                  iconBg="rgba(52,211,153,0.15)"
+                  icon={<TrendingUp size={20} color="#34d399" />}
                 />
               </div>
 
@@ -970,6 +972,85 @@ export function AdminPanel(props: {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ── BILLING TAB ──────────────────────── */}
+          {activeTab === "billing" && (
+            <div className="adm-table-card" style={{ gridColumn: "1 / -1" }}>
+              <div className="adm-table-card-head">
+                <h3>Billing Events</h3>
+                <span className="adm-badge adm-badge-neutral">{props.billingEvents.length} total</span>
+              </div>
+              {props.billingEvents.length === 0 ? (
+                <p className="adm-table-muted" style={{ padding: "1rem" }}>No billing events yet.</p>
+              ) : (
+                <table className="adm-table">
+                  <thead>
+                    <tr>
+                      <th>EVENT</th>
+                      <th>EMAIL</th>
+                      <th>PLAN</th>
+                      <th>STATUS</th>
+                      <th>DATE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {props.billingEvents.map((ev) => (
+                      <tr key={ev.id}>
+                        <td style={{ fontWeight: 600 }}>{ev.event_name.replace(/_/g, " ")}</td>
+                        <td className="adm-table-muted">{ev.user_email ?? "—"}</td>
+                        <td><StatusBadge label={ev.plan} tone={ev.plan === "pro" || ev.plan === "plus" ? "accent" : "neutral"} /></td>
+                        <td><StatusBadge label={ev.billing_status} tone={ev.billing_status === "active" ? "success" : ev.billing_status === "cancelled" || ev.billing_status === "expired" ? "warning" : "neutral"} /></td>
+                        <td className="adm-table-muted">{formatDate(ev.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+
+          {/* ── INSTITUTIONS TAB ─────────────────── */}
+          {activeTab === "institutions" && (
+            <div className="adm-table-card" style={{ gridColumn: "1 / -1" }}>
+              <div className="adm-table-card-head">
+                <h3>Institutions</h3>
+                <span className="adm-badge adm-badge-neutral">{props.institutions.length} total</span>
+              </div>
+              {props.institutions.length === 0 ? (
+                <p className="adm-table-muted" style={{ padding: "1rem" }}>No institutions yet.</p>
+              ) : (
+                <table className="adm-table">
+                  <thead>
+                    <tr>
+                      <th>ORGANIZATION</th>
+                      <th>TEACHERS</th>
+                      <th>STUDENTS</th>
+                      <th>SCHOOLS</th>
+                      <th>AVG SCORE</th>
+                      <th>TOTAL SESSIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {props.institutions.map((inst) => (
+                      <tr key={inst.organizationName}>
+                        <td>
+                          <div className="adm-table-user">
+                            <div className="adm-table-avatar">{inst.organizationName.slice(0, 2).toUpperCase()}</div>
+                            <div className="adm-table-name">{inst.organizationName}</div>
+                          </div>
+                        </td>
+                        <td>{inst.teachers}</td>
+                        <td>{inst.students}</td>
+                        <td>{inst.schools}</td>
+                        <td>{inst.averageScore != null ? inst.averageScore.toFixed(1) : "—"}</td>
+                        <td>{inst.totalSessions}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           )}
 
