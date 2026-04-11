@@ -2975,6 +2975,7 @@ img {
 .seo-page {
   display: grid;
   gap: 1.25rem;
+  padding-top: 5.5rem;
   padding-bottom: 8.5rem;
 }
 
