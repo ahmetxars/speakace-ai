@@ -4,14 +4,19 @@ export default function NotFound() {
   return (
     <main className="page-shell section">
       <div className="card" style={{ padding: "1.5rem", maxWidth: 620 }}>
-        <span className="eyebrow">Not found</span>
-        <h1>Session unavailable</h1>
+        <span className="eyebrow">404</span>
+        <h1>Page not found</h1>
         <p style={{ color: "var(--muted)" }}>
-          This practice result may have been lost after a server restart. Start a new speaking session to generate fresh feedback.
+          The page you are looking for doesn&apos;t exist or has been moved.
         </p>
-        <Link className="button button-primary" href="/app/practice">
-          New session
-        </Link>
+        <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+          <Link className="button button-primary" href="/">
+            Go home
+          </Link>
+          <Link className="button button-secondary" href="/app/practice">
+            Start practicing
+          </Link>
+        </div>
       </div>
     </main>
   );

@@ -34,6 +34,50 @@ export default function ToolsHubPage() {
           </p>
         </div>
         <div className="marketing-grid">
+          {/* Standalone interactive tools — always shown at top */}
+          <article className="card feature-card interactive-link-card">
+            <div className="tool-card-visual" aria-hidden="true">
+              <span className="tool-card-icon">🎯</span>
+              <span className="pill tool-card-badge">Free</span>
+            </div>
+            <h2 style={{ fontSize: "1.35rem" }}>IELTS Band Score Estimator</h2>
+            <p>Estimate your IELTS speaking band score across fluency, pronunciation, grammar, and vocabulary — instantly.</p>
+            <div className="interactive-link-card-footer">
+              <span className="interactive-link-card-tag">Interactive</span>
+              <Link className="button button-secondary" href="/ielts-band-estimator">
+                Open tool
+              </Link>
+            </div>
+          </article>
+          <article className="card feature-card interactive-link-card">
+            <div className="tool-card-visual" aria-hidden="true">
+              <span className="tool-card-icon">⏱️</span>
+              <span className="pill tool-card-badge">Free</span>
+            </div>
+            <h2 style={{ fontSize: "1.35rem" }}>Speaking Practice Timer</h2>
+            <p>A dedicated timer for IELTS Part 1, Part 2, and Part 3 speaking practice — set the part, start the clock, and stay on time.</p>
+            <div className="interactive-link-card-footer">
+              <span className="interactive-link-card-tag">Interactive</span>
+              <Link className="button button-secondary" href="/speaking-timer">
+                Open tool
+              </Link>
+            </div>
+          </article>
+          <article className="card feature-card interactive-link-card">
+            <div className="tool-card-visual" aria-hidden="true">
+              <span className="tool-card-icon">📚</span>
+              <span className="pill tool-card-badge">Free</span>
+            </div>
+            <h2 style={{ fontSize: "1.35rem" }}>IELTS Phrase Bank</h2>
+            <p>Browse high-scoring IELTS speaking phrases by category — openers, linkers, examples, and conclusions — ready to practise.</p>
+            <div className="interactive-link-card-footer">
+              <span className="interactive-link-card-tag">Reference</span>
+              <Link className="button button-secondary" href="/speaking-phrase-bank">
+                Open tool
+              </Link>
+            </div>
+          </article>
+
           {toolPages.map((item) => (
             <article key={item.slug} className="card feature-card interactive-link-card">
               <div className="tool-card-visual" aria-hidden="true">

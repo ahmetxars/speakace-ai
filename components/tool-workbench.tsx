@@ -39,6 +39,94 @@ const openings = [
   "A skill I would really like to build is..."
 ];
 
+const tipsByKeyword: Array<{ keywords: string[]; tips: string[] }> = [
+  {
+    keywords: ["band-6-to-7", "band-7"],
+    tips: [
+      "To move from Band 6 to 7, reduce filler words like 'umm' and 'you know' — examiners notice these quickly.",
+      "At Band 6-7 level, using a clear opinion + one reason + one specific example per answer will push your score higher.",
+      "Band 7 speakers link ideas naturally. Practice connectors like 'which means that', 'as a result', and 'for instance' in real sentences.",
+    ]
+  },
+  {
+    keywords: ["pronunciation"],
+    tips: [
+      "Improving pronunciation starts with word stress — say the right syllable louder and longer in each word.",
+      "Record yourself for 30 seconds and listen back. You will immediately hear the sounds that need the most work.",
+      "Focus on clear word endings — not swallowing the final consonant. This alone can lift your pronunciation score noticeably.",
+    ]
+  },
+  {
+    keywords: ["pause", "pauses", "fluency", "fluency-tips"],
+    tips: [
+      "Short pauses (1-2 seconds) are fine. Long pauses (3+ seconds) hurt your fluency score. Plan your answer structure before you start.",
+      "If you lose your thread, use a bridging phrase like 'What I mean is...' or 'To put it another way...' to keep speaking.",
+      "Fluency improves with volume. Aim to practice speaking for at least 10 minutes every day, even outside formal sessions.",
+    ]
+  },
+  {
+    keywords: ["structure", "answer-structure"],
+    tips: [
+      "A reliable IELTS Part 1 structure: direct answer → one reason → one brief example. Aim for 20-30 seconds.",
+      "For Part 2, use the cue card bullet points as checkboxes — touch on each one so your answer feels complete.",
+      "Strong Part 3 answers follow: opinion → reason → real-world example → brief conclusion. Practice this pattern daily.",
+    ]
+  },
+  {
+    keywords: ["vocabulary", "vocabulary-tips"],
+    tips: [
+      "You do not need rare words for a high band. You need common words used accurately and with some variety.",
+      "Replace overused words: instead of 'good', try 'beneficial', 'effective', or 'worthwhile' depending on context.",
+      "Learn vocabulary in chunks — 'make a significant contribution' is more useful than learning 'significant' alone.",
+    ]
+  },
+  {
+    keywords: ["natural", "sound-natural"],
+    tips: [
+      "Natural speech has rhythm. Practice speaking with slight emphasis on the key word in each phrase.",
+      "Contractions make you sound more natural — 'I'd rather' sounds more fluent than 'I would rather' in conversation.",
+      "Listen to native speakers for 5 minutes daily and try to copy their intonation patterns, not just the words.",
+    ]
+  },
+  {
+    keywords: ["part-1", "part-2", "part-3"],
+    tips: [
+      "Part 1 is about showing you can give clear, relevant answers. Do not over-explain — be direct and natural.",
+      "In Part 2, spend your 1-minute prep time jotting down 2-3 key ideas, not a full script.",
+      "Part 3 rewards depth of thought — show you can consider different perspectives and give a well-supported view.",
+    ]
+  },
+  {
+    keywords: ["toefl"],
+    tips: [
+      "For TOEFL Integrated tasks, the most important skill is summarizing clearly — not adding your own opinion unless asked.",
+      "Use your 15-30 seconds of prep time to write key words only — full sentences slow you down when speaking.",
+      "TOEFL speaking is scored on delivery, language use, and topic development equally — do not sacrifice clarity for vocabulary.",
+    ]
+  },
+  {
+    keywords: ["exam-day", "time-management"],
+    tips: [
+      "On exam day, take a full breath before Part 2 begins. A calm start sets a better pace for the whole response.",
+      "If you do not understand a Part 3 question, say 'Could you repeat that, please?' — this is completely acceptable.",
+      "Manage your exam energy: Part 1 is warm-up, Part 2 is performance, Part 3 is depth. Pace yourself accordingly.",
+    ]
+  }
+];
+
+function getTipsForSlug(slug: string): string[] {
+  for (const group of tipsByKeyword) {
+    if (group.keywords.some((keyword) => slug.includes(keyword))) {
+      return group.tips;
+    }
+  }
+  return [
+    "Focus on completing your answer fully — every response benefits from a clear main point, one reason, and one example.",
+    "Consistency beats intensity. Ten minutes of speaking practice every day beats a two-hour session once a week.",
+    "After each practice attempt, read your transcript and find one thing to improve. Then retry with that fix in mind.",
+  ];
+}
+
 const transitions = [
   "What stands out most is that...",
   "Another reason is that...",
@@ -61,6 +149,7 @@ export function ToolWorkbench({ slug, title }: { slug: string; title: string }) 
   const [planDeadlineDays, setPlanDeadlineDays] = useState(7);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveMessage, setSaveMessage] = useState("");
+  const [tipIndex, setTipIndex] = useState(0);
 
   const estimatedBand = useMemo(() => {
     const avg = (fluency + pronunciation + grammar + vocabulary) / 4;
@@ -161,6 +250,7 @@ export function ToolWorkbench({ slug, title }: { slug: string; title: string }) 
       slug.includes("part-2-ideas") ||
       slug.includes("part-3-examples") ||
       slug.includes("topic-of-the-day"));
+  const isTips = !isCalculator && !isAnswerChecker && !isPlanBuilder && !isGenerator;
 
   const toolSummary = useMemo(() => {
     if (isCalculator) {
@@ -421,6 +511,44 @@ export function ToolWorkbench({ slug, title }: { slug: string; title: string }) 
                 <span key={item} className="tool-chip">{item}</span>
               ))}
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isTips ? (
+        <div className="tool-form-grid">
+          <div className="card tool-output">
+            <span className="pill">{tr ? "Pratik ipucu" : "Practice tip"}</span>
+            <strong style={{ lineHeight: 1.5 }}>{getTipsForSlug(slug)[tipIndex % getTipsForSlug(slug).length]}</strong>
+            <p>
+              {tr
+                ? "Bu ipucunu bir sonraki speaking denemende dene ve nasil hissettirdigini gor."
+                : "Try applying this tip in your next speaking attempt and notice the difference."}
+            </p>
+            <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
+              <button className="button button-primary" type="button" onClick={() => setTipIndex((v) => v + 1)}>
+                {tr ? "Baska ipucu goster" : "Generate another tip"}
+              </button>
+              <a className="button button-secondary" href="/app/practice">
+                {tr ? "Practice yap" : "Start practice"}
+              </a>
+            </div>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
+            <strong>{tr ? "Pratik yapmaya hazir misin?" : "Ready to practise?"}</strong>
+            <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65 }}>
+              {tr
+                ? "Bu ipucunu gercek bir speaking denemesinde test etmek ilerlemeni hizlandirir. Transcript ve skor goruntusu practice ekraninda hazir."
+                : "The fastest way to improve is to test tips in a real speaking attempt. Your transcript and score view are ready in the practice screen."}
+            </p>
+            <div className="tool-chip-list">
+              <span className="tool-chip">{tr ? "Anlik geri bildirim" : "Instant feedback"}</span>
+              <span className="tool-chip">{tr ? "Skor gorunumu" : "Score view"}</span>
+              <span className="tool-chip">{tr ? "Improved answer" : "Improved answer"}</span>
+            </div>
+            <a className="button button-primary" href="/app/practice">
+              {tr ? "Simdi dene" : "Try it now"}
+            </a>
           </div>
         </div>
       ) : null}

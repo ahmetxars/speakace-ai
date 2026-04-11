@@ -161,6 +161,128 @@ export default async function AboutPage() {
           </article>
         </div>
 
+        {/* Why AI section */}
+        <div className="section-head" style={{ paddingTop: "0.5rem" }}>
+          <span className="eyebrow">Why AI</span>
+          <h2 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 0.98 }}>
+            Speaking feedback available at any hour
+          </h2>
+          <p>
+            Getting meaningful speaking feedback used to mean booking a tutor, waiting for a slot, and hoping for detailed notes.
+            SpeakAce replaces that wait with an AI coach that is available every day, scores every attempt, and always has time for one more retry.
+          </p>
+        </div>
+
+        <div className="marketing-grid">
+          <article className="card feature-card">
+            <h3>Available 24/7</h3>
+            <p>Practice at 6am before work or 11pm after class. No scheduling, no waiting lists, no cancellations.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Instant, detailed feedback</h3>
+            <p>Every speaking attempt produces a score across fluency, pronunciation, grammar, and vocabulary — within seconds.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Affordable at any level</h3>
+            <p>From free daily practice to unlimited plans, SpeakAce fits a student budget without cutting corners on feedback quality.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Real-time improvement loop</h3>
+            <p>Read your transcript, see the improved version, and retry immediately. That cycle is what turns feedback into actual score growth.</p>
+          </article>
+        </div>
+
+        {/* How it works */}
+        <div className="section-head" style={{ paddingTop: "0.5rem" }}>
+          <span className="eyebrow">How it works</span>
+          <h2 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 0.98 }}>
+            AI that evaluates the full picture
+          </h2>
+          <p>
+            SpeakAce does not only check if you spoke. It evaluates how you spoke — looking at pronunciation clarity,
+            fluency and natural rhythm, grammatical range and accuracy, and vocabulary depth. Each dimension contributes to an
+            overall band estimate that reflects real IELTS and TOEFL marking criteria.
+          </p>
+        </div>
+
+        <div className="marketing-grid">
+          <article className="card feature-card">
+            <h3>Pronunciation</h3>
+            <p>Evaluates clarity, word stress, and how well individual sounds are produced and understood.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Fluency and coherence</h3>
+            <p>Measures natural pacing, idea linking, pause frequency, and whether the response flows or sounds rehearsed.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Grammar</h3>
+            <p>Checks grammatical range and accuracy — whether you use a variety of structures and how cleanly you control them.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Vocabulary</h3>
+            <p>Evaluates word range, precision, and whether you can express ideas with appropriately varied and specific language.</p>
+          </article>
+        </div>
+
+        {/* Who uses SpeakAce */}
+        <div className="section-head" style={{ paddingTop: "0.5rem" }}>
+          <span className="eyebrow">Who uses SpeakAce</span>
+          <h2 style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 0.98 }}>
+            Self-study learners, teachers, and institutions
+          </h2>
+        </div>
+
+        <div className="marketing-grid">
+          <article className="card feature-card">
+            <h3>Self-study learners</h3>
+            <p>Candidates preparing for IELTS or TOEFL independently who want real feedback, not just practice prompts. SpeakAce replaces the tutor for daily habit work.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Teachers with classes</h3>
+            <p>Teachers who want students to practice outside class and come to lessons already knowing their weak spots. Class tools, homework assignments, and at-risk alerts are built in.</p>
+          </article>
+          <article className="card feature-card">
+            <h3>Language institutions</h3>
+            <p>Schools and training centres that need scalable speaking practice for many students without scaling teacher hours proportionally.</p>
+          </article>
+        </div>
+
+        {/* Stats / social proof */}
+        <div className="marketing-grid">
+          <article className="card feature-card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "3rem", fontWeight: 800, color: "var(--primary)", lineHeight: 1 }}>40+</div>
+            <h3 style={{ marginTop: "0.5rem" }}>Countries</h3>
+            <p>Learners from over 40 countries use SpeakAce to prepare for IELTS and TOEFL speaking sections.</p>
+          </article>
+          <article className="card feature-card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "3rem", fontWeight: 800, color: "var(--primary)", lineHeight: 1 }}>10k+</div>
+            <h3 style={{ marginTop: "0.5rem" }}>Speaking sessions</h3>
+            <p>More than ten thousand speaking attempts have been scored, transcribed, and reviewed on the platform.</p>
+          </article>
+          <article className="card feature-card" style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "3rem", fontWeight: 800, color: "var(--primary)", lineHeight: 1 }}>24/7</div>
+            <h3 style={{ marginTop: "0.5rem" }}>Always available</h3>
+            <p>No office hours, no booking required. Every learner gets the same quality of feedback at any time of day.</p>
+          </article>
+        </div>
+
+        {/* Feedback quality */}
+        <div className="card institution-cta" style={{ flexDirection: "column", alignItems: "flex-start" }}>
+          <div>
+            <span className="eyebrow">Feedback quality</span>
+            <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Our approach to making feedback actually useful</h2>
+            <p className="practice-copy">
+              A score alone does not improve speaking. SpeakAce pairs every score with a full transcript, an improved version of your answer,
+              category-level breakdown, and specific suggestions for the next attempt. The feedback loop is designed so that a learner who
+              completes five sessions in a week can see exactly what is changing and what still needs work.
+            </p>
+            <p className="practice-copy" style={{ marginTop: "0.75rem" }}>
+              We refine the feedback model continuously — checking it against real IELTS rubric criteria, testing edge cases in non-native speech,
+              and improving the clarity of the language the system uses to explain what needs to change.
+            </p>
+          </div>
+        </div>
+
         <div className="card institution-cta">
           <div>
             <span className="eyebrow">{copy.beliefEyebrow}</span>

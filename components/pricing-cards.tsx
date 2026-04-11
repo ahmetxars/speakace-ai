@@ -75,21 +75,6 @@ export function PricingCards() {
         </div>
       </div>
 
-      {isAnnual && (
-        <p
-          style={{
-            textAlign: "center",
-            color: "var(--muted)",
-            fontSize: "0.9rem",
-            margin: 0
-          }}
-        >
-          Annual plans include 2 months free. Annual LemonSqueezy products must be configured via{" "}
-          <code>LEMON_SQUEEZY_PLUS_ANNUAL_CHECKOUT_URL</code> /
-          <code>LEMON_SQUEEZY_PRO_ANNUAL_CHECKOUT_URL</code>.
-        </p>
-      )}
-
       {/* Pricing cards */}
       <div className="marketing-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
         {/* Free */}

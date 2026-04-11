@@ -167,6 +167,16 @@ body[data-theme="dark"] {
   box-shadow: 0 18px 46px rgba(29, 17, 10, 0.12);
 }
 
+body[data-theme="dark"] .sa-header {
+  background: rgba(12, 10, 20, 0.88);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.4);
+}
+
+body[data-theme="dark"] .sa-header.is-scrolled {
+  background: rgba(14, 12, 24, 0.96);
+}
+
 .sa-header-brand {
   display: grid;
   gap: 0.38rem;
@@ -366,6 +376,11 @@ body[data-theme="dark"] .sa-secondary-button:hover {
   transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
 }
 
+body[data-theme="dark"] .sa-mega-menu {
+  background: rgba(14, 12, 24, 0.98);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .sa-mega-menu.is-open {
   opacity: 1;
   visibility: visible;
@@ -389,6 +404,11 @@ body[data-theme="dark"] .sa-secondary-button:hover {
   background: #fff;
   border: 1px solid rgba(33, 23, 17, 0.05);
   box-shadow: 0 8px 20px rgba(24, 17, 11, 0.04);
+}
+
+body[data-theme="dark"] .sa-mega-column {
+  background: var(--surface-strong);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 .sa-mega-column strong {
@@ -482,6 +502,13 @@ body[data-theme="dark"] .sa-secondary-button:hover {
   border-radius: 2rem;
   background: rgba(255, 252, 248, 0.92);
   box-shadow: 0 18px 48px rgba(33, 23, 17, 0.08);
+}
+
+body[data-theme="dark"] .sa-footer-newsletter,
+body[data-theme="dark"] .sa-footer-main {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: var(--surface);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.4);
 }
 
 .sa-footer-newsletter {
@@ -612,6 +639,19 @@ body[data-theme="dark"] .sa-secondary-button:hover {
   border: 1px solid rgba(33, 23, 17, 0.08);
   background: rgba(255, 252, 248, 0.92);
   box-shadow: 0 18px 48px rgba(33, 23, 17, 0.08);
+}
+
+body[data-theme="dark"] .sa-hero-copy,
+body[data-theme="dark"] .sa-hero-card,
+body[data-theme="dark"] .sa-why-card,
+body[data-theme="dark"] .sa-step-card,
+body[data-theme="dark"] .sa-bento-card,
+body[data-theme="dark"] .sa-testimonial-card,
+body[data-theme="dark"] .sa-faq-item,
+body[data-theme="dark"] .sa-inline-promo {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.4);
 }
 
 .sa-hero-copy {
@@ -5200,11 +5240,19 @@ body[data-theme="dark"] .comparison-head {
   gap: 0.45rem;
 }
 
+body[data-theme="dark"] .quick-action-card {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .upgrade-card {
   padding: 1.2rem;
   display: grid;
   gap: 0.9rem;
   background: linear-gradient(180deg, rgba(217, 93, 57, 0.12), rgba(255, 249, 242, 0.94));
+}
+
+body[data-theme="dark"] .upgrade-card {
+  background: linear-gradient(180deg, rgba(217, 93, 57, 0.18), rgba(30, 20, 15, 0.92));
 }
 
 .mini-metric {
