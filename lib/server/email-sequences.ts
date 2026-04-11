@@ -181,16 +181,28 @@ export async function sendOnboardingEmail(
   else return { ok: false };
 
   const templateName = `onboarding_${emailNumber}`;
-  const result = await sendEmail({ to: user.email, ...emailContent });
-  await logEmail({
-    userId,
-    userEmail: user.email,
-    template: templateName,
-    subject: emailContent.subject,
-    status: result.ok ? "sent" : "failed",
-    errorMessage: result.ok ? undefined : "send failed"
-  });
-  return result;
+  try {
+    const result = await sendEmail({ to: user.email, ...emailContent });
+    await logEmail({
+      userId,
+      userEmail: user.email,
+      template: templateName,
+      subject: emailContent.subject,
+      status: result.ok ? "sent" : "failed",
+      errorMessage: result.ok ? undefined : "send skipped (no transport)"
+    });
+    return result;
+  } catch (err) {
+    await logEmail({
+      userId,
+      userEmail: user.email,
+      template: templateName,
+      subject: emailContent.subject,
+      status: "failed",
+      errorMessage: err instanceof Error ? err.message : "unknown error"
+    });
+    return { ok: false };
+  }
 }
 
 export async function getUsersForOnboardingEmail(dayOffset: number): Promise<Array<{ id: string; onboardingEmailsSent: number }>> {
