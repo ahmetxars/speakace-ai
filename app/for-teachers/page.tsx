@@ -161,8 +161,8 @@ export default function TeachersPage() {
             <Link className="button button-primary" href="/pricing">
               See Plus pricing
             </Link>
-            <Link className="button button-secondary" href="/for-institutions">
-              Institutional pricing
+            <Link className="button button-secondary" href="/for-schools">
+              For schools & institutions
             </Link>
           </div>
         </div>
