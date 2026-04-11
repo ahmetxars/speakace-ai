@@ -356,11 +356,12 @@ export async function sendOnboardingEmail(
   }
 
   const sql = getSql();
-  const rows = await sql<Array<{ email: string; name: string }>>`
-    select email, name from users where id = ${userId} limit 1
+  const rows = await sql<Array<{ email: string; name: string; email_opt_out: boolean }>>`
+    select email, name, email_opt_out from users where id = ${userId} limit 1
   `;
   const user = rows[0];
   if (!user) return { ok: false };
+  if (user.email_opt_out) return { ok: false, skipped: true };
 
   let emailContent: { subject: string; html: string; text: string };
   if (emailNumber === 1) emailContent = buildEmail1(user.name);
@@ -376,6 +377,13 @@ export async function sendOnboardingEmail(
   else if (emailNumber === 11) emailContent = buildEmail11(user.name);
   else if (emailNumber === 12) emailContent = buildEmail12(user.name);
   else return { ok: false };
+
+  // Inject user-specific unsubscribe link
+  const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`;
+  emailContent = {
+    ...emailContent,
+    html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${unsubscribeUrl}"`)
+  };
 
   const templateName = `onboarding_${emailNumber}`;
   try {

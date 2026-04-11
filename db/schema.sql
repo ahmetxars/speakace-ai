@@ -6,6 +6,7 @@ create table if not exists users (
   plan text not null check (plan in ('free', 'plus', 'pro')),
   password_hash text,
   email_verified boolean not null default false,
+  email_opt_out boolean not null default false,
   created_at timestamptz not null default now()
 );
 
