@@ -7,10 +7,17 @@ import {
 
 // Map from days-since-signup to email number
 const SCHEDULE: Array<{ dayOffset: number; emailNumber: number }> = [
-  { dayOffset: 2, emailNumber: 2 },
-  { dayOffset: 4, emailNumber: 3 },
-  { dayOffset: 7, emailNumber: 4 },
-  { dayOffset: 10, emailNumber: 5 }
+  { dayOffset: 2,  emailNumber: 2 },
+  { dayOffset: 4,  emailNumber: 3 },
+  { dayOffset: 7,  emailNumber: 4 },
+  { dayOffset: 10, emailNumber: 5 },
+  { dayOffset: 14, emailNumber: 6 },
+  { dayOffset: 21, emailNumber: 7 },
+  { dayOffset: 30, emailNumber: 8 },
+  { dayOffset: 45, emailNumber: 9 },
+  { dayOffset: 60, emailNumber: 10 },
+  { dayOffset: 75, emailNumber: 11 },
+  { dayOffset: 90, emailNumber: 12 }
 ];
 
 function isAuthorized(request: Request) {
