@@ -4,7 +4,7 @@ import { isAdminEmail, withAdminPrivileges } from "@/lib/admin";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { createMemberProfile } from "@/lib/membership";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
-import { createAuthSession, getSessionCookieName, getSessionCookieOptions } from "@/lib/server/auth";
+import { applyInviteReferralToUser, createAuthSession, getSessionCookieName, getSessionCookieOptions } from "@/lib/server/auth";
 import { upsertMember } from "@/lib/store";
 import { MemberProfile } from "@/lib/types";
 
@@ -181,16 +181,22 @@ export async function GET(request: Request) {
     }
 
     let attributionPath: string | null = null;
+    let inviteReferrerId: string | null = null;
     if (rawState) {
       try {
-        const parsed = JSON.parse(Buffer.from(rawState, "base64url").toString("utf8")) as { cta?: string | null };
+        const parsed = JSON.parse(Buffer.from(rawState, "base64url").toString("utf8")) as { cta?: string | null; invite?: string | null };
         attributionPath = typeof parsed.cta === "string" ? parsed.cta : null;
+        inviteReferrerId = typeof parsed.invite === "string" ? parsed.invite : null;
       } catch {
         attributionPath = null;
+        inviteReferrerId = null;
       }
     }
 
     const { profile, isNewUser } = await findOrCreateGoogleUser(googleUser);
+    if (isNewUser && inviteReferrerId) {
+      await applyInviteReferralToUser({ userId: profile.id, inviteReferrerId });
+    }
     if (isNewUser && attributionPath) {
       await trackAnalyticsEvent({
         userId: profile.id,

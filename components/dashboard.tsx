@@ -722,9 +722,25 @@ export function Dashboard() {
             <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Bugün ne yapmalısın?" : "What should you do today?"}</h2>
           </div>
           <div className="quick-action-grid">
+            <Link className="card quick-action-card" href="/app/improve">
+              <strong>{tr ? "Growth OS panelini aç" : "Open the growth OS"}</strong>
+              <div className="practice-meta">{tr ? "Tüm gelişim sistemi tek ekranda" : "See the full improvement system in one place"}</div>
+            </Link>
+            <Link className="card quick-action-card" href="/app/placement">
+              <strong>{tr ? "Placement sonucunu yenile" : "Refresh your placement"}</strong>
+              <div className="practice-meta">{tr ? "Seviyeni ve ritmini güncelle" : "Update your level and study rhythm"}</div>
+            </Link>
+            <Link className="card quick-action-card" href="/app/plan">
+              <strong>{tr ? "Kişisel planı aç" : "Open your study plan"}</strong>
+              <div className="practice-meta">{tr ? "Band açığına göre günlük rota" : "Daily route based on your target gap"}</div>
+            </Link>
             <Link className="card quick-action-card" href="/app/practice">
               <strong>{tr ? "Yeni practice başlat" : "Start a new practice"}</strong>
               <div className="practice-meta">{tr ? "Günün ana speaking denemesi" : "Open your main speaking attempt for today"}</div>
+            </Link>
+            <Link className="card quick-action-card" href="/app/mock-exam">
+              <strong>{tr ? "Mock exam moduna gir" : "Enter mock exam mode"}</strong>
+              <div className="practice-meta">{tr ? "Tam simülasyon ve mock rapor" : "Full simulation and mock reporting"}</div>
             </Link>
             <Link className="card quick-action-card" href="/app/review">
               <strong>{tr ? "Hataları gözden geçir" : "Review your mistakes"}</strong>
@@ -733,6 +749,10 @@ export function Dashboard() {
             <Link className="card quick-action-card" href="/app/study-lists">
               <strong>{tr ? "Çalışma listelerini aç" : "Open study lists"}</strong>
               <div className="practice-meta">{tr ? "Kaydettiğin sorularla tekrar çalış" : "Return to saved prompts and retry queue"}</div>
+            </Link>
+            <Link className="card quick-action-card" href="/app/referrals">
+              <strong>{tr ? "Referral merkezini aç" : "Open referral center"}</strong>
+              <div className="practice-meta">{tr ? "Kişisel davet linkin ve signup takibi" : "Your invite link and referral tracking"}</div>
             </Link>
             <Link className="card quick-action-card" href="/app/profile">
               <strong>{tr ? "Profil ve hedefler" : "Profile and goals"}</strong>

@@ -31,6 +31,7 @@ function AuthPageInner() {
   const [successToast, setSuccessToast] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [handledVerifyToken, setHandledVerifyToken] = useState("");
+  const inviteReferrerId = searchParams.get("invite");
 
   useEffect(() => {
     const requestedMode = searchParams.get("mode");
@@ -64,6 +65,7 @@ function AuthPageInner() {
         classCode,
         organizationName,
         referralCode,
+        inviteReferrerId,
         attributionPath: searchParams.get("cta") ?? null,
         attributionEvent: searchParams.get("cta_event") ?? null
       })
@@ -137,6 +139,19 @@ function AuthPageInner() {
     setPassword("");
   };
 
+  const cta = searchParams.get("cta");
+  const ctaEvent = searchParams.get("cta_event");
+  const googleParams = new URLSearchParams();
+  if (cta) {
+    googleParams.set("cta", cta);
+  }
+  if (ctaEvent) {
+    googleParams.set("cta_event", ctaEvent);
+  }
+  if (inviteReferrerId) {
+    googleParams.set("invite", inviteReferrerId);
+  }
+
   const resetToken = searchParams.get("reset");
 
   return (
@@ -169,6 +184,16 @@ function AuthPageInner() {
           <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
             {tr ? "E-posta adresin ve şifrenle hesabını oluştur. Oturum bilgisi güvenli bir çerez ile sunucuda saklanır." : "Create a real account with email and password. Session state is stored on the server with a secure cookie."}
           </p>
+          {inviteReferrerId ? (
+            <div className="card" style={{ padding: "1rem", background: "rgba(47, 125, 75, 0.08)" }}>
+              <strong>{tr ? "Davet linki aktif" : "Invite link active"}</strong>
+              <p style={{ margin: "0.45rem 0 0", lineHeight: 1.7 }}>
+                {tr
+                  ? "Bu kayıt, kişisel invite akışıyla geliyor. Hesap oluşturulduğunda referral sistemi bunu otomatik kaydedecek."
+                  : "This sign-up is coming through a personal invite. The referral system will record it automatically when the account is created."}
+              </p>
+            </div>
+          ) : null}
           {resetToken ? (
             <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
               <strong>{tr ? "Şifreni yenile" : "Reset your password"}</strong>
@@ -179,10 +204,7 @@ function AuthPageInner() {
           ) : null}
           {/* Google OAuth */}
           <a
-            href={`/api/auth/google${searchParams.get("cta") ? `?${new URLSearchParams({
-              cta: searchParams.get("cta") ?? "",
-              cta_event: searchParams.get("cta_event") ?? ""
-            }).toString()}` : ""}`}
+            href={`/api/auth/google${googleParams.size ? `?${googleParams.toString()}` : ""}`}
             className="button button-secondary"
             style={{
               display: "flex",

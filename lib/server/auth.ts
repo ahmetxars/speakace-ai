@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { compare, hash } from "bcryptjs";
 import { isAdminEmail, withAdminPrivileges } from "@/lib/admin";
 import { createMemberProfile } from "@/lib/membership";
+import { buildInviteReferralCode, getInviteReferrer } from "@/lib/referrals";
 import { recordAuthActivity, validateReferralCode } from "@/lib/server/admin-panel";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { hasEmailTransport, sendPasswordResetEmail, sendVerificationEmail } from "@/lib/server/email";
@@ -75,6 +76,7 @@ export async function signUpWithPassword(input: {
   memberType?: MemberProfile["memberType"];
   organizationName?: string | null;
   referralCode?: string | null;
+  inviteReferrerId?: string | null;
 }) {
   const normalizedEmail = input.email.trim().toLowerCase();
   if (!normalizedEmail || !input.password.trim()) {
@@ -89,7 +91,14 @@ export async function signUpWithPassword(input: {
   const passwordHash = await hash(input.password, 12);
   const purchasedPlan = await getActiveBillingPlanForEmail(normalizedEmail);
   const referral = await validateReferralCode(input.referralCode);
-  const trialEndsAt = referral ? new Date(Date.now() + referral.trialDays * 24 * 60 * 60 * 1000).toISOString() : null;
+  const inviteReferrer =
+    referral || !input.inviteReferrerId ? null : await getInviteReferrer(input.inviteReferrerId);
+  const inviteTrialDays = inviteReferrer ? 7 : 0;
+  const trialEndsAt = referral
+    ? new Date(Date.now() + referral.trialDays * 24 * 60 * 60 * 1000).toISOString()
+    : inviteReferrer
+      ? new Date(Date.now() + inviteTrialDays * 24 * 60 * 60 * 1000).toISOString()
+      : null;
   const profile = withAdminPrivileges({
     ...createMemberProfile(normalizedEmail, input.name, {
       memberType: requestedMemberType,
@@ -97,10 +106,10 @@ export async function signUpWithPassword(input: {
     }),
     teacherAccess: requestedMemberType === "teacher" || requestedMemberType === "school",
     adminAccess: requestedMemberType === "school",
-    plan: purchasedPlan ?? (referral ? "plus" : "free"),
-    billingStatus: referral ? "on_trial" : purchasedPlan ? "active" : "free",
+    plan: purchasedPlan ?? (referral || inviteReferrer ? "plus" : "free"),
+    billingStatus: referral || inviteReferrer ? "on_trial" : purchasedPlan ? "active" : "free",
     trialEndsAt,
-    referralCodeUsed: referral?.code ?? null
+    referralCodeUsed: referral?.code ?? (inviteReferrer ? buildInviteReferralCode(inviteReferrer.id) : null)
   });
   const autoVerified = isAdminEmail(normalizedEmail);
 
@@ -224,6 +233,74 @@ export async function signInWithPassword(input: { email: string; password: strin
   }
 
   return withAdminPrivileges(profile);
+}
+
+export async function applyInviteReferralToUser(input: {
+  userId: string;
+  inviteReferrerId?: string | null;
+  preserveExistingPlan?: boolean;
+}) {
+  if (!input.inviteReferrerId) {
+    return false;
+  }
+
+  const referrer = await getInviteReferrer(input.inviteReferrerId);
+  if (!referrer || referrer.id === input.userId) {
+    return false;
+  }
+
+  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const referralCodeUsed = buildInviteReferralCode(referrer.id);
+
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const rows = await sql<Array<{ referralCodeUsed: string | null }>>`
+      select referral_code_used as "referralCodeUsed"
+      from users
+      where id = ${input.userId}
+      limit 1
+    `;
+
+    if (!rows[0] || rows[0].referralCodeUsed) {
+      return false;
+    }
+
+    await sql`
+      update users
+      set
+        referral_code_used = ${referralCodeUsed},
+        plan = case
+          when ${input.preserveExistingPlan ?? false} then plan
+          else 'plus'
+        end,
+        billing_status = case
+          when ${input.preserveExistingPlan ?? false} then billing_status
+          else 'on_trial'
+        end,
+        trial_ends_at = case
+          when ${input.preserveExistingPlan ?? false} then trial_ends_at
+          else ${trialEndsAt}
+        end
+      where id = ${input.userId}
+    `;
+
+    return true;
+  }
+
+  const profile = await getMember(input.userId);
+  if (!profile || profile.referralCodeUsed) {
+    return false;
+  }
+
+  await upsertMember({
+    ...profile,
+    plan: input.preserveExistingPlan ? profile.plan : "plus",
+    billingStatus: input.preserveExistingPlan ? profile.billingStatus : "on_trial",
+    trialEndsAt: input.preserveExistingPlan ? profile.trialEndsAt : trialEndsAt,
+    referralCodeUsed
+  });
+
+  return true;
 }
 
 export async function createAuthSession(userId: string) {

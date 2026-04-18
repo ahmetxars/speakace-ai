@@ -20,9 +20,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const cta = searchParams.get("cta");
   const ctaEvent = searchParams.get("cta_event");
+  const invite = searchParams.get("invite");
   const state =
-    cta || ctaEvent
-      ? Buffer.from(JSON.stringify({ cta: cta ?? null, ctaEvent: ctaEvent ?? null }), "utf8").toString("base64url")
+    cta || ctaEvent || invite
+      ? Buffer.from(JSON.stringify({ cta: cta ?? null, ctaEvent: ctaEvent ?? null, invite: invite ?? null }), "utf8").toString("base64url")
       : null;
 
   const params = new URLSearchParams({

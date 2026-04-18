@@ -32,9 +32,10 @@ export function AppMobileNav() {
 
   const items = [
     navItem("/app", "Home", "Ana sayfa", "•"),
+    navItem("/app/improve", "Improve", "Gelisim", "✦"),
     navItem("/app/practice", "Practice", "Practice", "◦"),
     navItem("/app/review", "Review", "Gözden geçir", "△"),
-    navItem("/app/billing", "Plan", "Plan", "◇"),
+    navItem("/app/plan", "Plan", "Plan", "◇"),
     navItem(accountHref, accountLabelEn, accountLabelTr, "☰")
   ];
 

@@ -31,7 +31,8 @@ export async function POST(request: Request) {
       name: body.name ?? "",
       memberType: body.memberType ?? "student",
       organizationName: body.organizationName ?? null,
-      referralCode: body.referralCode ?? null
+      referralCode: body.referralCode ?? null,
+      inviteReferrerId: body.inviteReferrerId ?? null
     });
     let classJoinMessage: string | undefined;
     if (profile.memberType === "student" && typeof body.classCode === "string" && body.classCode.trim()) {
