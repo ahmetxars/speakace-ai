@@ -691,6 +691,41 @@ export function AdminPanel(props: {
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
+                    <h3>Practice Feature Usage</h3>
+                    <p>Tracks whether the new interview flow and PDF export are actually being used after release.</p>
+                  </div>
+                  <div className="adm-overview-list">
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.interviewStarts7d}</strong>
+                      <span>Interview mode starts in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.interviewStarts30d}</strong>
+                      <span>Interview mode starts in the last 30 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.interviewFollowUps7d}</strong>
+                      <span>Interview follow-up selections in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.interviewFollowUps30d}</strong>
+                      <span>Interview follow-up selections in the last 30 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.pdfExports7d}</strong>
+                      <span>PDF report exports in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.pdfExports30d}</strong>
+                      <span>PDF report exports in the last 30 days</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="adm-grid-2">
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
                     <h3>Conversion Funnel</h3>
                     <p>Uses CTA clicks, account creation, checkout taps, and successful paid billing events.</p>
                   </div>

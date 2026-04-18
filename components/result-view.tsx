@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
+import { trackClientEvent } from "@/lib/analytics-client";
 import { ProgressSummary, SpeakingSession } from "@/lib/types";
 import { readStudyFolders, readStudyItems, writeStudyFolders, writeStudyItems } from "@/lib/study-lists";
 
@@ -139,6 +140,9 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
 
   const exportPdfReport = () => {
     if (typeof window === "undefined") return;
+    if (currentUser?.id) {
+      void trackClientEvent({ userId: currentUser.id, event: "pdf_report_export", path: `/app/results/${session.id}` });
+    }
     const printWindow = window.open("", "_blank", "noopener,noreferrer,width=960,height=1200");
     if (!printWindow) return;
 

@@ -796,6 +796,9 @@ export function PracticeConsole() {
   };
 
   const continueInterviewWithPrompt = async (followUp: { id: string; title: string; prompt: string }) => {
+    if (currentUser?.id) {
+      void trackClientEvent({ userId: currentUser.id, event: "interview_followup_continue", path: "/app/practice" });
+    }
     await startSession({
       examType,
       taskType,
@@ -877,6 +880,9 @@ export function PracticeConsole() {
                     setInterviewState(null);
                     if (option.value !== "simulation") {
                       setSimulationState(null);
+                    }
+                    if (option.value === "interview" && currentUser?.id) {
+                      void trackClientEvent({ userId: currentUser.id, event: "interview_mode_start", path: "/app/practice" });
                     }
                   }}
                   disabled={mode !== "idle"}

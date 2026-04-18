@@ -394,6 +394,12 @@ export interface AdminOverview {
   ctaClicks30d: number;
   checkoutClicks7d: number;
   checkoutClicks30d: number;
+  interviewStarts7d: number;
+  interviewStarts30d: number;
+  interviewFollowUps7d: number;
+  interviewFollowUps30d: number;
+  pdfExports7d: number;
+  pdfExports30d: number;
   topCtas: Array<{
     path: string;
     event: string;

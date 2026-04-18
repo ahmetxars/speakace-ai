@@ -261,6 +261,12 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       ctaClicks30d: 0,
       checkoutClicks7d: 0,
       checkoutClicks30d: 0,
+      interviewStarts7d: 0,
+      interviewStarts30d: 0,
+      interviewFollowUps7d: 0,
+      interviewFollowUps30d: 0,
+      pdfExports7d: 0,
+      pdfExports30d: 0,
       topCtas: [],
       bestPerformingCtas: [],
       winnerCta7d: null,
@@ -311,6 +317,12 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       cta_clicks_30d: number;
       checkout_clicks_7d: number;
       checkout_clicks_30d: number;
+      interview_starts_7d: number;
+      interview_starts_30d: number;
+      interview_followups_7d: number;
+      interview_followups_30d: number;
+      pdf_exports_7d: number;
+      pdf_exports_30d: number;
     }>
   >`
     with institution_prices as (
@@ -374,6 +386,42 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         where event = 'checkout_cta_click'
           and created_at > now() - interval '30 days'
       ) as checkout_clicks_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'interview_mode_start'
+          and created_at > now() - interval '7 days'
+      ) as interview_starts_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'interview_mode_start'
+          and created_at > now() - interval '30 days'
+      ) as interview_starts_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'interview_followup_continue'
+          and created_at > now() - interval '7 days'
+      ) as interview_followups_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'interview_followup_continue'
+          and created_at > now() - interval '30 days'
+      ) as interview_followups_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'pdf_report_export'
+          and created_at > now() - interval '7 days'
+      ) as pdf_exports_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'pdf_report_export'
+          and created_at > now() - interval '30 days'
+      ) as pdf_exports_30d,
       (
         select max(created_at)::text
         from recent_analytics
@@ -682,6 +730,12 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     ctaClicks30d: row?.cta_clicks_30d ?? 0,
     checkoutClicks7d: row?.checkout_clicks_7d ?? 0,
     checkoutClicks30d: row?.checkout_clicks_30d ?? 0,
+    interviewStarts7d: row?.interview_starts_7d ?? 0,
+    interviewStarts30d: row?.interview_starts_30d ?? 0,
+    interviewFollowUps7d: row?.interview_followups_7d ?? 0,
+    interviewFollowUps30d: row?.interview_followups_30d ?? 0,
+    pdfExports7d: row?.pdf_exports_7d ?? 0,
+    pdfExports30d: row?.pdf_exports_30d ?? 0,
     topCtas: topCtaRows.map((item) => ({
       path: item.path ?? "Unknown CTA",
       event: item.event,
