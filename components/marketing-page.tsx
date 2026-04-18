@@ -18,7 +18,9 @@ import {
 } from "lucide-react";
 import { useAppState } from "@/components/providers";
 import { AdSenseUnit } from "@/components/adsense-unit";
+import { MiniSpeakingDemo } from "@/components/mini-speaking-demo";
 import { TrackedLink } from "@/components/tracked-link";
+import { buildFaqJsonLd, jsonLdToHtml } from "@/lib/structured-data";
 
 type MarketingPageProps = {
   eyebrow: string;
@@ -447,6 +449,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [activeDemo, setActiveDemo] = useState<(typeof t.demoTabs)[number]["id"]>(t.demoTabs[0].id);
   const selectedDemo = t.demoTabs.find((item) => item.id === activeDemo) ?? t.demoTabs[0];
+  const faqJsonLd = buildFaqJsonLd(t.faqs.map((item) => ({ question: item.q, answer: item.a })));
 
   return (
     <main style={{ minHeight: "100vh", paddingTop: "64px" }}>
@@ -726,6 +729,10 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                 {item.label}
               </button>
             ))}
+          </div>
+
+          <div style={{ marginTop: "1.25rem" }}>
+            <MiniSpeakingDemo language={language === "tr" ? "tr" : "en"} />
           </div>
 
           <motion.div
@@ -1553,6 +1560,8 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
           <AdSenseUnit className="sa-home-ad" />
         </div>
       </section>
+
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdToHtml(faqJsonLd) }} />
 
       <style>{`
         @media (max-width: 900px) {

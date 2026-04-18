@@ -7,6 +7,7 @@ import { TrackedLink } from "@/components/tracked-link";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
 import type { Language } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
+import { buildFaqJsonLd, jsonLdToHtml } from "@/lib/structured-data";
 
 const pricingCopy = {
   en: {
@@ -333,6 +334,7 @@ export default async function PricingPage() {
       a: "Students preparing seriously for IELTS or TOEFL speaking, especially if they want a stronger daily feedback loop."
     }
   ];
+  const faqJsonLd = buildFaqJsonLd(faq.map((item) => ({ question: item.q, answer: item.a })));
 
   return (
     <>
@@ -657,6 +659,7 @@ export default async function PricingPage() {
           </TrackedLink>
         </div>
       </main>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdToHtml(faqJsonLd) }} />
     </>
   );
 }

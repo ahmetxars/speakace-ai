@@ -89,6 +89,7 @@ export function Providers({ children }: { children: ReactNode }) {
     const storedLanguage = window.localStorage.getItem("speakace-language");
     const storedTheme = window.localStorage.getItem("speakace-theme");
     const storedUser = window.localStorage.getItem("speakace-user");
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
     if (isSupportedLanguage(storedLanguage)) {
       setLanguageState(storedLanguage);
@@ -101,11 +102,29 @@ export function Providers({ children }: { children: ReactNode }) {
       setThemeState(storedTheme);
       document.body.dataset.theme = storedTheme;
     } else {
-      document.body.dataset.theme = "light";
+      const systemTheme: ThemeMode = mediaQuery.matches ? "dark" : "light";
+      setThemeState(systemTheme);
+      document.body.dataset.theme = systemTheme;
     }
 
     void initializeUser(storedUser);
   }, [initializeUser]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const syncSystemTheme = (event: MediaQueryListEvent) => {
+      const storedTheme = window.localStorage.getItem("speakace-theme");
+      if (storedTheme === "light" || storedTheme === "dark") {
+        return;
+      }
+      const nextTheme: ThemeMode = event.matches ? "dark" : "light";
+      setThemeState(nextTheme);
+      document.body.dataset.theme = nextTheme;
+    };
+
+    mediaQuery.addEventListener("change", syncSystemTheme);
+    return () => mediaQuery.removeEventListener("change", syncSystemTheme);
+  }, []);
 
   const setGuestProfile = async (profile: MemberProfile) => {
     setCurrentUser(profile);

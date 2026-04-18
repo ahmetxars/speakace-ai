@@ -587,7 +587,7 @@ export function SiteHeader() {
             <span style={{ color: "white", fontWeight: 700, fontSize: "12px" }}>SA</span>
           </div>
           <Image
-            src="/brand/speakace-logo.png"
+            src="/brand/speakace-logo.webp"
             alt="SpeakAce"
             width={120}
             height={41}
@@ -1015,29 +1015,59 @@ export function SiteHeader() {
 
         {groups.map((group) => (
           <div key={group.key} style={{ marginBottom: "1.25rem" }}>
-            <strong style={{ display: "block", fontSize: "0.6875rem", color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "0.375rem" }}>
-              {group.label}
-            </strong>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.125rem" }}>
-              {group.items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href as Route}
-                  style={{
-                    display: "block",
-                    padding: "0.5rem 0.75rem",
-                    fontSize: "0.875rem",
-                    color: isActive(item.href) ? "var(--primary)" : "var(--foreground)",
-                    textDecoration: "none",
-                    borderRadius: "6px",
-                    background: isActive(item.href) ? "oklch(0.623 0.214 259.815 / 0.1)" : "transparent",
-                    opacity: isActive(item.href) ? 1 : 0.8
-                  }}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={() => setActiveGroup(activeGroup === group.key ? null : group.key)}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "0.75rem",
+                padding: "0.6rem 0.75rem",
+                fontSize: "0.8125rem",
+                fontWeight: 700,
+                color: "var(--foreground)",
+                background: "var(--input-bg)",
+                border: "1px solid var(--nav-border)",
+                borderRadius: "10px",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                marginBottom: "0.45rem",
+                cursor: "pointer"
+              }}
+            >
+              <span>{group.label}</span>
+              <ChevronDown
+                size={16}
+                style={{
+                  transition: "transform 0.2s ease",
+                  transform: activeGroup === group.key ? "rotate(180deg)" : "rotate(0deg)"
+                }}
+              />
+            </button>
+            {activeGroup === group.key ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.125rem", paddingLeft: "0.15rem" }}>
+                {group.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href as Route}
+                    style={{
+                      display: "block",
+                      padding: "0.55rem 0.75rem",
+                      fontSize: "0.875rem",
+                      color: isActive(item.href) ? "var(--primary)" : "var(--foreground)",
+                      textDecoration: "none",
+                      borderRadius: "8px",
+                      background: isActive(item.href) ? "oklch(0.623 0.214 259.815 / 0.1)" : "transparent",
+                      opacity: isActive(item.href) ? 1 : 0.8
+                    }}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
           </div>
         ))}
 
@@ -1089,8 +1119,28 @@ export function SiteHeader() {
             </>
           ) : (
             <>
-              <a href={buildPlanCheckoutPath({ campaign: "mobile_header_cta" })} style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 600, color: "white", background: "var(--primary)", borderRadius: "8px", textDecoration: "none", boxShadow: "0 0 20px oklch(0.623 0.214 259.815 / 0.3)" }}>
-                Get Plus
+              <a
+                href={buildPlanCheckoutPath({ campaign: "mobile_header_cta" })}
+                style={{
+                  display: "block",
+                  padding: "0.8rem 1rem",
+                  textAlign: "center",
+                  fontSize: "0.9375rem",
+                  fontWeight: 700,
+                  color: "white",
+                  background: "linear-gradient(135deg, var(--primary), var(--accent))",
+                  borderRadius: "12px",
+                  textDecoration: "none",
+                  boxShadow: "0 0 24px oklch(0.623 0.214 259.815 / 0.32)",
+                  position: "relative",
+                  overflow: "hidden"
+                }}
+              >
+                <span style={{ position: "absolute", inset: 0, background: "linear-gradient(120deg, transparent, oklch(1 0 0 / 0.22), transparent)", transform: "translateX(-100%)", animation: "speakaceShimmer 2.4s linear infinite" }} />
+                <span style={{ position: "relative", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ width: "0.55rem", height: "0.55rem", borderRadius: "999px", background: "oklch(0.98 0 0)", boxShadow: "0 0 0 6px oklch(1 0 0 / 0.12)" }} />
+                  Get Plus
+                </span>
               </a>
               <Link href="/auth?mode=signup" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "var(--nav-btn-bg)", border: "1px solid var(--nav-btn-border)", borderRadius: "8px", textDecoration: "none" }}>
                 {labels.signUp}
@@ -1106,6 +1156,10 @@ export function SiteHeader() {
       <style>{`
         @media (min-width: 768px) { .mobile-only { display: none !important; } }
         @media (max-width: 767px) { .desktop-nav { display: none !important; } }
+        @keyframes speakaceShimmer {
+          0% { transform: translateX(-120%); }
+          100% { transform: translateX(120%); }
+        }
       `}</style>
     </header>
   );

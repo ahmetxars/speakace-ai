@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { commerceConfig, couponCatalog, buildPlanCheckoutPath } from "@/lib/commerce";
+import { couponCatalog } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
 
 export function MarketingStickyCta() {
@@ -11,33 +11,35 @@ export function MarketingStickyCta() {
 
   if (!pathname) return null;
   if (pathname.startsWith("/app") || pathname.startsWith("/auth") || pathname.startsWith("/admin")) return null;
-  if (!(pathname === "/pricing" || pathname.startsWith("/blog"))) return null;
+  if (pathname === "/maintenance") return null;
   if (signedIn && currentUser?.plan && currentUser.plan !== "free") return null;
   const isPricingPage = pathname === "/pricing";
+  const isBlogPage = pathname.startsWith("/blog");
+  const ctaHref = "/free-ielts-speaking-test";
 
   return (
     <div className="marketing-sticky-cta">
       <div className="marketing-sticky-copy">
-        <strong>{tr ? "Plus ile daha hızlı geliş" : "Grow faster with Plus"}</strong>
+        <strong>{tr ? "Ücretsiz speaking testi ile başla" : "Start with a free speaking test"}</strong>
         <span>
           {isPricingPage
             ? tr
-              ? `${commerceConfig.plusMonthlyPrice} · ${couponCatalog.LAUNCH20.code} ile erken destekçi indirimi`
-              : `${commerceConfig.plusMonthlyPrice} · early supporter offer with ${couponCatalog.LAUNCH20.code}`
-            : tr
-              ? `${commerceConfig.plusMonthlyPrice} · Tam geri bildirim ve daha fazla speaking oturumu`
-              : `${commerceConfig.plusMonthlyPrice} · Full feedback and more speaking sessions`}
+              ? `Skorunu önce ücretsiz gör, sonra ${couponCatalog.LAUNCH20.code} ile Plus'a geç`
+              : `See your score free first, then upgrade with ${couponCatalog.LAUNCH20.code}`
+            : isBlogPage
+              ? tr
+                ? "Okuduğun konuyu hemen practice ile dene"
+                : "Turn this guide into a real practice attempt now"
+              : tr
+                ? "Kısa bir test, transcript ve ilk skor sinyali"
+                : "One short test, transcript, and your first score signal"}
         </span>
       </div>
       <a
         className="button button-primary"
-        href={
-          isPricingPage
-            ? buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "sticky_cta" })
-            : buildPlanCheckoutPath({ campaign: "sticky_cta" })
-        }
+        href={ctaHref}
       >
-        {tr ? "Plus'i ac" : "Unlock Plus"}
+        {tr ? "Start Free Test" : "Start Free Test"}
       </a>
     </div>
   );

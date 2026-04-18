@@ -715,6 +715,34 @@ export function Dashboard() {
         <TargetCard examType={latestExamType} targetScore={targetScore} onChange={handleTargetScoreChange} tr={tr} />
       </section>
 
+      <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1.15fr) minmax(320px, 0.85fr)", gap: "1rem", alignItems: "start" }}>
+        <BandTrendCard sessions={recentTrend} tr={tr} />
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem", background: "rgba(217, 93, 57, 0.06)" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Weak spot analysis" : "Weak spot analysis"}</span>
+            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>
+              {hasBalancedSkillProfile
+                ? tr ? "Profil dengeli görünüyor" : "Your profile looks balanced"
+                : weakestSkill
+                  ? tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label
+                  : tr ? "Henüz veri yok" : "Not enough data yet"}
+            </h2>
+          </div>
+          <p className="practice-copy">
+            {nextStudyFocus}
+          </p>
+          <div className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)" }}>
+            <strong>{tr ? "Bugünün odak noktası" : "Today's focus"}</strong>
+            <p style={{ margin: "0.5rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>
+              {dailyMission.secondary}
+            </p>
+          </div>
+          <Link className="button button-secondary" href="/app/practice">
+            {tr ? "Bu odağa göre practice aç" : "Practice around this weak spot"}
+          </Link>
+        </div>
+      </section>
+
       <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1.2fr) minmax(260px, 0.8fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
           <div>
@@ -1384,6 +1412,84 @@ function StatCard({ label, value, note }: { label: string; value: string; note: 
       <div style={{ color: "var(--muted)", marginBottom: "0.5rem" }}>{label}</div>
       <div style={{ fontSize: "2rem", fontWeight: 800 }}>{value}</div>
       <div style={{ color: "var(--muted)", marginTop: "0.45rem", lineHeight: 1.55 }}>{note}</div>
+    </div>
+  );
+}
+
+function BandTrendCard({ sessions, tr }: { sessions: SpeakingSession[]; tr: boolean }) {
+  const points = sessions
+    .map((session, index) => ({
+      x: index,
+      y: session.report?.overall ?? 0,
+      label: `${index + 1}`
+    }))
+    .filter((item) => item.y > 0);
+
+  const maxScore = Math.max(9, ...points.map((item) => item.y));
+  const minScore = Math.min(4, ...points.map((item) => item.y));
+  const width = 360;
+  const height = 160;
+  const chartPath = points.length
+    ? points
+        .map((point, index) => {
+          const x = points.length === 1 ? width / 2 : (point.x / Math.max(points.length - 1, 1)) * (width - 24) + 12;
+          const y = height - ((point.y - minScore) / Math.max(maxScore - minScore, 1)) * (height - 28) - 14;
+          return `${index === 0 ? "M" : "L"} ${x} ${y}`;
+        })
+        .join(" ")
+    : "";
+
+  return (
+    <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+      <div>
+        <span className="eyebrow">{tr ? "Band score trend" : "Band score trend"}</span>
+        <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Son 10 denemenin yönü" : "Direction across your last attempts"}</h2>
+      </div>
+      {points.length ? (
+        <>
+          <svg viewBox={`0 0 ${width} ${height}`} style={{ width: "100%", height: "auto", borderRadius: 18, background: "var(--surface-strong)", border: "1px solid var(--border)", padding: "0.75rem" }} role="img" aria-label={tr ? "Band score trend graph" : "Band score trend graph"}>
+            {[0.25, 0.5, 0.75].map((ratio) => {
+              const y = height * ratio;
+              return <line key={ratio} x1="8" y1={y} x2={width - 8} y2={y} stroke="rgba(29, 111, 117, 0.14)" strokeWidth="1" />;
+            })}
+            {chartPath ? <path d={chartPath} fill="none" stroke="url(#trendGradient)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /> : null}
+            {points.map((point, index) => {
+              const x = points.length === 1 ? width / 2 : (point.x / Math.max(points.length - 1, 1)) * (width - 24) + 12;
+              const y = height - ((point.y - minScore) / Math.max(maxScore - minScore, 1)) * (height - 28) - 14;
+              return (
+                <g key={`${point.label}-${point.y}-${index}`}>
+                  <circle cx={x} cy={y} r="5.5" fill="var(--card)" stroke="var(--accent)" strokeWidth="3" />
+                  <text x={x} y={height - 4} textAnchor="middle" fontSize="11" fill="var(--muted)">{point.label}</text>
+                </g>
+              );
+            })}
+            <defs>
+              <linearGradient id="trendGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="var(--primary)" />
+                <stop offset="100%" stopColor="var(--accent)" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem" }}>
+            <div className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)" }}>
+              <div className="practice-meta">{tr ? "Latest" : "Latest"}</div>
+              <strong style={{ fontSize: "1.35rem" }}>{points.at(-1)?.y.toFixed(1)}</strong>
+            </div>
+            <div className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)" }}>
+              <div className="practice-meta">{tr ? "Best in trend" : "Best in trend"}</div>
+              <strong style={{ fontSize: "1.35rem" }}>{Math.max(...points.map((item) => item.y)).toFixed(1)}</strong>
+            </div>
+            <div className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)" }}>
+              <div className="practice-meta">{tr ? "Attempts shown" : "Attempts shown"}</div>
+              <strong style={{ fontSize: "1.35rem" }}>{points.length}</strong>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
+          {tr ? "Trend grafiği ilk skorlu denemelerden sonra dolacak." : "The trend chart fills in after your first scored attempts."}
+        </div>
+      )}
     </div>
   );
 }
