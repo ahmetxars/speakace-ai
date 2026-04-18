@@ -56,7 +56,12 @@ export default async function AdminPage() {
             liveUsers5m: 0,
             requests5m: 0,
             pageViews1h: 0,
-            lastRequestAt: null
+            lastRequestAt: null,
+            ctaClicks7d: 0,
+            ctaClicks30d: 0,
+            checkoutClicks7d: 0,
+            checkoutClicks30d: 0,
+            topCtas: []
           };
     const members = membersResult.status === "fulfilled" ? membersResult.value : [];
     const billingEvents = billingEventsResult.status === "fulfilled" ? billingEventsResult.value : [];

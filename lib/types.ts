@@ -390,6 +390,15 @@ export interface AdminOverview {
   requests5m: number;
   pageViews1h: number;
   lastRequestAt?: string | null;
+  ctaClicks7d: number;
+  ctaClicks30d: number;
+  checkoutClicks7d: number;
+  checkoutClicks30d: number;
+  topCtas: Array<{
+    path: string;
+    event: string;
+    count: number;
+  }>;
 }
 
 export interface AdminMemberRecord {

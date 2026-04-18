@@ -8,8 +8,6 @@ import {
   Users,
   Mic2,
   FileText,
-  Star,
-  BarChart2,
   Settings,
   Search,
   Bell,
@@ -42,6 +40,15 @@ function formatDate(value?: string | null) {
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
+}
+
+function formatCtaLabel(path: string) {
+  return path
+    .replace(/^\//, "")
+    .replace(/^#/, "")
+    .replace(/[:/#?-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim() || "unknown";
 }
 
 function formatRelativeDate(value?: string | null) {
@@ -617,6 +624,61 @@ export function AdminPanel(props: {
                   <div className="adm-revenue-total">
                     <span className="adm-muted">Weekly estimate</span>
                     <strong>{formatMoney(props.overview.monthlyRevenueEstimate)}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="adm-grid-2">
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>CTA Performance</h3>
+                    <p>Homepage and pricing clicks collected from the new conversion flow.</p>
+                  </div>
+                  <div className="adm-overview-list">
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.ctaClicks7d}</strong>
+                      <span>All CTA clicks in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.ctaClicks30d}</strong>
+                      <span>All CTA clicks in the last 30 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.checkoutClicks7d}</strong>
+                      <span>Checkout CTA clicks in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.checkoutClicks30d}</strong>
+                      <span>Checkout CTA clicks in the last 30 days</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Top CTAs</h3>
+                    <p>Most-clicked CTA paths from homepage and pricing in the last 30 days.</p>
+                  </div>
+                  <div className="adm-stack-list">
+                    {props.overview.topCtas.length === 0 ? (
+                      <p className="adm-muted">No CTA clicks recorded yet.</p>
+                    ) : (
+                      props.overview.topCtas.map((item) => (
+                        <div key={`${item.event}-${item.path}`} className="adm-list-row">
+                          <div>
+                            <div className="adm-table-name">{formatCtaLabel(item.path)}</div>
+                            <div className="adm-table-email">{item.path}</div>
+                          </div>
+                          <div className="adm-list-side">
+                            <StatusBadge
+                              label={item.event.replaceAll("_", " ")}
+                              tone={item.event === "checkout_cta_click" ? "accent" : "neutral"}
+                            />
+                            <strong>{item.count}</strong>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>

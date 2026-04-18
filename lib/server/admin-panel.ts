@@ -256,7 +256,12 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       liveUsers5m: 0,
       requests5m: 0,
       pageViews1h: 0,
-      lastRequestAt: null
+      lastRequestAt: null,
+      ctaClicks7d: 0,
+      ctaClicks30d: 0,
+      checkoutClicks7d: 0,
+      checkoutClicks30d: 0,
+      topCtas: []
     };
   }
 
@@ -277,6 +282,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       requests_5m: number;
       page_views_1h: number;
       last_request_at: string | null;
+      cta_clicks_7d: number;
+      cta_clicks_30d: number;
+      checkout_clicks_7d: number;
+      checkout_clicks_30d: number;
     }>
   >`
     with institution_prices as (
@@ -317,6 +326,30 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         where event = 'page_view' and created_at > now() - interval '1 hour'
       ) as page_views_1h,
       (
+        select count(*)::int
+        from recent_analytics
+        where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
+          and created_at > now() - interval '7 days'
+      ) as cta_clicks_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
+          and created_at > now() - interval '30 days'
+      ) as cta_clicks_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'checkout_cta_click'
+          and created_at > now() - interval '7 days'
+      ) as checkout_clicks_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'checkout_cta_click'
+          and created_at > now() - interval '30 days'
+      ) as checkout_clicks_30d,
+      (
         select max(created_at)::text
         from recent_analytics
       ) as last_request_at,
@@ -330,6 +363,25 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       ), 0)::numeric(10,2) as monthly_revenue_estimate
     from users
     left join institution_prices on institution_prices.teacher_id = users.id
+  `;
+
+  const topCtaRows = await sql<
+    Array<{
+      path: string | null;
+      event: string;
+      count: number;
+    }>
+  >`
+    select
+      path,
+      event,
+      count(*)::int as count
+    from analytics_events
+    where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
+      and created_at > now() - interval '30 days'
+    group by path, event
+    order by count desc, path asc nulls last
+    limit 8
   `;
 
   return {
@@ -346,7 +398,16 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     liveUsers5m: row?.live_users_5m ?? 0,
     requests5m: row?.requests_5m ?? 0,
     pageViews1h: row?.page_views_1h ?? 0,
-    lastRequestAt: row?.last_request_at ?? null
+    lastRequestAt: row?.last_request_at ?? null,
+    ctaClicks7d: row?.cta_clicks_7d ?? 0,
+    ctaClicks30d: row?.cta_clicks_30d ?? 0,
+    checkoutClicks7d: row?.checkout_clicks_7d ?? 0,
+    checkoutClicks30d: row?.checkout_clicks_30d ?? 0,
+    topCtas: topCtaRows.map((item) => ({
+      path: item.path ?? "Unknown CTA",
+      event: item.event,
+      count: item.count
+    }))
   };
 }
 
@@ -457,7 +518,7 @@ export async function listAdminMembers(): Promise<AdminMemberRecord[]> {
 
   // Fetch email logs for all members in one query
   const memberIds = rows.map(r => r.id);
-  let emailLogMap: Record<string, Array<{ id: string; template: string; subject: string; status: string; sentAt: string; errorMessage?: string | null }>> = {};
+  const emailLogMap: Record<string, Array<{ id: string; template: string; subject: string; status: string; sentAt: string; errorMessage?: string | null }>> = {};
 
   if (memberIds.length > 0) {
     const logRows = await sql<Array<{
