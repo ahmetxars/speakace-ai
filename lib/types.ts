@@ -399,6 +399,14 @@ export interface AdminOverview {
     event: string;
     count: number;
   }>;
+  bestPerformingCtas: Array<{
+    path: string;
+    clicks: number;
+    signups: number;
+    paidCount: number;
+    clickToSignupRate: number;
+    clickToPaidRate: number;
+  }>;
   topCtaPages: Array<{
     page: string;
     clicks: number;

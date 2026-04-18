@@ -11,6 +11,8 @@ export async function GET(request: Request) {
   const billing: "weekly" | "annual" = rawBilling === "annual" ? "annual" : "weekly";
   const coupon = searchParams.get("coupon") ?? undefined;
   const campaign = searchParams.get("campaign") ?? undefined;
+  const ctaPath = searchParams.get("cta") ?? undefined;
+  const ctaEvent = searchParams.get("cta_event") ?? undefined;
   const cookieStore = await cookies();
   const token = cookieStore.get(getSessionCookieName())?.value;
   const profile = await getAuthenticatedUser(token);
@@ -24,9 +26,11 @@ export async function GET(request: Request) {
           name: profile.name,
           userId: profile.id,
           coupon,
-          campaign
+          campaign,
+          ctaPath,
+          ctaEvent
         }
-      : { plan, billing, coupon, campaign }
+      : { plan, billing, coupon, campaign, ctaPath, ctaEvent }
   );
 
   return NextResponse.redirect(checkoutUrl || commerceConfig.plusMonthlyCheckout);

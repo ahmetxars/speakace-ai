@@ -14,7 +14,8 @@ export type AnalyticsEventName =
   | "analytics_dashboard_view"
   | "marketing_cta_click"
   | "pricing_cta_click"
-  | "checkout_cta_click";
+  | "checkout_cta_click"
+  | "signup_completed";
 
 export type AnalyticsEvent = {
   id: string;

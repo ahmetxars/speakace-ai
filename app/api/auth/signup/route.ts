@@ -7,6 +7,7 @@ import {
   signUpWithPassword
 } from "@/lib/server/auth";
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
+import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { isAdminEmail } from "@/lib/admin";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
@@ -48,6 +49,13 @@ export async function POST(request: Request) {
       }
     }
     const autoVerified = isAdminEmail(profile.email);
+    if (typeof body.attributionPath === "string" && body.attributionPath.trim()) {
+      await trackAnalyticsEvent({
+        userId: profile.id,
+        event: "signup_completed",
+        path: body.attributionPath.trim()
+      });
+    }
     const verification = await createEmailVerificationFlow(profile.email);
     try {
       const result = await sendOnboardingEmail(profile.id, 1);

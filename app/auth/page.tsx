@@ -63,7 +63,9 @@ function AuthPageInner() {
         memberType,
         classCode,
         organizationName,
-        referralCode
+        referralCode,
+        attributionPath: searchParams.get("cta") ?? null,
+        attributionEvent: searchParams.get("cta_event") ?? null
       })
     });
 

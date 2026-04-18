@@ -44,6 +44,26 @@ function isExternalHref(href: TrackedLinkProps["href"]): href is ExternalTracked
   return typeof href === "string" && /^https?:\/\//.test(href);
 }
 
+function buildAttributedHref(href: string, analyticsEvent?: AnalyticsEventName, analyticsPath?: string) {
+  if (!analyticsPath || href.startsWith("#")) return href;
+  if (/^(mailto:|tel:)/.test(href)) return href;
+
+  try {
+    const base = typeof window !== "undefined" ? window.location.origin : "https://speakace.org";
+    const url = new URL(href, base);
+    url.searchParams.set("cta", analyticsPath);
+    if (analyticsEvent) {
+      url.searchParams.set("cta_event", analyticsEvent);
+    }
+    if (/^https?:\/\//.test(href)) {
+      return url.toString();
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return href;
+  }
+}
+
 export function TrackedLink({
   href,
   children,
@@ -58,22 +78,25 @@ export function TrackedLink({
   rel,
   onClick
 }: TrackedLinkProps) {
+  const resolvedHref =
+    typeof href === "string" ? buildAttributedHref(href, analyticsEvent, analyticsPath) : href;
+
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     onClick?.(event);
     void (analyticsEvent ? trackClientEvent({ userId, event: analyticsEvent, path: analyticsPath ?? String(href) }) : Promise.resolve());
     trackGaEvent(gaEvent, gaParams);
   };
 
-  if (isExternalHref(href)) {
+  if (typeof resolvedHref === "string" && isExternalHref(resolvedHref)) {
     return (
-      <a href={href} className={className} style={style} target={target} rel={rel} onClick={handleClick}>
+      <a href={resolvedHref} className={className} style={style} target={target} rel={rel} onClick={handleClick}>
         {children}
       </a>
     );
   }
 
   return (
-    <Link href={href} className={className} style={style} target={target} rel={rel} onClick={handleClick}>
+    <Link href={resolvedHref} className={className} style={style} target={target} rel={rel} onClick={handleClick}>
       {children}
     </Link>
   );

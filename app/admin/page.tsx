@@ -62,6 +62,7 @@ export default async function AdminPage() {
             checkoutClicks7d: 0,
             checkoutClicks30d: 0,
             topCtas: [],
+            bestPerformingCtas: [],
             topCtaPages: [],
             ctaTrend14d: [],
             funnel7d: {

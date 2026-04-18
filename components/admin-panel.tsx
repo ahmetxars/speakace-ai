@@ -818,6 +818,37 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
+                    <h3>Best Converting CTAs</h3>
+                    <p>CTA paths ranked by actual signups and paid conversions attributed over the last 30 days.</p>
+                  </div>
+                  <div className="adm-stack-list">
+                    {props.overview.bestPerformingCtas.length === 0 ? (
+                      <p className="adm-muted">Attribution data will appear as new signups and checkouts come in.</p>
+                    ) : (
+                      props.overview.bestPerformingCtas.map((item) => (
+                        <div key={item.path} className="adm-list-row" style={{ alignItems: "stretch" }}>
+                          <div style={{ flex: 1, display: "grid", gap: "0.35rem" }}>
+                            <div className="adm-table-name">{formatCtaLabel(item.path)}</div>
+                            <div className="adm-table-email">{item.path}</div>
+                            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                              <StatusBadge label={`${item.clicks} clicks`} />
+                              <StatusBadge label={`${item.signups} signups`} tone="success" />
+                              <StatusBadge label={`${item.paidCount} paid`} tone="accent" />
+                            </div>
+                          </div>
+                          <div className="adm-list-side" style={{ alignItems: "flex-end" }}>
+                            <strong>{formatPercent(item.clickToPaidRate)}</strong>
+                            <span className="adm-table-muted">click → paid</span>
+                            <span className="adm-table-muted">{formatPercent(item.clickToSignupRate)} click → signup</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
                     <h3>Top CTAs</h3>
                     <p>Most-clicked CTA paths from homepage and pricing in the last 30 days.</p>
                   </div>
