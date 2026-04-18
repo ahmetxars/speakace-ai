@@ -6,6 +6,21 @@ const PRACTICE_URL = `${SITE_URL}/app/practice`;
 const PRICING_URL = `${SITE_URL}/pricing`;
 const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&campaign=onboarding_email`;
 
+export const ONBOARDING_EMAIL_SCHEDULE: Array<{ dayOffset: number; emailNumber: number }> = [
+  { dayOffset: 0, emailNumber: 1 },
+  { dayOffset: 2, emailNumber: 2 },
+  { dayOffset: 4, emailNumber: 3 },
+  { dayOffset: 7, emailNumber: 4 },
+  { dayOffset: 10, emailNumber: 5 },
+  { dayOffset: 14, emailNumber: 6 },
+  { dayOffset: 21, emailNumber: 7 },
+  { dayOffset: 30, emailNumber: 8 },
+  { dayOffset: 45, emailNumber: 9 },
+  { dayOffset: 60, emailNumber: 10 },
+  { dayOffset: 75, emailNumber: 11 },
+  { dayOffset: 90, emailNumber: 12 }
+];
+
 function buildEmail1(name: string) {
   const greeting = name.trim() ? name.trim() : "there";
   return {
@@ -425,6 +440,90 @@ export async function getUsersForOnboardingEmail(dayOffset: number): Promise<Arr
   return rows.map((row) => ({
     id: row.id,
     onboardingEmailsSent: row.onboarding_emails_sent
+  }));
+}
+
+export function getNextOnboardingStep(onboardingEmailsSent: number) {
+  return ONBOARDING_EMAIL_SCHEDULE.find((step) => step.emailNumber === onboardingEmailsSent + 1) ?? null;
+}
+
+export async function getUsersDueForNextOnboardingEmail(limit = 100): Promise<
+  Array<{
+    id: string;
+    email: string;
+    name: string;
+    onboardingEmailsSent: number;
+    nextEmailNumber: number;
+    nextDayOffset: number;
+  }>
+> {
+  if (!hasDatabaseUrl()) return [];
+
+  const sql = getSql();
+  const maxEmailNumber = ONBOARDING_EMAIL_SCHEDULE[ONBOARDING_EMAIL_SCHEDULE.length - 1]?.emailNumber ?? 0;
+  const rows = await sql<
+    Array<{
+      id: string;
+      email: string;
+      name: string;
+      onboarding_emails_sent: number;
+      email_opt_out: boolean;
+      created_at: string;
+    }>
+  >`
+    select
+      u.id,
+      u.email,
+      u.name,
+      coalesce(u.onboarding_emails_sent, 0) as onboarding_emails_sent,
+      u.email_opt_out,
+      u.created_at
+    from users u
+    where coalesce(u.onboarding_emails_sent, 0) < ${maxEmailNumber}
+    order by u.created_at asc
+    limit ${Math.max(limit * 3, limit)}
+  `;
+
+  const dueUsers = rows
+    .filter((row) => !row.email_opt_out)
+    .map((row) => {
+      const nextStep = getNextOnboardingStep(row.onboarding_emails_sent);
+      if (!nextStep) return null;
+
+      const dueAt = new Date(row.created_at);
+      dueAt.setUTCDate(dueAt.getUTCDate() + nextStep.dayOffset);
+
+      if (dueAt.getTime() > Date.now()) {
+        return null;
+      }
+
+      return {
+        id: row.id,
+        email: row.email,
+        name: row.name,
+        onboardingEmailsSent: row.onboarding_emails_sent,
+        nextEmailNumber: nextStep.emailNumber,
+        nextDayOffset: nextStep.dayOffset,
+        dueAt: dueAt.toISOString()
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row))
+    .sort((a, b) => {
+      if (a.nextEmailNumber !== b.nextEmailNumber) {
+        return a.nextEmailNumber - b.nextEmailNumber;
+      }
+
+      return a.dueAt.localeCompare(b.dueAt);
+    })
+    .slice(0, limit);
+
+  return dueUsers.map((row) => ({
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    onboardingEmailsSent: row.onboardingEmailsSent,
+    nextEmailNumber: row.nextEmailNumber,
+    nextDayOffset: row.nextDayOffset
   }));
 }
 

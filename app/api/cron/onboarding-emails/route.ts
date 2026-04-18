@@ -1,24 +1,9 @@
 import { NextResponse } from "next/server";
 import {
-  getUsersForOnboardingEmail,
   markOnboardingEmailSent,
+  getUsersDueForNextOnboardingEmail,
   sendOnboardingEmail
 } from "@/lib/server/email-sequences";
-
-// Map from days-since-signup to email number
-const SCHEDULE: Array<{ dayOffset: number; emailNumber: number }> = [
-  { dayOffset: 2,  emailNumber: 2 },
-  { dayOffset: 4,  emailNumber: 3 },
-  { dayOffset: 7,  emailNumber: 4 },
-  { dayOffset: 10, emailNumber: 5 },
-  { dayOffset: 14, emailNumber: 6 },
-  { dayOffset: 21, emailNumber: 7 },
-  { dayOffset: 30, emailNumber: 8 },
-  { dayOffset: 45, emailNumber: 9 },
-  { dayOffset: 60, emailNumber: 10 },
-  { dayOffset: 75, emailNumber: 11 },
-  { dayOffset: 90, emailNumber: 12 }
-];
 
 function isAuthorized(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -37,32 +22,49 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const url = new URL(request.url);
+  const limitParam = Number(url.searchParams.get("limit") ?? "100");
+  const dryRun = url.searchParams.get("dryRun") === "1";
+  const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 250) : 100;
+
   let totalSent = 0;
   let totalSkipped = 0;
+  let totalFailed = 0;
+  const users = await getUsersDueForNextOnboardingEmail(limit);
 
-  for (const { dayOffset, emailNumber } of SCHEDULE) {
-    const users = await getUsersForOnboardingEmail(dayOffset);
-
-    for (const user of users) {
-      // Only send if we haven't yet sent this email number for this user
-      if (user.onboardingEmailsSent >= emailNumber) {
+  for (const user of users) {
+    try {
+      if (dryRun) {
         totalSkipped++;
         continue;
       }
 
-      try {
-        const result = await sendOnboardingEmail(user.id, emailNumber);
-        if (result.ok) {
-          await markOnboardingEmailSent(user.id, emailNumber);
-          totalSent++;
-        } else if (result.skipped) {
-          totalSkipped++;
-        }
-      } catch {
-        // Non-blocking — continue with next user
+      const result = await sendOnboardingEmail(user.id, user.nextEmailNumber);
+      if (result.ok) {
+        await markOnboardingEmailSent(user.id, user.nextEmailNumber);
+        totalSent++;
+      } else if (result.skipped) {
+        totalSkipped++;
+      } else {
+        totalFailed++;
       }
+    } catch {
+      totalFailed++;
     }
   }
 
-  return NextResponse.json({ ok: true, sent: totalSent, skipped: totalSkipped });
+  return NextResponse.json({
+    ok: true,
+    dryRun,
+    queuedUsers: users.length,
+    sent: totalSent,
+    skipped: totalSkipped,
+    failed: totalFailed,
+    sample: users.slice(0, 10).map((user) => ({
+      id: user.id,
+      email: user.email,
+      nextEmailNumber: user.nextEmailNumber,
+      onboardingEmailsSent: user.onboardingEmailsSent
+    }))
+  });
 }
