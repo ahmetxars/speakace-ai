@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, MouseEvent, ReactNode } from "react";
+import type { CSSProperties, ComponentProps, MouseEvent, ReactNode } from "react";
 import Link from "next/link";
 import { trackClientEvent } from "@/lib/analytics-client";
 import type { AnalyticsEventName } from "@/lib/analytics-store";
@@ -11,8 +11,7 @@ declare global {
   }
 }
 
-type TrackedLinkProps = {
-  href: string;
+type BaseTrackedLinkProps = {
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
@@ -26,9 +25,23 @@ type TrackedLinkProps = {
   onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
+type InternalTrackedLinkProps = BaseTrackedLinkProps & {
+  href: ComponentProps<typeof Link>["href"];
+};
+
+type ExternalTrackedLinkProps = BaseTrackedLinkProps & {
+  href: string;
+};
+
+type TrackedLinkProps = InternalTrackedLinkProps | ExternalTrackedLinkProps;
+
 function trackGaEvent(eventName?: string, params?: Record<string, unknown>) {
   if (!eventName || typeof window === "undefined" || typeof window.gtag !== "function") return;
   window.gtag("event", eventName, params ?? {});
+}
+
+function isExternalHref(href: TrackedLinkProps["href"]): href is ExternalTrackedLinkProps["href"] {
+  return typeof href === "string" && /^https?:\/\//.test(href);
 }
 
 export function TrackedLink({
@@ -45,15 +58,13 @@ export function TrackedLink({
   rel,
   onClick
 }: TrackedLinkProps) {
-  const isExternal = /^https?:\/\//.test(href);
-
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     onClick?.(event);
-    void (analyticsEvent ? trackClientEvent({ userId, event: analyticsEvent, path: analyticsPath ?? href }) : Promise.resolve());
+    void (analyticsEvent ? trackClientEvent({ userId, event: analyticsEvent, path: analyticsPath ?? String(href) }) : Promise.resolve());
     trackGaEvent(gaEvent, gaParams);
   };
 
-  if (isExternal) {
+  if (isExternalHref(href)) {
     return (
       <a href={href} className={className} style={style} target={target} rel={rel} onClick={handleClick}>
         {children}
