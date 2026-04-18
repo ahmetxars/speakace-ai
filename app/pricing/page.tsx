@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CheckCircle2, Clock3, GraduationCap, School, TrendingUp } from "lucide-react";
 import { MarketingSchema } from "@/components/marketing-schema";
 import { PricingCards } from "@/components/pricing-cards";
+import { TrackedLink } from "@/components/tracked-link";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
 import type { Language } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
@@ -499,9 +500,21 @@ export default async function PricingPage() {
               <div className="pill" style={{ marginBottom: "0.8rem" }}>Launch coupon</div>
               <h3>{coupon.label}</h3>
               <p>{coupon.description}</p>
-              <a className="button button-secondary" href={buildPlanCheckoutPath({ coupon: coupon.code, campaign: "pricing_coupon" })}>
+              <TrackedLink
+                className="button button-secondary"
+                href={buildPlanCheckoutPath({ coupon: coupon.code, campaign: "pricing_coupon" })}
+                analyticsEvent="checkout_cta_click"
+                analyticsPath={`/pricing/coupon/${coupon.code}`}
+                gaEvent="begin_checkout"
+                gaParams={{
+                  currency: "USD",
+                  value: 3.99,
+                  coupon: coupon.code,
+                  items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: 3.99, quantity: 1 }]
+                }}
+              >
                 Use {coupon.code}
-              </a>
+              </TrackedLink>
             </article>
           ))}
         </div>
@@ -595,12 +608,36 @@ export default async function PricingPage() {
             <Link className="button button-primary" href="/app/billing/success">
               Open billing status
             </Link>
-            <a className="button button-secondary" href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "pricing_bottom" })}>
+            <TrackedLink
+              className="button button-secondary"
+              href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "pricing_bottom" })}
+              analyticsEvent="checkout_cta_click"
+              analyticsPath="/pricing/bottom/plus"
+              gaEvent="begin_checkout"
+              gaParams={{
+                currency: "USD",
+                value: 3.99,
+                coupon: couponCatalog.LAUNCH20.code,
+                items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: 3.99, quantity: 1 }]
+              }}
+            >
               Buy Plus
-            </a>
-            <a className="button button-secondary" href={buildPlanCheckoutPath({ plan: "pro", campaign: "pricing_bottom_pro" })} style={{ borderColor: "#c9a227", color: "#b38600" }}>
+            </TrackedLink>
+            <TrackedLink
+              className="button button-secondary"
+              href={buildPlanCheckoutPath({ plan: "pro", campaign: "pricing_bottom_pro" })}
+              analyticsEvent="checkout_cta_click"
+              analyticsPath="/pricing/bottom/pro"
+              gaEvent="begin_checkout"
+              gaParams={{
+                currency: "USD",
+                value: 9.99,
+                items: [{ item_id: "pro_monthly", item_name: "SpeakAce Pro - Monthly", price: 9.99, quantity: 1 }]
+              }}
+              style={{ borderColor: "#c9a227", color: "#b38600" }}
+            >
               Get Pro
-            </a>
+            </TrackedLink>
             <Link className="button button-secondary" href="/reviews">
               Read reviews
             </Link>
@@ -608,9 +645,16 @@ export default async function PricingPage() {
         </div>
 
         <div className="pricing-mobile-cta">
-          <Link className="button button-primary" href="/app/practice?quickStart=1">
+          <TrackedLink
+            className="button button-primary"
+            href="/app/practice?quickStart=1"
+            analyticsEvent="pricing_cta_click"
+            analyticsPath="/pricing/mobile-start-free"
+            gaEvent="select_content"
+            gaParams={{ content_type: "pricing_cta", item_id: "pricing_mobile_start_free", destination: "/app/practice?quickStart=1" }}
+          >
             Start free — no card needed
-          </Link>
+          </TrackedLink>
         </div>
       </main>
     </>

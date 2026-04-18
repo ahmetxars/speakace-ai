@@ -11,7 +11,10 @@ export type AnalyticsEventName =
   | "session_replay_view"
   | "teacher_note_saved"
   | "institution_admin_view"
-  | "analytics_dashboard_view";
+  | "analytics_dashboard_view"
+  | "marketing_cta_click"
+  | "pricing_cta_click"
+  | "checkout_cta_click";
 
 export type AnalyticsEvent = {
   id: string;

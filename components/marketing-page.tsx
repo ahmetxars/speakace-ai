@@ -1,7 +1,6 @@
 "use client";
 
 import type { Route } from "next";
-import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -19,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAppState } from "@/components/providers";
 import { AdSenseUnit } from "@/components/adsense-unit";
+import { TrackedLink } from "@/components/tracked-link";
 
 type MarketingPageProps = {
   eyebrow: string;
@@ -441,7 +441,7 @@ const itemVariants = {
 };
 
 export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: MarketingPageProps) {
-  const { language } = useAppState();
+  const { language, currentUser } = useAppState();
   const t = sectionCopy[language === "tr" ? "tr" : "en"];
   const primaryHref = ctaHref as Route;
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -550,8 +550,13 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                 transition={{ duration: 0.8, delay: 0.3 }}
               >
                 <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                  <Link
+                  <TrackedLink
                     href={primaryHref}
+                    userId={currentUser?.id}
+                    analyticsEvent="marketing_cta_click"
+                    analyticsPath="/#hero-primary"
+                    gaEvent="select_content"
+                    gaParams={{ content_type: "cta", item_id: "hero_primary_start_practice", destination: primaryHref }}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
@@ -573,11 +578,16 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                     >
                       <ArrowRight size={18} />
                     </motion.span>
-                  </Link>
+                  </TrackedLink>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                  <a
+                  <TrackedLink
                     href="#how-it-works"
+                    userId={currentUser?.id}
+                    analyticsEvent="marketing_cta_click"
+                    analyticsPath="/#hero-secondary-demo"
+                    gaEvent="select_content"
+                    gaParams={{ content_type: "cta", item_id: "hero_secondary_how_it_works", destination: "#how-it-works" }}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
@@ -593,7 +603,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                     }}
                   >
                     {t.demo}
-                  </a>
+                  </TrackedLink>
                 </motion.div>
               </motion.div>
 
@@ -996,8 +1006,13 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                     <p style={{ fontSize: "0.92rem", color: "var(--muted-foreground)", lineHeight: 1.7, marginBottom: "0.9rem" }}>{segment.body}</p>
                     <p style={{ fontSize: "0.84rem", lineHeight: 1.6, color: "var(--foreground)", opacity: 0.82 }}>{segment.outcome}</p>
                   </div>
-                  <Link
+                  <TrackedLink
                     href={segment.href as Route}
+                    userId={currentUser?.id}
+                    analyticsEvent="marketing_cta_click"
+                    analyticsPath={`/segment:${segment.title}`}
+                    gaEvent="select_content"
+                    gaParams={{ content_type: "segment_cta", item_id: segment.title, destination: segment.href }}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
@@ -1010,7 +1025,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                   >
                     {segment.cta}
                     <ArrowRight size={15} />
-                  </Link>
+                  </TrackedLink>
                 </motion.div>
               );
             })}
@@ -1132,8 +1147,13 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
               <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)" }}>{t.howCtaMeta}</p>
             </div>
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-              <Link
+              <TrackedLink
                 href={primaryHref}
+                userId={currentUser?.id}
+                analyticsEvent="marketing_cta_click"
+                analyticsPath="/#how-it-works-cta"
+                gaEvent="select_content"
+                gaParams={{ content_type: "cta", item_id: "how_it_works_start_practice", destination: primaryHref }}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -1151,7 +1171,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
               >
                 {t.cta}
                 <ArrowRight size={16} />
-              </Link>
+              </TrackedLink>
             </motion.div>
           </motion.div>
         </div>
@@ -1374,12 +1394,28 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
               </h2>
             </div>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-              <Link href="/free-ielts-speaking-test" style={{ display: "inline-flex", alignItems: "center", padding: "0.75rem 1.5rem", fontSize: "0.9375rem", fontWeight: 700, color: "white", background: "var(--primary)", borderRadius: "10px", textDecoration: "none" }}>
+              <TrackedLink
+                href="/free-ielts-speaking-test"
+                userId={currentUser?.id}
+                analyticsEvent="marketing_cta_click"
+                analyticsPath="/#inline-promo-free-test"
+                gaEvent="select_content"
+                gaParams={{ content_type: "cta", item_id: "inline_promo_free_test", destination: "/free-ielts-speaking-test" }}
+                style={{ display: "inline-flex", alignItems: "center", padding: "0.75rem 1.5rem", fontSize: "0.9375rem", fontWeight: 700, color: "white", background: "var(--primary)", borderRadius: "10px", textDecoration: "none" }}
+              >
                 Free test
-              </Link>
-              <Link href="/blog" style={{ display: "inline-flex", alignItems: "center", padding: "0.75rem 1.5rem", fontSize: "0.9375rem", fontWeight: 600, color: "var(--foreground)", background: "oklch(1 0 0 / 8%)", border: "1px solid oklch(1 0 0 / 12%)", borderRadius: "10px", textDecoration: "none" }}>
+              </TrackedLink>
+              <TrackedLink
+                href="/blog"
+                userId={currentUser?.id}
+                analyticsEvent="marketing_cta_click"
+                analyticsPath="/#inline-promo-guides"
+                gaEvent="select_content"
+                gaParams={{ content_type: "cta", item_id: "inline_promo_guides", destination: "/blog" }}
+                style={{ display: "inline-flex", alignItems: "center", padding: "0.75rem 1.5rem", fontSize: "0.9375rem", fontWeight: 600, color: "var(--foreground)", background: "oklch(1 0 0 / 8%)", border: "1px solid oklch(1 0 0 / 12%)", borderRadius: "10px", textDecoration: "none" }}
+              >
                 Read guides →
-              </Link>
+              </TrackedLink>
             </div>
           </motion.div>
         </div>
@@ -1478,8 +1514,13 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
             {t.ctaFinalBody}
           </p>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-            <Link
+            <TrackedLink
               href={primaryHref}
+              userId={currentUser?.id}
+              analyticsEvent="marketing_cta_click"
+              analyticsPath="/#final-cta"
+              gaEvent="select_content"
+              gaParams={{ content_type: "cta", item_id: "final_cta_start_practice", destination: primaryHref }}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -1496,7 +1537,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
             >
               {t.ctaFinalButton}
               <ArrowRight size={18} />
-            </Link>
+            </TrackedLink>
           </motion.div>
         </motion.div>
       </section>
