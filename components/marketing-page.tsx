@@ -690,7 +690,12 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
         </div>
       </section>
 
-      <section style={{ padding: "5rem 1.5rem", background: "linear-gradient(180deg, oklch(1 0 0 / 0.01), oklch(0.98 0.01 250 / 0.08))" }}>
+      <section
+        style={{
+          padding: "5rem 1.5rem",
+          background: "linear-gradient(180deg, color-mix(in oklch, var(--background) 94%, white 6%), color-mix(in oklch, var(--surface-strong) 88%, var(--background) 12%))"
+        }}
+      >
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
           <motion.div
             style={{ textAlign: "center", marginBottom: "2rem" }}
@@ -780,7 +785,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                       style={{
                         borderRadius: "16px",
                         padding: "0.95rem",
-                        background: "oklch(0.98 0.01 250 / 0.55)",
+                        background: "color-mix(in oklch, var(--surface-strong) 86%, var(--card) 14%)",
                         border: "1px solid var(--border)",
                         display: "grid",
                         gap: "0.55rem"
@@ -797,7 +802,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
             <div
               className="marketing-demo-card"
               style={{
-                background: "linear-gradient(180deg, rgba(255,255,255,0.92), rgba(247,250,255,0.92))",
+                background: "linear-gradient(180deg, color-mix(in oklch, var(--card) 94%, white 6%), color-mix(in oklch, var(--surface-strong) 88%, var(--card) 12%))",
                 border: "1px solid var(--border)",
                 borderRadius: "22px",
                 boxShadow: "0 24px 60px oklch(0.22 0.03 250 / 0.08)"
@@ -826,7 +831,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                       alignItems: "flex-start",
                       padding: "0.95rem 1rem",
                       borderRadius: "16px",
-                      background: "oklch(0.99 0.005 250 / 0.9)",
+                      background: "color-mix(in oklch, var(--card) 82%, var(--surface-strong) 18%)",
                       border: "1px solid var(--border)"
                     }}
                   >
@@ -1353,7 +1358,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                 style={{
                   borderRadius: "18px",
                   padding: "1.35rem",
-                  background: "linear-gradient(180deg, rgba(255,255,255,0.85), rgba(246,248,252,0.85))",
+                  background: "linear-gradient(180deg, color-mix(in oklch, var(--card) 92%, white 8%), color-mix(in oklch, var(--surface-strong) 86%, var(--card) 14%))",
                   border: "1px solid var(--border)"
                 }}
               >
