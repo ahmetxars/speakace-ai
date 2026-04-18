@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CheckCircle2, Clock3, GraduationCap, School, TrendingUp } from "lucide-react";
 import { MarketingSchema } from "@/components/marketing-schema";
 import { PricingCards } from "@/components/pricing-cards";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
@@ -21,6 +22,44 @@ const pricingCopy = {
     corePromise: "Core promise",
     corePromiseValue: "Full feedback after every speaking attempt",
     price: "Price",
+    decisionEyebrow: "Buying clarity",
+    decisionTitle: "Choose the plan by the kind of progress you want",
+    decisionSubtitle: "The strongest pricing pages do not just list features. They explain which workflow you are actually buying.",
+    decisionCards: [
+      {
+        icon: GraduationCap,
+        title: "Free",
+        body: "Best if you want to test the scoring flow, see your transcript, and confirm the product fits your exam prep style.",
+        fit: "Use this if you are still evaluating the workflow."
+      },
+      {
+        icon: TrendingUp,
+        title: "Plus",
+        body: "Best if you want daily speaking volume, deeper feedback, and a retry loop strong enough to move your score faster.",
+        fit: "Use this if you want steady band improvement without expensive tutoring."
+      },
+      {
+        icon: School,
+        title: "Pro",
+        body: "Best if you need maximum volume, stronger tracking, and a plan that supports heavier practice or coaching workflows.",
+        fit: "Use this if speaking practice is already a serious weekly routine."
+      }
+    ],
+    roiEyebrow: "Why it pays off",
+    roiTitle: "What you are really paying for is repetition with useful feedback",
+    roiPoints: [
+      "One weak answer becomes a scored retry instead of a dead end.",
+      "Daily volume makes improvement measurable instead of random.",
+      "Full transcript review shows exactly why the score is stuck.",
+      "The plan costs less than relying only on private speaking lessons."
+    ],
+    checkoutEyebrow: "Before checkout",
+    checkoutTitle: "What happens after you upgrade",
+    checkoutSteps: [
+      "You keep the same account and unlock more daily speaking volume.",
+      "Billing success refreshes your plan automatically inside SpeakAce.",
+      "Your next practice session opens with the upgraded feedback flow."
+    ],
     free: "Free",
     start: "Start Speaking Now",
     faqTitle: "Common buying questions"
@@ -39,6 +78,44 @@ const pricingCopy = {
     corePromise: "Ana vaat",
     corePromiseValue: "Her denemeden sonra tam geri bildirim",
     price: "Fiyat",
+    decisionEyebrow: "Satın alma netliği",
+    decisionTitle: "Planı, istediğin gelişim biçimine göre seç",
+    decisionSubtitle: "Güçlü fiyat sayfaları sadece özellik saymaz. Aslında hangi çalışma akışını satın aldığını da açıklar.",
+    decisionCards: [
+      {
+        icon: GraduationCap,
+        title: "Ücretsiz",
+        body: "Skorlama akışını görmek, transcript’i incelemek ve ürünün çalışma tarzına uyup uymadığını anlamak için uygun.",
+        fit: "Önce ürünü ve akışı değerlendirmek istiyorsan bunu kullan."
+      },
+      {
+        icon: TrendingUp,
+        title: "Plus",
+        body: "Günlük speaking hacmi, daha derin geri bildirim ve skoru daha hızlı hareket ettiren retry döngüsü isteyenler için uygun.",
+        fit: "Pahalı özel ders olmadan düzenli band gelişimi istiyorsan bunu kullan."
+      },
+      {
+        icon: School,
+        title: "Pro",
+        body: "Daha yüksek hacim, daha güçlü takip ve yoğun pratik ya da koçluk akışı isteyen kullanıcılar için uygun.",
+        fit: "Speaking pratiği zaten ciddi bir haftalık rutine dönüştüyse bunu kullan."
+      }
+    ],
+    roiEyebrow: "Neden karşılığını verir",
+    roiTitle: "Aslında satın aldığın şey, faydalı geri bildirimle tekrar edebilmek",
+    roiPoints: [
+      "Zayıf bir cevap çıkmaz sokak olmak yerine skorlu bir retry denemesine dönüşür.",
+      "Günlük hacim sayesinde gelişim rastgele değil ölçülebilir olur.",
+      "Tam transcript incelemesi skorun neden takıldığını net gösterir.",
+      "Plan, sadece özel dersle ilerlemeye kıyasla çok daha düşük maliyetlidir."
+    ],
+    checkoutEyebrow: "Checkout öncesi",
+    checkoutTitle: "Yükselttikten sonra ne olur",
+    checkoutSteps: [
+      "Aynı hesapla devam eder ve daha yüksek günlük speaking hacmini açarsın.",
+      "Billing success ekranı planını SpeakAce içinde otomatik yeniler.",
+      "Sonraki practice oturumun yükseltilmiş geri bildirim akışıyla açılır."
+    ],
     free: "Ücretsiz",
     start: "Konuşmaya başla",
     faqTitle: "Sık sorulan satın alma soruları"
@@ -290,6 +367,43 @@ export default async function PricingPage() {
           ))}
         </div>
 
+        <div className="card" style={{ padding: "1.4rem", display: "grid", gap: "1.1rem" }}>
+          <div className="section-head" style={{ gap: "0.35rem", marginBottom: 0 }}>
+            <span className="eyebrow">{copy.decisionEyebrow}</span>
+            <h2 style={{ margin: 0 }}> {copy.decisionTitle}</h2>
+            <p style={{ margin: 0 }}>{copy.decisionSubtitle}</p>
+          </div>
+          <div className="marketing-grid">
+            {copy.decisionCards.map((item) => {
+              const Icon = item.icon;
+              return (
+                <article key={item.title} className="card feature-card" style={{ padding: "1.3rem" }}>
+                  <div
+                    style={{
+                      width: "2.8rem",
+                      height: "2.8rem",
+                      borderRadius: "14px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "rgba(217, 93, 57, 0.10)",
+                      color: "var(--accent)",
+                      marginBottom: "0.85rem"
+                    }}
+                  >
+                    <Icon size={20} />
+                  </div>
+                  <h3>{item.title}</h3>
+                  <p>{item.body}</p>
+                  <p className="practice-copy" style={{ marginTop: "0.6rem", fontWeight: 600 }}>
+                    {item.fit}
+                  </p>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="stats-strip">
           <div className="card stat-strip-card">
             <div className="practice-meta">{copy.launchOffer}</div>
@@ -314,6 +428,67 @@ export default async function PricingPage() {
           <p className="practice-copy">
             If you want more than one speaking attempt per week, a structured AI review loop is much cheaper than relying only on private tutoring.
           </p>
+        </div>
+
+        <div className="marketing-grid">
+          <article className="card feature-card" style={{ padding: "1.4rem" }}>
+            <span className="eyebrow">{copy.roiEyebrow}</span>
+            <h2 style={{ margin: "0.45rem 0 0.8rem" }}>{copy.roiTitle}</h2>
+            <div style={{ display: "grid", gap: "0.8rem" }}>
+              {copy.roiPoints.map((item) => (
+                <div key={item} style={{ display: "flex", gap: "0.7rem", alignItems: "flex-start" }}>
+                  <CheckCircle2 size={18} style={{ color: "var(--accent)", flexShrink: 0, marginTop: "0.15rem" }} />
+                  <p style={{ margin: 0 }}>{item}</p>
+                </div>
+              ))}
+            </div>
+          </article>
+          <article className="card feature-card" style={{ padding: "1.4rem" }}>
+            <span className="eyebrow">{copy.checkoutEyebrow}</span>
+            <h2 style={{ margin: "0.45rem 0 0.8rem" }}>{copy.checkoutTitle}</h2>
+            <div style={{ display: "grid", gap: "0.85rem" }}>
+              {copy.checkoutSteps.map((item, index) => (
+                <div key={item} style={{ display: "flex", gap: "0.8rem", alignItems: "flex-start" }}>
+                  <div
+                    style={{
+                      width: "1.7rem",
+                      height: "1.7rem",
+                      borderRadius: "999px",
+                      background: "rgba(27, 111, 117, 0.12)",
+                      color: "var(--primary)",
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      marginTop: "0.1rem"
+                    }}
+                  >
+                    {index + 1}
+                  </div>
+                  <p style={{ margin: 0 }}>{item}</p>
+                </div>
+              ))}
+            </div>
+            <div
+              style={{
+                marginTop: "1rem",
+                padding: "0.95rem 1rem",
+                borderRadius: "16px",
+                background: "rgba(255, 248, 242, 0.88)",
+                border: "1px solid rgba(217, 93, 57, 0.16)"
+              }}
+            >
+              <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", marginBottom: "0.35rem" }}>
+                <Clock3 size={17} style={{ color: "var(--accent)" }} />
+                <strong>Fastest path</strong>
+              </div>
+              <p style={{ margin: 0 }}>
+                Start on free, confirm the workflow, then upgrade the moment you want more daily volume and stronger retry feedback.
+              </p>
+            </div>
+          </article>
         </div>
 
         <PricingCards />
