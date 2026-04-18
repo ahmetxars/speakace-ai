@@ -5,6 +5,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
 const PRACTICE_URL = `${SITE_URL}/app/practice`;
 const PRICING_URL = `${SITE_URL}/pricing`;
 const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&campaign=onboarding_email`;
+let emailSequenceSchemaEnsured = false;
 
 export const ONBOARDING_EMAIL_SCHEDULE: Array<{ dayOffset: number; emailNumber: number }> = [
   { dayOffset: 0, emailNumber: 1 },
@@ -20,6 +21,65 @@ export const ONBOARDING_EMAIL_SCHEDULE: Array<{ dayOffset: number; emailNumber: 
   { dayOffset: 75, emailNumber: 11 },
   { dayOffset: 90, emailNumber: 12 }
 ];
+
+async function ensureEmailSequenceSchema() {
+  if (!hasDatabaseUrl() || emailSequenceSchemaEnsured) return;
+
+  const sql = getSql();
+  const onboardingColumn = await sql<Array<{ exists: boolean }>>`
+    select exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'users'
+        and column_name = 'onboarding_emails_sent'
+    ) as exists
+  `;
+  const hadOnboardingColumn = Boolean(onboardingColumn[0]?.exists);
+
+  await sql`
+    alter table users
+    add column if not exists onboarding_emails_sent integer not null default 0
+  `;
+
+  await sql`
+    create table if not exists email_log (
+      id bigserial primary key,
+      user_id text references users(id) on delete set null,
+      user_email text not null,
+      template text not null,
+      subject text not null,
+      status text not null,
+      error_message text,
+      sent_at timestamptz not null default now()
+    )
+  `;
+
+  await sql`
+    create index if not exists idx_email_log_user_id
+    on email_log(user_id, sent_at desc)
+  `;
+
+  if (!hadOnboardingColumn) {
+    await sql`
+      update users
+      set onboarding_emails_sent = 1
+      where coalesce(onboarding_emails_sent, 0) = 0
+        and created_at < now() - interval '1 hour'
+        and email not like '%@example.com'
+        and email not like '%@speakace.local'
+    `;
+
+    await sql`
+      update users
+      set email_opt_out = true
+      where email like '%@example.com'
+         or email like '%@speakace.local'
+    `;
+  }
+
+  emailSequenceSchemaEnsured = true;
+}
 
 function buildEmail1(name: string) {
   const greeting = name.trim() ? name.trim() : "there";
@@ -370,6 +430,7 @@ export async function sendOnboardingEmail(
     return { ok: false, skipped: true };
   }
 
+  await ensureEmailSequenceSchema();
   const sql = getSql();
   const rows = await sql<Array<{ email: string; name: string; email_opt_out: boolean }>>`
     select email, name, email_opt_out from users where id = ${userId} limit 1
@@ -428,6 +489,7 @@ export async function sendOnboardingEmail(
 export async function getUsersForOnboardingEmail(dayOffset: number): Promise<Array<{ id: string; onboardingEmailsSent: number }>> {
   if (!hasDatabaseUrl()) return [];
 
+  await ensureEmailSequenceSchema();
   const sql = getSql();
   // Get users whose account was created ~dayOffset days ago (between dayOffset-0.5 and dayOffset+0.5 days)
   const rows = await sql<Array<{ id: string; onboarding_emails_sent: number }>>`
@@ -459,6 +521,7 @@ export async function getUsersDueForNextOnboardingEmail(limit = 100): Promise<
 > {
   if (!hasDatabaseUrl()) return [];
 
+  await ensureEmailSequenceSchema();
   const sql = getSql();
   const maxEmailNumber = ONBOARDING_EMAIL_SCHEDULE[ONBOARDING_EMAIL_SCHEDULE.length - 1]?.emailNumber ?? 0;
   const rows = await sql<
@@ -530,6 +593,7 @@ export async function getUsersDueForNextOnboardingEmail(limit = 100): Promise<
 export async function markOnboardingEmailSent(userId: string, emailNumber: number): Promise<void> {
   if (!hasDatabaseUrl()) return;
 
+  await ensureEmailSequenceSchema();
   const sql = getSql();
   await sql`
     update users
