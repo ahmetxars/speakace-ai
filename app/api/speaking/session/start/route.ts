@@ -21,7 +21,8 @@ export async function POST(request: Request) {
       examType: body.examType,
       taskType: body.taskType,
       difficulty: body.difficulty,
-      promptId: body.promptId
+      promptId: body.promptId,
+      customPrompt: body.customPrompt
     });
 
     if ("error" in result) {

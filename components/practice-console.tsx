@@ -15,7 +15,7 @@ const taskOptions: Record<ExamType, TaskType[]> = {
 };
 
 type PracticeMode = "idle" | "permission" | "prep" | "speak" | "saving" | "done";
-type RunMode = "drill" | "simulation" | "pronunciation";
+type RunMode = "drill" | "simulation" | "pronunciation" | "interview";
 
 type SimulationState = {
   examType: ExamType;
@@ -24,6 +24,22 @@ type SimulationState = {
   completed: Array<{ sessionId: string; taskType: TaskType; title: string; score?: number }>;
   startedAt: string;
   finishedAt?: string;
+};
+
+type InterviewState = {
+  step: number;
+  history: Array<{
+    sessionId: string;
+    promptTitle: string;
+    score?: number;
+  }>;
+  followUps: Array<{
+    id: string;
+    title: string;
+    prompt: string;
+  }>;
+  lastPromptTitle?: string;
+  completedAt?: string;
 };
 
 type StoredMockExamSummary = {
@@ -95,6 +111,7 @@ export function PracticeConsole() {
   const [targetScore, setTargetScore] = useState("");
   const [runMode, setRunMode] = useState<RunMode>("drill");
   const [simulationState, setSimulationState] = useState<SimulationState | null>(null);
+  const [interviewState, setInterviewState] = useState<InterviewState | null>(null);
   const [retryQueue, setRetryQueue] = useState<RetryQueueItem[]>([]);
   const [drillGoal, setDrillGoal] = useState<DrillGoal>("balanced");
   const [answerMode, setAnswerMode] = useState<AnswerMode>("natural");
@@ -197,6 +214,7 @@ export function PracticeConsole() {
   const resetSession = useCallback((message?: string) => {
     cleanupMedia();
     sessionRef.current = null;
+    setInterviewState(null);
     setMode("idle");
     setRemainingSeconds(0);
     setSession(null);
@@ -263,6 +281,37 @@ export function PracticeConsole() {
           void trackClientEvent({ userId: currentUser.id, event: "simulation_complete", path: "/app/practice" });
         }
       }
+      return evaluatedSession;
+    }
+
+    if (runMode === "interview") {
+      const nextStep = (interviewState?.step ?? 0) + 1;
+      const followUps = nextStep >= 3 ? [] : buildInterviewFollowUps(evaluatedSession, tr);
+
+      setInterviewState((current) => ({
+        step: nextStep,
+        history: [
+          ...(current?.history ?? []),
+          {
+            sessionId,
+            promptTitle: evaluatedSession.prompt.title,
+            score: evaluatedSession.report?.overall
+          }
+        ],
+        followUps,
+        lastPromptTitle: evaluatedSession.prompt.title,
+        completedAt: nextStep >= 3 ? new Date().toISOString() : undefined
+      }));
+
+      setStatus(
+        nextStep >= 3
+          ? tr
+            ? "Interview modu tamamlandi. Tum turleri bitirdin ve son rapor hazir."
+            : "Interview mode is complete. You finished all rounds and your final report is ready."
+          : tr
+            ? "Ilk cevap hazir. Simdi daha derin bir follow-up sorusu secip devam et."
+            : "Your first answer is ready. Now choose a deeper follow-up question and continue."
+      );
       return evaluatedSession;
     }
 
@@ -425,6 +474,13 @@ export function PracticeConsole() {
     taskType?: TaskType;
     difficulty?: Difficulty;
     promptId?: string;
+    customPrompt?: {
+      id?: string;
+      title: string;
+      prompt: string;
+      prepSeconds?: number;
+      speakingSeconds?: number;
+    };
   }) => {
     setError(null);
 
@@ -432,6 +488,11 @@ export function PracticeConsole() {
     const resolvedTaskType = overrides?.taskType ?? taskType;
     const resolvedDifficulty = overrides?.difficulty ?? difficulty;
     const resolvedPromptId = overrides?.promptId ?? preferredPromptId;
+    const customPrompt = overrides?.customPrompt;
+
+    if (runMode === "interview" && !customPrompt) {
+      setInterviewState({ step: 0, history: [], followUps: [] });
+    }
 
     const queue = buildSimulationQueue(resolvedExamType);
     const currentSimulation = runMode === "simulation"
@@ -460,7 +521,7 @@ export function PracticeConsole() {
       ? currentSimulation?.queue[currentSimulation.currentIndex] ?? queue[0]
       : adaptivePlan?.taskType ?? resolvedTaskType;
     const requestedDifficulty = runMode === "simulation" ? resolvedDifficulty : adaptivePlan?.difficulty ?? resolvedDifficulty;
-    const requestedPromptId = runMode === "simulation" ? undefined : resolvedPromptId ?? adaptivePlan?.promptId;
+    const requestedPromptId = runMode === "simulation" || customPrompt ? undefined : resolvedPromptId ?? adaptivePlan?.promptId;
 
     if (runMode === "simulation" && (!simulationState || simulationState.examType !== resolvedExamType || simulationState.finishedAt)) {
       setSimulationState(currentSimulation);
@@ -484,6 +545,7 @@ export function PracticeConsole() {
         taskType: requestedTaskType,
         difficulty: requestedDifficulty,
         promptId: requestedPromptId,
+        customPrompt,
         userId: currentUser?.id
       })
     });
@@ -548,9 +610,18 @@ export function PracticeConsole() {
       return;
     }
 
+    if (runMode === "interview" && mode === "idle") {
+      setInterviewState(null);
+      setStatus(tr ? "Interview modu kapatildi." : "Interview mode closed.");
+      return;
+    }
+
     if (mode === "prep" || mode === "permission") {
       if (runMode === "simulation") {
         setSimulationState(null);
+      }
+      if (runMode === "interview") {
+        setInterviewState(null);
       }
       resetSession(tr ? "Session kapatildi." : "Session closed.");
       return;
@@ -669,6 +740,10 @@ export function PracticeConsole() {
   );
   const mockReportStorageKey = currentUser ? `speakace-mock-report-${currentUser.id}` : "speakace-mock-report-guest";
   const pronunciationGuide = useMemo(() => buildPronunciationGuide(session?.prompt.prompt ?? activeTaskLayout.overlayPrompt, tr), [activeTaskLayout.overlayPrompt, session?.prompt.prompt, tr]);
+  const interviewGuide = useMemo(
+    () => buildInterviewGuide(session?.prompt.title ?? activeTaskLayout.overlayPrompt, tr, interviewState?.step ?? 0),
+    [activeTaskLayout.overlayPrompt, interviewState?.step, session?.prompt.title, tr]
+  );
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!simulationState?.finishedAt || !simulationAverage) return;
@@ -720,6 +795,21 @@ export function PracticeConsole() {
     await pickPromptAndStart(randomPrompt.id);
   };
 
+  const continueInterviewWithPrompt = async (followUp: { id: string; title: string; prompt: string }) => {
+    await startSession({
+      examType,
+      taskType,
+      difficulty,
+      customPrompt: {
+        id: followUp.id,
+        title: followUp.title,
+        prompt: followUp.prompt,
+        prepSeconds: session?.prompt.prepSeconds ?? 20,
+        speakingSeconds: session?.prompt.speakingSeconds ?? 45
+      }
+    });
+  };
+
   return (
     <div className="page-shell section">
 
@@ -749,6 +839,64 @@ export function PracticeConsole() {
           <p style={{ color: "var(--muted-foreground)", margin: 0, fontSize: "0.95rem" }}>
             {tr ? "Sınavı seç, konu seç, başla." : "Pick your exam, choose a topic, start speaking."}
           </p>
+        </div>
+
+        <div style={{ display: "grid", gap: "0.7rem" }}>
+          <strong style={{ fontSize: "0.95rem" }}>{tr ? "Çalışma modu" : "Practice mode"}</strong>
+          <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+            {[
+              {
+                value: "drill",
+                label: tr ? "Hızlı drill" : "Quick drill",
+                description: tr ? "Tek cevap, hızlı skor ve retry yönü." : "One answer, quick score, and retry direction."
+              },
+              {
+                value: "interview",
+                label: tr ? "Interview mode" : "Interview mode",
+                description: tr ? "İlk cevaptan sonra follow-up sorularla derine iner." : "Adds deeper follow-up questions after your first answer."
+              },
+              {
+                value: "pronunciation",
+                label: tr ? "Telaffuz odağı" : "Pronunciation focus",
+                description: tr ? "Ritim, vurgu ve kelime sonları için kontrollü çalışma." : "Controlled practice for stress, rhythm, and word endings."
+              },
+              {
+                value: "simulation",
+                label: tr ? "Mock exam" : "Mock exam",
+                description: tr ? "Tam sınav akışıyla arka arkaya görevler." : "Full exam flow with back-to-back tasks."
+              }
+            ].map((option) => {
+              const active = runMode === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    if (mode !== "idle") return;
+                    setRunMode(option.value as RunMode);
+                    setInterviewState(null);
+                    if (option.value !== "simulation") {
+                      setSimulationState(null);
+                    }
+                  }}
+                  disabled={mode !== "idle"}
+                  style={{
+                    flex: "1 1 220px",
+                    textAlign: "left",
+                    padding: "0.95rem 1rem",
+                    borderRadius: 14,
+                    border: active ? "1.5px solid var(--primary)" : "1px solid var(--border)",
+                    background: active ? "color-mix(in oklch, var(--primary) 10%, var(--card) 90%)" : "var(--card)",
+                    color: "var(--foreground)",
+                    cursor: mode === "idle" ? "pointer" : "not-allowed"
+                  }}
+                >
+                  <div style={{ fontWeight: 700, marginBottom: "0.35rem", color: active ? "var(--primary)" : "var(--foreground)" }}>{option.label}</div>
+                  <div style={{ fontSize: "0.82rem", lineHeight: 1.55, color: "var(--muted-foreground)" }}>{option.description}</div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* EXAM + TASK SELECTOR */}
@@ -947,6 +1095,65 @@ export function PracticeConsole() {
           </div>
         ) : null}
 
+        {runMode === "interview" ? (
+          <div style={{ padding: "1.1rem", borderRadius: 14, border: "1px solid var(--border)", background: "var(--card)", display: "grid", gap: "0.75rem" }}>
+            <div>
+              <strong style={{ display: "block", marginBottom: "0.3rem" }}>{tr ? "Simulated interview coach" : "Simulated interview coach"}</strong>
+              <p style={{ margin: 0, color: "var(--muted-foreground)", lineHeight: 1.6 }}>{interviewGuide.summary}</p>
+            </div>
+            <div style={{ display: "grid", gap: "0.55rem" }}>
+              {interviewGuide.tips.map((tip) => (
+                <div key={tip} style={{ padding: "0.75rem 0.9rem", borderRadius: 12, background: "color-mix(in oklch, var(--surface-strong) 25%, var(--card) 75%)", border: "1px solid var(--border)", fontSize: "0.86rem", lineHeight: 1.6 }}>
+                  {tip}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {runMode === "interview" && mode === "done" && interviewState?.followUps.length ? (
+          <div style={{ padding: "1.1rem", borderRadius: 14, border: "1px solid color-mix(in oklch, var(--primary) 28%, var(--border) 72%)", background: "color-mix(in oklch, var(--primary) 7%, var(--card) 93%)", display: "grid", gap: "0.8rem" }}>
+            <div>
+              <strong style={{ display: "block", marginBottom: "0.3rem" }}>{tr ? "Sıradaki follow-up sorusu" : "Next follow-up question"}</strong>
+              <p style={{ margin: 0, color: "var(--muted-foreground)", lineHeight: 1.6 }}>
+                {tr ? "Bu mod şimdi cevabını daha derinleştiriyor. Bir follow-up seç ve aynı konu etrafında devam et." : "This mode now pushes your answer deeper. Pick one follow-up and continue around the same topic."}
+              </p>
+            </div>
+            <div style={{ display: "grid", gap: "0.7rem" }}>
+              {interviewState.followUps.map((followUp) => (
+                <button
+                  key={followUp.id}
+                  type="button"
+                  onClick={() => void continueInterviewWithPrompt(followUp)}
+                  className="button button-secondary"
+                  style={{ justifyContent: "flex-start", textAlign: "left", padding: "0.95rem 1rem", whiteSpace: "normal", lineHeight: 1.55 }}
+                >
+                  {followUp.prompt}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {runMode === "interview" && interviewState?.history.length ? (
+          <div style={{ padding: "1.1rem", borderRadius: 14, border: "1px solid var(--border)", background: "var(--card)", display: "grid", gap: "0.8rem" }}>
+            <strong>{tr ? "Interview ilerleme özeti" : "Interview progress"}</strong>
+            <div style={{ display: "grid", gap: "0.6rem" }}>
+              {interviewState.history.map((entry, index) => (
+                <div key={entry.sessionId} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", padding: "0.8rem 0.9rem", borderRadius: 12, background: "var(--secondary)", border: "1px solid var(--border)" }}>
+                  <div>
+                    <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--primary)", marginBottom: "0.25rem" }}>
+                      {tr ? `${index + 1}. tur` : `Round ${index + 1}`}
+                    </div>
+                    <div style={{ fontSize: "0.88rem", lineHeight: 1.55 }}>{entry.promptTitle}</div>
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: "1rem", alignSelf: "center" }}>{entry.score ?? "-"}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {/* ERROR */}
         {error ? (
           <div style={{ padding: "1rem", borderRadius: 12, background: "oklch(0.55 0.2 20 / 0.08)", border: "1px solid oklch(0.55 0.2 20 / 0.2)", color: "oklch(0.45 0.18 20)" }}>
@@ -962,7 +1169,15 @@ export function PracticeConsole() {
           disabled={!currentUser || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
           style={{ width: "100%", padding: "1rem", fontSize: "1rem", fontWeight: 700, borderRadius: 14 }}
         >
-          {mode === "saving" ? (tr ? "Kaydediliyor..." : "Saving...") : (tr ? "🎙 Konuşmaya Başla" : "🎙 Start Speaking")}
+          {mode === "saving"
+            ? (tr ? "Kaydediliyor..." : "Saving...")
+            : runMode === "simulation"
+              ? (tr ? "🧪 Mock Exam'i Başlat" : "🧪 Start Mock Exam")
+              : runMode === "interview"
+                ? (tr ? "🗣 Interview Modunu Başlat" : "🗣 Start Interview Mode")
+                : runMode === "pronunciation"
+                  ? (tr ? "🔊 Telaffuz Drillini Başlat" : "🔊 Start Pronunciation Drill")
+                  : (tr ? "🎙 Konuşmaya Başla" : "🎙 Start Speaking")}
         </button>
 
       </div>
@@ -986,18 +1201,22 @@ export function PracticeConsole() {
                 : mode === "prep"
                   ? runMode === "pronunciation"
                     ? tr ? "Geri sayim bitince telaffuz kaydi otomatik baslayacak" : "Pronunciation recording starts automatically after the countdown"
+                    : runMode === "interview"
+                      ? tr ? "Geri sayım bitince interview cevabın otomatik başlayacak" : "Your interview answer starts automatically after the countdown"
                     : tr ? "Geri sayim bitince kayit otomatik baslayacak" : "Recording starts automatically after the countdown"
                   : mode === "speak"
                     ? runMode === "pronunciation"
                       ? tr ? "Kelimeleri net bitir, vurguyu belirginlestir ve ritmi koru" : "Finish words clearly, stress key syllables, and keep a steady rhythm"
+                      : runMode === "interview"
+                        ? tr ? "Kısa ama gelişmiş cevap ver; follow-up bir sonraki turda gelecek" : "Give a concise but developed answer; the follow-up will come in the next round"
                       : tr ? "Net konus ve istersen erken bitir" : "Now speak clearly and keep going until the timer ends"
                     : tr ? "Cevabin kaydediliyor ve degerlendiriliyor" : "Saving and evaluating your answer"}
             </h2>
             <p className="practice-overlay-prompt">
               {mode === "permission"
-                ? tr ? "Tarayicin once mikrofon izni isteyecek. Izin verince geri sayim baslar." : "Your browser will ask for permission first. Once allowed, the countdown begins."
-                : mode === "saving"
-                  ? tr ? "Birkac saniye icinde transcript ve speaking analizi hazir olacak." : "Your transcript and speaking review will be ready in a few seconds."
+                  ? tr ? "Tarayicin once mikrofon izni isteyecek. Izin verince geri sayim baslar." : "Your browser will ask for permission first. Once allowed, the countdown begins."
+                  : mode === "saving"
+                    ? tr ? "Birkac saniye icinde transcript ve speaking analizi hazir olacak." : "Your transcript and speaking review will be ready in a few seconds."
                   : activeTaskLayout.overlayPrompt}
             </p>
             <div className="practice-overlay-mic" style={{ display: "grid", gap: "0.8rem", justifyItems: "center" }}>
@@ -1012,7 +1231,13 @@ export function PracticeConsole() {
               {(mode === "prep" || mode === "speak") ? (
                 <div className="card practice-tone-card practice-tone-card-cool practice-overlay-focus-card">
                   <strong style={{ display: "block", marginBottom: "0.35rem" }}>{tr ? "Bu denemedeki tek odak" : "One focus for this attempt"}</strong>
-                  <p style={{ margin: 0, lineHeight: 1.65 }}>{runMode === "pronunciation" ? pronunciationGuide.overlayFocus : focusInsight.primary}</p>
+                  <p style={{ margin: 0, lineHeight: 1.65 }}>
+                    {runMode === "pronunciation"
+                      ? pronunciationGuide.overlayFocus
+                      : runMode === "interview"
+                        ? interviewGuide.overlayFocus
+                        : focusInsight.primary}
+                  </p>
                 </div>
               ) : null}
             </div>
@@ -1078,6 +1303,64 @@ function buildPronunciationGuide(prompt: string, tr: boolean) {
           "Make the stressed key words slightly more prominent."
         ]
   };
+}
+
+function buildInterviewGuide(promptTitle: string, tr: boolean, step: number) {
+  const stage = step + 1;
+  return {
+    summary: tr
+      ? "Interview mode, ana cevaptan sonra seni daha net örnek, gerekçe ve karşılaştırma isteyen follow-up sorulara taşır."
+      : "Interview mode pushes you from a base answer into follow-up questions that demand clearer reasons, examples, and comparisons.",
+    overlayFocus: tr
+      ? `${stage}. tur odağı: kısa cevap verme; fikir + neden + küçük örnek zinciri kur.`
+      : `Round ${stage} focus: do not stop at a short answer; build an opinion + reason + mini-example chain.`,
+    tips: tr
+      ? [
+          `Bu turda "${promptTitle}" başlığını tek cümlede kapatma; cevabı bir neden ile büyüt.`,
+          "Cevabın sonunda küçük bir kişisel örnek veya sonuç ekle.",
+          "Takıldığında yeni fikir açmak yerine mevcut fikri netleştir."
+        ]
+      : [
+          `Do not close "${promptTitle}" in one sentence this round; expand it with a reason.`,
+          "End with one small personal example or consequence.",
+          "If you get stuck, clarify the current idea instead of opening a new one."
+        ]
+  };
+}
+
+function buildInterviewFollowUps(session: SpeakingSession, tr: boolean) {
+  const baseTitle = session.prompt.title;
+  const strongerLine = session.report?.improvedAnswer?.split(/(?<=[.!?])\s+/).find(Boolean) ?? "";
+  const weakestCategory = session.report?.categories.slice().sort((a, b) => a.score - b.score)[0]?.label;
+  const weaknessHint = weakestCategory?.toLowerCase().includes("pronunciation")
+    ? tr ? "aynı fikri daha yavaş ve net kur" : "say the same idea more slowly and clearly"
+    : weakestCategory?.toLowerCase().includes("topic")
+      ? tr ? "fikrini bir örnekle geliştir" : "develop the idea with one example"
+      : tr ? "nedenini daha net aç" : "open up your reason more clearly";
+
+  return [
+    {
+      id: `followup-${crypto.randomUUID()}`,
+      title: tr ? `${baseTitle} · Follow-up 1` : `${baseTitle} · Follow-up 1`,
+      prompt: tr
+        ? `"${baseTitle}" konusu için şimdi tek bir somut örnek ver ve bunun neden önemli olduğunu açıkla.`
+        : `For "${baseTitle}", give one concrete example now and explain why it matters.`
+    },
+    {
+      id: `followup-${crypto.randomUUID()}`,
+      title: tr ? `${baseTitle} · Follow-up 2` : `${baseTitle} · Follow-up 2`,
+      prompt: tr
+        ? `${weaknessHint.charAt(0).toUpperCase()}${weaknessHint.slice(1)}. Ardından önceki cevabını bir adım daha güçlü hale getir.`
+        : `${weaknessHint.charAt(0).toUpperCase()}${weaknessHint.slice(1)}. Then make your previous answer one step stronger.`
+    },
+    {
+      id: `followup-${crypto.randomUUID()}`,
+      title: tr ? `${baseTitle} · Follow-up 3` : `${baseTitle} · Follow-up 3`,
+      prompt: tr
+        ? `Bu fikirle ilgili farklı bir bakış açısını kabul et, sonra kendi görüşünü savun. ${strongerLine ? `İpucu: ${strongerLine}` : ""}`.trim()
+        : `Acknowledge a different point of view on this idea, then defend your own position. ${strongerLine ? `Hint: ${strongerLine}` : ""}`.trim()
+    }
+  ];
 }
 
 function extractFocusWords(prompt: string) {

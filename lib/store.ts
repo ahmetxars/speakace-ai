@@ -124,6 +124,13 @@ export async function createSession(input: {
   taskType: TaskType;
   difficulty: Difficulty;
   promptId?: string;
+  customPrompt?: {
+    id?: string;
+    title: string;
+    prompt: string;
+    prepSeconds?: number;
+    speakingSeconds?: number;
+  };
 }) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
@@ -148,7 +155,18 @@ export async function createSession(input: {
       seconds: usage?.speaking_seconds ?? 0
     };
 
-    const prompt = getPromptTemplate(input.examType, input.taskType, input.difficulty, input.promptId);
+    const prompt = input.customPrompt
+      ? {
+          id: input.customPrompt.id ?? `custom-${crypto.randomUUID()}`,
+          examType: input.examType,
+          taskType: input.taskType,
+          title: input.customPrompt.title,
+          prompt: input.customPrompt.prompt,
+          prepSeconds: input.customPrompt.prepSeconds ?? 20,
+          speakingSeconds: input.customPrompt.speakingSeconds ?? 45,
+          difficulty: input.difficulty
+        }
+      : getPromptTemplate(input.examType, input.taskType, input.difficulty, input.promptId);
     const nextSeconds = currentUsage.seconds + prompt.speakingSeconds;
 
     if (!member.isAdmin && currentUsage.sessions >= limits.sessionsPerDay) {
@@ -212,7 +230,18 @@ export async function createSession(input: {
   const limits = PLAN_LIMITS[member.plan];
   const usageKey = todayKey(input.userId);
   const currentUsage = store.usageByDay.get(usageKey) ?? { sessions: 0, seconds: 0 };
-  const prompt = getPromptTemplate(input.examType, input.taskType, input.difficulty, input.promptId);
+  const prompt = input.customPrompt
+    ? {
+        id: input.customPrompt.id ?? `custom-${crypto.randomUUID()}`,
+        examType: input.examType,
+        taskType: input.taskType,
+        title: input.customPrompt.title,
+        prompt: input.customPrompt.prompt,
+        prepSeconds: input.customPrompt.prepSeconds ?? 20,
+        speakingSeconds: input.customPrompt.speakingSeconds ?? 45,
+        difficulty: input.difficulty
+      }
+    : getPromptTemplate(input.examType, input.taskType, input.difficulty, input.promptId);
   const nextSeconds = currentUsage.seconds + prompt.speakingSeconds;
 
   if (!member.isAdmin && currentUsage.sessions >= limits.sessionsPerDay) {

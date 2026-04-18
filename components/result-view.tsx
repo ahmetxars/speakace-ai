@@ -7,8 +7,9 @@ import { ProgressSummary, SpeakingSession } from "@/lib/types";
 import { readStudyFolders, readStudyItems, writeStudyFolders, writeStudyItems } from "@/lib/study-lists";
 
 export function ResultView({ session, summary }: { session: SpeakingSession; summary: ProgressSummary }) {
-  const { language } = useAppState();
+  const { language, currentUser } = useAppState();
   const tr = language === "tr";
+  const canExportReport = Boolean(currentUser && currentUser.plan !== "free");
   const previousSession = summary.recentSessions.find((item) => item.id !== session.id && item.report);
   const delta = session.report && previousSession?.report ? Number((session.report.overall - previousSession.report.overall).toFixed(1)) : null;
   const qualityScore = session.transcriptQualityScore ?? 0;
@@ -134,6 +135,93 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         setSavedStudyList(true);
       }
     })();
+  };
+
+  const exportPdfReport = () => {
+    if (typeof window === "undefined") return;
+    const printWindow = window.open("", "_blank", "noopener,noreferrer,width=960,height=1200");
+    if (!printWindow) return;
+
+    const report = session.report;
+    const categoryMarkup = report
+      ? report.categories
+          .map(
+            (cat) => `
+              <div class="metric-row">
+                <span>${tr ? translateCategoryLabel(cat.label) : cat.label}</span>
+                <strong>${cat.score}</strong>
+              </div>
+            `
+          )
+          .join("")
+      : "";
+    const strengthsMarkup = report?.strengths.map((item) => `<li>${escapeHtml(item)}</li>`).join("") ?? "";
+    const improvementsMarkup = report?.improvements.map((item) => `<li>${escapeHtml(item)}</li>`).join("") ?? "";
+    const fillerMarkup = report?.fillerWords.length ? `<p>${report.fillerWords.map((item) => escapeHtml(item)).join(", ")}</p>` : "";
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>${escapeHtml(`${session.prompt.title} report`)}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; color: #111827; }
+            h1, h2, h3 { margin: 0 0 12px; }
+            p, li { line-height: 1.6; font-size: 14px; }
+            .hero { border: 1px solid #dbe3f0; border-radius: 18px; padding: 24px; margin-bottom: 24px; }
+            .score { font-size: 56px; font-weight: 800; color: #2563eb; margin: 8px 0; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+            .card { border: 1px solid #dbe3f0; border-radius: 16px; padding: 18px; break-inside: avoid; margin-bottom: 18px; }
+            .metric-row { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid #eef2f7; }
+            .metric-row:last-child { border-bottom: none; }
+            .eyebrow { text-transform: uppercase; letter-spacing: .12em; font-size: 11px; font-weight: 700; color: #2563eb; }
+            @media print { body { margin: 20px; } }
+          </style>
+        </head>
+        <body>
+          <section class="hero">
+            <div class="eyebrow">SpeakAce Report</div>
+            <h1>${escapeHtml(session.prompt.title)}</h1>
+            <p>${escapeHtml(`${session.examType} • ${session.taskType} • ${session.difficulty}`)}</p>
+            ${report ? `<div class="score">${report.overall}</div><p>${escapeHtml(report.scaleLabel)}</p>` : ""}
+          </section>
+          <section class="grid">
+            <div class="card">
+              <h2>${tr ? "Kategori skorları" : "Category scores"}</h2>
+              ${categoryMarkup}
+            </div>
+            <div class="card">
+              <h2>${tr ? "Sonraki adım" : "Next step"}</h2>
+              <p>${escapeHtml(report?.nextExercise ?? "")}</p>
+              <h3>${tr ? "Filler words" : "Filler words"}</h3>
+              ${fillerMarkup || `<p>${tr ? "Yok" : "None"}</p>`}
+            </div>
+          </section>
+          <section class="card">
+            <h2>${tr ? "Güçlü yönler" : "Strengths"}</h2>
+            <ul>${strengthsMarkup}</ul>
+          </section>
+          <section class="card">
+            <h2>${tr ? "Geliştirme alanları" : "Improve next"}</h2>
+            <ul>${improvementsMarkup}</ul>
+          </section>
+          <section class="card">
+            <h2>${tr ? "Senin transkriptin" : "Your transcript"}</h2>
+            <p>${escapeHtml(displayedRawTranscript ?? "")}</p>
+          </section>
+          <section class="card">
+            <h2>${tr ? "Düzeltilmiş versiyon" : "Corrected version"}</h2>
+            <p>${escapeHtml(report?.improvedAnswer ?? "")}</p>
+          </section>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    window.setTimeout(() => {
+      printWindow.print();
+    }, 150);
   };
 
   const handleAudioTimeUpdate = () => {
@@ -387,6 +475,11 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         <button type="button" className="button button-secondary" onClick={saveToStudyList} disabled={savedStudyList} style={{ flex: 1 }}>
           {savedStudyList ? (tr ? "✓ Kaydedildi" : "✓ Saved") : (tr ? "Kaydet" : "Save")}
         </button>
+        {canExportReport ? (
+          <button type="button" className="button button-secondary" onClick={exportPdfReport} style={{ flex: 1 }}>
+            {tr ? "PDF raporu indir" : "Download PDF report"}
+          </button>
+        ) : null}
       </div>
 
     </div>
@@ -567,4 +660,13 @@ function buildSentenceComparePairs(rawTranscript: string, improvedAnswer: string
     mine: mine[index] ?? "",
     stronger: stronger[index] ?? ""
   })).filter((pair) => pair.mine || pair.stronger);
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }

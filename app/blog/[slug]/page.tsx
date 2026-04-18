@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { AdSenseUnit } from "@/components/adsense-unit";
+import { BlogAudioExample } from "@/components/blog-audio-example";
 import { BlogReadingEnhancements } from "@/components/blog-reading-enhancements";
 import { getBlogChromeCopy, getLocalizedBlogPost, getLocalizedBlogPosts } from "@/lib/blog-content";
 import { getBlogPublicDescription, getBlogPublicTitle, getBlogSeoEntry } from "@/lib/blog-seo";
@@ -78,6 +80,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const seoTitle = getBlogPublicTitle(slug, post.title);
   const seoDescription = getBlogPublicDescription(slug, post.description);
   const seoEntry = getBlogSeoEntry(slug);
+  const audioTranscript = buildBlogAudioTranscript(post);
 
   const relatedPosts = [
     ...(await listPublishedCustomBlogPosts(language)),
@@ -135,6 +138,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </div>
           <p style={{ color: "var(--muted)", lineHeight: 1.85 }}>{post.intro}</p>
 
+          <BlogAudioExample
+            title={language === "tr" ? "Band 8-9 örnek akış" : "Band 8-9 sample flow"}
+            transcript={audioTranscript}
+            tr={language === "tr"}
+          />
+
           <div className="card spotlight-card" style={{ marginTop: "1.2rem" }}>
             <strong>{ctaLabels.title}</strong>
             <p style={{ marginTop: "0.55rem" }}>{ctaLabels.description}</p>
@@ -156,7 +165,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               <h2 style={{ marginBottom: "0.7rem" }}>{section.title}</h2>
               {section.body.map((paragraph) => (
                 <p key={paragraph} style={{ color: "var(--muted)", lineHeight: 1.85 }}>
-                  {paragraph}
+                  {linkParagraph(paragraph)}
                 </p>
               ))}
               {section.title === post.sections[2]?.title ? (
@@ -213,4 +222,42 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       </main>
     </>
   );
+}
+
+const internalLinkMap = [
+  { phrase: "IELTS Part 1", href: "/ielts-speaking-part-1-questions" },
+  { phrase: "IELTS Part 2", href: "/ielts-speaking-part-2-topics" },
+  { phrase: "IELTS Part 3", href: "/ielts-speaking-part-3-questions" },
+  { phrase: "IELTS speaking topics", href: "/ielts-speaking-topics" },
+  { phrase: "free IELTS speaking test", href: "/free-ielts-speaking-test" },
+  { phrase: "TOEFL speaking", href: "/app/practice" },
+  { phrase: "IELTS speaking", href: "/app/practice?quickStart=1" }
+];
+
+function linkParagraph(paragraph: string): ReactNode {
+  for (const item of internalLinkMap) {
+    const index = paragraph.indexOf(item.phrase);
+    if (index >= 0) {
+      const before = paragraph.slice(0, index);
+      const after = paragraph.slice(index + item.phrase.length);
+      return (
+        <>
+          {before}
+          <a href={item.href} style={{ color: "var(--primary)", fontWeight: 700 }}>
+            {item.phrase}
+          </a>
+          {after}
+        </>
+      );
+    }
+  }
+
+  return paragraph;
+}
+
+function buildBlogAudioTranscript(post: { intro: string; sections: Array<{ body: string[] }> }) {
+  const segments = [post.intro, ...post.sections.flatMap((section) => section.body).slice(0, 2)]
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return segments.join(" ").slice(0, 700);
 }
