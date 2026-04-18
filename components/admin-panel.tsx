@@ -42,6 +42,10 @@ function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 }
 
+function formatPercent(value: number) {
+  return `${value.toFixed(1)}%`;
+}
+
 function formatCtaLabel(path: string) {
   return path
     .replace(/^\//, "")
@@ -200,6 +204,29 @@ export function AdminPanel(props: {
     );
     return { totalCodes, activeCodes, totalUses, remainingSeats };
   }, [props.referralCodes]);
+
+  const funnelLift = useMemo(() => {
+    const clickDelta = props.overview.funnel7d.clickToPaidRate - props.overview.funnel30d.clickToPaidRate;
+    return {
+      clickDelta,
+      signupDelta: props.overview.funnel7d.clickToSignupRate - props.overview.funnel30d.clickToSignupRate,
+      checkoutDelta: props.overview.funnel7d.signupToCheckoutRate - props.overview.funnel30d.signupToCheckoutRate
+    };
+  }, [props.overview.funnel30d, props.overview.funnel7d]);
+
+  const trendMax = useMemo(
+    () =>
+      Math.max(
+        1,
+        ...props.overview.ctaTrend14d.flatMap((item) => [item.ctaClicks, item.signupCount, item.checkoutClicks, item.paidCount])
+      ),
+    [props.overview.ctaTrend14d]
+  );
+
+  const topPageMax = useMemo(
+    () => Math.max(1, ...props.overview.topCtaPages.map((item) => item.clicks)),
+    [props.overview.topCtaPages]
+  );
 
   const filteredMembers = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -632,7 +659,7 @@ export function AdminPanel(props: {
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
                     <h3>CTA Performance</h3>
-                    <p>Homepage and pricing clicks collected from the new conversion flow.</p>
+                    <p>Homepage and pricing clicks, signups, and paid conversions across the last 7 and 30 days.</p>
                   </div>
                   <div className="adm-overview-list">
                     <div className="adm-overview-item">
@@ -651,9 +678,144 @@ export function AdminPanel(props: {
                       <strong>{props.overview.checkoutClicks30d}</strong>
                       <span>Checkout CTA clicks in the last 30 days</span>
                     </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.funnel7d.signupCount}</strong>
+                      <span>New signups in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.funnel30d.signupCount}</strong>
+                      <span>New signups in the last 30 days</span>
+                    </div>
                   </div>
                 </div>
 
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Conversion Funnel</h3>
+                    <p>Uses CTA clicks, account creation, checkout taps, and successful paid billing events.</p>
+                  </div>
+                  <div className="adm-overview-list">
+                    {[
+                      {
+                        label: "Click → signup",
+                        sevenDayValue: props.overview.funnel7d.clickToSignupRate,
+                        thirtyDayValue: props.overview.funnel30d.clickToSignupRate,
+                        delta: funnelLift.signupDelta
+                      },
+                      {
+                        label: "Signup → checkout",
+                        sevenDayValue: props.overview.funnel7d.signupToCheckoutRate,
+                        thirtyDayValue: props.overview.funnel30d.signupToCheckoutRate,
+                        delta: funnelLift.checkoutDelta
+                      },
+                      {
+                        label: "Checkout → paid",
+                        sevenDayValue: props.overview.funnel7d.checkoutToPaidRate,
+                        thirtyDayValue: props.overview.funnel30d.checkoutToPaidRate,
+                        delta: props.overview.funnel7d.checkoutToPaidRate - props.overview.funnel30d.checkoutToPaidRate
+                      },
+                      {
+                        label: "Click → paid",
+                        sevenDayValue: props.overview.funnel7d.clickToPaidRate,
+                        thirtyDayValue: props.overview.funnel30d.clickToPaidRate,
+                        delta: funnelLift.clickDelta
+                      }
+                    ].map((item) => (
+                      <div key={item.label} className="adm-overview-item">
+                        <strong>{formatPercent(item.sevenDayValue)}</strong>
+                        <span>
+                          {item.label} in the last 7 days. 30-day baseline: {formatPercent(item.thirtyDayValue)}.
+                        </span>
+                        <span className={`adm-stat-trend ${item.delta >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
+                          {item.delta >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                          {formatPercent(Math.abs(item.delta))} vs 30-day average
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="adm-grid-2">
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>CTA Trend</h3>
+                    <p>14-day view of click volume, signups, checkout intent, and paid conversions.</p>
+                  </div>
+                  <div style={{ display: "grid", gap: "0.85rem" }}>
+                    {props.overview.ctaTrend14d.map((item) => (
+                      <div key={item.date} style={{ display: "grid", gap: "0.45rem" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", fontSize: "0.82rem" }}>
+                          <strong>{item.date.slice(5)}</strong>
+                          <span className="adm-muted">
+                            {item.ctaClicks} clicks · {item.signupCount} signups · {item.checkoutClicks} checkout · {item.paidCount} paid
+                          </span>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.45rem" }}>
+                          {[
+                            { label: "Clicks", value: item.ctaClicks, color: "var(--primary)" },
+                            { label: "Signups", value: item.signupCount, color: "var(--accent)" },
+                            { label: "Checkout", value: item.checkoutClicks, color: "#f59e0b" },
+                            { label: "Paid", value: item.paidCount, color: "#22c55e" }
+                          ].map((series) => (
+                            <div key={series.label} style={{ display: "grid", gap: "0.35rem" }}>
+                              <div style={{ height: 8, borderRadius: 999, background: "var(--surface-strong)", overflow: "hidden" }}>
+                                <div
+                                  style={{
+                                    width: `${Math.max((series.value / trendMax) * 100, series.value > 0 ? 8 : 0)}%`,
+                                    height: "100%",
+                                    borderRadius: 999,
+                                    background: series.color
+                                  }}
+                                />
+                              </div>
+                              <span className="adm-muted" style={{ fontSize: "0.75rem" }}>
+                                {series.label}: {series.value}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Top CTA Pages</h3>
+                    <p>Which page groups create the most CTA pressure and checkout intent in the last 30 days.</p>
+                  </div>
+                  <div className="adm-stack-list">
+                    {props.overview.topCtaPages.length === 0 ? (
+                      <p className="adm-muted">No CTA clicks recorded yet.</p>
+                    ) : (
+                      props.overview.topCtaPages.map((item) => (
+                        <div key={item.page} className="adm-list-row" style={{ alignItems: "stretch" }}>
+                          <div style={{ flex: 1, display: "grid", gap: "0.45rem" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem" }}>
+                              <div className="adm-table-name">{item.page}</div>
+                              <strong>{item.clicks}</strong>
+                            </div>
+                            <div style={{ height: 8, borderRadius: 999, background: "var(--surface-strong)", overflow: "hidden" }}>
+                              <div
+                                style={{
+                                  width: `${Math.max((item.clicks / topPageMax) * 100, item.clicks > 0 ? 8 : 0)}%`,
+                                  height: "100%",
+                                  borderRadius: 999,
+                                  background: "linear-gradient(90deg, var(--primary), var(--accent))"
+                                }}
+                              />
+                            </div>
+                            <div className="adm-table-email">{item.checkoutClicks} checkout clicks from this page group</div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
                     <h3>Top CTAs</h3>

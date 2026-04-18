@@ -399,6 +399,38 @@ export interface AdminOverview {
     event: string;
     count: number;
   }>;
+  topCtaPages: Array<{
+    page: string;
+    clicks: number;
+    checkoutClicks: number;
+  }>;
+  ctaTrend14d: Array<{
+    date: string;
+    ctaClicks: number;
+    signupCount: number;
+    checkoutClicks: number;
+    paidCount: number;
+  }>;
+  funnel7d: {
+    ctaClicks: number;
+    signupCount: number;
+    checkoutClicks: number;
+    paidCount: number;
+    clickToSignupRate: number;
+    signupToCheckoutRate: number;
+    checkoutToPaidRate: number;
+    clickToPaidRate: number;
+  };
+  funnel30d: {
+    ctaClicks: number;
+    signupCount: number;
+    checkoutClicks: number;
+    paidCount: number;
+    clickToSignupRate: number;
+    signupToCheckoutRate: number;
+    checkoutToPaidRate: number;
+    clickToPaidRate: number;
+  };
 }
 
 export interface AdminMemberRecord {

@@ -261,11 +261,34 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       ctaClicks30d: 0,
       checkoutClicks7d: 0,
       checkoutClicks30d: 0,
-      topCtas: []
+      topCtas: [],
+      topCtaPages: [],
+      ctaTrend14d: [],
+      funnel7d: {
+        ctaClicks: 0,
+        signupCount: 0,
+        checkoutClicks: 0,
+        paidCount: 0,
+        clickToSignupRate: 0,
+        signupToCheckoutRate: 0,
+        checkoutToPaidRate: 0,
+        clickToPaidRate: 0
+      },
+      funnel30d: {
+        ctaClicks: 0,
+        signupCount: 0,
+        checkoutClicks: 0,
+        paidCount: 0,
+        clickToSignupRate: 0,
+        signupToCheckoutRate: 0,
+        checkoutToPaidRate: 0,
+        clickToPaidRate: 0
+      }
     };
   }
 
   const sql = getSql();
+  const paidEventNames = ["order_created", "subscription_created", "subscription_resumed", "subscription_unpaused"];
   const [row] = await sql<
     Array<{
       total_users: number;
@@ -384,6 +407,168 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     limit 8
   `;
 
+  const topPageRows = await sql<
+    Array<{
+      page: string | null;
+      clicks: number;
+      checkout_clicks: number;
+    }>
+  >`
+    with cta_events as (
+      select
+        case
+          when path like '/pricing%' then '/pricing'
+          when path like '/#%' then '/'
+          when path like 'segment:%' then '/segments'
+          when path like '/compare%' then '/compare'
+          else coalesce(nullif(split_part(path, '?', 1), ''), '/')
+        end as page,
+        event
+      from analytics_events
+      where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
+        and created_at > now() - interval '30 days'
+    )
+    select
+      page,
+      count(*)::int as clicks,
+      count(*) filter (where event = 'checkout_cta_click')::int as checkout_clicks
+    from cta_events
+    group by page
+    order by clicks desc, page asc nulls last
+    limit 6
+  `;
+
+  const trendRows = await sql<
+    Array<{
+      date: string;
+      cta_clicks: number;
+      signup_count: number;
+      checkout_clicks: number;
+      paid_count: number;
+    }>
+  >`
+    with days as (
+      select generate_series(
+        date_trunc('day', now() - interval '13 days'),
+        date_trunc('day', now()),
+        interval '1 day'
+      ) as day
+    ),
+    cta_daily as (
+      select date_trunc('day', created_at) as day, count(*)::int as count
+      from analytics_events
+      where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
+        and created_at >= now() - interval '14 days'
+      group by 1
+    ),
+    checkout_daily as (
+      select date_trunc('day', created_at) as day, count(*)::int as count
+      from analytics_events
+      where event = 'checkout_cta_click'
+        and created_at >= now() - interval '14 days'
+      group by 1
+    ),
+    signup_daily as (
+      select date_trunc('day', created_at) as day, count(*)::int as count
+      from users
+      where created_at >= now() - interval '14 days'
+      group by 1
+    ),
+    paid_daily as (
+      select
+        date_trunc('day', created_at) as day,
+        count(distinct coalesce(provider_subscription_id, user_id, user_email, id))::int as count
+      from billing_events
+      where billing_status in ('active', 'on_trial')
+        and event_name = any(${paidEventNames})
+        and created_at >= now() - interval '14 days'
+      group by 1
+    )
+    select
+      to_char(days.day, 'YYYY-MM-DD') as date,
+      coalesce(cta_daily.count, 0)::int as cta_clicks,
+      coalesce(signup_daily.count, 0)::int as signup_count,
+      coalesce(checkout_daily.count, 0)::int as checkout_clicks,
+      coalesce(paid_daily.count, 0)::int as paid_count
+    from days
+    left join cta_daily on cta_daily.day = days.day
+    left join signup_daily on signup_daily.day = days.day
+    left join checkout_daily on checkout_daily.day = days.day
+    left join paid_daily on paid_daily.day = days.day
+    order by days.day asc
+  `;
+
+  const [funnelRow] = await sql<
+    Array<{
+      cta_clicks_7d: number;
+      signup_count_7d: number;
+      checkout_clicks_7d: number;
+      paid_count_7d: number;
+      cta_clicks_30d: number;
+      signup_count_30d: number;
+      checkout_clicks_30d: number;
+      paid_count_30d: number;
+    }>
+  >`
+    select
+      (
+        select count(*)::int
+        from analytics_events
+        where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
+          and created_at > now() - interval '7 days'
+      ) as cta_clicks_7d,
+      (
+        select count(*)::int
+        from users
+        where created_at > now() - interval '7 days'
+      ) as signup_count_7d,
+      (
+        select count(*)::int
+        from analytics_events
+        where event = 'checkout_cta_click'
+          and created_at > now() - interval '7 days'
+      ) as checkout_clicks_7d,
+      (
+        select count(distinct coalesce(provider_subscription_id, user_id, user_email, id))::int
+        from billing_events
+        where billing_status in ('active', 'on_trial')
+          and event_name = any(${paidEventNames})
+          and created_at > now() - interval '7 days'
+      ) as paid_count_7d,
+      (
+        select count(*)::int
+        from analytics_events
+        where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
+          and created_at > now() - interval '30 days'
+      ) as cta_clicks_30d,
+      (
+        select count(*)::int
+        from users
+        where created_at > now() - interval '30 days'
+      ) as signup_count_30d,
+      (
+        select count(*)::int
+        from analytics_events
+        where event = 'checkout_cta_click'
+          and created_at > now() - interval '30 days'
+      ) as checkout_clicks_30d,
+      (
+        select count(distinct coalesce(provider_subscription_id, user_id, user_email, id))::int
+        from billing_events
+        where billing_status in ('active', 'on_trial')
+          and event_name = any(${paidEventNames})
+          and created_at > now() - interval '30 days'
+      ) as paid_count_30d
+  `;
+
+  const buildFunnel = (input: { ctaClicks: number; signupCount: number; checkoutClicks: number; paidCount: number }) => ({
+    ...input,
+    clickToSignupRate: input.ctaClicks ? Number(((input.signupCount / input.ctaClicks) * 100).toFixed(1)) : 0,
+    signupToCheckoutRate: input.signupCount ? Number(((input.checkoutClicks / input.signupCount) * 100).toFixed(1)) : 0,
+    checkoutToPaidRate: input.checkoutClicks ? Number(((input.paidCount / input.checkoutClicks) * 100).toFixed(1)) : 0,
+    clickToPaidRate: input.ctaClicks ? Number(((input.paidCount / input.ctaClicks) * 100).toFixed(1)) : 0
+  });
+
   return {
     totalUsers: row?.total_users ?? 0,
     totalStudents: row?.total_students ?? 0,
@@ -407,7 +592,31 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       path: item.path ?? "Unknown CTA",
       event: item.event,
       count: item.count
-    }))
+    })),
+    topCtaPages: topPageRows.map((item) => ({
+      page: item.page ?? "/",
+      clicks: item.clicks,
+      checkoutClicks: item.checkout_clicks
+    })),
+    ctaTrend14d: trendRows.map((item) => ({
+      date: item.date,
+      ctaClicks: item.cta_clicks,
+      signupCount: item.signup_count,
+      checkoutClicks: item.checkout_clicks,
+      paidCount: item.paid_count
+    })),
+    funnel7d: buildFunnel({
+      ctaClicks: funnelRow?.cta_clicks_7d ?? 0,
+      signupCount: funnelRow?.signup_count_7d ?? 0,
+      checkoutClicks: funnelRow?.checkout_clicks_7d ?? 0,
+      paidCount: funnelRow?.paid_count_7d ?? 0
+    }),
+    funnel30d: buildFunnel({
+      ctaClicks: funnelRow?.cta_clicks_30d ?? 0,
+      signupCount: funnelRow?.signup_count_30d ?? 0,
+      checkoutClicks: funnelRow?.checkout_clicks_30d ?? 0,
+      paidCount: funnelRow?.paid_count_30d ?? 0
+    })
   };
 }
 

@@ -61,7 +61,29 @@ export default async function AdminPage() {
             ctaClicks30d: 0,
             checkoutClicks7d: 0,
             checkoutClicks30d: 0,
-            topCtas: []
+            topCtas: [],
+            topCtaPages: [],
+            ctaTrend14d: [],
+            funnel7d: {
+              ctaClicks: 0,
+              signupCount: 0,
+              checkoutClicks: 0,
+              paidCount: 0,
+              clickToSignupRate: 0,
+              signupToCheckoutRate: 0,
+              checkoutToPaidRate: 0,
+              clickToPaidRate: 0
+            },
+            funnel30d: {
+              ctaClicks: 0,
+              signupCount: 0,
+              checkoutClicks: 0,
+              paidCount: 0,
+              clickToSignupRate: 0,
+              signupToCheckoutRate: 0,
+              checkoutToPaidRate: 0,
+              clickToPaidRate: 0
+            }
           };
     const members = membersResult.status === "fulfilled" ? membersResult.value : [];
     const billingEvents = billingEventsResult.status === "fulfilled" ? billingEventsResult.value : [];
