@@ -263,6 +263,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       checkoutClicks30d: 0,
       topCtas: [],
       bestPerformingCtas: [],
+      winnerCta7d: null,
       topCtaPages: [],
       ctaTrend14d: [],
       funnel7d: {
@@ -485,6 +486,52 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     limit 8
   `;
 
+  const [winnerCtaRow] = await sql<
+    Array<{
+      path: string | null;
+      clicks: number;
+      signups: number;
+      paid_count: number;
+    }>
+  >`
+    with click_paths as (
+      select path, count(*)::int as clicks
+      from analytics_events
+      where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
+        and path is not null
+        and created_at > now() - interval '7 days'
+      group by path
+    ),
+    signup_paths as (
+      select path, count(*)::int as signups
+      from analytics_events
+      where event = 'signup_completed'
+        and path is not null
+        and created_at > now() - interval '7 days'
+      group by path
+    ),
+    paid_paths as (
+      select
+        payload_json->'meta'->'custom_data'->>'cta_path' as path,
+        count(distinct coalesce(provider_subscription_id, user_id, user_email, id))::int as paid_count
+      from billing_events
+      where billing_status in ('active', 'on_trial')
+        and event_name = any(${paidEventNames})
+        and created_at > now() - interval '7 days'
+      group by 1
+    )
+    select
+      click_paths.path,
+      click_paths.clicks,
+      coalesce(signup_paths.signups, 0)::int as signups,
+      coalesce(paid_paths.paid_count, 0)::int as paid_count
+    from click_paths
+    left join signup_paths on signup_paths.path = click_paths.path
+    left join paid_paths on paid_paths.path = click_paths.path
+    order by paid_count desc, signups desc, clicks desc, click_paths.path asc
+    limit 1
+  `;
+
   const trendRows = await sql<
     Array<{
       date: string;
@@ -648,6 +695,16 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       clickToSignupRate: item.clicks ? Number(((item.signups / item.clicks) * 100).toFixed(1)) : 0,
       clickToPaidRate: item.clicks ? Number(((item.paid_count / item.clicks) * 100).toFixed(1)) : 0
     })),
+    winnerCta7d: winnerCtaRow
+      ? {
+          path: winnerCtaRow.path ?? "Unknown CTA",
+          clicks: winnerCtaRow.clicks,
+          signups: winnerCtaRow.signups,
+          paidCount: winnerCtaRow.paid_count,
+          clickToSignupRate: winnerCtaRow.clicks ? Number(((winnerCtaRow.signups / winnerCtaRow.clicks) * 100).toFixed(1)) : 0,
+          clickToPaidRate: winnerCtaRow.clicks ? Number(((winnerCtaRow.paid_count / winnerCtaRow.clicks) * 100).toFixed(1)) : 0
+        }
+      : null,
     topCtaPages: topPageRows.map((item) => ({
       page: item.page ?? "/",
       clicks: item.clicks,

@@ -33,5 +33,25 @@ export async function GET(request: Request) {
       : { plan, billing, coupon, campaign, ctaPath, ctaEvent }
   );
 
-  return NextResponse.redirect(checkoutUrl || commerceConfig.plusMonthlyCheckout);
+  const response = NextResponse.redirect(checkoutUrl || commerceConfig.plusMonthlyCheckout);
+  if (ctaPath || campaign || rawPlan) {
+    response.cookies.set(
+      "speakace_checkout_attribution",
+      JSON.stringify({
+        ctaPath: ctaPath ?? null,
+        ctaEvent: ctaEvent ?? null,
+        campaign: campaign ?? null,
+        plan
+      }),
+      {
+        httpOnly: false,
+        sameSite: "lax",
+        secure: process.env.APP_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 6
+      }
+    );
+  }
+
+  return response;
 }

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { isAdminEmail, withAdminPrivileges } from "@/lib/admin";
+import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { createMemberProfile } from "@/lib/membership";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { createAuthSession, getSessionCookieName, getSessionCookieOptions } from "@/lib/server/auth";
@@ -57,7 +58,7 @@ async function getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
   return response.json() as Promise<GoogleUserInfo>;
 }
 
-async function findOrCreateGoogleUser(googleUser: GoogleUserInfo): Promise<MemberProfile> {
+async function findOrCreateGoogleUser(googleUser: GoogleUserInfo): Promise<{ profile: MemberProfile; isNewUser: boolean }> {
   const normalizedEmail = googleUser.email.trim().toLowerCase();
   const displayName = googleUser.name ?? googleUser.given_name ?? normalizedEmail.split("@")[0];
 
@@ -90,7 +91,7 @@ async function findOrCreateGoogleUser(googleUser: GoogleUserInfo): Promise<Membe
         await sql`update users set email_verified = true where email = ${normalizedEmail}`;
         existing[0].emailVerified = true;
       }
-      return withAdminPrivileges(existing[0]);
+      return { profile: withAdminPrivileges(existing[0]), isNewUser: false };
     }
 
     // Create new user — Google already verified the email
@@ -116,7 +117,7 @@ async function findOrCreateGoogleUser(googleUser: GoogleUserInfo): Promise<Membe
         email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
     `;
 
-    return withAdminPrivileges(rows[0]);
+    return { profile: withAdminPrivileges(rows[0]), isNewUser: true };
   }
 
   // Memory store fallback
@@ -130,9 +131,9 @@ async function findOrCreateGoogleUser(googleUser: GoogleUserInfo): Promise<Membe
       if (profile.email.toLowerCase() === normalizedEmail) {
         if (!profile.emailVerified) {
           await upsertMember({ ...profile, emailVerified: true });
-          return withAdminPrivileges({ ...profile, emailVerified: true });
+          return { profile: withAdminPrivileges({ ...profile, emailVerified: true }), isNewUser: false };
         }
-        return withAdminPrivileges(profile);
+        return { profile: withAdminPrivileges(profile), isNewUser: false };
       }
     }
   }
@@ -143,7 +144,7 @@ async function findOrCreateGoogleUser(googleUser: GoogleUserInfo): Promise<Membe
     emailVerified: true
   });
   await upsertMember(newProfile);
-  return newProfile;
+  return { profile: newProfile, isNewUser: true };
 }
 
 export async function GET(request: Request) {
@@ -160,6 +161,7 @@ export async function GET(request: Request) {
 
   const code = searchParams.get("code");
   const error = searchParams.get("error");
+  const rawState = searchParams.get("state");
 
   if (error || !code) {
     return NextResponse.redirect(`${siteUrl}/auth?error=google_denied`);
@@ -178,7 +180,24 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${siteUrl}/auth?error=google_no_email`);
     }
 
-    const profile = await findOrCreateGoogleUser(googleUser);
+    let attributionPath: string | null = null;
+    if (rawState) {
+      try {
+        const parsed = JSON.parse(Buffer.from(rawState, "base64url").toString("utf8")) as { cta?: string | null };
+        attributionPath = typeof parsed.cta === "string" ? parsed.cta : null;
+      } catch {
+        attributionPath = null;
+      }
+    }
+
+    const { profile, isNewUser } = await findOrCreateGoogleUser(googleUser);
+    if (isNewUser && attributionPath) {
+      await trackAnalyticsEvent({
+        userId: profile.id,
+        event: "signup_completed",
+        path: attributionPath
+      });
+    }
     const session = await createAuthSession(profile.id);
 
     const cookieStore = await cookies();

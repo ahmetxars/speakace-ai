@@ -407,6 +407,14 @@ export interface AdminOverview {
     clickToSignupRate: number;
     clickToPaidRate: number;
   }>;
+  winnerCta7d: {
+    path: string;
+    clicks: number;
+    signups: number;
+    paidCount: number;
+    clickToSignupRate: number;
+    clickToPaidRate: number;
+  } | null;
   topCtaPages: Array<{
     page: string;
     clicks: number;

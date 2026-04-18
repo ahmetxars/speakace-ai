@@ -818,6 +818,35 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
+                    <h3>Winner CTA This Week</h3>
+                    <p>The CTA currently creating the strongest paid conversion outcome over the last 7 days.</p>
+                  </div>
+                  {props.overview.winnerCta7d ? (
+                    <div className="adm-overview-list">
+                      <div className="adm-overview-item">
+                        <strong>{formatCtaLabel(props.overview.winnerCta7d.path)}</strong>
+                        <span>{props.overview.winnerCta7d.path}</span>
+                      </div>
+                      <div className="adm-overview-item">
+                        <strong>{props.overview.winnerCta7d.paidCount}</strong>
+                        <span>Paid conversions this week</span>
+                      </div>
+                      <div className="adm-overview-item">
+                        <strong>{formatPercent(props.overview.winnerCta7d.clickToPaidRate)}</strong>
+                        <span>Click → paid conversion rate</span>
+                      </div>
+                      <div className="adm-overview-item">
+                        <strong>{props.overview.winnerCta7d.signups}</strong>
+                        <span>Attributed signups this week</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="adm-muted">Not enough attributed data yet for a weekly winner.</p>
+                  )}
+                </div>
+
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
                     <h3>Best Converting CTAs</h3>
                     <p>CTA paths ranked by actual signups and paid conversions attributed over the last 30 days.</p>
                   </div>

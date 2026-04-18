@@ -179,7 +179,10 @@ function AuthPageInner() {
           ) : null}
           {/* Google OAuth */}
           <a
-            href="/api/auth/google"
+            href={`/api/auth/google${searchParams.get("cta") ? `?${new URLSearchParams({
+              cta: searchParams.get("cta") ?? "",
+              cta_event: searchParams.get("cta_event") ?? ""
+            }).toString()}` : ""}`}
             className="button button-secondary"
             style={{
               display: "flex",

@@ -9,11 +9,33 @@ type PlanCheckResponse = {
   billingStatus?: string;
 };
 
+type CheckoutAttribution = {
+  ctaPath?: string | null;
+  ctaEvent?: string | null;
+  campaign?: string | null;
+  plan?: string | null;
+};
+
 export default function BillingSuccessPage() {
   const { language, refreshSession } = useAppState();
   const tr = language === "tr";
   const [status, setStatus] = useState<"checking" | "active" | "pending">("checking");
   const [plan, setPlan] = useState<string>("free");
+  const [attribution, setAttribution] = useState<CheckoutAttribution | null>(null);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const rawCookie = document.cookie
+      .split("; ")
+      .find((item) => item.startsWith("speakace_checkout_attribution="))
+      ?.split("=")[1];
+    if (!rawCookie) return;
+    try {
+      setAttribution(JSON.parse(decodeURIComponent(rawCookie)) as CheckoutAttribution);
+    } catch {
+      setAttribution(null);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,7 +120,25 @@ export default function BillingSuccessPage() {
             <strong>{tr ? "Durum" : "Status"}</strong>
             <div>{status === "active" ? (tr ? "Aktif" : "Active") : tr ? "Bekleniyor" : "Pending"}</div>
           </div>
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
+            <strong>{tr ? "CTA kaynagi" : "CTA source"}</strong>
+            <div>{attribution?.ctaPath ?? (tr ? "Bilinmiyor" : "Unknown")}</div>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
+            <strong>{tr ? "Campaign" : "Campaign"}</strong>
+            <div>{attribution?.campaign ?? "—"}</div>
+          </div>
         </div>
+        {attribution?.ctaPath ? (
+          <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
+            <strong>{tr ? "Bu odeme nereden geldi?" : "Where did this checkout come from?"}</strong>
+            <p style={{ margin: "0.55rem 0 0", lineHeight: 1.7 }}>
+              {tr
+                ? `Bu checkout akisi ${attribution.ctaPath} CTA'si uzerinden basladi. Admin panelinde bu kaynagi artik dogrudan gorebilirsin.`
+                : `This checkout flow started from the ${attribution.ctaPath} CTA. You can now see that source directly in the admin panel.`}
+            </p>
+          </div>
+        ) : null}
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
           <button className="button button-primary" type="button" onClick={() => void refreshSession()}>
             {tr ? "Plani tekrar kontrol et" : "Refresh plan"}

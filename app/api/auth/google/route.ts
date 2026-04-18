@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
  *   GOOGLE_CLIENT_ID       — OAuth 2.0 client ID from Google Cloud Console
  *   GOOGLE_REDIRECT_URI    — Authorized redirect URI (e.g. https://speakace.org/api/auth/google/callback)
  */
-export async function GET() {
+export async function GET(request: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI;
 
@@ -17,6 +17,14 @@ export async function GET() {
     );
   }
 
+  const { searchParams } = new URL(request.url);
+  const cta = searchParams.get("cta");
+  const ctaEvent = searchParams.get("cta_event");
+  const state =
+    cta || ctaEvent
+      ? Buffer.from(JSON.stringify({ cta: cta ?? null, ctaEvent: ctaEvent ?? null }), "utf8").toString("base64url")
+      : null;
+
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -25,6 +33,9 @@ export async function GET() {
     access_type: "offline",
     prompt: "select_account"
   });
+  if (state) {
+    params.set("state", state);
+  }
 
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   return NextResponse.redirect(authUrl);
