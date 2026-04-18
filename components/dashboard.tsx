@@ -10,7 +10,7 @@ import { trackClientEvent } from "@/lib/analytics-client";
 import { AnalyticsSummary } from "@/lib/analytics-store";
 import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
 import { dashboardRecommendations } from "@/lib/growth-pack";
-import { AnnouncementItem, HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership, StudentProfile } from "@/lib/types";
+import { AnnouncementItem, HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership, StudentProfile, WritingSummary } from "@/lib/types";
 
 const emptySummary: ProgressSummary = {
   totalSessions: 0,
@@ -20,6 +20,14 @@ const emptySummary: ProgressSummary = {
   remainingMinutesToday: 8,
   currentPlan: "free",
   recentSessions: []
+};
+
+const emptyWritingSummary: WritingSummary = {
+  totalSessions: 0,
+  averageScore: 0,
+  latestSession: null,
+  recentSessions: [],
+  weakestCategory: null
 };
 
 export function Dashboard() {
@@ -46,6 +54,7 @@ export function Dashboard() {
   >([]);
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [writingSummary, setWritingSummary] = useState<WritingSummary>(emptyWritingSummary);
 
   const isSchoolMember = Boolean(signedIn && currentUser?.memberType === "school");
   const isTeacherMember = Boolean(signedIn && currentUser?.memberType === "teacher");
@@ -59,6 +68,18 @@ export function Dashboard() {
       .then((response) => response.json())
       .then((data: ProgressSummary) => setSummary(data))
       .catch(() => setSummary(emptySummary));
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setWritingSummary(emptyWritingSummary);
+      return;
+    }
+
+    fetch(`/api/writing/summary?userId=${encodeURIComponent(currentUser.id)}`)
+      .then((response) => response.json())
+      .then((data: WritingSummary) => setWritingSummary(data))
+      .catch(() => setWritingSummary(emptyWritingSummary));
   }, [currentUser]);
 
   useEffect(() => {
@@ -880,6 +901,38 @@ export function Dashboard() {
         <StatCard label={tr ? "Practice baslangici" : "Practice starts"} value={String(analytics.practiceStarts)} note={tr ? "Konusma denemesi baslatma sayin" : "How many times you started practice"} />
         <StatCard label={tr ? "Yuklenen kayit" : "Uploaded recordings"} value={String(analytics.uploads)} note={tr ? "Transcript icin giden ses kayitlari" : "Recordings sent for transcript"} />
         <StatCard label={tr ? "Tamamlanan simulasyon" : "Completed simulations"} value={String(analytics.simulationsCompleted)} note={tr ? "Bitirilen tam mock sinavlar" : "Full mock exams completed"} />
+        <StatCard label={tr ? "Writing band" : "Writing band"} value={writingSummary.averageScore ? String(writingSummary.averageScore) : "-"} note={writingSummary.latestSession?.report ? (tr ? "Son essay denemelerinin ortalamasi" : "Average across your latest essay attempts") : (tr ? "Henüz writing sonucu yok" : "No writing result yet")} />
+      </section>
+
+      <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(280px, 0.8fr)", gap: "1rem", alignItems: "start" }}>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <span className="eyebrow">{tr ? "Writing coach" : "Writing coach"}</span>
+          <h2 style={{ margin: 0, fontSize: "1.7rem" }}>{tr ? "Speaking'den sonra en güçlü ikinci skor motoru artık hazır" : "The strongest second score engine after speaking is now live"}</h2>
+          <p style={{ margin: 0, color: "var(--muted-foreground)", lineHeight: 1.7 }}>
+            {writingSummary.latestSession?.report
+              ? (tr ? `Son writing denemende ${writingSummary.latestSession.report.overall} band tahmini aldın. Aynı task'i tekrar açıp corrected version ile kıyaslayabilirsin.` : `Your latest writing attempt scored an estimated ${writingSummary.latestSession.report.overall}. Re-open the same task and compare it with the corrected version.`)
+              : (tr ? "IELTS Writing Task 2 artık band tahmini, corrected version, retry ve PDF raporla birlikte çalışıyor." : "IELTS Writing Task 2 now comes with band estimates, corrected versions, retry flow, and PDF reports.")}
+          </p>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+            <Link href="/app/writing" className="button button-primary">{tr ? "Writing hub'ı aç" : "Open writing hub"}</Link>
+            <Link href="/app/writing/task-2" className="button button-secondary">{tr ? "Yeni essay yaz" : "Write a new essay"}</Link>
+          </div>
+        </div>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+          <strong>{tr ? "Writing snapshot" : "Writing snapshot"}</strong>
+          <div className="adm-overview-item">
+            <strong>{writingSummary.totalSessions}</strong>
+            <span>{tr ? "Toplam writing denemesi" : "Total writing attempts"}</span>
+          </div>
+          <div className="adm-overview-item">
+            <strong>{writingSummary.weakestCategory ?? "-"}</strong>
+            <span>{tr ? "En zayıf writing kriteri" : "Weakest writing criterion"}</span>
+          </div>
+          <div className="adm-overview-item">
+            <strong>{writingSummary.latestSession?.wordCount ?? "-"}</strong>
+            <span>{tr ? "Son essay kelime sayısı" : "Latest essay word count"}</span>
+          </div>
+        </div>
       </section>
 
       <section className="grid dashboard-section-grid" style={{ gridTemplateColumns: "minmax(320px, 1.15fr) minmax(320px, 0.85fr)", gap: "1rem", alignItems: "start" }}>

@@ -85,6 +85,66 @@ export interface SpeakingSession {
   report?: ScoreReport;
 }
 
+export type WritingTaskType = "ielts-writing-task-2";
+
+export type WritingFeedbackCategory =
+  | "taskResponse"
+  | "coherence"
+  | "lexicalResource"
+  | "grammar";
+
+export interface WritingCategoryScore {
+  category: WritingFeedbackCategory;
+  label: string;
+  score: number;
+}
+
+export interface WritingPromptTemplate {
+  id: string;
+  examType: "IELTS";
+  taskType: WritingTaskType;
+  title: string;
+  prompt: string;
+  difficulty: Difficulty;
+  recommendedMinutes: number;
+}
+
+export interface WritingReport {
+  overall: number;
+  scaleLabel: string;
+  categories: WritingCategoryScore[];
+  strengths: string[];
+  improvements: string[];
+  nextExercise: string;
+  caution: string;
+  correctedVersion: string;
+  outline: string[];
+}
+
+export interface WritingSession {
+  id: string;
+  userId: string;
+  examType: "IELTS";
+  taskType: WritingTaskType;
+  difficulty: Difficulty;
+  plan: SubscriptionPlan;
+  prompt: WritingPromptTemplate;
+  createdAt: string;
+  submittedAt?: string | null;
+  draftText?: string;
+  wordCount?: number;
+  minutesSpent?: number;
+  report?: WritingReport;
+}
+
+export interface WritingSummary {
+  totalSessions: number;
+  averageScore: number;
+  latestSession: WritingSession | null;
+  recentSessions: WritingSession[];
+  weakestCategory: string | null;
+}
+
 export interface MemberProfile {
   id: string;
   email: string;
@@ -400,6 +460,14 @@ export interface AdminOverview {
   interviewFollowUps30d: number;
   pdfExports7d: number;
   pdfExports30d: number;
+  writingStarts7d: number;
+  writingStarts30d: number;
+  writingEvaluations7d: number;
+  writingEvaluations30d: number;
+  writingRetries7d: number;
+  writingRetries30d: number;
+  writingPdfExports7d: number;
+  writingPdfExports30d: number;
   topCtas: Array<{
     path: string;
     event: string;

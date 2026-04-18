@@ -85,6 +85,7 @@ export function PricingCards() {
             <li>4 daily speaking sessions</li>
             <li>8 daily speaking minutes</li>
             <li>Starter score view and limited feedback</li>
+            <li>Writing Task 2 preview access</li>
           </ul>
           <a className="button button-secondary" href="/auth">
             Start Speaking Now
@@ -124,6 +125,7 @@ export function PricingCards() {
             <li>18 daily sessions</li>
             <li>35 daily speaking minutes</li>
             <li>Full feedback after each speaking attempt</li>
+            <li>IELTS Writing Task 2 scoring and corrected version</li>
             <li>Expanded IELTS-style score insight</li>
             <li>Unlimited-feeling retry and improvement workflow</li>
             <li>Built for serious exam score growth</li>
@@ -193,6 +195,7 @@ export function PricingCards() {
             <li>40 daily sessions</li>
             <li>90 daily speaking minutes</li>
             <li>All Plus features included</li>
+            <li>Speaking + Writing in one account</li>
             <li>Priority support</li>
             <li>Advanced analytics &amp; score trends</li>
             <li>Maximum practice volume for fast progress</li>

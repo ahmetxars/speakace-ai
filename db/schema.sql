@@ -281,6 +281,38 @@ create table if not exists feedback_reports (
   created_at timestamptz not null default now()
 );
 
+create table if not exists writing_sessions (
+  id text primary key,
+  user_id text not null references users(id) on delete cascade,
+  exam_type text not null default 'IELTS',
+  task_type text not null,
+  difficulty text not null,
+  plan text not null,
+  prompt_id text not null,
+  prompt_title text not null,
+  prompt_text text not null,
+  recommended_minutes integer not null default 40,
+  draft_text text,
+  word_count integer,
+  minutes_spent integer,
+  submitted_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists writing_reports (
+  session_id text primary key references writing_sessions(id) on delete cascade,
+  overall_score numeric(4,1) not null,
+  scale_label text not null,
+  categories_json jsonb not null,
+  strengths_json jsonb not null,
+  improvements_json jsonb not null,
+  next_exercise text not null,
+  caution text not null,
+  corrected_version text not null,
+  outline_json jsonb not null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists teacher_notes (
   id text primary key,
   teacher_id text not null references users(id) on delete cascade,
@@ -325,6 +357,9 @@ alter table institution_billing add column if not exists lemon_subscription_id t
 
 create index if not exists idx_speaking_sessions_user_created_at
   on speaking_sessions(user_id, created_at desc);
+
+create index if not exists idx_writing_sessions_user_created_at
+  on writing_sessions(user_id, created_at desc);
 
 create index if not exists idx_auth_sessions_user_id
   on auth_sessions(user_id);

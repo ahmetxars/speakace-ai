@@ -719,6 +719,38 @@ export function AdminPanel(props: {
                       <strong>{props.overview.pdfExports30d}</strong>
                       <span>PDF report exports in the last 30 days</span>
                     </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.writingStarts7d}</strong>
+                      <span>Writing Task 2 starts in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.writingEvaluations7d}</strong>
+                      <span>Writing evaluations in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.writingStarts30d}</strong>
+                      <span>Writing Task 2 starts in the last 30 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.writingEvaluations30d}</strong>
+                      <span>Writing evaluations in the last 30 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.writingRetries7d}</strong>
+                      <span>Writing retries in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.writingRetries30d}</strong>
+                      <span>Writing retries in the last 30 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.writingPdfExports7d}</strong>
+                      <span>Writing PDF exports in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.writingPdfExports30d}</strong>
+                      <span>Writing PDF exports in the last 30 days</span>
+                    </div>
                   </div>
                 </div>
               </div>

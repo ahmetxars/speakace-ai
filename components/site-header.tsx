@@ -426,6 +426,7 @@ const navGroups = (labels: HeaderLabels) => [
     label: labels.practice,
     items: [
       { href: "/app/practice", label: labels.practice },
+      { href: "/app/writing", label: "Writing" },
       { href: "/free-ielts-speaking-test", label: labels.freeTest },
       { href: "/ielts-speaking-topics", label: labels.topics },
       { href: "/tools", label: labels.tools }

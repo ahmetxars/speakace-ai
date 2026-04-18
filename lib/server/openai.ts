@@ -224,6 +224,122 @@ export async function generateFeedbackReport({
   };
 }
 
+export async function generateWritingFeedbackReport({
+  promptTitle,
+  promptText,
+  difficulty,
+  draftText
+}: {
+  promptTitle: string;
+  promptText: string;
+  difficulty: string;
+  draftText: string;
+}) {
+  if (!process.env.OPENAI_API_KEY) {
+    return null;
+  }
+
+  const response = await fetch(`${OPENAI_API_BASE_URL}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_FEEDBACK_MODEL || "gpt-4o-mini",
+      temperature: 0.2,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "writing_feedback",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              overall: { type: "number" },
+              scaleLabel: { type: "string" },
+              categories: {
+                type: "array",
+                minItems: 4,
+                maxItems: 4,
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  properties: {
+                    category: { type: "string", enum: ["taskResponse", "coherence", "lexicalResource", "grammar"] },
+                    label: {
+                      type: "string",
+                      enum: ["Task Response", "Coherence and Cohesion", "Lexical Resource", "Grammar Range and Accuracy"]
+                    },
+                    score: { type: "number" }
+                  },
+                  required: ["category", "label", "score"]
+                }
+              },
+              strengths: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 3 },
+              improvements: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 3 },
+              nextExercise: { type: "string" },
+              caution: { type: "string" },
+              correctedVersion: { type: "string" },
+              outline: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 4 }
+            },
+            required: ["overall", "scaleLabel", "categories", "strengths", "improvements", "nextExercise", "caution", "correctedVersion", "outline"]
+          }
+        }
+      },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an IELTS Writing Task 2 evaluator. Score honestly using IELTS Writing Task 2 criteria. Return strict JSON only. CorrectedVersion must sound natural, high-band, and directly answer the same question without becoming overly formal or robotic."
+        },
+        {
+          role: "user",
+          content: [
+            "Exam: IELTS Writing Task 2",
+            `Difficulty: ${difficulty}`,
+            `Prompt title: ${promptTitle}`,
+            `Prompt: ${promptText}`,
+            `Draft: ${draftText}`,
+            "Use category labels exactly as defined in the schema.",
+            "Caution should explain that this is AI practice guidance, not an official IELTS result.",
+            "Outline should give 4 short revision steps for retrying the same essay."
+          ].join("\n")
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`OpenAI writing feedback failed: ${text}`);
+  }
+
+  const data = (await response.json()) as {
+    choices?: Array<{
+      message?: {
+        content?: string;
+      };
+    }>;
+  };
+
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) return null;
+
+  return JSON.parse(content) as {
+    overall: number;
+    scaleLabel: string;
+    categories: Array<{ category: string; label: string; score: number }>;
+    strengths: string[];
+    improvements: string[];
+    nextExercise: string;
+    caution: string;
+    correctedVersion: string;
+    outline: string[];
+  };
+}
+
 function buildIeltsSystemPrompt(taskType: string) {
   if (taskType === "ielts-part-1") {
     return "You are an IELTS Speaking examiner simulator. Evaluate only from the transcript. This is IELTS Part 1, so expect short personal interview answers. Use a 0-9 band scale, score realistically, and do not reward memorized or underdeveloped answers. Return strict JSON only.";
