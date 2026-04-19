@@ -460,6 +460,16 @@ export interface AdminOverview {
   interviewFollowUps30d: number;
   pdfExports7d: number;
   pdfExports30d: number;
+  resultCardDownloads7d: number;
+  resultCardDownloads30d: number;
+  resultShares7d: number;
+  resultShares30d: number;
+  resultShareX7d: number;
+  resultShareX30d: number;
+  resultShareWhatsApp7d: number;
+  resultShareWhatsApp30d: number;
+  resultShareLinkedIn7d: number;
+  resultShareLinkedIn30d: number;
   writingStarts7d: number;
   writingStarts30d: number;
   writingEvaluations7d: number;

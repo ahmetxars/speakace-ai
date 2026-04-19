@@ -265,9 +265,19 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       interviewStarts30d: 0,
       interviewFollowUps7d: 0,
       interviewFollowUps30d: 0,
-      pdfExports7d: 0,
-      pdfExports30d: 0,
-      writingStarts7d: 0,
+        pdfExports7d: 0,
+        pdfExports30d: 0,
+        resultCardDownloads7d: 0,
+        resultCardDownloads30d: 0,
+        resultShares7d: 0,
+        resultShares30d: 0,
+        resultShareX7d: 0,
+        resultShareX30d: 0,
+        resultShareWhatsApp7d: 0,
+        resultShareWhatsApp30d: 0,
+        resultShareLinkedIn7d: 0,
+        resultShareLinkedIn30d: 0,
+        writingStarts7d: 0,
       writingStarts30d: 0,
       writingEvaluations7d: 0,
       writingEvaluations30d: 0,
@@ -331,6 +341,16 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       interview_followups_30d: number;
       pdf_exports_7d: number;
       pdf_exports_30d: number;
+      result_card_downloads_7d: number;
+      result_card_downloads_30d: number;
+      result_shares_7d: number;
+      result_shares_30d: number;
+      result_share_x_7d: number;
+      result_share_x_30d: number;
+      result_share_whatsapp_7d: number;
+      result_share_whatsapp_30d: number;
+      result_share_linkedin_7d: number;
+      result_share_linkedin_30d: number;
       writing_starts_7d: number;
       writing_starts_30d: number;
       writing_evaluations_7d: number;
@@ -438,6 +458,66 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         where event = 'pdf_report_export'
           and created_at > now() - interval '30 days'
       ) as pdf_exports_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'result_card_download'
+          and created_at > now() - interval '7 days'
+      ) as result_card_downloads_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'result_card_download'
+          and created_at > now() - interval '30 days'
+      ) as result_card_downloads_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event in ('result_share_x', 'result_share_whatsapp', 'result_share_linkedin', 'result_share_native', 'result_share_copy')
+          and created_at > now() - interval '7 days'
+      ) as result_shares_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event in ('result_share_x', 'result_share_whatsapp', 'result_share_linkedin', 'result_share_native', 'result_share_copy')
+          and created_at > now() - interval '30 days'
+      ) as result_shares_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'result_share_x'
+          and created_at > now() - interval '7 days'
+      ) as result_share_x_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'result_share_x'
+          and created_at > now() - interval '30 days'
+      ) as result_share_x_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'result_share_whatsapp'
+          and created_at > now() - interval '7 days'
+      ) as result_share_whatsapp_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'result_share_whatsapp'
+          and created_at > now() - interval '30 days'
+      ) as result_share_whatsapp_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'result_share_linkedin'
+          and created_at > now() - interval '7 days'
+      ) as result_share_linkedin_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'result_share_linkedin'
+          and created_at > now() - interval '30 days'
+      ) as result_share_linkedin_30d,
       (
         select count(*)::int
         from recent_analytics
@@ -800,6 +880,16 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     interviewFollowUps30d: row?.interview_followups_30d ?? 0,
     pdfExports7d: row?.pdf_exports_7d ?? 0,
     pdfExports30d: row?.pdf_exports_30d ?? 0,
+    resultCardDownloads7d: row?.result_card_downloads_7d ?? 0,
+    resultCardDownloads30d: row?.result_card_downloads_30d ?? 0,
+    resultShares7d: row?.result_shares_7d ?? 0,
+    resultShares30d: row?.result_shares_30d ?? 0,
+    resultShareX7d: row?.result_share_x_7d ?? 0,
+    resultShareX30d: row?.result_share_x_30d ?? 0,
+    resultShareWhatsApp7d: row?.result_share_whatsapp_7d ?? 0,
+    resultShareWhatsApp30d: row?.result_share_whatsapp_30d ?? 0,
+    resultShareLinkedIn7d: row?.result_share_linkedin_7d ?? 0,
+    resultShareLinkedIn30d: row?.result_share_linkedin_30d ?? 0,
     writingStarts7d: row?.writing_starts_7d ?? 0,
     writingStarts30d: row?.writing_starts_30d ?? 0,
     writingEvaluations7d: row?.writing_evaluations_7d ?? 0,

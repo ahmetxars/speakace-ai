@@ -3,6 +3,12 @@ import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 export type AnalyticsEventName =
   | "page_view"
   | "practice_start"
+  | "result_card_download"
+  | "result_share_x"
+  | "result_share_whatsapp"
+  | "result_share_linkedin"
+  | "result_share_native"
+  | "result_share_copy"
   | "writing_start"
   | "writing_submitted"
   | "writing_evaluated"

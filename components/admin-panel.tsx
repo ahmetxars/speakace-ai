@@ -241,6 +241,20 @@ export function AdminPanel(props: {
     props.overview.writingStarts7d
   ]);
 
+  const speakingShareFunnel = useMemo(() => {
+    const cardToShare7d = props.overview.resultCardDownloads7d ? (props.overview.resultShares7d / props.overview.resultCardDownloads7d) * 100 : 0;
+    const cardToShare30d = props.overview.resultCardDownloads30d ? (props.overview.resultShares30d / props.overview.resultCardDownloads30d) * 100 : 0;
+    return {
+      cardToShare7d,
+      cardToShare30d
+    };
+  }, [
+    props.overview.resultCardDownloads30d,
+    props.overview.resultCardDownloads7d,
+    props.overview.resultShares30d,
+    props.overview.resultShares7d
+  ]);
+
   const trendMax = useMemo(
     () =>
       Math.max(
@@ -747,6 +761,22 @@ export function AdminPanel(props: {
                       <span>PDF report exports in the last 30 days</span>
                     </div>
                     <div className="adm-overview-item">
+                      <strong>{props.overview.resultCardDownloads7d}</strong>
+                      <span>Speaking result card PNG downloads in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.resultShares7d}</strong>
+                      <span>Speaking result shares in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.resultCardDownloads30d}</strong>
+                      <span>Speaking result card PNG downloads in the last 30 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.resultShares30d}</strong>
+                      <span>Speaking result shares in the last 30 days</span>
+                    </div>
+                    <div className="adm-overview-item">
                       <strong>{props.overview.writingStarts7d}</strong>
                       <span>Writing starts in the last 7 days</span>
                     </div>
@@ -862,6 +892,45 @@ export function AdminPanel(props: {
                         {writingFunnel.evalToPdf7d - writingFunnel.evalToPdf30d >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
                         {formatPercent(Math.abs(writingFunnel.evalToPdf7d - writingFunnel.evalToPdf30d))} vs 30-day average
                       </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="adm-grid-2">
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Speaking Share Funnel</h3>
+                    <p>Shows whether the new premium result card actually gets downloaded and shared after users see their score.</p>
+                  </div>
+                  <div className="adm-overview-list">
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.resultCardDownloads7d}</strong>
+                      <span>Result card PNG downloads in the last 7 days. 30-day baseline: {props.overview.resultCardDownloads30d}.</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.resultShares7d}</strong>
+                      <span>Total speaking result shares in the last 7 days. 30-day baseline: {props.overview.resultShares30d}.</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{formatPercent(speakingShareFunnel.cardToShare7d)}</strong>
+                      <span>Download → any share in the last 7 days. 30-day baseline: {formatPercent(speakingShareFunnel.cardToShare30d)}.</span>
+                      <span className={`adm-stat-trend ${speakingShareFunnel.cardToShare7d - speakingShareFunnel.cardToShare30d >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
+                        {speakingShareFunnel.cardToShare7d - speakingShareFunnel.cardToShare30d >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                        {formatPercent(Math.abs(speakingShareFunnel.cardToShare7d - speakingShareFunnel.cardToShare30d))} vs 30-day average
+                      </span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.resultShareX7d}</strong>
+                      <span>X shares in the last 7 days. 30-day baseline: {props.overview.resultShareX30d}.</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.resultShareWhatsApp7d}</strong>
+                      <span>WhatsApp shares in the last 7 days. 30-day baseline: {props.overview.resultShareWhatsApp30d}.</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.resultShareLinkedIn7d}</strong>
+                      <span>LinkedIn shares in the last 7 days. 30-day baseline: {props.overview.resultShareLinkedIn30d}.</span>
                     </div>
                   </div>
                 </div>

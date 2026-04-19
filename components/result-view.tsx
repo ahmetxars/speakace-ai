@@ -68,6 +68,12 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     return allocateSegmentTimings(transcriptSegments, audioDuration);
   }, [audioDuration, transcriptSegments]);
 
+  const shareText = session.report
+    ? tr
+      ? `SpeakAce sonucum: ${session.report.overall} ${session.report.scaleLabel}. ${session.prompt.title}`
+      : `My SpeakAce result: ${session.report.overall} ${session.report.scaleLabel}. ${session.prompt.title}`
+    : "";
+
   const saveToStudyList = () => {
     if (typeof window === "undefined") return;
     void (async () => {
@@ -238,9 +244,9 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     }
   };
 
-  const downloadScoreImage = async () => {
-    if (!session.report || typeof window === "undefined") return;
-    const svg = buildScoreCardSvg({
+  const buildShareableCardSvg = () => {
+    if (!session.report) return "";
+    return buildScoreCardSvg({
       title: session.prompt.title,
       examLine: `${session.examType} • ${session.taskType.toUpperCase()} • ${session.difficulty}`,
       score: String(session.report.overall),
@@ -248,24 +254,34 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
       categories: session.report.categories.map((item) => ({
         label: tr ? translateCategoryLabel(item.label) : item.label,
         score: String(item.score)
-      }))
+      })),
+      nextExercise: session.report.nextExercise,
+      delta,
+      tr
     });
+  };
 
-    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `speakace-${session.examType.toLowerCase()}-result-${session.id}.svg`;
-    anchor.click();
-    URL.revokeObjectURL(url);
-    setShareMessage(tr ? "Sonuç kartı indirildi." : "Result card downloaded.");
+  const downloadScoreImage = async () => {
+    if (!session.report || typeof window === "undefined") return;
+    try {
+      const pngBlob = await svgToPngBlob(buildShareableCardSvg(), 1400, 1100);
+      const url = URL.createObjectURL(pngBlob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `speakace-${session.examType.toLowerCase()}-result-${session.id}.png`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      if (currentUser?.id) {
+        void trackClientEvent({ userId: currentUser.id, event: "result_card_download", path: `/app/results/${session.id}` });
+      }
+      setShareMessage(tr ? "Premium sonuç kartı PNG olarak indirildi." : "Premium result card downloaded as PNG.");
+    } catch {
+      setShareMessage(tr ? "PNG indirilemedi." : "Could not download the PNG card.");
+    }
   };
 
   const shareResult = async () => {
     if (!session.report || typeof window === "undefined") return;
-    const shareText = tr
-      ? `SpeakAce sonucum: ${session.report.overall} ${session.report.scaleLabel}. ${session.prompt.title}`
-      : `My SpeakAce result: ${session.report.overall} ${session.report.scaleLabel}. ${session.prompt.title}`;
     const shareUrl = window.location.href;
 
     try {
@@ -275,116 +291,147 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
           text: shareText,
           url: shareUrl
         });
+        if (currentUser?.id) {
+          void trackClientEvent({ userId: currentUser.id, event: "result_share_native", path: `/app/results/${session.id}` });
+        }
         setShareMessage(tr ? "Sonuç başarıyla paylaşıldı." : "Result shared successfully.");
         return;
       }
 
       await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      if (currentUser?.id) {
+        void trackClientEvent({ userId: currentUser.id, event: "result_share_copy", path: `/app/results/${session.id}` });
+      }
       setShareMessage(tr ? "Paylaşım metni panoya kopyalandı." : "Share text copied to clipboard.");
     } catch {
       setShareMessage(tr ? "Paylaşım şu anda tamamlanamadı." : "Could not complete sharing right now.");
     }
   };
 
-  return (
-    <div style={{ maxWidth: 820, margin: "0 auto", padding: "2rem 1.5rem" }}>
+  const openSocialShare = (platform: "x" | "whatsapp" | "linkedin") => {
+    if (typeof window === "undefined") return;
+    const shareUrl = window.location.href;
+    const encodedUrl = encodeURIComponent(shareUrl);
+    const encodedText = encodeURIComponent(shareText);
 
-      {/* HERO: Score + summary */}
+    const urls = {
+      x: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
+      whatsapp: `https://wa.me/?text=${encodedText}%20${encodedUrl}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`
+    };
+
+    const events = {
+      x: "result_share_x" as const,
+      whatsapp: "result_share_whatsapp" as const,
+      linkedin: "result_share_linkedin" as const
+    };
+
+    if (currentUser?.id) {
+      void trackClientEvent({ userId: currentUser.id, event: events[platform], path: `/app/results/${session.id}` });
+    }
+    window.open(urls[platform], "_blank", "noopener,noreferrer,width=720,height=720");
+    setShareMessage(
+      platform === "x"
+        ? tr ? "X paylaşımı açıldı." : "X share opened."
+        : platform === "whatsapp"
+          ? tr ? "WhatsApp paylaşımı açıldı." : "WhatsApp share opened."
+          : tr ? "LinkedIn paylaşımı açıldı." : "LinkedIn share opened."
+    );
+  };
+
+  return (
+    <div style={{ maxWidth: 860, margin: "0 auto", padding: "2rem 1.5rem" }}>
       <div
         style={{
-          padding: "1.4rem",
-          borderRadius: 28,
-          background: "linear-gradient(135deg, color-mix(in oklch, var(--primary) 18%, var(--card) 82%), color-mix(in oklch, var(--accent) 18%, var(--card) 82%))",
-          border: "1px solid color-mix(in oklch, var(--primary) 25%, var(--border) 75%)",
-          boxShadow: "0 24px 60px color-mix(in oklch, var(--primary) 12%, transparent 88%)",
-          marginBottom: "1.5rem"
+          position: "relative",
+          padding: "1.5rem",
+          borderRadius: 30,
+          background: "radial-gradient(circle at top right, rgba(76,132,255,0.34), transparent 28%), radial-gradient(circle at bottom left, rgba(18,184,166,0.26), transparent 35%), linear-gradient(135deg, #06111f 0%, #0d1a33 52%, #102f43 100%)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "0 32px 90px rgba(7, 17, 31, 0.28)",
+          marginBottom: "1.6rem",
+          overflow: "hidden"
         }}
       >
+        <div style={{ position: "absolute", top: -40, right: -20, width: 220, height: 220, borderRadius: 999, background: "rgba(93, 112, 255, 0.18)", filter: "blur(36px)" }} />
+        <div style={{ position: "absolute", bottom: -70, left: -30, width: 260, height: 260, borderRadius: 999, background: "rgba(16, 185, 129, 0.14)", filter: "blur(42px)" }} />
+
         <div
           style={{
-            background: "color-mix(in oklch, var(--card) 92%, white 8%)",
-            borderRadius: 22,
-            padding: "1.6rem",
+            position: "relative",
+            zIndex: 1,
             display: "grid",
-            gap: "1.2rem"
+            gap: "1.2rem",
+            padding: "1.5rem",
+            borderRadius: 24,
+            background: "linear-gradient(180deg, rgba(8, 15, 28, 0.58), rgba(8, 15, 28, 0.32))",
+            border: "1px solid rgba(255,255,255,0.1)",
+            backdropFilter: "blur(18px)"
           }}
         >
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>
-              {examMeta.leftEyebrow}
-            </div>
-            <h1 style={{ fontSize: "clamp(1.2rem, 2.5vw, 1.7rem)", margin: "0 0 0.85rem", fontWeight: 800, color: "var(--foreground)" }}>
-              {session.prompt.title}
-            </h1>
-
-            {session.report ? (
-              <div style={{ display: "grid", gap: "0.45rem", justifyItems: "center" }}>
-                <div style={{ display: "inline-flex", alignItems: "end", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
-                  <div style={{ fontSize: "clamp(4rem, 8vw, 6rem)", fontWeight: 900, lineHeight: 0.95, color: "var(--primary)" }}>
-                    {session.report.overall}
-                  </div>
-                  {delta !== null ? (
-                    <div
-                      style={{
-                        padding: "0.35rem 0.8rem",
-                        borderRadius: 999,
-                        background: delta > 0 ? "oklch(0.55 0.18 165 / 0.12)" : delta < 0 ? "oklch(0.55 0.2 20 / 0.1)" : "var(--secondary)",
-                        color: delta > 0 ? "oklch(0.45 0.18 165)" : delta < 0 ? "oklch(0.45 0.18 20)" : "var(--muted-foreground)",
-                        fontWeight: 800,
-                        fontSize: "0.9rem"
-                      }}
-                    >
-                      {delta > 0 ? `+${delta}` : `${delta}`} {tr ? "öncekine göre" : "vs last attempt"}
-                    </div>
-                  ) : null}
-                </div>
-                <div style={{ fontSize: "1rem", color: "var(--muted-foreground)", fontWeight: 600 }}>
-                  {session.report.scaleLabel}
-                </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "1rem", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.55rem", padding: "0.4rem 0.8rem", borderRadius: 999, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.82)", fontSize: "0.82rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.8rem" }}>
+                <span style={{ width: 11, height: 11, borderRadius: 999, background: "linear-gradient(135deg, #60a5fa, #34d399)", boxShadow: "0 0 18px rgba(96,165,250,0.7)" }} />
+                SpeakAce Result Card
               </div>
-            ) : (
-              <p style={{ color: "var(--muted-foreground)" }}>{tr ? "Henüz skor yok." : "No score yet."}</p>
-            )}
+              <h1 style={{ fontSize: "clamp(1.3rem, 2.8vw, 1.9rem)", margin: 0, fontWeight: 800, color: "white", maxWidth: 580 }}>{session.prompt.title}</h1>
+              <p style={{ margin: "0.55rem 0 0", color: "rgba(255,255,255,0.68)", fontSize: "0.96rem" }}>{examMeta.leftEyebrow} • {session.examType} • {session.difficulty}</p>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: "0.78rem", fontWeight: 800, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.08em" }}>speakace.org</div>
+              <div style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.62)", marginTop: "0.45rem" }}>{tr ? "AI speaking score" : "AI speaking score"}</div>
+            </div>
           </div>
 
           {session.report ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem" }}>
-              {session.report.categories.map((cat) => (
-                <div
-                  key={cat.category}
-                  style={{
-                    padding: "0.9rem",
-                    borderRadius: 16,
-                    background: "linear-gradient(180deg, color-mix(in oklch, var(--primary) 6%, var(--card) 94%), var(--card))",
-                    border: "1px solid var(--border)",
-                    textAlign: "center"
-                  }}
-                >
-                  <div style={{ fontSize: "0.76rem", color: "var(--muted-foreground)", minHeight: 34 }}>{tr ? translateCategoryLabel(cat.label) : cat.label}</div>
-                  <div style={{ fontSize: "1.6rem", fontWeight: 900, marginTop: "0.35rem", color: "var(--foreground)" }}>{cat.score}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: "1rem", alignItems: "stretch" }}>
+              <div style={{ padding: "1.25rem", borderRadius: 24, background: "linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04))", border: "1px solid rgba(255,255,255,0.1)" }}>
+                <div style={{ display: "flex", gap: "0.85rem", alignItems: "end", flexWrap: "wrap" }}>
+                  <div style={{ fontSize: "clamp(4.3rem, 8vw, 6.4rem)", fontWeight: 900, lineHeight: 0.95, color: "white", textShadow: "0 12px 40px rgba(59,130,246,0.35)" }}>{session.report.overall}</div>
+                  {delta !== null ? (
+                    <div style={{ padding: "0.42rem 0.82rem", borderRadius: 999, background: delta >= 0 ? "rgba(16,185,129,0.16)" : "rgba(248,113,113,0.16)", color: delta >= 0 ? "#6ee7b7" : "#fca5a5", fontWeight: 800, fontSize: "0.92rem", marginBottom: "0.45rem" }}>
+                      {delta >= 0 ? `+${delta}` : `${delta}`} {tr ? "son denemeye göre" : "vs last try"}
+                    </div>
+                  ) : null}
                 </div>
-              ))}
+                <div style={{ marginTop: "0.65rem", fontSize: "1rem", color: "rgba(255,255,255,0.78)", fontWeight: 600 }}>{session.report.scaleLabel}</div>
+                <p style={{ margin: "1rem 0 0", lineHeight: 1.65, color: "rgba(255,255,255,0.66)", maxWidth: 520 }}>{session.report.nextExercise}</p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem" }}>
+                {session.report.categories.map((cat) => (
+                  <div key={cat.category} style={{ padding: "0.95rem", borderRadius: 18, background: "linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.05))", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    <div style={{ fontSize: "0.8rem", minHeight: 36, color: "rgba(255,255,255,0.72)" }}>{tr ? translateCategoryLabel(cat.label) : cat.label}</div>
+                    <div style={{ marginTop: "0.45rem", fontSize: "1.75rem", fontWeight: 900, color: "white" }}>{cat.score}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : null}
 
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <button type="button" className="button button-secondary" onClick={() => void downloadScoreImage()}>
-              {tr ? "Sonuç kartını indir" : "Download image"}
-            </button>
-            <button type="button" className="button button-primary" onClick={() => void shareResult()}>
-              {tr ? "Sonucu paylaş" : "Share result"}
-            </button>
+          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+              <button type="button" className="button button-secondary" onClick={() => void downloadScoreImage()}>
+                {tr ? "PNG indir" : "Download PNG"}
+              </button>
+              <button type="button" className="button button-primary" onClick={() => void shareResult()}>
+                {tr ? "Hızlı paylaş" : "Quick share"}
+              </button>
+            </div>
+            <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
+              <button type="button" className="button button-secondary" onClick={() => openSocialShare("x")}>Share to X</button>
+              <button type="button" className="button button-secondary" onClick={() => openSocialShare("whatsapp")}>WhatsApp</button>
+              <button type="button" className="button button-secondary" onClick={() => openSocialShare("linkedin")}>LinkedIn</button>
+            </div>
           </div>
-          {shareMessage ? (
-            <p style={{ margin: 0, textAlign: "center", fontSize: "0.88rem", color: "var(--muted-foreground)" }}>{shareMessage}</p>
-          ) : null}
+          {shareMessage ? <p style={{ margin: 0, color: "rgba(255,255,255,0.68)", fontSize: "0.88rem" }}>{shareMessage}</p> : null}
         </div>
       </div>
 
-      {/* CATEGORY BARS */}
       {session.report ? (
         <div style={{ display: "grid", gap: "0.75rem", marginBottom: "2rem" }}>
-          {session.report.categories.map(cat => {
+          {session.report.categories.map((cat) => {
             const max = session.examType === "TOEFL" ? 4 : 9;
             const pct = Math.round((cat.score / max) * 100);
             return (
@@ -402,14 +449,13 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         </div>
       ) : null}
 
-      {/* TAB NAV */}
       <div style={{ display: "flex", gap: 0, marginBottom: "1.5rem", borderBottom: "2px solid var(--border)" }}>
         {[
           { key: "feedback", label: tr ? "Geri Bildirim" : "Feedback" },
           { key: "transcript", label: tr ? "Transkript" : "Transcript" },
           { key: "compare", label: tr ? "Karşılaştır" : "Compare" },
           { key: "history", label: tr ? "Geçmiş" : "History" }
-        ].map(tab => (
+        ].map((tab) => (
           <button
             key={tab.key}
             type="button"
@@ -426,11 +472,12 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
               marginBottom: "-2px",
               transition: "all 0.15s"
             }}
-          >{tab.label}</button>
+          >
+            {tab.label}
+          </button>
         ))}
       </div>
 
-      {/* TAB CONTENT: Feedback */}
       {activeTab === "feedback" && session.report ? (
         <div style={{ display: "grid", gap: "1.5rem" }}>
           <div style={{ padding: "1.2rem", borderRadius: 14, background: "oklch(0.71 0.18 165.41 / 0.07)", border: "1px solid oklch(0.71 0.18 165.41 / 0.2)" }}>
@@ -460,7 +507,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
             <div style={{ padding: "1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }}>
               <div style={{ fontWeight: 700, marginBottom: "0.5rem", fontSize: "0.9rem" }}>{examMeta.fillerWordsLabel}</div>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                {session.report.fillerWords.map(w => (
+                {session.report.fillerWords.map((w) => (
                   <span key={w} style={{ padding: "0.25rem 0.75rem", borderRadius: 999, background: "var(--secondary)", border: "1px solid var(--border)", fontSize: "0.85rem", fontWeight: 600 }}>{w}</span>
                 ))}
               </div>
@@ -471,7 +518,6 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         <p style={{ color: "var(--muted-foreground)" }}>{tr ? "Henüz AI raporu yok." : "No AI report yet."}</p>
       ) : null}
 
-      {/* TAB CONTENT: Transcript */}
       {activeTab === "transcript" ? (
         <div style={{ display: "grid", gap: "1.2rem" }}>
           {audioSource ? (
@@ -483,7 +529,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
                 preload="metadata"
                 src={audioSource}
                 style={{ width: "100%", borderRadius: 8 }}
-                onLoadedMetadata={e => setAudioDuration(e.currentTarget.duration || 0)}
+                onLoadedMetadata={(e) => setAudioDuration(e.currentTarget.duration || 0)}
                 onTimeUpdate={handleAudioTimeUpdate}
               />
             </div>
@@ -508,7 +554,6 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         </div>
       ) : null}
 
-      {/* TAB CONTENT: Compare */}
       {activeTab === "compare" && session.report?.improvedAnswer ? (
         <div style={{ display: "grid", gap: "1rem" }}>
           <p style={{ color: "var(--muted-foreground)", fontSize: "0.88rem", margin: 0 }}>
@@ -536,13 +581,12 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         <p style={{ color: "var(--muted-foreground)" }}>{tr ? "Karşılaştırma için gelişmiş cevap gerekli." : "No improved answer available to compare."}</p>
       ) : null}
 
-      {/* TAB CONTENT: History */}
       {activeTab === "history" ? (
         <div style={{ display: "grid", gap: "1rem" }}>
           <div style={{ padding: "1.1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }}>
             <div style={{ fontWeight: 700, marginBottom: "1rem", fontSize: "0.9rem" }}>{examMeta.trendPanelLabel}</div>
             <div style={{ display: "grid", gap: "0.65rem" }}>
-              {summary.recentSessions.slice(0, 5).map(item => {
+              {summary.recentSessions.slice(0, 5).map((item) => {
                 const max = session.examType === "TOEFL" ? 4 : 9;
                 const pct = Math.round(((item.report?.overall ?? 0) / max) * 100);
                 return (
@@ -564,7 +608,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
             <div style={{ padding: "1.1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)" }}>
               <div style={{ fontWeight: 700, marginBottom: "0.8rem", fontSize: "0.9rem" }}>{tr ? "Bu soruda önceki denemeler" : "Previous attempts on this topic"}</div>
               <div style={{ display: "grid", gap: "0.75rem" }}>
-                {samePromptHistory.map(item => (
+                {samePromptHistory.map((item) => (
                   <div key={item.id} style={{ padding: "0.9rem", borderRadius: 10, background: "var(--secondary)", border: "1px solid var(--border)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
                       <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>{new Date(item.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</span>
@@ -581,7 +625,6 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         </div>
       ) : null}
 
-      {/* ACTION BUTTONS */}
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "2rem", paddingTop: "1.5rem", borderTop: "1px solid var(--border)" }}>
         <Link href={retryHref} className="button button-primary" style={{ flex: 1, textAlign: "center" }}>
           {examMeta.retryLabel}
@@ -598,7 +641,6 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
           </button>
         ) : null}
       </div>
-
     </div>
   );
 }
@@ -648,7 +690,6 @@ function getExamMeta(session: SpeakingSession, tr: boolean) {
     structureLabel: tr ? "Bu taskta ne beklenir" : "What this task expects",
     structureHint: buildToeflStructureHint(session.taskType, tr),
     totalSessionsLabel: tr ? "Toplam task denemesi" : "Total task attempts",
-    totalSessionsNote: tr ? "Kayitli TOEFL speaking denemen" : "Recorded TOEFL speaking attempts",
     averageLabel: tr ? "Ortalama tahmin" : "Average estimate",
     averageNote: tr ? "Son TOEFL denemelerinde" : "Across recent TOEFL attempts",
     trendLabel: tr ? "Task trendi" : "Task trend",
@@ -760,7 +801,6 @@ function buildSentenceUpgradeReason(mine: string, stronger: string, tr: boolean)
     : "The stronger version keeps the same core idea but expresses it in a clearer, more natural, and more exam-ready way.";
 }
 
-
 function buildSentenceComparePairs(rawTranscript: string, improvedAnswer: string) {
   const split = (text: string) =>
     text
@@ -779,6 +819,129 @@ function buildSentenceComparePairs(rawTranscript: string, improvedAnswer: string
   })).filter((pair) => pair.mine || pair.stronger);
 }
 
+function buildScoreCardSvg(input: {
+  title: string;
+  examLine: string;
+  score: string;
+  scaleLabel: string;
+  categories: Array<{ label: string; score: string }>;
+  nextExercise: string;
+  delta: number | null;
+  tr: boolean;
+}) {
+  const rows = input.categories
+    .slice(0, 4)
+    .map(
+      (item, index) => `
+        <g transform="translate(${64 + index * 220}, 654)">
+          <rect x="0" y="0" width="196" height="136" rx="26" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.14)" />
+          <text x="98" y="50" text-anchor="middle" fill="rgba(255,255,255,0.78)" font-size="22" font-family="Arial, sans-serif">${escapeXml(truncateForCard(item.label, 18))}</text>
+          <text x="98" y="98" text-anchor="middle" fill="#ffffff" font-size="48" font-weight="800" font-family="Arial, sans-serif">${escapeXml(item.score)}</text>
+        </g>
+      `
+    )
+    .join("");
+
+  const deltaBadge = input.delta !== null
+    ? `<g transform="translate(640, 258)"><rect x="0" y="0" width="200" height="56" rx="28" fill="${input.delta >= 0 ? "rgba(16,185,129,0.16)" : "rgba(248,113,113,0.16)"}" /><text x="100" y="36" text-anchor="middle" fill="${input.delta >= 0 ? "#86efac" : "#fca5a5"}" font-size="24" font-weight="800" font-family="Arial, sans-serif">${escapeXml(input.delta >= 0 ? `+${input.delta}` : `${input.delta}`)} ${escapeXml(input.tr ? "son denemeye göre" : "vs last try")}</text></g>`
+    : "";
+
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1100" viewBox="0 0 1400 1100" fill="none">
+      <defs>
+        <linearGradient id="bg" x1="72" y1="72" x2="1320" y2="1010" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#071325"/>
+          <stop offset="0.55" stop-color="#153563"/>
+          <stop offset="1" stop-color="#0b7b71"/>
+        </linearGradient>
+        <radialGradient id="glowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1180 150) rotate(90) scale(300 300)">
+          <stop stop-color="#6EA8FF" stop-opacity="0.55"/>
+          <stop offset="1" stop-color="#6EA8FF" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="glowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(180 960) rotate(90) scale(340 340)">
+          <stop stop-color="#34D399" stop-opacity="0.45"/>
+          <stop offset="1" stop-color="#34D399" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="1400" height="1100" rx="44" fill="#04101d"/>
+      <rect x="32" y="32" width="1336" height="1036" rx="42" fill="url(#bg)"/>
+      <circle cx="1180" cy="150" r="300" fill="url(#glowA)"/>
+      <circle cx="180" cy="960" r="340" fill="url(#glowB)"/>
+      <rect x="60" y="60" width="1280" height="980" rx="36" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)"/>
+      <rect x="86" y="86" width="1228" height="928" rx="34" fill="rgba(4,11,22,0.24)" stroke="rgba(255,255,255,0.08)"/>
+
+      <g transform="translate(122, 132)">
+        <rect x="0" y="0" width="286" height="58" rx="29" fill="rgba(255,255,255,0.09)" />
+        <circle cx="34" cy="29" r="11" fill="url(#glowA)" />
+        <text x="60" y="38" fill="rgba(255,255,255,0.82)" font-size="24" font-weight="700" font-family="Arial, sans-serif">SpeakAce Result Card</text>
+      </g>
+      <text x="122" y="252" fill="#ffffff" font-size="58" font-weight="800" font-family="Arial, sans-serif">${escapeXml(truncateForCard(input.title, 36))}</text>
+      <text x="122" y="300" fill="rgba(255,255,255,0.72)" font-size="28" font-family="Arial, sans-serif">${escapeXml(input.examLine)}</text>
+      <text x="1120" y="168" text-anchor="end" fill="rgba(255,255,255,0.88)" font-size="30" font-weight="800" font-family="Arial, sans-serif">speakace.org</text>
+      <text x="1120" y="206" text-anchor="end" fill="rgba(255,255,255,0.62)" font-size="22" font-family="Arial, sans-serif">${escapeXml(input.tr ? "AI speaking score" : "AI speaking score")}</text>
+
+      <text x="122" y="540" fill="#ffffff" font-size="214" font-weight="900" font-family="Arial, sans-serif">${escapeXml(input.score)}</text>
+      <text x="128" y="596" fill="rgba(255,255,255,0.88)" font-size="44" font-weight="700" font-family="Arial, sans-serif">${escapeXml(input.scaleLabel)}</text>
+      ${deltaBadge}
+      <foreignObject x="126" y="628" width="1110" height="90">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Arial, sans-serif; color: rgba(255,255,255,0.72); font-size: 26px; line-height: 1.45;">${escapeHtml(input.nextExercise)}</div>
+      </foreignObject>
+
+      ${rows}
+
+      <g transform="translate(1088, 886)">
+        <rect x="0" y="0" width="164" height="78" rx="26" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.14)" />
+        <text x="82" y="30" text-anchor="middle" fill="rgba(255,255,255,0.72)" font-size="18" font-family="Arial, sans-serif">${escapeXml(input.tr ? "Powered by" : "Powered by")}</text>
+        <text x="82" y="58" text-anchor="middle" fill="#ffffff" font-size="28" font-weight="800" font-family="Arial, sans-serif">SpeakAce</text>
+      </g>
+    </svg>
+  `.trim();
+}
+
+async function svgToPngBlob(svg: string, width: number, height: number) {
+  const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const svgUrl = URL.createObjectURL(svgBlob);
+
+  try {
+    const image = await loadImage(svgUrl);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Canvas context unavailable.");
+    }
+    context.fillStyle = "#04101d";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("PNG conversion failed."));
+          return;
+        }
+        resolve(blob);
+      }, "image/png");
+    });
+  } finally {
+    URL.revokeObjectURL(svgUrl);
+  }
+}
+
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+function truncateForCard(value: string, max: number) {
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -786,52 +949,6 @@ function escapeHtml(value: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-}
-
-function buildScoreCardSvg(input: {
-  title: string;
-  examLine: string;
-  score: string;
-  scaleLabel: string;
-  categories: Array<{ label: string; score: string }>;
-}) {
-  const rows = input.categories
-    .slice(0, 4)
-    .map(
-      (item, index) => `
-        <g transform="translate(${48 + index * 168}, 360)">
-          <rect x="0" y="0" width="152" height="108" rx="22" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.18)" />
-          <text x="76" y="38" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="16" font-family="Arial, sans-serif">${escapeXml(item.label)}</text>
-          <text x="76" y="78" text-anchor="middle" fill="#ffffff" font-size="34" font-weight="800" font-family="Arial, sans-serif">${escapeXml(item.score)}</text>
-        </g>
-      `
-    )
-    .join("");
-
-  return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="720" height="540" viewBox="0 0 720 540" fill="none">
-      <defs>
-        <linearGradient id="bg" x1="48" y1="40" x2="672" y2="500" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#3B82F6"/>
-          <stop offset="1" stop-color="#14B8A6"/>
-        </linearGradient>
-      </defs>
-      <rect width="720" height="540" rx="36" fill="#08111f"/>
-      <rect x="24" y="24" width="672" height="492" rx="30" fill="url(#bg)" />
-      <rect x="44" y="44" width="632" height="452" rx="26" fill="rgba(7,14,28,0.18)" stroke="rgba(255,255,255,0.16)" />
-      <text x="60" y="88" fill="rgba(255,255,255,0.8)" font-size="18" font-weight="700" font-family="Arial, sans-serif">SpeakAce Result</text>
-      <text x="60" y="132" fill="#ffffff" font-size="32" font-weight="800" font-family="Arial, sans-serif">${escapeXml(truncateForCard(input.title, 34))}</text>
-      <text x="60" y="164" fill="rgba(255,255,255,0.76)" font-size="18" font-family="Arial, sans-serif">${escapeXml(input.examLine)}</text>
-      <text x="60" y="280" fill="#ffffff" font-size="124" font-weight="900" font-family="Arial, sans-serif">${escapeXml(input.score)}</text>
-      <text x="60" y="318" fill="rgba(255,255,255,0.9)" font-size="28" font-weight="700" font-family="Arial, sans-serif">${escapeXml(input.scaleLabel)}</text>
-      ${rows}
-      <text x="60" y="506" fill="rgba(255,255,255,0.84)" font-size="20" font-family="Arial, sans-serif">speakace.org</text>
-    </svg>
-  `.trim();
-}
-
-function truncateForCard(value: string, max: number) {
-  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
 }
 
 function escapeXml(value: string) {
