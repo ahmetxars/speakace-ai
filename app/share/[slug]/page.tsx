@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ShareAttributionCapture } from "@/components/share-attribution-capture";
 import { buildShareAttributionPath, buildSharePricingHref, buildShareSignupHref, estimateCountryRank } from "@/lib/share-growth";
@@ -66,63 +65,86 @@ export default async function SharedResultPage({ params }: { params: Promise<{ s
         <div
           style={{
             position: "relative",
-            padding: "1.5rem",
-            borderRadius: 30,
-            background: "radial-gradient(circle at top right, rgba(76,132,255,0.34), transparent 28%), radial-gradient(circle at bottom left, rgba(18,184,166,0.26), transparent 35%), linear-gradient(135deg, #06111f 0%, #0d1a33 52%, #102f43 100%)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 32px 90px rgba(7, 17, 31, 0.28)",
+            padding: "2rem 1.5rem",
+            borderRadius: 32,
+            background: "#151e32",
+            border: "1px solid rgba(255,255,255,0.09)",
+            boxShadow: "0 24px 60px rgba(0,0,0,0.42), 0 0 0 1px rgba(255,255,255,0.05)",
             overflow: "hidden"
           }}
         >
-          <div style={{ position: "absolute", top: -40, right: -20, width: 220, height: 220, borderRadius: 999, background: "rgba(93, 112, 255, 0.18)", filter: "blur(36px)" }} />
-          <div style={{ position: "absolute", bottom: -70, left: -30, width: 260, height: 260, borderRadius: 999, background: "rgba(16, 185, 129, 0.14)", filter: "blur(42px)" }} />
-          <div style={{ position: "relative", zIndex: 1, display: "grid", gap: "1.1rem", padding: "1.5rem", borderRadius: 24, background: "linear-gradient(180deg, rgba(8, 15, 28, 0.58), rgba(8, 15, 28, 0.32))", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(18px)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
-              <div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.55rem", padding: "0.4rem 0.8rem", borderRadius: 999, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.82)", fontSize: "0.82rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.8rem" }}>
-                  <span style={{ width: 11, height: 11, borderRadius: 999, background: "linear-gradient(135deg, #60a5fa, #34d399)", boxShadow: "0 0 18px rgba(96,165,250,0.7)" }} />
-                  SpeakAce Shared Result
-                </div>
-                <div style={{ display: "flex", gap: "0.7rem", alignItems: "center", marginBottom: "0.9rem" }}>
-                  <div style={{ width: 46, height: 46, borderRadius: 999, overflow: "hidden", display: "grid", placeItems: "center", background: "rgba(255,255,255,0.12)", color: "white", fontWeight: 900 }}>
-                    {card.avatarDataUrl ? <img src={card.avatarDataUrl} alt="Learner" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : card.learnerName.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <div style={{ color: "white", fontWeight: 800 }}>{card.learnerName}</div>
-                    <div style={{ color: "rgba(255,255,255,0.66)", fontSize: "0.84rem" }}>{card.localeFlag} {card.streakLabel}</div>
-                  </div>
-                  <div style={{ padding: "0.36rem 0.72rem", borderRadius: 999, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.88)", fontSize: "0.8rem", fontWeight: 700 }}>{card.badgeLabel}</div>
-                </div>
-                <h1 style={{ margin: 0, color: "white", fontSize: "clamp(1.4rem, 3vw, 2rem)" }}>{card.promptTitle}</h1>
-                <p style={{ margin: "0.55rem 0 0", color: "rgba(255,255,255,0.68)" }}>{card.examType} • {card.taskType} • {card.difficulty}</p>
+          <div style={{ position: "absolute", top: -50, left: -50, width: 180, height: 180, borderRadius: 999, background: "linear-gradient(135deg, rgba(99,102,241,0.42), rgba(168,85,247,0.28))", filter: "blur(80px)", opacity: 0.75 }} />
+          <div style={{ position: "absolute", bottom: -60, right: -40, width: 180, height: 180, borderRadius: 999, background: "linear-gradient(135deg, rgba(99,102,241,0.24), rgba(168,85,247,0.34))", filter: "blur(80px)", opacity: 0.8 }} />
+          <div style={{ position: "relative", zIndex: 1, display: "grid", gap: "1.5rem", minHeight: 760 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
+              <div style={{ fontSize: "1.35rem", fontWeight: 800, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                SpeakAce
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ color: "rgba(255,255,255,0.88)", fontWeight: 800, fontSize: "1rem" }}>speakace.org</div>
+              <div style={{ fontSize: "0.75rem", fontWeight: 700, background: "rgba(255,255,255,0.08)", padding: "0.45rem 0.8rem", borderRadius: 999, color: "#22d3ee", border: "1px solid rgba(34,211,238,0.2)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                AI Certified
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: "1rem" }}>
-              <div style={{ padding: "1.15rem", borderRadius: 20, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                <div style={{ fontSize: "4.8rem", fontWeight: 900, lineHeight: 0.95, color: "white" }}>{card.overallScore}</div>
-                <div style={{ marginTop: "0.5rem", color: "rgba(255,255,255,0.82)", fontWeight: 700 }}>{card.scaleLabel}</div>
-                <p style={{ margin: "0.9rem 0 0", lineHeight: 1.65, color: "rgba(255,255,255,0.68)" }}>{card.nextExercise}</p>
-                <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap", marginTop: "1rem" }}>
-                  <div style={{ padding: "0.65rem 0.8rem", borderRadius: 16, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)", minWidth: 160 }}>
-                    <div style={{ color: "rgba(255,255,255,0.62)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>Estimated percentile</div>
-                    <div style={{ color: "white", fontWeight: 800, marginTop: "0.25rem" }}>{rankMeta.percentileLabel}</div>
+
+            <div style={{ display: "grid", gap: "1.35rem", justifyItems: "center", textAlign: "center", marginBottom: "auto" }}>
+              <div style={{ display: "grid", gap: "0.85rem", justifyItems: "center" }}>
+                <div style={{ display: "flex", gap: "0.7rem", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+                  <div style={{ width: 56, height: 56, borderRadius: 999, overflow: "hidden", background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)", color: "white", display: "grid", placeItems: "center", fontWeight: 900, fontSize: "1rem" }}>
+                    {card.avatarDataUrl ? <img src={card.avatarDataUrl} alt="Learner" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : card.learnerName.slice(0, 2).toUpperCase()}
                   </div>
-                  <div style={{ padding: "0.65rem 0.8rem", borderRadius: 16, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)", minWidth: 180 }}>
-                    <div style={{ color: "rgba(255,255,255,0.62)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>Country signal</div>
-                    <div style={{ color: "white", fontWeight: 800, marginTop: "0.25rem" }}>{rankMeta.countrySignal}</div>
+                  <div style={{ display: "grid", gap: "0.15rem", textAlign: "left" }}>
+                    <div style={{ color: "white", fontWeight: 700, fontSize: "1rem" }}>{card.learnerName}</div>
+                    <div style={{ color: "var(--text-muted)", fontSize: "0.84rem" }}>{card.localeFlag} {card.streakLabel}</div>
+                  </div>
+                </div>
+                <h1 style={{ margin: 0, color: "white", fontSize: "clamp(1.4rem, 3vw, 2rem)", maxWidth: 620 }}>{card.promptTitle}</h1>
+                <p style={{ margin: 0, color: "var(--text-muted)" }}>{card.examType} • {card.taskType} • {card.difficulty}</p>
+              </div>
+
+              <div style={{ width: 236, height: 236, borderRadius: "50%", background: "conic-gradient(#22d3ee 0% 78%, rgba(255,255,255,0.1) 78% 100%)", display: "grid", placeItems: "center", boxShadow: "0 0 36px rgba(34,211,238,0.18)" }}>
+                <div style={{ width: 206, height: 206, borderRadius: "50%", background: "#151e32", display: "grid", placeItems: "center" }}>
+                  <div style={{ display: "grid", justifyItems: "center" }}>
+                    <div style={{ fontSize: "4.2rem", fontWeight: 900, lineHeight: 1, background: "linear-gradient(to bottom, #fff, #cbd5e1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{card.overallScore}</div>
+                    <div style={{ fontSize: "0.88rem", color: "var(--text-muted)", marginTop: 4 }}>OVERALL SCORE</div>
                   </div>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem" }}>
-                {card.categories.map((item) => (
-                  <div key={item.label} style={{ padding: "0.9rem", borderRadius: 16, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                    <div style={{ color: "rgba(255,255,255,0.72)", fontSize: "0.8rem", minHeight: 32 }}>{item.label}</div>
-                    <div style={{ marginTop: "0.35rem", color: "white", fontSize: "1.6rem", fontWeight: 900 }}>{item.score}</div>
-                  </div>
-                ))}
+
+              <div style={{ display: "grid", gap: "0.75rem", justifyItems: "center" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", background: "rgba(16,185,129,0.15)", color: "#34d399", padding: "0.5rem 1rem", borderRadius: 999, fontWeight: 700, fontSize: "0.95rem", border: "1px solid rgba(16,185,129,0.2)" }}>
+                  <span>≈ {card.scaleLabel}</span>
+                </div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", background: "rgba(255,255,255,0.08)", color: "#22d3ee", padding: "0.45rem 0.95rem", borderRadius: 999, fontWeight: 700, fontSize: "0.82rem", border: "1px solid rgba(34,211,238,0.14)" }}>
+                  {card.badgeLabel}
+                </div>
+              </div>
+
+              <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                {card.categories.map((item, index) => {
+                  const tone = ["#22d3ee", "#f472b6", "#818cf8", "#fbbf24"][index % 4];
+                  const pct = Math.max(10, Math.min(100, (item.score / (card.examType === "TOEFL" ? 4 : 9)) * 100));
+                  return (
+                    <div key={item.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", padding: "1rem", borderRadius: 16, textAlign: "left" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem", gap: "0.5rem" }}>
+                        <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>{item.label}</span>
+                        <span style={{ fontWeight: 800, color: "white" }}>{item.score}</span>
+                      </div>
+                      <div style={{ width: "100%", height: 8, background: "rgba(255,255,255,0.1)", borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: tone }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ width: "100%", display: "grid", gap: "0.8rem", justifyItems: "center" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0.8rem 1rem", borderRadius: 16, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.06)", color: "white", fontSize: "0.95rem", fontWeight: 700, textAlign: "center" }}>
+                  {rankMeta.percentileLabel} • {rankMeta.countrySignal}
+                </div>
+                <p style={{ margin: 0, fontSize: "0.95rem", color: "rgba(255,255,255,0.76)", maxWidth: 560, lineHeight: 1.6, textAlign: "center" }}>{card.nextExercise}</p>
+              </div>
+
+              <div style={{ width: "100%", paddingTop: "1.2rem", borderTop: "1px solid rgba(255,255,255,0.08)", display: "grid", gap: "0.8rem", justifyItems: "center" }}>
+                <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--text-muted)" }}>SpeakAce AI tarafından analiz edildi.</p>
               </div>
             </div>
           </div>

@@ -5,53 +5,20 @@ import { getSharedResultCard } from "@/lib/shared-result-cards";
 
 export const size = {
   width: 1200,
-  height: 630
+  height: 1500
 };
 
 export const contentType = "image/png";
+
+const statTones = ["#22d3ee", "#f472b6", "#818cf8", "#fbbf24"];
 
 export default async function OpenGraphImage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const card = await getSharedResultCard(slug);
 
-  if (!card) {
-    notFound();
-  }
-  const rankMeta = estimateCountryRank(card.overallScore, card.examType, card.localeFlag);
+  if (!card) notFound();
 
-  const avatarContent = card.avatarDataUrl ? (
-    <img
-      alt={card.learnerName}
-      src={card.avatarDataUrl}
-      width={88}
-      height={88}
-      style={{
-        width: 88,
-        height: 88,
-        borderRadius: 9999,
-        objectFit: "cover",
-        border: "3px solid rgba(255,255,255,0.18)"
-      }}
-    />
-  ) : (
-    <div
-      style={{
-        width: 88,
-        height: 88,
-        borderRadius: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "white",
-        fontSize: 32,
-        fontWeight: 800,
-        background: "linear-gradient(135deg, rgba(96,165,250,0.95), rgba(52,211,153,0.9))",
-        border: "3px solid rgba(255,255,255,0.16)"
-      }}
-    >
-      {card.learnerName.slice(0, 2).toUpperCase()}
-    </div>
-  );
+  const rankMeta = estimateCountryRank(card.overallScore, card.examType, card.localeFlag);
 
   return new ImageResponse(
     (
@@ -60,237 +27,245 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
           width: "100%",
           height: "100%",
           display: "flex",
+          padding: 44,
           position: "relative",
-          background: "linear-gradient(135deg, #06111f 0%, #0d1a33 52%, #102f43 100%)",
+          backgroundColor: "#0f172a",
           color: "white",
-          fontFamily: "Arial"
+          fontFamily: "Arial, sans-serif",
+          backgroundImage:
+            "radial-gradient(circle at 10% 20%, rgba(99,102,241,0.18) 0%, transparent 20%), radial-gradient(circle at 90% 80%, rgba(168,85,247,0.18) 0%, transparent 20%)"
         }}
       >
         <div
           style={{
-            position: "absolute",
-            top: -80,
-            right: -40,
-            width: 320,
-            height: 320,
-            borderRadius: 9999,
-            background: "rgba(93, 112, 255, 0.22)",
-            filter: "blur(32px)"
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            left: -60,
-            bottom: -90,
-            width: 360,
-            height: 360,
-            borderRadius: 9999,
-            background: "rgba(16, 185, 129, 0.16)",
-            filter: "blur(36px)"
-          }}
-        />
-
-        <div
-          style={{
-            margin: 32,
-            width: 1136,
-            height: 566,
-            borderRadius: 34,
+            width: "100%",
+            borderRadius: 36,
+            background: "#151e32",
+            position: "relative",
+            overflow: "hidden",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.38)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            padding: 42,
             display: "flex",
             flexDirection: "column",
-            padding: 36,
-            background: "rgba(5, 13, 24, 0.42)",
-            border: "1px solid rgba(255,255,255,0.12)"
+            justifyContent: "space-between"
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "10px 18px",
-                  borderRadius: 9999,
-                  background: "rgba(255,255,255,0.08)",
-                  fontSize: 22,
-                  fontWeight: 700,
-                  letterSpacing: 1.5,
-                  textTransform: "uppercase"
-                }}
-              >
-                <div
-                  style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: 9999,
-                    background: "linear-gradient(135deg, #60a5fa, #34d399)"
-                  }}
-                />
-                SpeakAce Shared Result
-              </div>
+          <div
+            style={{
+              position: "absolute",
+              width: 220,
+              height: 220,
+              left: -60,
+              top: -60,
+              borderRadius: 9999,
+              background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+              filter: "blur(100px)",
+              opacity: 0.28
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              width: 220,
+              height: 220,
+              right: -70,
+              bottom: -70,
+              borderRadius: 9999,
+              background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+              filter: "blur(100px)",
+              opacity: 0.24
+            }}
+          />
 
-              <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 26 }}>
-                {avatarContent}
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <div style={{ fontSize: 30, fontWeight: 800 }}>{card.learnerName}</div>
-                  <div style={{ fontSize: 20, color: "rgba(255,255,255,0.72)" }}>
-                    {card.localeFlag} {card.streakLabel}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    marginLeft: 12,
-                    padding: "10px 18px",
-                    borderRadius: 9999,
-                    background: "rgba(255,255,255,0.08)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    fontSize: 20,
-                    fontWeight: 700
-                  }}
-                >
-                  {card.badgeLabel}
-                </div>
-              </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 2 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                fontSize: 42,
+                fontWeight: 800,
+                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent"
+              }}
+            >
+              SpeakAce
             </div>
-
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-              <div style={{ fontSize: 28, fontWeight: 800 }}>speakace.org</div>
-              <div style={{ fontSize: 18, color: "rgba(255,255,255,0.64)" }}>AI speaking score</div>
+            <div
+              style={{
+                display: "flex",
+                padding: "10px 18px",
+                borderRadius: 9999,
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(34,211,238,0.22)",
+                color: "#22d3ee",
+                fontSize: 20,
+                fontWeight: 700,
+                letterSpacing: 1
+              }}
+            >
+              AI CERTIFIED
             </div>
           </div>
 
-          <div style={{ display: "flex", marginTop: 28, justifyContent: "space-between", gap: 28, flex: 1 }}>
-            <div
-              style={{
-                width: 600,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                padding: 28,
-                borderRadius: 28,
-                background: "linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04))",
-                border: "1px solid rgba(255,255,255,0.10)"
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <div style={{ fontSize: 40, fontWeight: 800, lineHeight: 1.08 }}>
-                  {card.promptTitle.length > 84 ? `${card.promptTitle.slice(0, 81)}...` : card.promptTitle}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2, marginTop: 28 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              {card.avatarDataUrl ? (
+                <img
+                  src={card.avatarDataUrl}
+                  alt={card.learnerName}
+                  width={84}
+                  height={84}
+                  style={{ width: 84, height: 84, borderRadius: 9999, objectFit: "cover" }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 84,
+                    height: 84,
+                    borderRadius: 9999,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontSize: 30,
+                    fontWeight: 800,
+                    background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)"
+                  }}
+                >
+                  {card.learnerName.slice(0, 2).toUpperCase()}
                 </div>
-                <div style={{ fontSize: 22, color: "rgba(255,255,255,0.7)" }}>
-                  {card.examType} • {card.taskType} • {card.difficulty}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 18 }}>
-                <div style={{ fontSize: 132, lineHeight: 0.92, fontWeight: 900 }}>{card.overallScore}</div>
-                <div style={{ display: "flex", flexDirection: "column", marginBottom: 12 }}>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: "rgba(255,255,255,0.84)" }}>{card.scaleLabel}</div>
-                  {card.delta != null ? (
-                    <div
-                      style={{
-                        marginTop: 10,
-                        padding: "8px 14px",
-                        borderRadius: 9999,
-                        background: card.delta >= 0 ? "rgba(16,185,129,0.16)" : "rgba(248,113,113,0.16)",
-                        color: card.delta >= 0 ? "#86efac" : "#fca5a5",
-                        fontSize: 18,
-                        fontWeight: 800
-                      }}
-                    >
-                      {card.delta >= 0 ? `+${card.delta}` : `${card.delta}`} vs last try
-                    </div>
-                  ) : null}
-                </div>
+              )}
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div style={{ fontSize: 30, fontWeight: 700 }}>{card.learnerName}</div>
+                <div style={{ fontSize: 22, color: "#94a3b8" }}>{card.localeFlag} {card.streakLabel}</div>
               </div>
             </div>
 
-            <div style={{ width: 480, display: "flex", flexDirection: "column", gap: 16 }}>
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 14
-                }}
-              >
-                {card.categories.slice(0, 4).map((item) => (
-                  <div
-                    key={item.label}
-                    style={{
-                      width: 233,
-                      padding: 18,
-                      borderRadius: 24,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 10,
-                      background: "rgba(255,255,255,0.08)",
-                      border: "1px solid rgba(255,255,255,0.10)"
-                    }}
-                  >
-                    <div style={{ fontSize: 18, color: "rgba(255,255,255,0.7)" }}>
-                      {item.label.length > 22 ? `${item.label.slice(0, 22)}...` : item.label}
-                    </div>
-                    <div style={{ fontSize: 42, fontWeight: 900 }}>{item.score}</div>
-                  </div>
-                ))}
-              </div>
+            <div style={{ fontSize: 44, fontWeight: 800, textAlign: "center", marginTop: 28, lineHeight: 1.08 }}>
+              {card.promptTitle.length > 62 ? `${card.promptTitle.slice(0, 59)}...` : card.promptTitle}
+            </div>
+          </div>
 
+          <div style={{ display: "flex", justifyContent: "center", zIndex: 2, marginTop: 18 }}>
+            <div
+              style={{
+                width: 360,
+                height: 360,
+                borderRadius: 9999,
+                background: "conic-gradient(#22d3ee 0% 78%, rgba(255,255,255,0.10) 78% 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 0 30px rgba(34,211,238,0.16)"
+              }}
+            >
               <div
                 style={{
-                  padding: 22,
-                  borderRadius: 24,
+                  width: 314,
+                  height: 314,
+                  borderRadius: 9999,
+                  background: "#151e32",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 14,
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.10)"
+                  alignItems: "center",
+                  justifyContent: "center"
                 }}
               >
-                <div style={{ fontSize: 16, letterSpacing: 1.2, textTransform: "uppercase", color: "rgba(255,255,255,0.66)", fontWeight: 700 }}>
-                  Next improvement move
-                </div>
-                <div style={{ fontSize: 22, lineHeight: 1.35, color: "rgba(255,255,255,0.88)" }}>
-                  {card.nextExercise.length > 140 ? `${card.nextExercise.slice(0, 137)}...` : card.nextExercise}
-                </div>
+                <div style={{ fontSize: 120, fontWeight: 800, lineHeight: 1 }}>{card.overallScore}</div>
+                <div style={{ fontSize: 24, color: "#94a3b8" }}>OVERALL SCORE</div>
               </div>
+            </div>
+          </div>
 
-              <div style={{ display: "flex", gap: 14 }}>
+          <div style={{ display: "flex", justifyContent: "center", zIndex: 2, marginTop: 18 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                padding: "12px 26px",
+                borderRadius: 9999,
+                background: "rgba(16,185,129,0.15)",
+                border: "1px solid rgba(16,185,129,0.22)",
+                color: "#34d399",
+                fontSize: 26,
+                fontWeight: 700
+              }}
+            >
+              ≈ {card.scaleLabel}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, zIndex: 2, marginTop: 30 }}>
+            {card.categories.slice(0, 4).map((item, index) => {
+              const pct = Math.max(8, Math.min(100, (item.score / (card.examType === "TOEFL" ? 4 : 9)) * 100));
+              return (
                 <div
+                  key={item.label}
                   style={{
-                    flex: 1,
-                    padding: 18,
-                    borderRadius: 20,
                     display: "flex",
                     flexDirection: "column",
-                    gap: 8,
-                    background: "rgba(255,255,255,0.08)",
-                    border: "1px solid rgba(255,255,255,0.10)"
-                  }}
-                >
-                  <div style={{ fontSize: 15, textTransform: "uppercase", letterSpacing: 1.1, color: "rgba(255,255,255,0.62)", fontWeight: 700 }}>
-                    Estimated percentile
-                  </div>
-                  <div style={{ fontSize: 28, fontWeight: 800 }}>{rankMeta.percentileLabel}</div>
-                </div>
-                <div
-                  style={{
-                    flex: 1,
-                    padding: 18,
+                    gap: 12,
+                    padding: 22,
                     borderRadius: 20,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                    background: "rgba(255,255,255,0.08)",
-                    border: "1px solid rgba(255,255,255,0.10)"
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.06)"
                   }}
                 >
-                  <div style={{ fontSize: 15, textTransform: "uppercase", letterSpacing: 1.1, color: "rgba(255,255,255,0.62)", fontWeight: 700 }}>
-                    Country signal
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+                    <div style={{ fontSize: 24, color: "#94a3b8" }}>
+                      {item.label.length > 18 ? `${item.label.slice(0, 18)}...` : item.label}
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 800 }}>{item.score}</div>
                   </div>
-                  <div style={{ fontSize: 28, fontWeight: 800 }}>{rankMeta.countrySignal}</div>
+                  <div style={{ width: "100%", height: 10, borderRadius: 9999, background: "rgba(255,255,255,0.10)", overflow: "hidden" }}>
+                    <div style={{ width: `${pct}%`, height: "100%", borderRadius: 9999, background: statTones[index % 4] }} />
+                  </div>
                 </div>
-              </div>
+              );
+            })}
+          </div>
+
+          <div style={{ display: "grid", gap: 16, zIndex: 2, marginTop: 24 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "12px 20px",
+                borderRadius: 16,
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                color: "white",
+                fontSize: 24,
+                fontWeight: 700
+              }}
+            >
+              {rankMeta.percentileLabel} • {rankMeta.countrySignal}
+            </div>
+            <div style={{ fontSize: 24, color: "#94a3b8", textAlign: "center", lineHeight: 1.5 }}>
+              {card.nextExercise.length > 138 ? `${card.nextExercise.slice(0, 135)}...` : card.nextExercise}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gap: 14, zIndex: 2, marginTop: 28 }}>
+            <div style={{ fontSize: 22, color: "#94a3b8", textAlign: "center" }}>Analyzed by SpeakAce AI.</div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                width: "100%",
+                padding: "18px 0",
+                borderRadius: 18,
+                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+                color: "white",
+                fontSize: 30,
+                fontWeight: 700
+              }}
+            >
+              Get Your Score
             </div>
           </div>
         </div>

@@ -394,84 +394,111 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
       <div
         style={{
           position: "relative",
-          padding: "1.5rem",
-          borderRadius: 30,
-          background: "radial-gradient(circle at top right, rgba(76,132,255,0.34), transparent 28%), radial-gradient(circle at bottom left, rgba(18,184,166,0.26), transparent 35%), linear-gradient(135deg, #06111f 0%, #0d1a33 52%, #102f43 100%)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "0 32px 90px rgba(7, 17, 31, 0.28)",
+          padding: "2rem 1.5rem",
+          borderRadius: 32,
+          background: "#151e32",
+          border: "1px solid rgba(255,255,255,0.09)",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.42), 0 0 0 1px rgba(255,255,255,0.05)",
           marginBottom: "1.6rem",
           overflow: "hidden"
         }}
       >
-        <div style={{ position: "absolute", top: -40, right: -20, width: 220, height: 220, borderRadius: 999, background: "rgba(93, 112, 255, 0.18)", filter: "blur(36px)" }} />
-        <div style={{ position: "absolute", bottom: -70, left: -30, width: 260, height: 260, borderRadius: 999, background: "rgba(16, 185, 129, 0.14)", filter: "blur(42px)" }} />
+        <div style={{ position: "absolute", top: -50, left: -50, width: 180, height: 180, borderRadius: 999, background: "linear-gradient(135deg, rgba(99,102,241,0.42), rgba(168,85,247,0.28))", filter: "blur(80px)", opacity: 0.75 }} />
+        <div style={{ position: "absolute", bottom: -60, right: -40, width: 180, height: 180, borderRadius: 999, background: "linear-gradient(135deg, rgba(99,102,241,0.24), rgba(168,85,247,0.34))", filter: "blur(80px)", opacity: 0.8 }} />
 
         <div
           style={{
             position: "relative",
             zIndex: 1,
             display: "grid",
-            gap: "1.2rem",
-            padding: "1.5rem",
-            borderRadius: 24,
-            background: "linear-gradient(180deg, rgba(8, 15, 28, 0.58), rgba(8, 15, 28, 0.32))",
-            border: "1px solid rgba(255,255,255,0.1)",
-            backdropFilter: "blur(18px)"
+            gap: "1.5rem",
+            minHeight: 760
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "1rem", flexWrap: "wrap" }}>
-            <div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.55rem", padding: "0.4rem 0.8rem", borderRadius: 999, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.82)", fontSize: "0.82rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.8rem" }}>
-                <span style={{ width: 11, height: 11, borderRadius: 999, background: "linear-gradient(135deg, #60a5fa, #34d399)", boxShadow: "0 0 18px rgba(96,165,250,0.7)" }} />
-                SpeakAce Result Card
-              </div>
-              <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap", marginBottom: "0.9rem" }}>
-                <div style={{ width: 42, height: 42, borderRadius: 999, overflow: "hidden", background: "linear-gradient(135deg, rgba(96,165,250,0.9), rgba(52,211,153,0.85))", color: "white", display: "grid", placeItems: "center", fontWeight: 900, fontSize: "0.95rem", boxShadow: "0 10px 24px rgba(96,165,250,0.22)" }}>
-                  {avatarDataUrl ? (
-                    <img src={avatarDataUrl} alt={learnerName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  ) : (
-                    avatarInitials
-                  )}
-                </div>
-                <div style={{ display: "grid", gap: "0.1rem" }}>
-                  <div style={{ color: "white", fontWeight: 700, fontSize: "0.95rem" }}>{learnerName}</div>
-                  <div style={{ color: "rgba(255,255,255,0.66)", fontSize: "0.82rem" }}>{localeFlag} {streakLabel}</div>
-                </div>
-                <div style={{ padding: "0.38rem 0.75rem", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.86)", fontWeight: 700, fontSize: "0.8rem" }}>
-                  {scoreBadge}
-                </div>
-              </div>
-              <h1 style={{ fontSize: "clamp(1.3rem, 2.8vw, 1.9rem)", margin: 0, fontWeight: 800, color: "white", maxWidth: 580 }}>{session.prompt.title}</h1>
-              <p style={{ margin: "0.55rem 0 0", color: "rgba(255,255,255,0.68)", fontSize: "0.96rem" }}>{examMeta.leftEyebrow} • {session.examType} • {session.difficulty}</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
+            <div style={{ fontSize: "1.35rem", fontWeight: 800, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              SpeakAce
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: "0.78rem", fontWeight: 800, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.08em" }}>speakace.org</div>
-              <div style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.62)", marginTop: "0.45rem" }}>{tr ? "AI speaking score" : "AI speaking score"}</div>
+            <div style={{ fontSize: "0.75rem", fontWeight: 700, background: "rgba(255,255,255,0.08)", padding: "0.45rem 0.8rem", borderRadius: 999, color: "#22d3ee", border: "1px solid rgba(34,211,238,0.2)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              AI Certified
             </div>
           </div>
 
           {session.report ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: "1rem", alignItems: "stretch" }}>
-              <div style={{ padding: "1.25rem", borderRadius: 24, background: "linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04))", border: "1px solid rgba(255,255,255,0.1)" }}>
-                <div style={{ display: "flex", gap: "0.85rem", alignItems: "end", flexWrap: "wrap" }}>
-                  <div style={{ fontSize: "clamp(4.3rem, 8vw, 6.4rem)", fontWeight: 900, lineHeight: 0.95, color: "white", textShadow: "0 12px 40px rgba(59,130,246,0.35)" }}>{session.report.overall}</div>
-                  {delta !== null ? (
-                    <div style={{ padding: "0.42rem 0.82rem", borderRadius: 999, background: delta >= 0 ? "rgba(16,185,129,0.16)" : "rgba(248,113,113,0.16)", color: delta >= 0 ? "#6ee7b7" : "#fca5a5", fontWeight: 800, fontSize: "0.92rem", marginBottom: "0.45rem" }}>
-                      {delta >= 0 ? `+${delta}` : `${delta}`} {tr ? "son denemeye göre" : "vs last try"}
-                    </div>
-                  ) : null}
+            <div style={{ display: "grid", gap: "1.35rem", justifyItems: "center", textAlign: "center", marginBottom: "auto" }}>
+              <div style={{ display: "grid", gap: "0.85rem", justifyItems: "center" }}>
+                <div style={{ display: "flex", gap: "0.7rem", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+                  <div style={{ width: 56, height: 56, borderRadius: 999, overflow: "hidden", background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)", color: "white", display: "grid", placeItems: "center", fontWeight: 900, fontSize: "1rem" }}>
+                    {avatarDataUrl ? (
+                      <img src={avatarDataUrl} alt={learnerName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      avatarInitials
+                    )}
+                  </div>
+                  <div style={{ display: "grid", gap: "0.15rem", textAlign: "left" }}>
+                    <div style={{ color: "white", fontWeight: 700, fontSize: "1rem" }}>{learnerName}</div>
+                    <div style={{ color: "var(--text-muted)", fontSize: "0.84rem" }}>{localeFlag} {streakLabel}</div>
+                  </div>
                 </div>
-                <div style={{ marginTop: "0.65rem", fontSize: "1rem", color: "rgba(255,255,255,0.78)", fontWeight: 600 }}>{session.report.scaleLabel}</div>
-                <p style={{ margin: "1rem 0 0", lineHeight: 1.65, color: "rgba(255,255,255,0.66)", maxWidth: 520 }}>{session.report.nextExercise}</p>
+                <h1 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", margin: 0, fontWeight: 800, color: "white", maxWidth: 620 }}>{session.prompt.title}</h1>
+                <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.95rem" }}>{examMeta.leftEyebrow} • {session.examType} • {session.difficulty}</p>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem" }}>
-                {session.report.categories.map((cat) => (
-                  <div key={cat.category} style={{ padding: "0.95rem", borderRadius: 18, background: "linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.05))", border: "1px solid rgba(255,255,255,0.1)" }}>
-                    <div style={{ fontSize: "0.8rem", minHeight: 36, color: "rgba(255,255,255,0.72)" }}>{tr ? translateCategoryLabel(cat.label) : cat.label}</div>
-                    <div style={{ marginTop: "0.45rem", fontSize: "1.75rem", fontWeight: 900, color: "white" }}>{cat.score}</div>
+              <div
+                style={{
+                  width: 236,
+                  height: 236,
+                  borderRadius: "50%",
+                  background: "conic-gradient(#22d3ee 0% 78%, rgba(255,255,255,0.1) 78% 100%)",
+                  display: "grid",
+                  placeItems: "center",
+                  boxShadow: "0 0 36px rgba(34,211,238,0.18)",
+                  animation: "pulse 3s infinite ease-in-out"
+                }}
+              >
+                <div style={{ width: 206, height: 206, borderRadius: "50%", background: "#151e32", display: "grid", placeItems: "center" }}>
+                  <div style={{ display: "grid", justifyItems: "center" }}>
+                    <div style={{ fontSize: "4.2rem", fontWeight: 900, lineHeight: 1, background: "linear-gradient(to bottom, #fff, #cbd5e1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{session.report.overall}</div>
+                    <div style={{ fontSize: "0.88rem", color: "var(--text-muted)", marginTop: 4 }}>{tr ? "GENEL SKOR" : "OVERALL SCORE"}</div>
                   </div>
-                ))}
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gap: "0.75rem", justifyItems: "center" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", background: "rgba(16,185,129,0.15)", color: "#34d399", padding: "0.5rem 1rem", borderRadius: 999, fontWeight: 700, fontSize: "0.95rem", border: "1px solid rgba(16,185,129,0.2)" }}>
+                  <span>≈ {session.report.scaleLabel}</span>
+                </div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", background: "rgba(255,255,255,0.08)", color: "#22d3ee", padding: "0.45rem 0.95rem", borderRadius: 999, fontWeight: 700, fontSize: "0.82rem", border: "1px solid rgba(34,211,238,0.14)" }}>
+                  {scoreBadge}
+                </div>
+                {delta !== null ? (
+                  <div style={{ padding: "0.45rem 0.95rem", borderRadius: 999, background: delta >= 0 ? "rgba(16,185,129,0.16)" : "rgba(248,113,113,0.16)", color: delta >= 0 ? "#6ee7b7" : "#fca5a5", fontWeight: 800, fontSize: "0.92rem" }}>
+                    {delta >= 0 ? `+${delta}` : `${delta}`} {tr ? "son denemeye göre" : "vs last try"}
+                  </div>
+                ) : null}
+              </div>
+
+              <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                {session.report.categories.map((cat, index) => {
+                  const tone = getCategoryTone(index);
+                  const pct = Math.max(10, Math.min(100, (cat.score / (session.examType === "TOEFL" ? 4 : 9)) * 100));
+                  return (
+                    <div key={cat.category} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", padding: "1rem", borderRadius: 16, textAlign: "left" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem", gap: "0.5rem" }}>
+                        <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>{tr ? translateCategoryLabel(cat.label) : cat.label}</span>
+                        <span style={{ fontWeight: 800, color: "white" }}>{cat.score}</span>
+                      </div>
+                      <div style={{ width: "100%", height: 8, background: "rgba(255,255,255,0.1)", borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: tone.fill, boxShadow: tone.glow }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ width: "100%", paddingTop: "1.2rem", borderTop: "1px solid rgba(255,255,255,0.08)", display: "grid", gap: "0.8rem", justifyItems: "center" }}>
+                <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--text-muted)" }}>{tr ? "SpeakAce AI tarafından analiz edildi." : "Analyzed by SpeakAce AI."}</p>
+                <p style={{ margin: 0, fontSize: "0.95rem", color: "rgba(255,255,255,0.76)", maxWidth: 560, lineHeight: 1.6 }}>{session.report.nextExercise}</p>
               </div>
             </div>
           ) : null}
@@ -817,6 +844,15 @@ function translateQualityLabel(label: string, tr: boolean) {
   return label;
 }
 
+function getCategoryTone(index: number) {
+  return [
+    { fill: "#22d3ee", glow: "0 0 18px rgba(34,211,238,0.35)" },
+    { fill: "#f472b6", glow: "0 0 18px rgba(244,114,182,0.35)" },
+    { fill: "#818cf8", glow: "0 0 18px rgba(129,140,248,0.35)" },
+    { fill: "#fbbf24", glow: "0 0 18px rgba(251,191,36,0.35)" }
+  ][index % 4];
+}
+
 function buildTranscriptSegments(transcript: string) {
   return transcript
     .split(/(?<=[.!?])\s+/)
@@ -901,96 +937,126 @@ function buildScoreCardSvg(input: {
   streakLabel?: string;
   badgeLabel?: string;
 }) {
+  const statMeta = [
+    { fill: "#22d3ee", glow: "#22d3ee", icon: "◆" },
+    { fill: "#f472b6", glow: "#f472b6", icon: "◈" },
+    { fill: "#818cf8", glow: "#818cf8", icon: "▣" },
+    { fill: "#fbbf24", glow: "#fbbf24", icon: "◉" }
+  ];
+
   const rows = input.categories
     .slice(0, 4)
-    .map(
-      (item, index) => `
-        <g transform="translate(${64 + index * 220}, 654)">
-          <rect x="0" y="0" width="196" height="136" rx="26" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.14)" />
-          <text x="98" y="50" text-anchor="middle" fill="rgba(255,255,255,0.78)" font-size="22" font-family="Arial, sans-serif">${escapeXml(truncateForCard(item.label, 18))}</text>
-          <text x="98" y="98" text-anchor="middle" fill="#ffffff" font-size="48" font-weight="800" font-family="Arial, sans-serif">${escapeXml(item.score)}</text>
+    .map((item, index) => {
+      const row = Math.floor(index / 2);
+      const col = index % 2;
+      const x = 98 + col * 612;
+      const y = 664 + row * 150;
+      const meta = statMeta[index] ?? statMeta[0];
+      const numericScore = Number(item.score);
+      const fillWidth = Math.max(16, Math.min(100, (numericScore / 9) * 100));
+
+      return `
+        <g transform="translate(${x}, ${y})">
+          <rect x="0" y="0" width="500" height="118" rx="26" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" />
+          <text x="30" y="36" fill="rgba(255,255,255,0.72)" font-size="18" font-family="Arial, sans-serif">${escapeXml(meta.icon)}</text>
+          <text x="58" y="36" fill="rgba(255,255,255,0.72)" font-size="24" font-family="Arial, sans-serif">${escapeXml(truncateForCard(item.label, 22))}</text>
+          <text x="446" y="36" text-anchor="end" fill="#ffffff" font-size="28" font-weight="800" font-family="Arial, sans-serif">${escapeXml(item.score)}</text>
+          <rect x="30" y="72" width="440" height="10" rx="5" fill="rgba(255,255,255,0.10)" />
+          <rect x="30" y="72" width="${(440 * fillWidth) / 100}" height="10" rx="5" fill="${meta.fill}" />
         </g>
-      `
-    )
+      `;
+    })
     .join("");
 
   const deltaBadge = input.delta !== null
-    ? `<g transform="translate(640, 258)"><rect x="0" y="0" width="200" height="56" rx="28" fill="${input.delta >= 0 ? "rgba(16,185,129,0.16)" : "rgba(248,113,113,0.16)"}" /><text x="100" y="36" text-anchor="middle" fill="${input.delta >= 0 ? "#86efac" : "#fca5a5"}" font-size="24" font-weight="800" font-family="Arial, sans-serif">${escapeXml(input.delta >= 0 ? `+${input.delta}` : `${input.delta}`)} ${escapeXml(input.tr ? "son denemeye göre" : "vs last try")}</text></g>`
+    ? `<g transform="translate(926, 190)"><rect x="0" y="0" width="214" height="54" rx="27" fill="${input.delta >= 0 ? "rgba(16,185,129,0.18)" : "rgba(248,113,113,0.18)"}" stroke="${input.delta >= 0 ? "rgba(16,185,129,0.22)" : "rgba(248,113,113,0.22)"}" /><text x="107" y="35" text-anchor="middle" fill="${input.delta >= 0 ? "#34d399" : "#fca5a5"}" font-size="22" font-weight="800" font-family="Arial, sans-serif">${escapeXml(input.delta >= 0 ? `+${input.delta}` : `${input.delta}`)} ${escapeXml(input.tr ? "trend" : "trend")}</text></g>`
     : "";
   const avatarMarkup = input.avatarDataUrl
     ? `
         <clipPath id="avatarClip">
-          <circle cx="30" cy="30" r="30" />
+          <circle cx="44" cy="44" r="44" />
         </clipPath>
       `
     : "";
   const avatarContent = input.avatarDataUrl
     ? `
-        <circle cx="30" cy="30" r="30" fill="rgba(255,255,255,0.18)" />
-        <image href="${escapeXml(input.avatarDataUrl)}" x="0" y="0" width="60" height="60" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatarClip)" />
+        <circle cx="44" cy="44" r="44" fill="rgba(255,255,255,0.18)" />
+        <image href="${escapeXml(input.avatarDataUrl)}" x="0" y="0" width="88" height="88" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatarClip)" />
       `
     : `
-        <circle cx="30" cy="30" r="30" fill="rgba(255,255,255,0.14)" />
-        <text x="30" y="39" text-anchor="middle" fill="#ffffff" font-size="28" font-weight="800" font-family="Arial, sans-serif">${escapeXml(input.avatarInitials ?? "SA")}</text>
+        <circle cx="44" cy="44" r="44" fill="rgba(255,255,255,0.14)" />
+        <text x="44" y="58" text-anchor="middle" fill="#ffffff" font-size="34" font-weight="800" font-family="Arial, sans-serif">${escapeXml(input.avatarInitials ?? "SA")}</text>
       `;
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1100" viewBox="0 0 1400 1100" fill="none">
       <defs>
-        <linearGradient id="bg" x1="72" y1="72" x2="1320" y2="1010" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#071325"/>
-          <stop offset="0.55" stop-color="#153563"/>
-          <stop offset="1" stop-color="#0b7b71"/>
+        <linearGradient id="cardShell" x1="0" y1="0" x2="1400" y2="1100" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#151e32"/>
+          <stop offset="1" stop-color="#131c2d"/>
+        </linearGradient>
+        <linearGradient id="brandGradient" x1="0" y1="0" x2="1" y2="1">
+          <stop stop-color="#6366f1"/>
+          <stop offset="1" stop-color="#a855f7"/>
         </linearGradient>
         <radialGradient id="glowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1180 150) rotate(90) scale(300 300)">
-          <stop stop-color="#6EA8FF" stop-opacity="0.55"/>
-          <stop offset="1" stop-color="#6EA8FF" stop-opacity="0"/>
+          <stop stop-color="#6366f1" stop-opacity="0.45"/>
+          <stop offset="1" stop-color="#6366f1" stop-opacity="0"/>
         </radialGradient>
         <radialGradient id="glowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(180 960) rotate(90) scale(340 340)">
-          <stop stop-color="#34D399" stop-opacity="0.45"/>
-          <stop offset="1" stop-color="#34D399" stop-opacity="0"/>
+          <stop stop-color="#a855f7" stop-opacity="0.35"/>
+          <stop offset="1" stop-color="#a855f7" stop-opacity="0"/>
         </radialGradient>
         ${avatarMarkup}
       </defs>
-      <rect width="1400" height="1100" rx="44" fill="#04101d"/>
-      <rect x="32" y="32" width="1336" height="1036" rx="42" fill="url(#bg)"/>
+      <rect width="1400" height="1100" rx="44" fill="#0f172a"/>
+      <rect x="32" y="32" width="1336" height="1036" rx="42" fill="url(#cardShell)"/>
       <circle cx="1180" cy="150" r="300" fill="url(#glowA)"/>
       <circle cx="180" cy="960" r="340" fill="url(#glowB)"/>
-      <rect x="60" y="60" width="1280" height="980" rx="36" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)"/>
-      <rect x="86" y="86" width="1228" height="928" rx="34" fill="rgba(4,11,22,0.24)" stroke="rgba(255,255,255,0.08)"/>
+      <rect x="60" y="60" width="1280" height="980" rx="36" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)"/>
 
-      <g transform="translate(122, 132)">
-        <rect x="0" y="0" width="286" height="58" rx="29" fill="rgba(255,255,255,0.09)" />
-        <circle cx="34" cy="29" r="11" fill="url(#glowA)" />
-        <text x="60" y="38" fill="rgba(255,255,255,0.82)" font-size="24" font-weight="700" font-family="Arial, sans-serif">SpeakAce Result Card</text>
+      <g transform="translate(112, 112)">
+        <text x="0" y="36" fill="url(#brandGradient)" font-size="34" font-weight="800" font-family="Arial, sans-serif">SpeakAce</text>
+        <g transform="translate(984, 0)">
+          <rect x="0" y="0" width="168" height="42" rx="21" fill="rgba(255,255,255,0.08)" stroke="rgba(34,211,238,0.18)" />
+          <text x="84" y="28" text-anchor="middle" fill="#22d3ee" font-size="18" font-weight="700" font-family="Arial, sans-serif">AI CERTIFIED</text>
+        </g>
       </g>
-      <g transform="translate(122, 216)">
+
+      <g transform="translate(110, 164)">
         ${avatarContent}
-        <text x="76" y="26" fill="#ffffff" font-size="24" font-weight="700" font-family="Arial, sans-serif">${escapeXml(truncateForCard(input.learnerName ?? "SpeakAce learner", 26))}</text>
-        <text x="76" y="56" fill="rgba(255,255,255,0.72)" font-size="18" font-family="Arial, sans-serif">${escapeXml(`${input.localeFlag ?? "🌍"} ${input.streakLabel ?? ""}`)}</text>
+        <text x="106" y="38" fill="#ffffff" font-size="28" font-weight="700" font-family="Arial, sans-serif">${escapeXml(truncateForCard(input.learnerName ?? "SpeakAce learner", 26))}</text>
+        <text x="106" y="72" fill="rgba(148,163,184,1)" font-size="20" font-family="Arial, sans-serif">${escapeXml(`${input.localeFlag ?? "🌍"} ${input.streakLabel ?? ""}`)}</text>
       </g>
-      <g transform="translate(990, 244)">
-        <rect x="0" y="0" width="214" height="48" rx="24" fill="rgba(255,255,255,0.1)" />
-        <text x="107" y="31" text-anchor="middle" fill="#ffffff" font-size="20" font-weight="800" font-family="Arial, sans-serif">${escapeXml(input.badgeLabel ?? "Momentum builder")}</text>
+      <g transform="translate(1040, 176)">
+        <rect x="0" y="0" width="196" height="46" rx="23" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.2)" />
+        <text x="98" y="30" text-anchor="middle" fill="#34d399" font-size="20" font-weight="700" font-family="Arial, sans-serif">${escapeXml(input.badgeLabel ?? "Momentum builder")}</text>
       </g>
-      <text x="122" y="252" fill="#ffffff" font-size="58" font-weight="800" font-family="Arial, sans-serif">${escapeXml(truncateForCard(input.title, 36))}</text>
-      <text x="122" y="334" fill="rgba(255,255,255,0.72)" font-size="28" font-family="Arial, sans-serif">${escapeXml(input.examLine)}</text>
-      <text x="1120" y="168" text-anchor="end" fill="rgba(255,255,255,0.88)" font-size="30" font-weight="800" font-family="Arial, sans-serif">speakace.org</text>
-      <text x="1120" y="206" text-anchor="end" fill="rgba(255,255,255,0.62)" font-size="22" font-family="Arial, sans-serif">${escapeXml(input.tr ? "AI speaking score" : "AI speaking score")}</text>
+      <text x="700" y="304" text-anchor="middle" fill="#ffffff" font-size="56" font-weight="800" font-family="Arial, sans-serif">${escapeXml(truncateForCard(input.title, 34))}</text>
 
-      <text x="122" y="556" fill="#ffffff" font-size="214" font-weight="900" font-family="Arial, sans-serif">${escapeXml(input.score)}</text>
-      <text x="128" y="612" fill="rgba(255,255,255,0.88)" font-size="44" font-weight="700" font-family="Arial, sans-serif">${escapeXml(input.scaleLabel)}</text>
+      <g transform="translate(532, 350)">
+        <circle cx="168" cy="168" r="168" fill="rgba(255,255,255,0.08)" />
+        <circle cx="168" cy="168" r="138" fill="#151e32" />
+        <path d="M168 30 A138 138 0 1 1 30 168" stroke="#22d3ee" stroke-width="24" fill="none" stroke-linecap="round" />
+        <text x="168" y="162" text-anchor="middle" fill="#ffffff" font-size="110" font-weight="900" font-family="Arial, sans-serif">${escapeXml(input.score)}</text>
+        <text x="168" y="205" text-anchor="middle" fill="rgba(148,163,184,1)" font-size="24" font-weight="600" font-family="Arial, sans-serif">${escapeXml(input.tr ? "GENEL SKOR" : "OVERALL SCORE")}</text>
+      </g>
+
+      <g transform="translate(532, 714)">
+        <rect x="0" y="0" width="336" height="52" rx="26" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.2)" />
+        <text x="168" y="33" text-anchor="middle" fill="#34d399" font-size="24" font-weight="700" font-family="Arial, sans-serif">≈ ${escapeXml(input.scaleLabel)}</text>
+      </g>
       ${deltaBadge}
-      <foreignObject x="126" y="644" width="1110" height="90">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Arial, sans-serif; color: rgba(255,255,255,0.72); font-size: 26px; line-height: 1.45;">${escapeHtml(input.nextExercise)}</div>
+      <foreignObject x="140" y="780" width="1120" height="80">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Arial, sans-serif; color: rgba(148,163,184,1); font-size: 24px; text-align: center; line-height: 1.4;">${escapeHtml(truncateForCard(input.examLine, 44))}</div>
       </foreignObject>
 
       ${rows}
 
-      <g transform="translate(1088, 886)">
-        <rect x="0" y="0" width="164" height="78" rx="26" fill="rgba(255,255,255,0.09)" stroke="rgba(255,255,255,0.14)" />
-        <text x="82" y="30" text-anchor="middle" fill="rgba(255,255,255,0.72)" font-size="18" font-family="Arial, sans-serif">${escapeXml(input.tr ? "Powered by" : "Powered by")}</text>
-        <text x="82" y="58" text-anchor="middle" fill="#ffffff" font-size="28" font-weight="800" font-family="Arial, sans-serif">SpeakAce</text>
+      <g transform="translate(112, 968)">
+        <text x="0" y="0" fill="rgba(148,163,184,1)" font-size="20" font-family="Arial, sans-serif">${escapeXml(input.tr ? "SpeakAce AI tarafından analiz edildi." : "Analyzed by SpeakAce AI.")}</text>
+        <rect x="870" y="-36" width="266" height="64" rx="18" fill="url(#brandGradient)" />
+        <text x="1003" y="5" text-anchor="middle" fill="#ffffff" font-size="26" font-weight="700" font-family="Arial, sans-serif">${escapeXml(input.tr ? "Kendi Skorunu Öğren" : "Get Your Score")}</text>
       </g>
     </svg>
   `.trim();
