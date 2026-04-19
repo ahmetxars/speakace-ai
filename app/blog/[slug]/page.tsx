@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { Route } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
@@ -77,6 +78,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   if (!post) {
     notFound();
   }
+  const practiceCta = getBlogPracticeCta({ slug: post.slug, title: post.title, language });
   const seoTitle = getBlogPublicTitle(slug, post.title);
   const seoDescription = getBlogPublicDescription(slug, post.description);
   const seoEntry = getBlogSeoEntry(slug);
@@ -121,7 +123,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       <BlogReadingEnhancements
         ctaLabel={ctaLabels.title}
         ctaDescription={ctaLabels.description}
-        ctaHref="/app/practice?quickStart=1"
+        ctaHref={practiceCta.href as Route}
       />
       <main className="page-shell section">
         <div className="section-head">
@@ -148,11 +150,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             <strong>{ctaLabels.title}</strong>
             <p style={{ marginTop: "0.55rem" }}>{ctaLabels.description}</p>
             <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap", marginTop: "0.85rem" }}>
-              <Link className="button button-primary" href="/app/practice?quickStart=1">
-                Start Speaking Now
+              <Link className="button button-primary" href={practiceCta.href as Route}>
+                {practiceCta.primaryLabel}
               </Link>
-              <Link className="button button-secondary" href="/free-ielts-speaking-test">
-                try a free IELTS speaking test
+              <Link className="button button-secondary" href={practiceCta.secondaryHref as Route}>
+                {practiceCta.secondaryLabel}
               </Link>
               <Link className="button button-secondary" href={relatedPosts[0] ? `/blog/${relatedPosts[0].slug}` : "/ielts-speaking-topics"}>
                 {relatedPosts[0] ? pageLabels.readNext : "IELTS Speaking Topics"}
@@ -170,16 +172,16 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               ))}
               {section.title === post.sections[2]?.title ? (
                 <div className="card quick-pitch" style={{ marginTop: "1.1rem" }}>
-                  <h3 style={{ marginBottom: "0.55rem" }}>Practice this topic now</h3>
+                  <h3 style={{ marginBottom: "0.55rem" }}>{practiceCta.inlineTitle}</h3>
                   <p className="practice-copy" style={{ marginBottom: "0.9rem" }}>
-                    See your score first, fix one weak pattern, and retry the same topic with clearer fluency and stronger structure.
+                    {practiceCta.inlineDescription}
                   </p>
                   <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
-                    <Link className="button button-primary" href="/app/practice?quickStart=1">
-                      Practice this topic now
+                    <Link className="button button-primary" href={practiceCta.href as Route}>
+                      {practiceCta.primaryLabel}
                     </Link>
-                    <Link className="button button-secondary" href="/ielts-speaking-topics">
-                      IELTS Speaking Topics
+                    <Link className="button button-secondary" href={practiceCta.secondaryHref as Route}>
+                      {practiceCta.secondaryLabel}
                     </Link>
                     <Link className="button button-secondary" href="/pricing">
                       Unlock full feedback
@@ -260,4 +262,59 @@ function buildBlogAudioTranscript(post: { intro: string; sections: Array<{ body:
     .map((item) => item.trim())
     .filter(Boolean);
   return segments.join(" ").slice(0, 700);
+}
+
+function getBlogPracticeCta(input: { slug: string; title: string; language: string }) {
+  const source = `${input.slug} ${input.title}`.toLowerCase();
+  const tr = input.language === "tr";
+
+  if (source.includes("part-1")) {
+    return {
+      href: "/app/practice?examType=IELTS&taskType=ielts-part-1&quickStart=1",
+      secondaryHref: "/ielts-speaking-part-1-questions",
+      primaryLabel: tr ? "Bu Part 1 sorusunu şimdi dene" : "Practice this Part 1 question now",
+      secondaryLabel: tr ? "Daha fazla Part 1 sorusu" : "More Part 1 questions",
+      inlineTitle: tr ? "Bu Part 1 konusunu şimdi AI ile pratik yap" : "Practice this Part 1 topic with AI now",
+      inlineDescription: tr
+        ? "Kısa bir cevap ver, anında skor sinyali gör ve aynı Part 1 sorusunu daha akıcı şekilde tekrar dene."
+        : "Give one short answer, see your score signal instantly, and retry the same Part 1 question with better fluency."
+    };
+  }
+
+  if (source.includes("part-2") || source.includes("cue card") || source.includes("hometown")) {
+    return {
+      href: "/app/practice?examType=IELTS&taskType=ielts-part-2&quickStart=1",
+      secondaryHref: "/ielts-speaking-part-2-topics",
+      primaryLabel: tr ? "Bu Part 2 konusunu şimdi dene" : "Practice this Part 2 topic now",
+      secondaryLabel: tr ? "Daha fazla Part 2 konusu" : "More Part 2 topics",
+      inlineTitle: tr ? "Bu konuyu şimdi AI ile pratik yap" : "Practice this topic with AI now",
+      inlineDescription: tr
+        ? "Önce skorunu gör, sonra daha güçlü örnek ve daha net yapı ile aynı cue card'ı tekrar dene."
+        : "See your score first, then retry the same cue card with a stronger example and cleaner structure."
+    };
+  }
+
+  if (source.includes("part-3")) {
+    return {
+      href: "/app/practice?examType=IELTS&taskType=ielts-part-3&quickStart=1",
+      secondaryHref: "/ielts-speaking-part-3-questions",
+      primaryLabel: tr ? "Bu Part 3 sorusunu şimdi dene" : "Practice this Part 3 question now",
+      secondaryLabel: tr ? "Daha fazla Part 3 sorusu" : "More Part 3 questions",
+      inlineTitle: tr ? "Bu tartışma sorusunu AI ile pratik yap" : "Practice this discussion question with AI",
+      inlineDescription: tr
+        ? "Fikrini geliştir, neden ver, sonra aynı soruyu daha güçlü mantıkla yeniden söyle."
+        : "Develop your opinion, add reasons, then retry the same question with stronger logic."
+    };
+  }
+
+  return {
+    href: "/app/practice?quickStart=1",
+    secondaryHref: "/free-ielts-speaking-test",
+    primaryLabel: tr ? "Bu konuyu şimdi AI ile pratik yap" : "Practice this topic with AI now",
+    secondaryLabel: tr ? "Ücretsiz IELTS speaking testi" : "Free IELTS speaking test",
+    inlineTitle: tr ? "Okuduğun konuyu şimdi dene" : "Turn this guide into practice now",
+    inlineDescription: tr
+      ? "Bir cevap ver, tahmini skorunu gör ve aynı konuyu daha net akıcılık ve yapı ile tekrar dene."
+      : "Give one answer, see your estimated score, and retry the same topic with clearer fluency and stronger structure."
+  };
 }

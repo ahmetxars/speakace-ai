@@ -36,7 +36,8 @@ const sectionCopy = {
     badge: "AI-powered speaking practice",
     badgeLive: "1,000+ learners practicing today",
     trusted: "Trusted by learners in 50+ countries.",
-    cta: "Start Speaking Free",
+    cta: "Start Free Test",
+    ctaMicrocopy: "No Credit Card Required · Results in 60s",
     ctaFree: "Try Free",
     demo: "See how it works",
     trustBar: "✓ No signup required   ✓ Free forever   ✓ 1,000+ active learners",
@@ -218,7 +219,8 @@ const sectionCopy = {
     badge: "Yapay zekâ destekli speaking practice",
     badgeLive: "Bugün 1.000+ öğrenci pratik yapıyor",
     trusted: "50+ ülkedeki öğrenciler tarafından kullanılıyor.",
-    cta: "Hemen Konuşmaya Başla",
+    cta: "Ücretsiz Teste Başla",
+    ctaMicrocopy: "Kredi kartı gerekmez · 60 saniyede sonuç",
     ctaFree: "Ücretsiz Dene",
     demo: "Nasıl çalıştığını gör",
     trustBar: "✓ Kayıt gerektirmez   ✓ Ücretsiz   ✓ 1.000+ aktif öğrenci",
@@ -583,6 +585,21 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                     </motion.span>
                   </TrackedLink>
                 </motion.div>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "0.75rem 0.95rem",
+                    borderRadius: "10px",
+                    background: "color-mix(in oklch, var(--surface-strong) 45%, var(--card) 55%)",
+                    border: "1px solid var(--border)",
+                    fontSize: "0.85rem",
+                    fontWeight: 700,
+                    color: "var(--foreground)"
+                  }}
+                >
+                  {t.ctaMicrocopy}
+                </div>
                 <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
                   <TrackedLink
                     href="#how-it-works"

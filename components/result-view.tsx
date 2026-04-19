@@ -32,6 +32,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [activeTab, setActiveTab] = useState<"feedback" | "transcript" | "compare" | "history">("feedback");
+  const [shareMessage, setShareMessage] = useState<string>("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -237,35 +238,147 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     }
   };
 
+  const downloadScoreImage = async () => {
+    if (!session.report || typeof window === "undefined") return;
+    const svg = buildScoreCardSvg({
+      title: session.prompt.title,
+      examLine: `${session.examType} • ${session.taskType.toUpperCase()} • ${session.difficulty}`,
+      score: String(session.report.overall),
+      scaleLabel: session.report.scaleLabel,
+      categories: session.report.categories.map((item) => ({
+        label: tr ? translateCategoryLabel(item.label) : item.label,
+        score: String(item.score)
+      }))
+    });
+
+    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `speakace-${session.examType.toLowerCase()}-result-${session.id}.svg`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    setShareMessage(tr ? "Sonuç kartı indirildi." : "Result card downloaded.");
+  };
+
+  const shareResult = async () => {
+    if (!session.report || typeof window === "undefined") return;
+    const shareText = tr
+      ? `SpeakAce sonucum: ${session.report.overall} ${session.report.scaleLabel}. ${session.prompt.title}`
+      : `My SpeakAce result: ${session.report.overall} ${session.report.scaleLabel}. ${session.prompt.title}`;
+    const shareUrl = window.location.href;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "SpeakAce Result",
+          text: shareText,
+          url: shareUrl
+        });
+        setShareMessage(tr ? "Sonuç başarıyla paylaşıldı." : "Result shared successfully.");
+        return;
+      }
+
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      setShareMessage(tr ? "Paylaşım metni panoya kopyalandı." : "Share text copied to clipboard.");
+    } catch {
+      setShareMessage(tr ? "Paylaşım şu anda tamamlanamadı." : "Could not complete sharing right now.");
+    }
+  };
+
   return (
     <div style={{ maxWidth: 820, margin: "0 auto", padding: "2rem 1.5rem" }}>
 
       {/* HERO: Score + summary */}
-      <div style={{ textAlign: "center", padding: "2rem 0 1.5rem" }}>
-        <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>
-          {examMeta.leftEyebrow}
-        </div>
-        <h1 style={{ fontSize: "clamp(1.2rem, 2.5vw, 1.6rem)", margin: "0 0 1.5rem", fontWeight: 700, color: "var(--foreground)" }}>
-          {session.prompt.title}
-        </h1>
+      <div
+        style={{
+          padding: "1.4rem",
+          borderRadius: 28,
+          background: "linear-gradient(135deg, color-mix(in oklch, var(--primary) 18%, var(--card) 82%), color-mix(in oklch, var(--accent) 18%, var(--card) 82%))",
+          border: "1px solid color-mix(in oklch, var(--primary) 25%, var(--border) 75%)",
+          boxShadow: "0 24px 60px color-mix(in oklch, var(--primary) 12%, transparent 88%)",
+          marginBottom: "1.5rem"
+        }}
+      >
+        <div
+          style={{
+            background: "color-mix(in oklch, var(--card) 92%, white 8%)",
+            borderRadius: 22,
+            padding: "1.6rem",
+            display: "grid",
+            gap: "1.2rem"
+          }}
+        >
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>
+              {examMeta.leftEyebrow}
+            </div>
+            <h1 style={{ fontSize: "clamp(1.2rem, 2.5vw, 1.7rem)", margin: "0 0 0.85rem", fontWeight: 800, color: "var(--foreground)" }}>
+              {session.prompt.title}
+            </h1>
 
-        {session.report ? (
-          <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: "0.3rem" }}>
-            <div style={{ fontSize: "clamp(4rem, 8vw, 6rem)", fontWeight: 900, lineHeight: 1, color: "var(--primary)" }}>
-              {session.report.overall}
-            </div>
-            <div style={{ fontSize: "1rem", color: "var(--muted-foreground)", fontWeight: 500 }}>
-              {session.report.scaleLabel}
-            </div>
-            {delta !== null ? (
-              <div style={{ fontSize: "0.9rem", fontWeight: 700, color: delta > 0 ? "oklch(0.55 0.18 165)" : delta < 0 ? "oklch(0.55 0.2 20)" : "var(--muted-foreground)" }}>
-                {delta > 0 ? `↑ +${delta}` : delta < 0 ? `↓ ${delta}` : "→ No change"} {tr ? "öncekine göre" : "vs last attempt"}
+            {session.report ? (
+              <div style={{ display: "grid", gap: "0.45rem", justifyItems: "center" }}>
+                <div style={{ display: "inline-flex", alignItems: "end", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
+                  <div style={{ fontSize: "clamp(4rem, 8vw, 6rem)", fontWeight: 900, lineHeight: 0.95, color: "var(--primary)" }}>
+                    {session.report.overall}
+                  </div>
+                  {delta !== null ? (
+                    <div
+                      style={{
+                        padding: "0.35rem 0.8rem",
+                        borderRadius: 999,
+                        background: delta > 0 ? "oklch(0.55 0.18 165 / 0.12)" : delta < 0 ? "oklch(0.55 0.2 20 / 0.1)" : "var(--secondary)",
+                        color: delta > 0 ? "oklch(0.45 0.18 165)" : delta < 0 ? "oklch(0.45 0.18 20)" : "var(--muted-foreground)",
+                        fontWeight: 800,
+                        fontSize: "0.9rem"
+                      }}
+                    >
+                      {delta > 0 ? `+${delta}` : `${delta}`} {tr ? "öncekine göre" : "vs last attempt"}
+                    </div>
+                  ) : null}
+                </div>
+                <div style={{ fontSize: "1rem", color: "var(--muted-foreground)", fontWeight: 600 }}>
+                  {session.report.scaleLabel}
+                </div>
               </div>
-            ) : null}
+            ) : (
+              <p style={{ color: "var(--muted-foreground)" }}>{tr ? "Henüz skor yok." : "No score yet."}</p>
+            )}
           </div>
-        ) : (
-          <p style={{ color: "var(--muted-foreground)" }}>{tr ? "Henüz skor yok." : "No score yet."}</p>
-        )}
+
+          {session.report ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem" }}>
+              {session.report.categories.map((cat) => (
+                <div
+                  key={cat.category}
+                  style={{
+                    padding: "0.9rem",
+                    borderRadius: 16,
+                    background: "linear-gradient(180deg, color-mix(in oklch, var(--primary) 6%, var(--card) 94%), var(--card))",
+                    border: "1px solid var(--border)",
+                    textAlign: "center"
+                  }}
+                >
+                  <div style={{ fontSize: "0.76rem", color: "var(--muted-foreground)", minHeight: 34 }}>{tr ? translateCategoryLabel(cat.label) : cat.label}</div>
+                  <div style={{ fontSize: "1.6rem", fontWeight: 900, marginTop: "0.35rem", color: "var(--foreground)" }}>{cat.score}</div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+            <button type="button" className="button button-secondary" onClick={() => void downloadScoreImage()}>
+              {tr ? "Sonuç kartını indir" : "Download image"}
+            </button>
+            <button type="button" className="button button-primary" onClick={() => void shareResult()}>
+              {tr ? "Sonucu paylaş" : "Share result"}
+            </button>
+          </div>
+          {shareMessage ? (
+            <p style={{ margin: 0, textAlign: "center", fontSize: "0.88rem", color: "var(--muted-foreground)" }}>{shareMessage}</p>
+          ) : null}
+        </div>
       </div>
 
       {/* CATEGORY BARS */}
@@ -673,4 +786,59 @@ function escapeHtml(value: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function buildScoreCardSvg(input: {
+  title: string;
+  examLine: string;
+  score: string;
+  scaleLabel: string;
+  categories: Array<{ label: string; score: string }>;
+}) {
+  const rows = input.categories
+    .slice(0, 4)
+    .map(
+      (item, index) => `
+        <g transform="translate(${48 + index * 168}, 360)">
+          <rect x="0" y="0" width="152" height="108" rx="22" fill="rgba(255,255,255,0.14)" stroke="rgba(255,255,255,0.18)" />
+          <text x="76" y="38" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="16" font-family="Arial, sans-serif">${escapeXml(item.label)}</text>
+          <text x="76" y="78" text-anchor="middle" fill="#ffffff" font-size="34" font-weight="800" font-family="Arial, sans-serif">${escapeXml(item.score)}</text>
+        </g>
+      `
+    )
+    .join("");
+
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="720" height="540" viewBox="0 0 720 540" fill="none">
+      <defs>
+        <linearGradient id="bg" x1="48" y1="40" x2="672" y2="500" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#3B82F6"/>
+          <stop offset="1" stop-color="#14B8A6"/>
+        </linearGradient>
+      </defs>
+      <rect width="720" height="540" rx="36" fill="#08111f"/>
+      <rect x="24" y="24" width="672" height="492" rx="30" fill="url(#bg)" />
+      <rect x="44" y="44" width="632" height="452" rx="26" fill="rgba(7,14,28,0.18)" stroke="rgba(255,255,255,0.16)" />
+      <text x="60" y="88" fill="rgba(255,255,255,0.8)" font-size="18" font-weight="700" font-family="Arial, sans-serif">SpeakAce Result</text>
+      <text x="60" y="132" fill="#ffffff" font-size="32" font-weight="800" font-family="Arial, sans-serif">${escapeXml(truncateForCard(input.title, 34))}</text>
+      <text x="60" y="164" fill="rgba(255,255,255,0.76)" font-size="18" font-family="Arial, sans-serif">${escapeXml(input.examLine)}</text>
+      <text x="60" y="280" fill="#ffffff" font-size="124" font-weight="900" font-family="Arial, sans-serif">${escapeXml(input.score)}</text>
+      <text x="60" y="318" fill="rgba(255,255,255,0.9)" font-size="28" font-weight="700" font-family="Arial, sans-serif">${escapeXml(input.scaleLabel)}</text>
+      ${rows}
+      <text x="60" y="506" fill="rgba(255,255,255,0.84)" font-size="20" font-family="Arial, sans-serif">speakace.org</text>
+    </svg>
+  `.trim();
+}
+
+function truncateForCard(value: string, max: number) {
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
+function escapeXml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
 }
