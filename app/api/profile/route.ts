@@ -40,6 +40,7 @@ export async function POST(request: Request) {
       targetReason: body.targetReason ? String(body.targetReason) : "",
       discoverySource: body.discoverySource ? String(body.discoverySource) : "",
       bio: body.bio ? String(body.bio) : "",
+      avatarDataUrl: body.avatarDataUrl ? String(body.avatarDataUrl) : "",
       onboardingComplete: Boolean(body.onboardingComplete)
     });
     return NextResponse.json({ profile: studentProfile });

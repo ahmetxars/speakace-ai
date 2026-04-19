@@ -278,6 +278,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         resultShareLinkedIn7d: 0,
         resultShareLinkedIn30d: 0,
         topSharedSpeakingPrompts: [],
+        topSharedBadges: [],
         writingStarts7d: 0,
       writingStarts30d: 0,
       writingEvaluations7d: 0,
@@ -315,6 +316,29 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   }
 
   const sql = getSql();
+  await sql`
+    create table if not exists shared_result_cards (
+      slug text primary key,
+      session_id text not null references speaking_sessions(id) on delete cascade,
+      user_id text not null references users(id) on delete cascade,
+      prompt_title text not null,
+      exam_type text not null,
+      task_type text not null,
+      difficulty text not null,
+      overall_score numeric(4,1) not null,
+      scale_label text not null,
+      delta numeric(4,1),
+      learner_name text not null,
+      avatar_data_url text,
+      locale_flag text not null,
+      streak_label text not null,
+      badge_label text not null,
+      next_exercise text not null,
+      categories_json jsonb not null,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`create index if not exists idx_shared_result_cards_session_id on shared_result_cards(session_id)`;
   const paidEventNames = ["order_created", "subscription_created", "subscription_resumed", "subscription_unpaused"];
   const [row] = await sql<
     Array<{
@@ -664,6 +688,44 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     limit 6
   `;
 
+  const topSharedBadgeRows = await sql<
+    Array<{
+      badge_label: string;
+      total_shares: number;
+      x_shares: number;
+      whatsapp_shares: number;
+      linkedin_shares: number;
+    }>
+  >`
+    with share_events as (
+      select
+        ae.event,
+        regexp_replace(ae.path, '^/app/results/', '') as session_id
+      from analytics_events ae
+      where ae.event in ('result_share_x', 'result_share_whatsapp', 'result_share_linkedin', 'result_share_native', 'result_share_copy')
+        and ae.path like '/app/results/%'
+        and ae.created_at > now() - interval '30 days'
+    ),
+    latest_cards as (
+      select distinct on (src.session_id)
+        src.session_id,
+        src.badge_label
+      from shared_result_cards src
+      order by src.session_id, src.created_at desc
+    )
+    select
+      latest_cards.badge_label,
+      count(*)::int as total_shares,
+      count(*) filter (where share_events.event = 'result_share_x')::int as x_shares,
+      count(*) filter (where share_events.event = 'result_share_whatsapp')::int as whatsapp_shares,
+      count(*) filter (where share_events.event = 'result_share_linkedin')::int as linkedin_shares
+    from share_events
+    join latest_cards on latest_cards.session_id = share_events.session_id
+    group by latest_cards.badge_label
+    order by total_shares desc, latest_cards.badge_label asc
+    limit 6
+  `;
+
   const bestPerformingCtaRows = await sql<
     Array<{
       path: string | null;
@@ -924,6 +986,13 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     resultShareLinkedIn30d: row?.result_share_linkedin_30d ?? 0,
     topSharedSpeakingPrompts: topSharedSpeakingPromptRows.map((item) => ({
       promptTitle: item.prompt_title,
+      totalShares: item.total_shares,
+      xShares: item.x_shares,
+      whatsappShares: item.whatsapp_shares,
+      linkedInShares: item.linkedin_shares
+    })),
+    topSharedBadges: topSharedBadgeRows.map((item) => ({
+      badgeLabel: item.badge_label,
       totalShares: item.total_shares,
       xShares: item.x_shares,
       whatsappShares: item.whatsapp_shares,

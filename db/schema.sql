@@ -71,6 +71,7 @@ create table if not exists student_profiles (
   target_reason text,
   discovery_source text,
   bio text,
+  avatar_data_url text,
   updated_at timestamptz not null default now()
 );
 
@@ -538,3 +539,27 @@ create table if not exists email_log (
 
 create index if not exists idx_email_log_user_id
   on email_log(user_id, sent_at desc);
+
+create table if not exists shared_result_cards (
+  slug text primary key,
+  session_id text not null references speaking_sessions(id) on delete cascade,
+  user_id text not null references users(id) on delete cascade,
+  prompt_title text not null,
+  exam_type text not null,
+  task_type text not null,
+  difficulty text not null,
+  overall_score numeric(4,1) not null,
+  scale_label text not null,
+  delta numeric(4,1),
+  learner_name text not null,
+  avatar_data_url text,
+  locale_flag text not null,
+  streak_label text not null,
+  badge_label text not null,
+  next_exercise text not null,
+  categories_json jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_shared_result_cards_session_id
+  on shared_result_cards(session_id);

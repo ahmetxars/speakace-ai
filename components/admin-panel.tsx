@@ -720,6 +720,30 @@ export function AdminPanel(props: {
                     )}
                   </div>
                 </div>
+
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Top Shared Badges</h3>
+                    <p>Reveals which result-card badge labels are producing the strongest share behavior in the last 30 days.</p>
+                  </div>
+                  <div className="adm-stack-list">
+                    {props.overview.topSharedBadges.length === 0 ? (
+                      <p className="adm-muted">No badge-linked share activity recorded yet.</p>
+                    ) : (
+                      props.overview.topSharedBadges.map((item) => (
+                        <div key={item.badgeLabel} className="adm-list-row" style={{ alignItems: "stretch" }}>
+                          <div style={{ display: "grid", gap: "0.3rem", flex: 1 }}>
+                            <strong>{item.badgeLabel}</strong>
+                            <span className="adm-muted">
+                              {item.totalShares} total shares · X {item.xShares} · WhatsApp {item.whatsappShares} · LinkedIn {item.linkedInShares}
+                            </span>
+                          </div>
+                          <StatusBadge label={`${item.totalShares} shares`} tone="success" />
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="adm-grid-2">

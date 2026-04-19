@@ -362,8 +362,30 @@ export interface StudentProfile {
   targetReason?: string;
   discoverySource?: string;
   bio?: string;
+  avatarDataUrl?: string;
   onboardingComplete?: boolean;
   updatedAt: string;
+}
+
+export interface SharedResultCard {
+  slug: string;
+  sessionId: string;
+  userId: string;
+  promptTitle: string;
+  examType: ExamType;
+  taskType: TaskType;
+  difficulty: Difficulty;
+  overallScore: number;
+  scaleLabel: string;
+  delta?: number | null;
+  learnerName: string;
+  avatarDataUrl?: string;
+  localeFlag: string;
+  streakLabel: string;
+  badgeLabel: string;
+  nextExercise: string;
+  categories: Array<{ label: string; score: number }>;
+  createdAt: string;
 }
 
 export interface AnnouncementItem {
@@ -472,6 +494,13 @@ export interface AdminOverview {
   resultShareLinkedIn30d: number;
   topSharedSpeakingPrompts: Array<{
     promptTitle: string;
+    totalShares: number;
+    xShares: number;
+    whatsappShares: number;
+    linkedInShares: number;
+  }>;
+  topSharedBadges: Array<{
+    badgeLabel: string;
     totalShares: number;
     xShares: number;
     whatsappShares: number;

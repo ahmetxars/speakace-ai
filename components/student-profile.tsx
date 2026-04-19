@@ -49,7 +49,8 @@ function normalizeProfile(profile: StudentProfileType | null): StudentProfileTyp
     examDate: profile.examDate ?? null,
     targetReason: profile.targetReason || "Improve speaking score",
     discoverySource: profile.discoverySource || "Google search",
-    bio: profile.bio || ""
+    bio: profile.bio || "",
+    avatarDataUrl: profile.avatarDataUrl || ""
   };
 }
 
@@ -142,6 +143,50 @@ export function StudentProfile() {
           <input value={profile.examDate ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, examDate: event.target.value } : current)} placeholder={tr ? "Sinav tarihi" : "Exam date"} style={inputStyle} />
           <input value={profile.targetReason ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, targetReason: event.target.value } : current)} placeholder={tr ? "Skor hedefinin nedeni" : "Reason for target score"} style={inputStyle} />
           <input value={profile.discoverySource ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, discoverySource: event.target.value } : current)} placeholder={tr ? "SpeakAce'i nereden buldun?" : "How did you find SpeakAce?"} style={inputStyle} />
+          <div style={{ display: "grid", gap: "0.55rem" }}>
+            <span className="practice-meta">{tr ? "Profil fotoğrafı" : "Profile photo"}</span>
+            <div style={{ display: "flex", gap: "0.8rem", alignItems: "center", flexWrap: "wrap" }}>
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 999,
+                  overflow: "hidden",
+                  display: "grid",
+                  placeItems: "center",
+                  background: "var(--surface-strong)",
+                  border: "1px solid var(--line)",
+                  fontWeight: 800
+                }}
+              >
+                {profile.avatarDataUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={profile.avatarDataUrl} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  currentUser.name.slice(0, 2).toUpperCase()
+                )}
+              </div>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const result = typeof reader.result === "string" ? reader.result : "";
+                    setProfile((current) => current ? { ...current, avatarDataUrl: result } : current);
+                  };
+                  reader.readAsDataURL(file);
+                }}
+              />
+              {profile.avatarDataUrl ? (
+                <button type="button" className="button button-secondary" onClick={() => setProfile((current) => current ? { ...current, avatarDataUrl: "" } : current)}>
+                  {tr ? "Fotoğrafı kaldır" : "Remove photo"}
+                </button>
+              ) : null}
+            </div>
+          </div>
           <textarea value={profile.bio ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, bio: event.target.value } : current)} rows={4} placeholder={tr ? "Kısa bir çalışma notu ekle..." : "Short study note..."} style={{ ...inputStyle, resize: "vertical" }} />
           <div style={{ display: "grid", gap: "0.45rem" }}>
             <span className="practice-meta">{tr ? "Çalışma günleri" : "Study days"}</span>

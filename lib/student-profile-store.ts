@@ -29,13 +29,24 @@ function defaultProfile(userId: string): StudentProfile {
     targetReason: "Improve speaking score",
     discoverySource: "Google search",
     bio: "",
+    avatarDataUrl: "",
     onboardingComplete: false,
     updatedAt: new Date().toISOString()
   };
 }
 
+let ensuredAvatarColumn = false;
+
+async function ensureStudentProfileColumns() {
+  if (!hasDatabaseUrl() || ensuredAvatarColumn) return;
+  const sql = getSql();
+  await sql`alter table student_profiles add column if not exists avatar_data_url text`;
+  ensuredAvatarColumn = true;
+}
+
 export async function getStudentProfile(userId: string) {
   if (hasDatabaseUrl()) {
+    await ensureStudentProfileColumns();
     const sql = getSql();
     const rows = (await sql`
       select
@@ -51,6 +62,7 @@ export async function getStudentProfile(userId: string) {
         target_reason as "targetReason",
         discovery_source as "discoverySource",
         bio,
+        avatar_data_url as "avatarDataUrl",
         onboarding_complete as "onboardingComplete",
         updated_at as "updatedAt"
       from student_profiles
@@ -76,6 +88,7 @@ export async function upsertStudentProfile(input: {
   targetReason?: string;
   discoverySource?: string;
   bio?: string;
+  avatarDataUrl?: string;
   onboardingComplete?: boolean;
 }) {
   const next: StudentProfile = {
@@ -91,13 +104,16 @@ export async function upsertStudentProfile(input: {
     targetReason: input.targetReason?.trim() || "Improve speaking score",
     discoverySource: input.discoverySource?.trim() || "Google search",
     bio: input.bio?.trim() ?? "",
+    avatarDataUrl: input.avatarDataUrl?.trim() ?? "",
     onboardingComplete: Boolean(input.onboardingComplete),
     updatedAt: new Date().toISOString()
   };
 
   if (hasDatabaseUrl()) {
+    await ensureStudentProfileColumns();
     const sql = getSql();
     const bio = next.bio ?? "";
+    const avatarDataUrl = next.avatarDataUrl ?? "";
     const dailyMinutesGoal = next.dailyMinutesGoal ?? 15;
     const examDate = next.examDate ?? null;
     const targetReason = next.targetReason ?? "Improve speaking score";
@@ -106,12 +122,12 @@ export async function upsertStudentProfile(input: {
       insert into student_profiles (
         user_id, preferred_exam_type, target_score, weekly_goal, study_days_json,
         daily_minutes_goal, current_level, focus_skill, exam_date, target_reason,
-        discovery_source, bio, onboarding_complete, updated_at
+        discovery_source, bio, avatar_data_url, onboarding_complete, updated_at
       ) values (
         ${next.userId}, ${next.preferredExamType}, ${next.targetScore}, ${next.weeklyGoal},
         ${JSON.stringify(next.studyDays)}::jsonb, ${dailyMinutesGoal}, ${next.currentLevel},
         ${next.focusSkill}, ${examDate}, ${targetReason}, ${discoverySource},
-        ${bio}, ${next.onboardingComplete ?? false}, ${next.updatedAt}
+        ${bio}, ${avatarDataUrl}, ${next.onboardingComplete ?? false}, ${next.updatedAt}
       )
       on conflict (user_id)
       do update set
@@ -126,6 +142,7 @@ export async function upsertStudentProfile(input: {
         target_reason = excluded.target_reason,
         discovery_source = excluded.discovery_source,
         bio = excluded.bio,
+        avatar_data_url = excluded.avatar_data_url,
         onboarding_complete = excluded.onboarding_complete,
         updated_at = excluded.updated_at
       returning
@@ -141,6 +158,7 @@ export async function upsertStudentProfile(input: {
         target_reason as "targetReason",
         discovery_source as "discoverySource",
         bio,
+        avatar_data_url as "avatarDataUrl",
         onboarding_complete as "onboardingComplete",
         updated_at as "updatedAt"
     `) as unknown as StudentProfile[];

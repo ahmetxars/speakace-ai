@@ -34,6 +34,8 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
   const streakLabel = summary.streakDays > 0
     ? (tr ? `${summary.streakDays} günlük seri` : `${summary.streakDays}-day streak`)
     : (tr ? "İlk seriyi başlat" : "Start your first streak");
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string>("");
+  const [publicShareUrl, setPublicShareUrl] = useState<string>("");
   const [audioSource, setAudioSource] = useState<string>("");
   const [savedStudyList, setSavedStudyList] = useState(false);
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(0);
@@ -48,6 +50,15 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     const studyItems = readStudyItems();
     setSavedStudyList(studyItems.some((item) => item.promptId === session.prompt.id));
     void (async () => {
+      try {
+        const profileResponse = await fetch("/api/profile", { cache: "no-store" });
+        if (profileResponse.ok) {
+          const profilePayload = (await profileResponse.json()) as { profile?: { avatarDataUrl?: string } };
+          setAvatarDataUrl(profilePayload.profile?.avatarDataUrl ?? "");
+        }
+      } catch {
+        setAvatarDataUrl("");
+      }
       try {
         const response = await fetch("/api/study-lists", { cache: "no-store" });
         if (!response.ok) return;
@@ -267,10 +278,33 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
       tr,
       learnerName,
       avatarInitials,
+      avatarDataUrl,
       localeFlag,
       streakLabel,
       badgeLabel: scoreBadge
     });
+  };
+
+  const ensurePublicShareUrl = async () => {
+    if (publicShareUrl) return publicShareUrl;
+    const response = await fetch("/api/results/share", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: session.id,
+        delta,
+        learnerName,
+        localeFlag,
+        streakLabel,
+        badgeLabel: scoreBadge
+      })
+    });
+    const data = (await response.json()) as { shareUrl?: string; error?: string };
+    if (!response.ok || !data.shareUrl) {
+      throw new Error(data.error ?? "Could not create share URL.");
+    }
+    setPublicShareUrl(data.shareUrl);
+    return data.shareUrl;
   };
 
   const downloadScoreImage = async () => {
@@ -294,7 +328,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
 
   const shareResult = async () => {
     if (!session.report || typeof window === "undefined") return;
-    const shareUrl = window.location.href;
+    const shareUrl = await ensurePublicShareUrl();
 
     try {
       if (navigator.share) {
@@ -322,7 +356,8 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
 
   const openSocialShare = (platform: "x" | "whatsapp" | "linkedin") => {
     if (typeof window === "undefined") return;
-    const shareUrl = window.location.href;
+    void (async () => {
+      const shareUrl = await ensurePublicShareUrl();
     const encodedUrl = encodeURIComponent(shareUrl);
     const encodedText = encodeURIComponent(shareText);
 
@@ -349,6 +384,9 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
           ? tr ? "WhatsApp paylaşımı açıldı." : "WhatsApp share opened."
           : tr ? "LinkedIn paylaşımı açıldı." : "LinkedIn share opened."
     );
+    })().catch(() => {
+      setShareMessage(tr ? "Public share link oluşturulamadı." : "Could not create a public share link.");
+    });
   };
 
   return (
@@ -388,8 +426,12 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
                 SpeakAce Result Card
               </div>
               <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap", marginBottom: "0.9rem" }}>
-                <div style={{ width: 42, height: 42, borderRadius: 999, background: "linear-gradient(135deg, rgba(96,165,250,0.9), rgba(52,211,153,0.85))", color: "white", display: "grid", placeItems: "center", fontWeight: 900, fontSize: "0.95rem", boxShadow: "0 10px 24px rgba(96,165,250,0.22)" }}>
-                  {avatarInitials}
+                <div style={{ width: 42, height: 42, borderRadius: 999, overflow: "hidden", background: "linear-gradient(135deg, rgba(96,165,250,0.9), rgba(52,211,153,0.85))", color: "white", display: "grid", placeItems: "center", fontWeight: 900, fontSize: "0.95rem", boxShadow: "0 10px 24px rgba(96,165,250,0.22)" }}>
+                  {avatarDataUrl ? (
+                    <img src={avatarDataUrl} alt={learnerName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    avatarInitials
+                  )}
                 </div>
                 <div style={{ display: "grid", gap: "0.1rem" }}>
                   <div style={{ color: "white", fontWeight: 700, fontSize: "0.95rem" }}>{learnerName}</div>
@@ -854,6 +896,7 @@ function buildScoreCardSvg(input: {
   tr: boolean;
   learnerName?: string;
   avatarInitials?: string;
+  avatarDataUrl?: string;
   localeFlag?: string;
   streakLabel?: string;
   badgeLabel?: string;
@@ -874,6 +917,22 @@ function buildScoreCardSvg(input: {
   const deltaBadge = input.delta !== null
     ? `<g transform="translate(640, 258)"><rect x="0" y="0" width="200" height="56" rx="28" fill="${input.delta >= 0 ? "rgba(16,185,129,0.16)" : "rgba(248,113,113,0.16)"}" /><text x="100" y="36" text-anchor="middle" fill="${input.delta >= 0 ? "#86efac" : "#fca5a5"}" font-size="24" font-weight="800" font-family="Arial, sans-serif">${escapeXml(input.delta >= 0 ? `+${input.delta}` : `${input.delta}`)} ${escapeXml(input.tr ? "son denemeye göre" : "vs last try")}</text></g>`
     : "";
+  const avatarMarkup = input.avatarDataUrl
+    ? `
+        <clipPath id="avatarClip">
+          <circle cx="30" cy="30" r="30" />
+        </clipPath>
+      `
+    : "";
+  const avatarContent = input.avatarDataUrl
+    ? `
+        <circle cx="30" cy="30" r="30" fill="rgba(255,255,255,0.18)" />
+        <image href="${escapeXml(input.avatarDataUrl)}" x="0" y="0" width="60" height="60" preserveAspectRatio="xMidYMid slice" clip-path="url(#avatarClip)" />
+      `
+    : `
+        <circle cx="30" cy="30" r="30" fill="rgba(255,255,255,0.14)" />
+        <text x="30" y="39" text-anchor="middle" fill="#ffffff" font-size="28" font-weight="800" font-family="Arial, sans-serif">${escapeXml(input.avatarInitials ?? "SA")}</text>
+      `;
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1100" viewBox="0 0 1400 1100" fill="none">
@@ -891,6 +950,7 @@ function buildScoreCardSvg(input: {
           <stop stop-color="#34D399" stop-opacity="0.45"/>
           <stop offset="1" stop-color="#34D399" stop-opacity="0"/>
         </radialGradient>
+        ${avatarMarkup}
       </defs>
       <rect width="1400" height="1100" rx="44" fill="#04101d"/>
       <rect x="32" y="32" width="1336" height="1036" rx="42" fill="url(#bg)"/>
@@ -905,8 +965,7 @@ function buildScoreCardSvg(input: {
         <text x="60" y="38" fill="rgba(255,255,255,0.82)" font-size="24" font-weight="700" font-family="Arial, sans-serif">SpeakAce Result Card</text>
       </g>
       <g transform="translate(122, 216)">
-        <circle cx="30" cy="30" r="30" fill="rgba(255,255,255,0.14)" />
-        <text x="30" y="39" text-anchor="middle" fill="#ffffff" font-size="28" font-weight="800" font-family="Arial, sans-serif">${escapeXml(input.avatarInitials ?? "SA")}</text>
+        ${avatarContent}
         <text x="76" y="26" fill="#ffffff" font-size="24" font-weight="700" font-family="Arial, sans-serif">${escapeXml(truncateForCard(input.learnerName ?? "SpeakAce learner", 26))}</text>
         <text x="76" y="56" fill="rgba(255,255,255,0.72)" font-size="18" font-family="Arial, sans-serif">${escapeXml(`${input.localeFlag ?? "🌍"} ${input.streakLabel ?? ""}`)}</text>
       </g>
