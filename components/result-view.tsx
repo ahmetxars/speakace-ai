@@ -27,6 +27,13 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
   };
   const displayedRawTranscript = session.rawTranscript ?? session.transcript;
   const examMeta = getExamMeta(session, tr);
+  const learnerName = currentUser?.name?.trim() || (tr ? "SpeakAce learner" : "SpeakAce learner");
+  const avatarInitials = getAvatarInitials(learnerName);
+  const localeFlag = getLocaleFlag(language);
+  const scoreBadge = getScoreBadge({ score: session.report?.overall ?? 0, examType: session.examType, tr });
+  const streakLabel = summary.streakDays > 0
+    ? (tr ? `${summary.streakDays} günlük seri` : `${summary.streakDays}-day streak`)
+    : (tr ? "İlk seriyi başlat" : "Start your first streak");
   const [audioSource, setAudioSource] = useState<string>("");
   const [savedStudyList, setSavedStudyList] = useState(false);
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(0);
@@ -257,7 +264,12 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
       })),
       nextExercise: session.report.nextExercise,
       delta,
-      tr
+      tr,
+      learnerName,
+      avatarInitials,
+      localeFlag,
+      streakLabel,
+      badgeLabel: scoreBadge
     });
   };
 
@@ -374,6 +386,18 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
               <div style={{ display: "inline-flex", alignItems: "center", gap: "0.55rem", padding: "0.4rem 0.8rem", borderRadius: 999, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.82)", fontSize: "0.82rem", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.8rem" }}>
                 <span style={{ width: 11, height: 11, borderRadius: 999, background: "linear-gradient(135deg, #60a5fa, #34d399)", boxShadow: "0 0 18px rgba(96,165,250,0.7)" }} />
                 SpeakAce Result Card
+              </div>
+              <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap", marginBottom: "0.9rem" }}>
+                <div style={{ width: 42, height: 42, borderRadius: 999, background: "linear-gradient(135deg, rgba(96,165,250,0.9), rgba(52,211,153,0.85))", color: "white", display: "grid", placeItems: "center", fontWeight: 900, fontSize: "0.95rem", boxShadow: "0 10px 24px rgba(96,165,250,0.22)" }}>
+                  {avatarInitials}
+                </div>
+                <div style={{ display: "grid", gap: "0.1rem" }}>
+                  <div style={{ color: "white", fontWeight: 700, fontSize: "0.95rem" }}>{learnerName}</div>
+                  <div style={{ color: "rgba(255,255,255,0.66)", fontSize: "0.82rem" }}>{localeFlag} {streakLabel}</div>
+                </div>
+                <div style={{ padding: "0.38rem 0.75rem", borderRadius: 999, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.86)", fontWeight: 700, fontSize: "0.8rem" }}>
+                  {scoreBadge}
+                </div>
               </div>
               <h1 style={{ fontSize: "clamp(1.3rem, 2.8vw, 1.9rem)", margin: 0, fontWeight: 800, color: "white", maxWidth: 580 }}>{session.prompt.title}</h1>
               <p style={{ margin: "0.55rem 0 0", color: "rgba(255,255,255,0.68)", fontSize: "0.96rem" }}>{examMeta.leftEyebrow} • {session.examType} • {session.difficulty}</p>
@@ -828,6 +852,11 @@ function buildScoreCardSvg(input: {
   nextExercise: string;
   delta: number | null;
   tr: boolean;
+  learnerName?: string;
+  avatarInitials?: string;
+  localeFlag?: string;
+  streakLabel?: string;
+  badgeLabel?: string;
 }) {
   const rows = input.categories
     .slice(0, 4)
@@ -875,15 +904,25 @@ function buildScoreCardSvg(input: {
         <circle cx="34" cy="29" r="11" fill="url(#glowA)" />
         <text x="60" y="38" fill="rgba(255,255,255,0.82)" font-size="24" font-weight="700" font-family="Arial, sans-serif">SpeakAce Result Card</text>
       </g>
+      <g transform="translate(122, 216)">
+        <circle cx="30" cy="30" r="30" fill="rgba(255,255,255,0.14)" />
+        <text x="30" y="39" text-anchor="middle" fill="#ffffff" font-size="28" font-weight="800" font-family="Arial, sans-serif">${escapeXml(input.avatarInitials ?? "SA")}</text>
+        <text x="76" y="26" fill="#ffffff" font-size="24" font-weight="700" font-family="Arial, sans-serif">${escapeXml(truncateForCard(input.learnerName ?? "SpeakAce learner", 26))}</text>
+        <text x="76" y="56" fill="rgba(255,255,255,0.72)" font-size="18" font-family="Arial, sans-serif">${escapeXml(`${input.localeFlag ?? "🌍"} ${input.streakLabel ?? ""}`)}</text>
+      </g>
+      <g transform="translate(990, 244)">
+        <rect x="0" y="0" width="214" height="48" rx="24" fill="rgba(255,255,255,0.1)" />
+        <text x="107" y="31" text-anchor="middle" fill="#ffffff" font-size="20" font-weight="800" font-family="Arial, sans-serif">${escapeXml(input.badgeLabel ?? "Momentum builder")}</text>
+      </g>
       <text x="122" y="252" fill="#ffffff" font-size="58" font-weight="800" font-family="Arial, sans-serif">${escapeXml(truncateForCard(input.title, 36))}</text>
-      <text x="122" y="300" fill="rgba(255,255,255,0.72)" font-size="28" font-family="Arial, sans-serif">${escapeXml(input.examLine)}</text>
+      <text x="122" y="334" fill="rgba(255,255,255,0.72)" font-size="28" font-family="Arial, sans-serif">${escapeXml(input.examLine)}</text>
       <text x="1120" y="168" text-anchor="end" fill="rgba(255,255,255,0.88)" font-size="30" font-weight="800" font-family="Arial, sans-serif">speakace.org</text>
       <text x="1120" y="206" text-anchor="end" fill="rgba(255,255,255,0.62)" font-size="22" font-family="Arial, sans-serif">${escapeXml(input.tr ? "AI speaking score" : "AI speaking score")}</text>
 
-      <text x="122" y="540" fill="#ffffff" font-size="214" font-weight="900" font-family="Arial, sans-serif">${escapeXml(input.score)}</text>
-      <text x="128" y="596" fill="rgba(255,255,255,0.88)" font-size="44" font-weight="700" font-family="Arial, sans-serif">${escapeXml(input.scaleLabel)}</text>
+      <text x="122" y="556" fill="#ffffff" font-size="214" font-weight="900" font-family="Arial, sans-serif">${escapeXml(input.score)}</text>
+      <text x="128" y="612" fill="rgba(255,255,255,0.88)" font-size="44" font-weight="700" font-family="Arial, sans-serif">${escapeXml(input.scaleLabel)}</text>
       ${deltaBadge}
-      <foreignObject x="126" y="628" width="1110" height="90">
+      <foreignObject x="126" y="644" width="1110" height="90">
         <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Arial, sans-serif; color: rgba(255,255,255,0.72); font-size: 26px; line-height: 1.45;">${escapeHtml(input.nextExercise)}</div>
       </foreignObject>
 
@@ -940,6 +979,44 @@ function loadImage(src: string) {
 
 function truncateForCard(value: string, max: number) {
   return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
+function getAvatarInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "SA";
+  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("");
+}
+
+function getLocaleFlag(language: string) {
+  const flags: Record<string, string> = {
+    tr: "🇹🇷",
+    en: "🇬🇧",
+    de: "🇩🇪",
+    es: "🇪🇸",
+    fr: "🇫🇷",
+    it: "🇮🇹",
+    pt: "🇵🇹",
+    nl: "🇳🇱",
+    pl: "🇵🇱",
+    ru: "🇷🇺",
+    ar: "🇸🇦",
+    ja: "🇯🇵",
+    ko: "🇰🇷"
+  };
+  return flags[language] ?? "🌍";
+}
+
+function getScoreBadge(input: { score: number; examType: string; tr: boolean }) {
+  if (input.examType === "TOEFL") {
+    if (input.score >= 3.5) return input.tr ? "Yüksek performans" : "High performer";
+    if (input.score >= 3) return input.tr ? "Güçlü yükseliş" : "Strong climb";
+    return input.tr ? "İvme yakalıyor" : "Building momentum";
+  }
+
+  if (input.score >= 7.5) return input.tr ? "Share-worthy band" : "Share-worthy band";
+  if (input.score >= 7) return input.tr ? "Band 7 yolunda" : "Band 7 path";
+  if (input.score >= 6) return input.tr ? "Skor yükseliyor" : "Score climbing";
+  return input.tr ? "İvme yakalıyor" : "Building momentum";
 }
 
 function escapeHtml(value: string) {

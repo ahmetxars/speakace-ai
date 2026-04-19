@@ -277,6 +277,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         resultShareWhatsApp30d: 0,
         resultShareLinkedIn7d: 0,
         resultShareLinkedIn30d: 0,
+        topSharedSpeakingPrompts: [],
         writingStarts7d: 0,
       writingStarts30d: 0,
       writingEvaluations7d: 0,
@@ -632,6 +633,37 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     limit 6
   `;
 
+  const topSharedSpeakingPromptRows = await sql<
+    Array<{
+      prompt_title: string;
+      total_shares: number;
+      x_shares: number;
+      whatsapp_shares: number;
+      linkedin_shares: number;
+    }>
+  >`
+    with share_events as (
+      select
+        ae.event,
+        regexp_replace(ae.path, '^/app/results/', '') as session_id
+      from analytics_events ae
+      where ae.event in ('result_share_x', 'result_share_whatsapp', 'result_share_linkedin', 'result_share_native', 'result_share_copy')
+        and ae.path like '/app/results/%'
+        and ae.created_at > now() - interval '30 days'
+    )
+    select
+      ss.prompt_title,
+      count(*)::int as total_shares,
+      count(*) filter (where share_events.event = 'result_share_x')::int as x_shares,
+      count(*) filter (where share_events.event = 'result_share_whatsapp')::int as whatsapp_shares,
+      count(*) filter (where share_events.event = 'result_share_linkedin')::int as linkedin_shares
+    from share_events
+    join speaking_sessions ss on ss.id = share_events.session_id
+    group by ss.prompt_title
+    order by total_shares desc, ss.prompt_title asc
+    limit 6
+  `;
+
   const bestPerformingCtaRows = await sql<
     Array<{
       path: string | null;
@@ -890,6 +922,13 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     resultShareWhatsApp30d: row?.result_share_whatsapp_30d ?? 0,
     resultShareLinkedIn7d: row?.result_share_linkedin_7d ?? 0,
     resultShareLinkedIn30d: row?.result_share_linkedin_30d ?? 0,
+    topSharedSpeakingPrompts: topSharedSpeakingPromptRows.map((item) => ({
+      promptTitle: item.prompt_title,
+      totalShares: item.total_shares,
+      xShares: item.x_shares,
+      whatsappShares: item.whatsapp_shares,
+      linkedInShares: item.linkedin_shares
+    })),
     writingStarts7d: row?.writing_starts_7d ?? 0,
     writingStarts30d: row?.writing_starts_30d ?? 0,
     writingEvaluations7d: row?.writing_evaluations_7d ?? 0,

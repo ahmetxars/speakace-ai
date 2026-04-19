@@ -699,6 +699,32 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
+                    <h3>Top Shared Speaking Prompts</h3>
+                    <p>Shows which speaking result pages create the most social sharing pressure in the last 30 days.</p>
+                  </div>
+                  <div className="adm-stack-list">
+                    {props.overview.topSharedSpeakingPrompts.length === 0 ? (
+                      <p className="adm-muted">No speaking share activity recorded yet.</p>
+                    ) : (
+                      props.overview.topSharedSpeakingPrompts.map((item) => (
+                        <div key={item.promptTitle} className="adm-list-row" style={{ alignItems: "stretch" }}>
+                          <div style={{ display: "grid", gap: "0.3rem", flex: 1 }}>
+                            <strong>{item.promptTitle}</strong>
+                            <span className="adm-muted">
+                              {item.totalShares} total shares · X {item.xShares} · WhatsApp {item.whatsappShares} · LinkedIn {item.linkedInShares}
+                            </span>
+                          </div>
+                          <StatusBadge label={`${item.totalShares} shares`} tone="accent" />
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="adm-grid-2">
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
                     <h3>CTA Performance</h3>
                     <p>Homepage and pricing clicks, signups, and paid conversions across the last 7 and 30 days.</p>
                   </div>

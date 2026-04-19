@@ -470,6 +470,13 @@ export interface AdminOverview {
   resultShareWhatsApp30d: number;
   resultShareLinkedIn7d: number;
   resultShareLinkedIn30d: number;
+  topSharedSpeakingPrompts: Array<{
+    promptTitle: string;
+    totalShares: number;
+    xShares: number;
+    whatsappShares: number;
+    linkedInShares: number;
+  }>;
   writingStarts7d: number;
   writingStarts30d: number;
   writingEvaluations7d: number;
