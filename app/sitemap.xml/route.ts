@@ -1,8 +1,16 @@
 import { listAllCustomBlogSlugs } from "@/lib/server/custom-blog";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://speakace.org";
-  const blogSlugs = await listAllCustomBlogSlugs();
+  let blogSlugs: string[] = [];
+
+  try {
+    blogSlugs = await listAllCustomBlogSlugs();
+  } catch (error) {
+    console.error("Failed to load custom blog slugs for sitemap.", error);
+  }
 
   const staticPages = [
     { url: "/", changefreq: "weekly", priority: "1.0" },

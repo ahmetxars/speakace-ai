@@ -5,6 +5,8 @@ import { listAllCustomBlogSlugs } from "@/lib/server/custom-blog";
 import { siteConfig } from "@/lib/site";
 import { seoTopicPages } from "@/lib/seo-topics";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const routes = [
     "",
@@ -44,7 +46,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/app"
   ];
   const blogRoutes = getAllBlogSlugs().map((slug) => `/blog/${slug}`);
-  const customBlogRoutes = (await listAllCustomBlogSlugs()).map((slug) => `/blog/${slug}`);
+  let customBlogRoutes: string[] = [];
+  try {
+    customBlogRoutes = (await listAllCustomBlogSlugs()).map((slug) => `/blog/${slug}`);
+  } catch (error) {
+    console.error("Failed to load custom blog routes for sitemap.", error);
+  }
   const topicRoutes = seoTopicPages.map((topic) => `/ielts-speaking-topics/${topic.slug}`);
   const comparisonRoutes = comparisonPages.map((item) => `/compare/${item.slug}`);
   const toolRoutes = toolPages.map((item) => `/tools/${item.slug}`);

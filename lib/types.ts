@@ -85,7 +85,7 @@ export interface SpeakingSession {
   report?: ScoreReport;
 }
 
-export type WritingTaskType = "ielts-writing-task-2";
+export type WritingTaskType = "ielts-writing-task-1" | "ielts-writing-task-2";
 
 export type WritingFeedbackCategory =
   | "taskResponse"

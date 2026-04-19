@@ -225,11 +225,13 @@ export async function generateFeedbackReport({
 }
 
 export async function generateWritingFeedbackReport({
+  taskType,
   promptTitle,
   promptText,
   difficulty,
   draftText
 }: {
+  taskType: "ielts-writing-task-1" | "ielts-writing-task-2";
   promptTitle: string;
   promptText: string;
   difficulty: string;
@@ -270,7 +272,7 @@ export async function generateWritingFeedbackReport({
                     category: { type: "string", enum: ["taskResponse", "coherence", "lexicalResource", "grammar"] },
                     label: {
                       type: "string",
-                      enum: ["Task Response", "Coherence and Cohesion", "Lexical Resource", "Grammar Range and Accuracy"]
+                      enum: ["Task Achievement", "Task Response", "Coherence and Cohesion", "Lexical Resource", "Grammar Range and Accuracy"]
                     },
                     score: { type: "number" }
                   },
@@ -292,19 +294,23 @@ export async function generateWritingFeedbackReport({
         {
           role: "system",
           content:
-            "You are an IELTS Writing Task 2 evaluator. Score honestly using IELTS Writing Task 2 criteria. Return strict JSON only. CorrectedVersion must sound natural, high-band, and directly answer the same question without becoming overly formal or robotic."
+            taskType === "ielts-writing-task-1"
+              ? "You are an IELTS Writing Task 1 evaluator. Score honestly using IELTS Task 1 criteria. Use 'Task Achievement' as the first category label. CorrectedVersion must read like a strong report with an overview and grouped comparisons, and it must not include personal opinions. Return strict JSON only."
+              : "You are an IELTS Writing Task 2 evaluator. Score honestly using IELTS Writing Task 2 criteria. Use 'Task Response' as the first category label. CorrectedVersion must sound natural, high-band, and directly answer the same question without becoming overly formal or robotic. Return strict JSON only."
         },
         {
           role: "user",
           content: [
-            "Exam: IELTS Writing Task 2",
+            `Exam: ${taskType === "ielts-writing-task-1" ? "IELTS Writing Task 1" : "IELTS Writing Task 2"}`,
             `Difficulty: ${difficulty}`,
             `Prompt title: ${promptTitle}`,
             `Prompt: ${promptText}`,
             `Draft: ${draftText}`,
             "Use category labels exactly as defined in the schema.",
             "Caution should explain that this is AI practice guidance, not an official IELTS result.",
-            "Outline should give 4 short revision steps for retrying the same essay."
+            taskType === "ielts-writing-task-1"
+              ? "Outline should give 4 short revision steps for retrying the same report with a better overview and clearer comparisons."
+              : "Outline should give 4 short revision steps for retrying the same essay."
           ].join("\n")
         }
       ]

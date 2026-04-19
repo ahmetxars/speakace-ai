@@ -214,6 +214,33 @@ export function AdminPanel(props: {
     };
   }, [props.overview.funnel30d, props.overview.funnel7d]);
 
+  const writingFunnel = useMemo(() => {
+    const startToEval7d = props.overview.writingStarts7d ? (props.overview.writingEvaluations7d / props.overview.writingStarts7d) * 100 : 0;
+    const startToEval30d = props.overview.writingStarts30d ? (props.overview.writingEvaluations30d / props.overview.writingStarts30d) * 100 : 0;
+    const evalToRetry7d = props.overview.writingEvaluations7d ? (props.overview.writingRetries7d / props.overview.writingEvaluations7d) * 100 : 0;
+    const evalToRetry30d = props.overview.writingEvaluations30d ? (props.overview.writingRetries30d / props.overview.writingEvaluations30d) * 100 : 0;
+    const evalToPdf7d = props.overview.writingEvaluations7d ? (props.overview.writingPdfExports7d / props.overview.writingEvaluations7d) * 100 : 0;
+    const evalToPdf30d = props.overview.writingEvaluations30d ? (props.overview.writingPdfExports30d / props.overview.writingEvaluations30d) * 100 : 0;
+
+    return {
+      startToEval7d,
+      startToEval30d,
+      evalToRetry7d,
+      evalToRetry30d,
+      evalToPdf7d,
+      evalToPdf30d
+    };
+  }, [
+    props.overview.writingEvaluations30d,
+    props.overview.writingEvaluations7d,
+    props.overview.writingPdfExports30d,
+    props.overview.writingPdfExports7d,
+    props.overview.writingRetries30d,
+    props.overview.writingRetries7d,
+    props.overview.writingStarts30d,
+    props.overview.writingStarts7d
+  ]);
+
   const trendMax = useMemo(
     () =>
       Math.max(
@@ -721,7 +748,7 @@ export function AdminPanel(props: {
                     </div>
                     <div className="adm-overview-item">
                       <strong>{props.overview.writingStarts7d}</strong>
-                      <span>Writing Task 2 starts in the last 7 days</span>
+                      <span>Writing starts in the last 7 days</span>
                     </div>
                     <div className="adm-overview-item">
                       <strong>{props.overview.writingEvaluations7d}</strong>
@@ -729,7 +756,7 @@ export function AdminPanel(props: {
                     </div>
                     <div className="adm-overview-item">
                       <strong>{props.overview.writingStarts30d}</strong>
-                      <span>Writing Task 2 starts in the last 30 days</span>
+                      <span>Writing starts in the last 30 days</span>
                     </div>
                     <div className="adm-overview-item">
                       <strong>{props.overview.writingEvaluations30d}</strong>
@@ -799,6 +826,43 @@ export function AdminPanel(props: {
                         </span>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Writing Conversion Funnel</h3>
+                    <p>Shows whether learners finish evaluation, retry, and export after entering the writing flow.</p>
+                  </div>
+                  <div className="adm-overview-list">
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.writingStarts7d}</strong>
+                      <span>Writing starts in the last 7 days. 30-day baseline: {props.overview.writingStarts30d}.</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{formatPercent(writingFunnel.startToEval7d)}</strong>
+                      <span>Start → evaluated in the last 7 days. 30-day baseline: {formatPercent(writingFunnel.startToEval30d)}.</span>
+                      <span className={`adm-stat-trend ${writingFunnel.startToEval7d - writingFunnel.startToEval30d >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
+                        {writingFunnel.startToEval7d - writingFunnel.startToEval30d >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                        {formatPercent(Math.abs(writingFunnel.startToEval7d - writingFunnel.startToEval30d))} vs 30-day average
+                      </span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{formatPercent(writingFunnel.evalToRetry7d)}</strong>
+                      <span>Evaluated → retry in the last 7 days. 30-day baseline: {formatPercent(writingFunnel.evalToRetry30d)}.</span>
+                      <span className={`adm-stat-trend ${writingFunnel.evalToRetry7d - writingFunnel.evalToRetry30d >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
+                        {writingFunnel.evalToRetry7d - writingFunnel.evalToRetry30d >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                        {formatPercent(Math.abs(writingFunnel.evalToRetry7d - writingFunnel.evalToRetry30d))} vs 30-day average
+                      </span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{formatPercent(writingFunnel.evalToPdf7d)}</strong>
+                      <span>Evaluated → PDF export in the last 7 days. 30-day baseline: {formatPercent(writingFunnel.evalToPdf30d)}.</span>
+                      <span className={`adm-stat-trend ${writingFunnel.evalToPdf7d - writingFunnel.evalToPdf30d >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
+                        {writingFunnel.evalToPdf7d - writingFunnel.evalToPdf30d >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
+                        {formatPercent(Math.abs(writingFunnel.evalToPdf7d - writingFunnel.evalToPdf30d))} vs 30-day average
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

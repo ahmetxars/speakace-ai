@@ -139,7 +139,7 @@ export async function createWritingSession(input: {
     return { error: "User profile not found. Sign in again to continue.", status: 401 as const };
   }
 
-  const prompt = getWritingPrompt(input.promptId, input.difficulty);
+  const prompt = getWritingPrompt(input.taskType, input.promptId, input.difficulty);
   const limits = PLAN_LIMITS[member.plan];
 
   if (hasDatabaseUrl()) {
@@ -248,6 +248,7 @@ export async function evaluateStoredWritingSession(sessionId: string) {
 
   try {
     const aiReport = await generateWritingFeedbackReport({
+      taskType: session.taskType,
       promptTitle: session.prompt.title,
       promptText: session.prompt.prompt,
       difficulty: session.difficulty,

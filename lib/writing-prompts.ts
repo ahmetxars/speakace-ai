@@ -1,4 +1,67 @@
-import { Difficulty, WritingPromptTemplate } from "@/lib/types";
+import { Difficulty, WritingPromptTemplate, WritingTaskType } from "@/lib/types";
+
+const writingTask1Prompts: WritingPromptTemplate[] = [
+  {
+    id: "wt1-line-urban-rural",
+    examType: "IELTS",
+    taskType: "ielts-writing-task-1",
+    title: "Urban vs rural population changes",
+    prompt:
+      "The line graph below shows changes in the population of people living in urban and rural areas in a country between 1990 and 2020. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+    difficulty: "Starter",
+    recommendedMinutes: 20
+  },
+  {
+    id: "wt1-bar-energy-sources",
+    examType: "IELTS",
+    taskType: "ielts-writing-task-1",
+    title: "Energy sources used by households",
+    prompt:
+      "The bar chart compares the percentage of household energy provided by five different sources in two countries in 2010. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+    difficulty: "Target",
+    recommendedMinutes: 20
+  },
+  {
+    id: "wt1-table-tourism-income",
+    examType: "IELTS",
+    taskType: "ielts-writing-task-1",
+    title: "Tourism income by region",
+    prompt:
+      "The table gives information about the annual income from tourism in four regions in 2005 and 2025. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+    difficulty: "Target",
+    recommendedMinutes: 20
+  },
+  {
+    id: "wt1-process-recycling-paper",
+    examType: "IELTS",
+    taskType: "ielts-writing-task-1",
+    title: "Paper recycling process",
+    prompt:
+      "The diagram shows the process of recycling waste paper. Summarise the information by selecting and reporting the main features.",
+    difficulty: "Stretch",
+    recommendedMinutes: 20
+  },
+  {
+    id: "wt1-map-town-development",
+    examType: "IELTS",
+    taskType: "ielts-writing-task-1",
+    title: "Town centre development",
+    prompt:
+      "The maps show how the town centre changed between 1995 and the present day. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+    difficulty: "Stretch",
+    recommendedMinutes: 20
+  },
+  {
+    id: "wt1-pie-student-spending",
+    examType: "IELTS",
+    taskType: "ielts-writing-task-1",
+    title: "Student spending habits",
+    prompt:
+      "The pie charts compare how university students in one country spent their monthly budget in 2000 and 2025. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+    difficulty: "Starter",
+    recommendedMinutes: 20
+  }
+];
 
 const writingTask2Prompts: WritingPromptTemplate[] = [
   {
@@ -153,18 +216,25 @@ const writingTask2Prompts: WritingPromptTemplate[] = [
   }
 ];
 
-export function listWritingPrompts(difficulty?: Difficulty) {
-  if (!difficulty) return writingTask2Prompts;
-  const filtered = writingTask2Prompts.filter((item) => item.difficulty === difficulty);
-  return filtered.length ? filtered : writingTask2Prompts;
+const promptsByTask: Record<WritingTaskType, WritingPromptTemplate[]> = {
+  "ielts-writing-task-1": writingTask1Prompts,
+  "ielts-writing-task-2": writingTask2Prompts
+};
+
+export function listWritingPrompts(taskType: WritingTaskType, difficulty?: Difficulty) {
+  const prompts = promptsByTask[taskType];
+  if (!difficulty) return prompts;
+  const filtered = prompts.filter((item) => item.difficulty === difficulty);
+  return filtered.length ? filtered : prompts;
 }
 
-export function getWritingPrompt(promptId?: string, difficulty: Difficulty = "Target") {
+export function getWritingPrompt(taskType: WritingTaskType, promptId?: string, difficulty: Difficulty = "Target") {
+  const prompts = promptsByTask[taskType];
   if (promptId) {
-    const exact = writingTask2Prompts.find((item) => item.id === promptId);
+    const exact = prompts.find((item) => item.id === promptId);
     if (exact) return exact;
   }
 
-  const byDifficulty = listWritingPrompts(difficulty);
+  const byDifficulty = listWritingPrompts(taskType, difficulty);
   return byDifficulty[Math.floor(Math.random() * byDifficulty.length)];
 }
