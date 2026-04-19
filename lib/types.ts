@@ -506,6 +506,16 @@ export interface AdminOverview {
     whatsappShares: number;
     linkedInShares: number;
   }>;
+  topSharedIdentitySegments: Array<{
+    segmentLabel: string;
+    badgeLabel: string;
+    localeFlag: string;
+    streakLabel: string;
+    totalShares: number;
+    xShares: number;
+    whatsappShares: number;
+    linkedInShares: number;
+  }>;
   writingStarts7d: number;
   writingStarts30d: number;
   writingEvaluations7d: number;

@@ -1,6 +1,52 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSharedResultCard } from "@/lib/shared-result-cards";
+import { siteConfig } from "@/lib/site";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const card = await getSharedResultCard(slug);
+
+  if (!card) {
+    return {
+      title: "Shared result not found | SpeakAce AI",
+      description: "This shared speaking result is no longer available."
+    };
+  }
+
+  const title = `${card.learnerName} scored ${card.overallScore} ${card.scaleLabel} on SpeakAce`;
+  const description = `${card.badgeLabel} • ${card.localeFlag} ${card.streakLabel} • ${card.promptTitle}`;
+  const url = `${siteConfig.domain}/share/${card.slug}`;
+  const image = `${siteConfig.domain}/share/${card.slug}/opengraph-image`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: siteConfig.name,
+      type: "website",
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 630,
+          alt: `${card.learnerName} SpeakAce result card`
+        }
+      ]
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image]
+    }
+  };
+}
 
 export default async function SharedResultPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

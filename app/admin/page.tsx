@@ -79,6 +79,7 @@ export default async function AdminPage() {
             resultShareLinkedIn30d: 0,
             topSharedSpeakingPrompts: [],
             topSharedBadges: [],
+            topSharedIdentitySegments: [],
             writingStarts7d: 0,
             writingStarts30d: 0,
             writingEvaluations7d: 0,

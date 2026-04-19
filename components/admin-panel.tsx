@@ -749,6 +749,35 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
+                    <h3>Top Share Segments</h3>
+                    <p>Shows which badge + country + streak combinations generate the highest share momentum in the last 30 days.</p>
+                  </div>
+                  <div className="adm-stack-list">
+                    {props.overview.topSharedIdentitySegments.length === 0 ? (
+                      <p className="adm-muted">No segment-level share activity recorded yet.</p>
+                    ) : (
+                      props.overview.topSharedIdentitySegments.map((item) => (
+                        <div key={item.segmentLabel} className="adm-list-row" style={{ alignItems: "stretch" }}>
+                          <div style={{ display: "grid", gap: "0.3rem", flex: 1 }}>
+                            <strong>{item.segmentLabel}</strong>
+                            <span className="adm-muted">
+                              {item.totalShares} total shares · X {item.xShares} · WhatsApp {item.whatsappShares} · LinkedIn {item.linkedInShares}
+                            </span>
+                          </div>
+                          <div className="adm-list-side">
+                            <StatusBadge label={item.badgeLabel} tone="accent" />
+                            <span className="adm-table-muted">{item.localeFlag} {item.streakLabel}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="adm-grid-2">
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
                     <h3>CTA Performance</h3>
                     <p>Homepage and pricing clicks, signups, and paid conversions across the last 7 and 30 days.</p>
                   </div>
