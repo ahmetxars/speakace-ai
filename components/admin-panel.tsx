@@ -1011,6 +1011,34 @@ export function AdminPanel(props: {
                       <strong>{props.overview.resultShareLinkedIn7d}</strong>
                       <span>LinkedIn shares in the last 7 days. 30-day baseline: {props.overview.resultShareLinkedIn30d}.</span>
                     </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.shareAttributedSignups7d}</strong>
+                      <span>Signups attributed to shared result pages in the last 7 days. 30-day baseline: {props.overview.shareAttributedSignups30d}.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="adm-grid-2">
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Top Share Signup Sources</h3>
+                    <p>Shows which public result pages are turning social sharing into actual account creation in the last 30 days.</p>
+                  </div>
+                  <div className="adm-stack-list">
+                    {props.overview.topShareSignupSources.length === 0 ? (
+                      <p className="adm-muted">No signup attribution from shared result pages yet.</p>
+                    ) : (
+                      props.overview.topShareSignupSources.map((item) => (
+                        <div key={item.sharePath} className="adm-list-row" style={{ alignItems: "stretch" }}>
+                          <div style={{ display: "grid", gap: "0.3rem", flex: 1 }}>
+                            <strong>{item.promptTitle}</strong>
+                            <span className="adm-muted">{item.learnerName} · {item.sharePath}</span>
+                          </div>
+                          <StatusBadge label={`${item.signups} signups`} tone="success" />
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>

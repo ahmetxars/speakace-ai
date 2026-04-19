@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useAppState } from "@/components/providers";
+import { clearShareAttribution, getShareAttributionFromStorage } from "@/lib/share-growth";
 
 export default function AuthPage() {
   return (
@@ -31,6 +32,7 @@ function AuthPageInner() {
   const [successToast, setSuccessToast] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [handledVerifyToken, setHandledVerifyToken] = useState("");
+  const [storedAttributionPath, setStoredAttributionPath] = useState<string | null>(null);
   const inviteReferrerId = searchParams.get("invite");
 
   useEffect(() => {
@@ -50,10 +52,16 @@ function AuthPageInner() {
     return () => window.clearTimeout(timer);
   }, [successToast]);
 
+  useEffect(() => {
+    const stored = getShareAttributionFromStorage();
+    setStoredAttributionPath(stored?.path ?? null);
+  }, []);
+
   const submit = async () => {
     setError("");
     setNotice("");
     setSuccessToast("");
+    const effectiveAttributionPath = searchParams.get("cta") ?? storedAttributionPath ?? null;
     const response = await fetch(mode === "signup" ? "/api/auth/signup" : "/api/auth/signin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -66,7 +74,7 @@ function AuthPageInner() {
         organizationName,
         referralCode,
         inviteReferrerId,
-        attributionPath: searchParams.get("cta") ?? null,
+        attributionPath: effectiveAttributionPath,
         attributionEvent: searchParams.get("cta_event") ?? null
       })
     });
@@ -81,6 +89,7 @@ function AuthPageInner() {
     }
 
     if (mode === "signup" && data.verificationRequired) {
+      clearShareAttribution();
       setSuccessToast(
         data.emailSent
           ? tr ? "Hesabın oluşturuldu. Doğrulama maili gönderildi." : "Your account was created. Verification email sent."
@@ -92,6 +101,9 @@ function AuthPageInner() {
       return;
     }
 
+    if (mode === "signup") {
+      clearShareAttribution();
+    }
     await refreshSession();
     router.push("/app");
   };
@@ -139,7 +151,7 @@ function AuthPageInner() {
     setPassword("");
   };
 
-  const cta = searchParams.get("cta");
+  const cta = searchParams.get("cta") ?? storedAttributionPath;
   const ctaEvent = searchParams.get("cta_event");
   const googleParams = new URLSearchParams();
   if (cta) {

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ShareAttributionCapture } from "@/components/share-attribution-capture";
+import { buildShareAttributionPath, buildSharePricingHref, buildShareSignupHref, estimateCountryRank } from "@/lib/share-growth";
 import { getSharedResultCard } from "@/lib/shared-result-cards";
 import { siteConfig } from "@/lib/site";
 
@@ -52,9 +54,14 @@ export default async function SharedResultPage({ params }: { params: Promise<{ s
   const { slug } = await params;
   const card = await getSharedResultCard(slug);
   if (!card) notFound();
+  const rankMeta = estimateCountryRank(card.overallScore, card.examType, card.localeFlag);
+  const sharePath = buildShareSignupHref(card.slug);
+  const pricingPath = buildSharePricingHref(card.slug);
+  const attributionPath = buildShareAttributionPath(card.slug);
 
   return (
     <main className="page-shell section">
+      <ShareAttributionCapture path={attributionPath} />
       <div style={{ maxWidth: 860, margin: "0 auto", display: "grid", gap: "1.2rem" }}>
         <div
           style={{
@@ -98,6 +105,16 @@ export default async function SharedResultPage({ params }: { params: Promise<{ s
                 <div style={{ fontSize: "4.8rem", fontWeight: 900, lineHeight: 0.95, color: "white" }}>{card.overallScore}</div>
                 <div style={{ marginTop: "0.5rem", color: "rgba(255,255,255,0.82)", fontWeight: 700 }}>{card.scaleLabel}</div>
                 <p style={{ margin: "0.9rem 0 0", lineHeight: 1.65, color: "rgba(255,255,255,0.68)" }}>{card.nextExercise}</p>
+                <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap", marginTop: "1rem" }}>
+                  <div style={{ padding: "0.65rem 0.8rem", borderRadius: 16, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)", minWidth: 160 }}>
+                    <div style={{ color: "rgba(255,255,255,0.62)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>Estimated percentile</div>
+                    <div style={{ color: "white", fontWeight: 800, marginTop: "0.25rem" }}>{rankMeta.percentileLabel}</div>
+                  </div>
+                  <div style={{ padding: "0.65rem 0.8rem", borderRadius: 16, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.08)", minWidth: 180 }}>
+                    <div style={{ color: "rgba(255,255,255,0.62)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>Country signal</div>
+                    <div style={{ color: "white", fontWeight: 800, marginTop: "0.25rem" }}>{rankMeta.countrySignal}</div>
+                  </div>
+                </div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem" }}>
                 {card.categories.map((item) => (
@@ -115,8 +132,8 @@ export default async function SharedResultPage({ params }: { params: Promise<{ s
           <strong>Practice your own speaking result with SpeakAce</strong>
           <p style={{ margin: 0, color: "var(--muted-foreground)", lineHeight: 1.7 }}>Record one answer, get an IELTS-style score estimate, and share your own result card in minutes.</p>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <Link href="/free-ielts-speaking-test" className="button button-primary">Start Free Test</Link>
-            <Link href="/pricing" className="button button-secondary">Unlock full feedback</Link>
+            <a href={sharePath} className="button button-primary">Start Free Test</a>
+            <a href={pricingPath} className="button button-secondary">Unlock full feedback</a>
           </div>
         </div>
       </div>

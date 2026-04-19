@@ -492,6 +492,14 @@ export interface AdminOverview {
   resultShareWhatsApp30d: number;
   resultShareLinkedIn7d: number;
   resultShareLinkedIn30d: number;
+  shareAttributedSignups7d: number;
+  shareAttributedSignups30d: number;
+  topShareSignupSources: Array<{
+    sharePath: string;
+    promptTitle: string;
+    learnerName: string;
+    signups: number;
+  }>;
   topSharedSpeakingPrompts: Array<{
     promptTitle: string;
     totalShares: number;

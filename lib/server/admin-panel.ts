@@ -277,6 +277,9 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         resultShareWhatsApp30d: 0,
         resultShareLinkedIn7d: 0,
         resultShareLinkedIn30d: 0,
+        shareAttributedSignups7d: 0,
+        shareAttributedSignups30d: 0,
+        topShareSignupSources: [],
         topSharedSpeakingPrompts: [],
         topSharedBadges: [],
         topSharedIdentitySegments: [],
@@ -377,6 +380,8 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       result_share_whatsapp_30d: number;
       result_share_linkedin_7d: number;
       result_share_linkedin_30d: number;
+      share_attributed_signups_7d: number;
+      share_attributed_signups_30d: number;
       writing_starts_7d: number;
       writing_starts_30d: number;
       writing_evaluations_7d: number;
@@ -547,6 +552,20 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       (
         select count(*)::int
         from recent_analytics
+        where event = 'signup_completed'
+          and path like '/share/%'
+          and created_at > now() - interval '7 days'
+      ) as share_attributed_signups_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'signup_completed'
+          and path like '/share/%'
+          and created_at > now() - interval '30 days'
+      ) as share_attributed_signups_30d,
+      (
+        select count(*)::int
+        from recent_analytics
         where event = 'writing_start'
           and created_at > now() - interval '7 days'
       ) as writing_starts_7d,
@@ -687,6 +706,35 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     group by ss.prompt_title
     order by total_shares desc, ss.prompt_title asc
     limit 6
+  `;
+
+  const topShareSignupSourceRows = await sql<
+    Array<{
+      share_path: string;
+      prompt_title: string;
+      learner_name: string;
+      signups: number;
+    }>
+  >`
+    with share_signup_events as (
+      select
+        split_part(ae.path, '?', 1) as share_path,
+        regexp_replace(split_part(ae.path, '?', 1), '^/share/', '') as slug
+      from analytics_events ae
+      where ae.event = 'signup_completed'
+        and ae.path like '/share/%'
+        and ae.created_at > now() - interval '30 days'
+    )
+    select
+      share_signup_events.share_path,
+      src.prompt_title,
+      src.learner_name,
+      count(*)::int as signups
+    from share_signup_events
+    join shared_result_cards src on src.slug = share_signup_events.slug
+    group by share_signup_events.share_path, src.prompt_title, src.learner_name
+    order by signups desc, share_signup_events.share_path asc
+    limit 8
   `;
 
   const topSharedBadgeRows = await sql<
@@ -1031,6 +1079,14 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     resultShareWhatsApp30d: row?.result_share_whatsapp_30d ?? 0,
     resultShareLinkedIn7d: row?.result_share_linkedin_7d ?? 0,
     resultShareLinkedIn30d: row?.result_share_linkedin_30d ?? 0,
+    shareAttributedSignups7d: row?.share_attributed_signups_7d ?? 0,
+    shareAttributedSignups30d: row?.share_attributed_signups_30d ?? 0,
+    topShareSignupSources: topShareSignupSourceRows.map((item) => ({
+      sharePath: item.share_path,
+      promptTitle: item.prompt_title,
+      learnerName: item.learner_name,
+      signups: item.signups
+    })),
     topSharedSpeakingPrompts: topSharedSpeakingPromptRows.map((item) => ({
       promptTitle: item.prompt_title,
       totalShares: item.total_shares,

@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { notFound } from "next/navigation";
+import { estimateCountryRank } from "@/lib/share-growth";
 import { getSharedResultCard } from "@/lib/shared-result-cards";
 
 export const size = {
@@ -16,6 +17,7 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
   if (!card) {
     notFound();
   }
+  const rankMeta = estimateCountryRank(card.overallScore, card.examType, card.localeFlag);
 
   const avatarContent = card.avatarDataUrl ? (
     <img
@@ -250,6 +252,43 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
                 </div>
                 <div style={{ fontSize: 22, lineHeight: 1.35, color: "rgba(255,255,255,0.88)" }}>
                   {card.nextExercise.length > 140 ? `${card.nextExercise.slice(0, 137)}...` : card.nextExercise}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 14 }}>
+                <div
+                  style={{
+                    flex: 1,
+                    padding: 18,
+                    borderRadius: 20,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.10)"
+                  }}
+                >
+                  <div style={{ fontSize: 15, textTransform: "uppercase", letterSpacing: 1.1, color: "rgba(255,255,255,0.62)", fontWeight: 700 }}>
+                    Estimated percentile
+                  </div>
+                  <div style={{ fontSize: 28, fontWeight: 800 }}>{rankMeta.percentileLabel}</div>
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    padding: 18,
+                    borderRadius: 20,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.10)"
+                  }}
+                >
+                  <div style={{ fontSize: 15, textTransform: "uppercase", letterSpacing: 1.1, color: "rgba(255,255,255,0.62)", fontWeight: 700 }}>
+                    Country signal
+                  </div>
+                  <div style={{ fontSize: 28, fontWeight: 800 }}>{rankMeta.countrySignal}</div>
                 </div>
               </div>
             </div>
