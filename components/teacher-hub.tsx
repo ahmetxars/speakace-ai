@@ -341,8 +341,8 @@ export function TeacherHub() {
         {/* Feedback */}
         {(notice || error) && (
           <div>
-            {notice && <p style={{ color: "var(--success)", margin: 0 }}>{notice}</p>}
-            {error && <p style={{ color: "var(--accent-deep)", margin: 0 }}>{error}</p>}
+            {notice && <p className="teacher-feedback teacher-feedback-success">{notice}</p>}
+            {error && <p className="teacher-feedback teacher-feedback-error">{error}</p>}
           </div>
         )}
 
@@ -356,7 +356,7 @@ export function TeacherHub() {
               onChange={(e) => setNewClassName(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") void createClass(); }}
               placeholder={tr ? "Örnek: IELTS Akşam Grubu" : "Example: IELTS Evening Group"}
-              style={{ flex: 1, padding: "0.85rem 1rem", borderRadius: 14, border: "1px solid var(--line)" }}
+              style={{ ...fieldStyle, flex: 1 }}
             />
             <button type="button" className="button button-primary" onClick={createClass} disabled={!newClassName.trim()}>
               {tr ? "Oluştur" : "Create"}
@@ -373,7 +373,7 @@ export function TeacherHub() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.6rem" }}>
                   <strong style={{ fontSize: "1.1rem" }}>{cls.name}</strong>
                   {(cls.pendingCount ?? 0) > 0 && (
-                    <span className="pill" style={{ background: "var(--accent-deep)", color: "white", fontSize: "0.78rem" }}>
+                    <span className="pill teacher-pill-alert" style={{ fontSize: "0.78rem" }}>
                       {cls.pendingCount} {tr ? "bekleyen" : "pending"}
                     </span>
                   )}
@@ -383,7 +383,7 @@ export function TeacherHub() {
                   <TeacherStat label={tr ? "Bekleyen" : "Pending"} value={String(cls.pendingCount ?? 0)} />
                   <TeacherStat label={tr ? "Kod" : "Code"} value={cls.joinCode} />
                 </div>
-                <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: "0.9rem" }}>
+                <span className="teacher-link-hint">
                   {tr ? "Sınıfa gir →" : "Open class →"}
                 </span>
               </button>
@@ -435,17 +435,11 @@ export function TeacherHub() {
         <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", borderBottom: "1px solid var(--line)", paddingBottom: "0.1rem", marginTop: "0.4rem" }}>
           {tabs.map((tab) => (
             <button key={tab.id} type="button" onClick={() => { setActiveTab(tab.id); setNotice(""); setError(""); }}
-              style={{
-                background: "none", border: "none", cursor: "pointer",
-                padding: "0.5rem 1rem", borderRadius: "8px 8px 0 0",
-                fontWeight: activeTab === tab.id ? 700 : 400,
-                color: activeTab === tab.id ? "var(--accent)" : "var(--muted)",
-                borderBottom: activeTab === tab.id ? "2.5px solid var(--accent)" : "2.5px solid transparent",
-                fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "0.4rem",
-              }}>
+              className={`teacher-tab-button ${activeTab === tab.id ? "is-active" : ""}`}
+              style={{ fontWeight: activeTab === tab.id ? 700 : 500 }}>
               {tab.label}
               {tab.badge !== undefined && (
-                <span style={{ background: tab.id === "homework" ? "var(--accent-deep)" : "var(--accent)", color: "white", borderRadius: 999, fontSize: "0.72rem", padding: "0.1rem 0.45rem", fontWeight: 700 }}>
+                <span className={`teacher-tab-badge ${tab.id === "homework" ? "is-alert" : ""}`}>
                   {tab.badge}
                 </span>
               )}
@@ -457,8 +451,8 @@ export function TeacherHub() {
       {/* Feedback */}
       {(notice || error) && (
         <div>
-          {notice && <p style={{ color: "var(--success)", margin: 0 }}>{notice}</p>}
-          {error && <p style={{ color: "var(--accent-deep)", margin: 0 }}>{error}</p>}
+          {notice && <p className="teacher-feedback teacher-feedback-success">{notice}</p>}
+          {error && <p className="teacher-feedback teacher-feedback-error">{error}</p>}
         </div>
       )}
 
@@ -483,7 +477,7 @@ export function TeacherHub() {
 
           {/* Pending approvals */}
           {pendingRequests.length > 0 && (
-            <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem", background: "rgba(255, 200, 0, 0.05)" }}>
+            <section className="card teacher-highlight teacher-highlight-warm" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
               <span className="eyebrow">{tr ? "Katılım onayları" : "Join approvals"}</span>
               <h2 style={{ fontSize: "1.5rem", margin: 0 }}>
                 {tr ? `${pendingRequests.length} öğrenci onay bekliyor` : `${pendingRequests.length} students awaiting approval`}
@@ -506,14 +500,14 @@ export function TeacherHub() {
 
           {/* At-risk */}
           {atRiskStudents.length > 0 && (
-            <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem", background: "rgba(217, 93, 57, 0.06)" }}>
+            <section className="card teacher-highlight teacher-highlight-danger" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
               <span className="eyebrow">{tr ? "Risk sinyali" : "At-risk students"}</span>
               <h2 style={{ fontSize: "1.5rem", margin: 0 }}>
                 {tr ? `${atRiskStudents.length} öğrencide uyarı` : `${atRiskStudents.length} students flagged`}
               </h2>
               <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "0.6rem" }}>
                 {atRiskStudents.map((s) => (
-                  <Link key={s.student.id} href={`/app/teacher/student/${s.student.id}`} className="card" style={{ padding: "0.9rem", display: "grid", gap: "0.3rem" }}>
+                  <Link key={s.student.id} href={`/app/teacher/student/${s.student.id}`} className="card teacher-soft-card" style={{ padding: "0.9rem", display: "grid", gap: "0.3rem" }}>
                     <strong>{s.student.name}</strong>
                     <div className="practice-meta">{(s.riskFlags ?? []).join(" · ")}</div>
                   </Link>
@@ -541,7 +535,7 @@ export function TeacherHub() {
                   <div key={s.student.id} style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr) auto", gap: "0.7rem", alignItems: "center" }}>
                     <span className="pill" style={{ fontSize: "0.78rem" }}>+{i + 1}</span>
                     <div><strong>{s.student.name}</strong><div className="practice-meta">{s.lastTaskType ? humanizeTaskType(s.lastTaskType, tr) : "-"}</div></div>
-                    <strong style={{ color: (s.scoreDelta ?? 0) >= 0 ? "var(--success)" : "var(--accent-deep)" }}>{formatDelta(s.scoreDelta)}</strong>
+                    <strong style={{ color: (s.scoreDelta ?? 0) >= 0 ? "var(--success)" : "color-mix(in srgb, var(--destructive) 82%, var(--text) 18%)" }}>{formatDelta(s.scoreDelta)}</strong>
                   </div>
                 )) : <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Henüz yeterli veri yok." : "Not enough data yet."}</p>}
               </div>
@@ -567,7 +561,7 @@ export function TeacherHub() {
                 value={studentSearch}
                 onChange={(e) => setStudentSearch(e.target.value)}
                 placeholder={tr ? "Öğrenci ara…" : "Search students…"}
-                style={{ padding: "0.7rem 1rem", borderRadius: 14, border: "1px solid var(--line)", minWidth: 160 }}
+                style={{ ...compactFieldStyle, minWidth: 160 }}
               />
               <select value={filters.exam} onChange={(e) => setFilters((f) => ({ ...f, exam: e.target.value as "all" | ExamType }))} style={selectStyle}>
                 <option value="all">{tr ? "Tüm sınavlar" : "All exams"}</option>
@@ -637,14 +631,14 @@ export function TeacherHub() {
                 value={bulkHomework.title}
                 onChange={(e) => setBulkHomework((b) => ({ ...b, title: e.target.value }))}
                 placeholder={tr ? "Ödev başlığı" : "Homework title"}
-                style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }}
+                style={fieldStyle}
               />
               <textarea
                 value={bulkHomework.instructions}
                 onChange={(e) => setBulkHomework((b) => ({ ...b, instructions: e.target.value }))}
                 rows={4}
                 placeholder={tr ? "Tüm sınıfa gidecek yönergeler…" : "Instructions for the entire class…"}
-                style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }}
+                style={textareaStyle}
               />
               <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
                 <select value={bulkHomework.recommendedTaskType} onChange={(e) => setBulkHomework((b) => ({ ...b, recommendedTaskType: e.target.value as TaskType }))} style={selectStyle}>
@@ -655,7 +649,7 @@ export function TeacherHub() {
                   value={bulkHomework.dueDays}
                   onChange={(e) => setBulkHomework((b) => ({ ...b, dueDays: Number(e.target.value) || 7 }))}
                   placeholder={tr ? "Gün sayısı" : "Due in days"}
-                  style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }}
+                  style={fieldStyle}
                 />
               </div>
               <button type="button" className="button button-primary" onClick={assignBulkHomework}>
@@ -676,13 +670,13 @@ export function TeacherHub() {
                   <span className="practice-meta">{tr ? "Skor eşiği" : "Score threshold"}</span>
                   <input type="number" min="1" max="9" step="0.1" value={rule?.scoreThreshold ?? 5.5}
                     onChange={(e) => setRule((r) => r ? { ...r, scoreThreshold: Number(e.target.value) } : r)}
-                    style={{ padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)" }} />
+                    style={compactFieldStyle} />
                 </label>
                 <label style={{ display: "grid", gap: "0.3rem" }}>
                   <span className="practice-meta">{tr ? "Teslim günü" : "Due in days"}</span>
                   <input type="number" min="1" max="21" value={rule?.dueDays ?? 7}
                     onChange={(e) => setRule((r) => r ? { ...r, dueDays: Number(e.target.value) } : r)}
-                    style={{ padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)" }} />
+                    style={compactFieldStyle} />
                 </label>
                 <select value={rule?.examType ?? "all"} onChange={(e) => setRule((r) => r ? { ...r, examType: e.target.value as HomeworkAutoAssignRule["examType"] } : r)} style={selectStyle}>
                   <option value="all">{tr ? "Tüm sınavlar" : "All exams"}</option>
@@ -728,7 +722,7 @@ export function TeacherHub() {
               onChange={(e) => setShareNote(e.target.value)}
               rows={3}
               placeholder={tr ? "Sınıfa kısa yönlendirme notu…" : "Short guidance note for the class…"}
-              style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }}
+              style={textareaStyle}
             />
             <button type="button" className="button button-primary" onClick={sharePromptToClass}>
               {tr ? "Promptu paylaş" : "Share prompt"}
@@ -742,7 +736,7 @@ export function TeacherHub() {
             {sharedItems.length ? (
               <div style={{ display: "grid", gap: "0.55rem" }}>
                 {sharedItems.map((item) => (
-                  <div key={item.id} className="card" style={{ padding: "0.9rem", background: "rgba(29,111,117,0.06)", display: "grid", gap: "0.35rem" }}>
+                  <div key={item.id} className="card teacher-highlight teacher-highlight-cool" style={{ padding: "0.9rem", display: "grid", gap: "0.35rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.6rem" }}>
                       <strong style={{ fontSize: "0.95rem" }}>{item.title}</strong>
                       <button type="button" className="button button-secondary" style={{ fontSize: "0.8rem", padding: "0.3rem 0.7rem" }} onClick={() => removeSharedItem(item.id)}>
@@ -780,7 +774,7 @@ export function TeacherHub() {
               onChange={(e) => setClassSettings((s) => ({ ...s, joinMessage: e.target.value }))}
               rows={3}
               placeholder={tr ? "Katılım sonrası öğrenciye kısa mesaj…" : "Short note students see after joining…"}
-              style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }}
+              style={textareaStyle}
             />
             <button type="button" className="button button-primary" onClick={updateClassSettings}>
               {tr ? "Ayarları kaydet" : "Save settings"}
@@ -790,7 +784,7 @@ export function TeacherHub() {
               <span className="practice-meta" style={{ fontWeight: 600 }}>{tr ? "Öğrenci ekle" : "Add student"}</span>
               <div style={{ display: "flex", gap: "0.6rem" }}>
                 <input value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} placeholder="student@example.com"
-                  style={{ flex: 1, padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)" }} />
+                  style={{ ...compactFieldStyle, flex: 1 }} />
                 <button type="button" className="button button-secondary" onClick={addStudent}>{tr ? "Ekle" : "Add"}</button>
               </div>
             </div>
@@ -810,14 +804,14 @@ export function TeacherHub() {
               value={announcementTitle}
               onChange={(e) => setAnnouncementTitle(e.target.value)}
               placeholder={tr ? "Duyuru başlığı" : "Announcement title"}
-              style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }}
+              style={fieldStyle}
             />
             <textarea
               value={announcementBody}
               onChange={(e) => setAnnouncementBody(e.target.value)}
               rows={5}
               placeholder={tr ? "Sınıfa gidecek duyuru…" : "Announcement for the class…"}
-              style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }}
+              style={textareaStyle}
             />
             <button type="button" className="button button-primary" onClick={sendClassAnnouncement}>
               {tr ? "Duyuruyu gönder" : "Send announcement"}
@@ -834,7 +828,7 @@ export function TeacherHub() {
 
 function TeacherStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card" style={{ padding: "0.75rem", background: "rgba(255,255,255,0.6)" }}>
+    <div className="card teacher-stat-card" style={{ padding: "0.75rem" }}>
       <div style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "0.2rem" }}>{label}</div>
       <strong>{value}</strong>
     </div>
@@ -879,5 +873,30 @@ const selectStyle: CSSProperties = {
   padding: "0.8rem",
   borderRadius: 14,
   border: "1px solid var(--line)",
-  background: "white",
+  background: "var(--surface)",
+  color: "var(--text)",
+  font: "inherit",
+};
+
+const compactFieldStyle: CSSProperties = {
+  padding: "0.8rem",
+  borderRadius: 14,
+  border: "1px solid var(--line)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  font: "inherit",
+};
+
+const fieldStyle: CSSProperties = {
+  padding: "0.85rem",
+  borderRadius: 14,
+  border: "1px solid var(--line)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  font: "inherit",
+};
+
+const textareaStyle: CSSProperties = {
+  ...fieldStyle,
+  resize: "vertical",
 };
