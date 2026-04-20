@@ -11,11 +11,7 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
   const tr = language === "tr";
   const [form, setForm] = useState<StudentProfileType>({
     ...profile,
-    studyDays: Array.isArray(profile.studyDays)
-      ? profile.studyDays.map(String)
-      : typeof profile.studyDays === "string"
-        ? profile.studyDays.split(",").map((item) => item.trim()).filter(Boolean)
-        : []
+    studyDays: Array.isArray(profile.studyDays) ? profile.studyDays.map(String) : []
   });
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
