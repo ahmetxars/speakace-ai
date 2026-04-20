@@ -126,6 +126,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         ) : null}
       </head>
       <body>
+        {/* Prevent flash of wrong theme — runs synchronously before React hydration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('speakace-theme');if(t==='dark'||t==='light'){document.body.dataset.theme=t;}else{document.body.dataset.theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}}catch(e){}})();`
+          }}
+        />
         <Providers>
           <script
             type="application/ld+json"

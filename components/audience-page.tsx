@@ -45,6 +45,11 @@ type PageAction = {
   variant?: "primary" | "secondary";
 };
 
+type PreviewCard = {
+  label: string;
+  body: string;
+};
+
 type AudiencePageProps = {
   audienceLabel: string;
   heroTitle: string;
@@ -52,6 +57,7 @@ type AudiencePageProps = {
   heroKicker: string;
   heroStats: Stat[];
   heroSignals: string[];
+  heroPreviewCards?: [PreviewCard, PreviewCard];
   primaryAction: PageAction;
   secondaryAction?: PageAction;
   tertiaryAction?: PageAction;
@@ -101,6 +107,7 @@ export function AudiencePage({
   heroKicker,
   heroStats,
   heroSignals,
+  heroPreviewCards,
   primaryAction,
   secondaryAction,
   tertiaryAction,
@@ -171,16 +178,18 @@ export function AudiencePage({
               </article>
             ))}
           </div>
-          <div className="audience-preview-stack">
-            <div className="audience-preview-card">
-              <span>What changes after launch</span>
-              <strong>Visitors understand where they belong in under 10 seconds.</strong>
+          {heroPreviewCards ? (
+            <div className="audience-preview-stack">
+              <div className="audience-preview-card">
+                <span>{heroPreviewCards[0].label}</span>
+                <strong>{heroPreviewCards[0].body}</strong>
+              </div>
+              <div className="audience-preview-card">
+                <span>{heroPreviewCards[1].label}</span>
+                <strong>{heroPreviewCards[1].body}</strong>
+              </div>
             </div>
-            <div className="audience-preview-card">
-              <span>Why this matters</span>
-              <strong>Cleaner segment pages make your email campaigns feel more credible and more focused.</strong>
-            </div>
-          </div>
+          ) : null}
         </div>
       </section>
 

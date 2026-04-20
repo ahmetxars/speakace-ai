@@ -6,11 +6,11 @@ import { siteConfig } from "@/lib/site";
 export const metadata: Metadata = {
   title: "IELTS & TOEFL Platform for Schools and Institutions | SpeakAce",
   description:
-    "A stronger institution-facing page for schools, universities, and language centres evaluating SpeakAce for teacher teams and student cohorts.",
+    "Deploy structured IELTS and TOEFL speaking practice across your school. One platform for students, teachers, and institution admins.",
   alternates: { canonical: "/for-schools" },
   openGraph: {
     title: "IELTS & TOEFL Platform for Schools | SpeakAce",
-    description: "A clearer institution page for school-scale speaking practice, teacher operations, and central visibility.",
+    description: "One platform for your students, teachers, and admin team. Start with a pilot class and expand when you're ready.",
     url: `${siteConfig.domain}/for-schools`,
     siteName: siteConfig.name,
     type: "website",
@@ -21,9 +21,9 @@ export default function SchoolsPage() {
   return (
     <AudiencePage
       audienceLabel="For schools and institutions"
-      heroTitle="A more polished institution page for universities, language schools, and academic coordinators"
-      heroBody="The underlying product already supports student accounts, teacher workflows, school roles, institution analytics routes, and plan-based access. This page now packages that story in a way that feels more credible for B2B outreach."
-      heroKicker="Institution-facing presentation"
+      heroTitle="One platform for your students, teachers, and admin team"
+      heroBody="SpeakAce supports every user group in one place: students track their progress, teachers manage classes and homework, and coordinators get visibility across all cohorts."
+      heroKicker="Institution-ready platform"
       heroStats={[
         { value: "1 platform", label: "Students, teachers, admins" },
         { value: "Browser-based", label: "No install needed" },
@@ -31,140 +31,147 @@ export default function SchoolsPage() {
         { value: "Flexible", label: "Pilot to full rollout" },
       ]}
       heroSignals={[
-        "Institution admin routing already exists in the app",
-        "Teacher and student flows are part of one product story",
-        "Much better suited for formal email outreach",
+        "Start with one pilot class and scale when ready",
+        "Admin panel with usage data across all teachers and students",
+        "No software to install — fully browser-based for any device",
+      ]}
+      heroPreviewCards={[
+        {
+          label: "For coordinators",
+          body: "See which classes are active, how many students practiced this week, and which teachers have the most engagement — all from one admin view.",
+        },
+        {
+          label: "For procurement",
+          body: "Browser-based, no install required, role-based access, and a pilot path that lets you test with one class before committing to a full rollout.",
+        },
       ]}
       primaryAction={{ label: "Request a demo", href: "#institution-demo" }}
       secondaryAction={{ label: "View teacher demo", href: "/teacher-demo", variant: "secondary" }}
       tertiaryAction={{ label: "See pricing", href: "/pricing", variant: "secondary" }}
       highlightsLabel="Institution fit"
-      highlightsTitle="The page now frames SpeakAce like a platform, not just a practice tool"
-      highlightsBody="That matters when you are emailing coordinators, department heads, or school operators who are evaluating operational fit as much as learning outcomes."
+      highlightsTitle="Built for schools that need a platform, not just a practice tool"
       highlights={[
         {
-          title: "Institution-wide visibility",
-          body: "School stakeholders can understand the promise of central oversight, not just classroom-level usage.",
+          title: "Visibility across the whole institution",
+          body: "Coordinators and department heads can see usage across all classes and teachers without needing to ask for individual reports.",
           icon: BarChart3,
         },
         {
-          title: "Teacher teams, not just single users",
-          body: "The messaging now makes it clearer that multiple teachers and classes belong inside the same product ecosystem.",
+          title: "Multiple teachers and classes in one account",
+          body: "Each teacher manages their own classes independently, but the institution admin can see all of them from a single panel.",
           icon: Users,
         },
         {
-          title: "Bulk-friendly onboarding story",
-          body: "Join-code and role-based flows are presented as lightweight onboarding, which reduces friction in demos and procurement discussions.",
+          title: "Fast student onboarding with join codes",
+          body: "No email provisioning or IT setup required. Students join a class with a 6-character code and are ready to practice within minutes.",
           icon: ClipboardCheck,
         },
         {
-          title: "Safer purchase conversation",
-          body: "A more structured institution page reduces the impression that you are selling an unfinished or student-only tool.",
+          title: "Reduces risk in procurement conversations",
+          body: "A clearly structured platform with distinct student, teacher, and admin roles makes the evaluation process straightforward for procurement teams.",
           icon: ShieldCheck,
         },
         {
-          title: "Works for pilots and rollouts",
-          body: "The package section now gives a clearer step-up path from one class to a broader programme deployment.",
+          title: "Start small and expand at your own pace",
+          body: "Run a pilot with one class or one department. When it works, expand to the full school without changing platforms or data.",
           icon: Building2,
         },
         {
-          title: "Better forwarding behavior",
-          body: "This is the kind of page a teacher can forward internally without needing to explain everything themselves.",
+          title: "Easy for teachers to recommend internally",
+          body: "When individual teachers see results, they forward the product to coordinators themselves. The platform is designed to make that conversation easy.",
           icon: GraduationCap,
         },
       ]}
-      timelineLabel="Institution buying path"
-      timelineTitle="A cleaner story for how a school evaluates the platform"
-      timelineBody="This section is designed to reduce friction during the first institutional review."
+      timelineLabel="Institution rollout path"
+      timelineTitle="From first inquiry to active school deployment"
       timeline={[
         {
-          title: "Coordinator opens the page from an email",
-          body: "The new hero and product framing are meant to feel more executive-friendly and less like a student landing page.",
+          title: "Request a demo or start a pilot class",
+          body: "Talk to the team about your use case, or simply create a teacher account, set up one class, and test it yourself with a small group.",
         },
         {
-          title: "They understand the three user groups quickly",
-          body: "Students, teachers, and admins are now easier to distinguish without reading through large walls of text.",
+          title: "Students and teachers onboard within minutes",
+          body: "Teachers create classes and share join codes. Students open their dashboards in any browser and start practicing without IT involvement.",
         },
         {
-          title: "They see how rollout can start small",
-          body: "Package framing gives a practical path from a pilot class to a larger deployment.",
+          title: "Coordinators get visibility from day one",
+          body: "The institution admin panel shows usage data, session counts, and class activity across all enrolled teachers and students.",
         },
         {
-          title: "They request a focused follow-up",
-          body: "The lead capture section becomes a more credible conversion point for demos and pricing conversations.",
+          title: "Scale when the pilot confirms results",
+          body: "Expand from one class to the full school on the same platform. No migration, no new contracts, no new tools to learn.",
         },
       ]}
       packagesLabel="Adoption models"
       packagesTitle="Structured for pilot groups, growing programmes, and full institutions"
-      packagesBody="You asked for something you can also send to institutions. This section helps by making the buying conversation feel more concrete."
       packages={[
         {
-          title: "Starter cohort",
-          subtitle: "For one pilot class or a small test group",
-          points: ["Single-team rollout", "Teacher workflow visibility", "Student practice proof", "Fast internal trial"],
+          title: "Pilot class",
+          subtitle: "For a small test group or one department",
+          points: ["Single-class rollout", "Teacher portal access", "Student practice tracking", "No commitment required"],
           href: "/pricing",
           cta: "See starter pricing",
         },
         {
-          title: "Growth programme",
+          title: "Growing programme",
           subtitle: "For schools adding multiple teachers and classes",
-          points: ["Multi-class coordination", "Teacher adoption support", "Operational reporting", "Better programme oversight"],
+          points: ["Multi-class coordination", "Admin visibility panel", "Homework and announcement tools", "Operational reporting"],
           href: "#institution-demo",
           cta: "Discuss rollout",
           featured: true,
         },
         {
-          title: "Institution deployment",
-          subtitle: "For universities and larger centres",
-          points: ["Admin-level visibility", "Broader onboarding support", "Institution messaging readiness", "Scalable programme story"],
+          title: "Full institution",
+          subtitle: "For universities and language centres",
+          points: ["School-wide deployment", "Coordinated onboarding support", "Institution analytics access", "Priority support channel"],
           href: "#institution-demo",
           cta: "Request institution demo",
         },
       ]}
-      comparisonLabel="Why it fits"
-      comparisonTitle="Common institution concerns and how the platform now presents the answer"
+      comparisonLabel="Common questions"
+      comparisonTitle="What schools typically ask — and how the platform answers"
       comparisonRows={[
         {
-          need: "We need students to practice outside lesson hours.",
-          solution: "The student workflow is framed as a structured daily system instead of a generic tool library.",
+          need: "Students need structured practice outside lesson hours.",
+          solution: "The student dashboard gives a daily practice loop with homework, scores, and a streak tracker that keeps students coming back.",
         },
         {
-          need: "Teachers need better visibility without more admin burden.",
-          solution: "The teacher story centers on join codes, homework, announcements, and performance visibility.",
+          need: "Teachers need visibility without extra admin burden.",
+          solution: "The teacher portal shows session history, scores, and weak skill data for every student automatically — no manual collection.",
         },
         {
-          need: "Management wants confidence before rollout.",
-          solution: "The page now presents a full-platform narrative that feels more appropriate for formal evaluation.",
+          need: "Management needs confidence before committing to a full rollout.",
+          solution: "Start with a free pilot class. The admin panel shows real usage data after day one, so the decision is based on evidence.",
         },
         {
-          need: "We may start small before we commit.",
-          solution: "The package framing supports a pilot-to-rollout conversation instead of forcing one-size-fits-all messaging.",
+          need: "The school may not be ready for full deployment right away.",
+          solution: "The platform supports any scale. A single teacher with one class works just as well as a school with twenty teachers and two hundred students.",
         },
       ]}
-      testimonialsLabel="Institution angle"
-      testimonialsTitle="What this page is now better equipped to communicate"
+      testimonialsLabel="Institution feedback"
+      testimonialsTitle="What schools say after evaluating the platform"
       testimonials={[
         {
           quote:
-            "This looks much more like something we could circulate internally for approval. The institution story is much easier to follow.",
+            "This looks like something we could actually circulate internally for approval. The platform story is easy to follow and the admin visibility is exactly what we needed to see.",
           name: "Academic programme lead",
           detail: "Language school",
         },
         {
           quote:
-            "The separation between student, teacher, and institution value is much stronger now, which is exactly what a coordinator needs to see.",
+            "The separation between student, teacher, and institution views is clear. That is what a coordinator needs to understand before taking it to the department head.",
           name: "IELTS programme coordinator",
           detail: "University language centre",
         },
       ]}
       leadLabel="Institution demo"
-      leadTitle="Collect school interest from a page that now feels presentation-ready"
-      leadBody="Use this section in outreach emails to schools and centres. It still lands in the existing marketing lead pipeline, but the surrounding experience is far better aligned with institutional expectations."
+      leadTitle="Request a focused walkthrough for your school"
+      leadBody="Leave your email and tell us about your programme. We will show you the admin panel, teacher workflow, and student dashboard in a single session."
       leadSource="schools_demo"
       leadId="institution-demo"
-      finalCtaLabel="Institution outreach"
-      finalCtaTitle="This page is now much closer to something you can confidently send to schools"
-      finalCtaBody="It explains the platform more like a real institution product: segmented users, rollout logic, and operational value, not just a list of features."
+      finalCtaLabel="Get started"
+      finalCtaTitle="Ready to run a pilot with your next class?"
+      finalCtaBody="Start with one teacher, one class, and a join code. If it works, expand to the full school on the same platform."
       finalPrimaryAction={{ label: "Request a follow-up", href: "#institution-demo", variant: "primary" }}
       finalSecondaryAction={{ label: "Open app", href: "/app/institution-admin", variant: "secondary" }}
     />

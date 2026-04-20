@@ -554,15 +554,13 @@ export function Dashboard() {
   ];
 
   return (
-    <div className="page-shell section dashboard-page dashboard-redesign">
+    <div className="page-shell section db-page">
 
       {needsOnboarding ? (
-        <section className="dashboard-banner card">
-          <div className="dashboard-banner-copy">
-            <span className="dashboard-banner-icon">
-              <Sparkles size={16} />
-            </span>
-            <p>{tr ? "Hedef skorunu ve tercihlerini tamamla; dashboard onerileri daha isabetli hale gelsin." : "Finish your target score and preferences so the dashboard can guide you more precisely."}</p>
+        <section className="db-banner card">
+          <div className="db-banner-body">
+            <Sparkles size={15} />
+            <p>{tr ? "Hedef skorunu ve tercihlerini tamamla; dashboard onerileri daha isabetli hale gelsin." : "Complete your target score and preferences so the dashboard can guide you more precisely."}</p>
           </div>
           <Link className="button button-secondary" href="/app/onboarding">
             {tr ? "Kurulumu tamamla" : "Complete setup"}
@@ -570,81 +568,64 @@ export function Dashboard() {
         </section>
       ) : null}
 
-      <section className="dashboard-hero card">
-        <div className="dashboard-hero-copy">
+      {/* HERO */}
+      <section className="db-hero card">
+        <div className="db-hero-copy">
           <span className="eyebrow">{tr ? "Ogrenci dashboard" : "Student dashboard"}</span>
-          <h1>
+          <h1 className="db-hero-name">
             {firstName ? (tr ? `Merhaba, ${firstName}` : `Hi, ${firstName}`) : tr ? "Hos geldin" : "Welcome back"}
           </h1>
-          <p>{heroStatus}</p>
-          <div className="dashboard-hero-actions">
+          <p className="db-hero-status">{heroStatus}</p>
+          <div className="db-hero-actions">
             <Link className="button button-primary" href="/app/practice">
-              {tr ? "Yeni speaking denemesi" : "Start speaking"}
+              {tr ? "Speaking baslat" : "Start speaking"}
             </Link>
             <Link className="button button-secondary" href="/app/profile">
-              {tr ? "Profili ac" : "Open profile"}
+              {tr ? "Profil" : "Profile"}
             </Link>
             <button className="button button-secondary" type="button" onClick={signedIn ? signOut : undefined}>
-              {signedIn ? (tr ? "Cikis yap" : "Sign out") : tr ? "Misafir" : "Guest"}
+              {signedIn ? (tr ? "Cikis" : "Sign out") : tr ? "Misafir" : "Guest"}
             </button>
           </div>
         </div>
-
-        <div className="dashboard-hero-panel">
-          <div className="dashboard-hero-panel-card">
-            <span>{tr ? "Bir sonraki odak" : "Next focus"}</span>
-            <strong>{hasBalancedSkillProfile ? (tr ? "Dengeli profil" : "Balanced profile") : mistakeNotebook.weakSkillLabel ?? (tr ? "Daha fazla veri gerek" : "Need more data")}</strong>
-            <p>{nextStudyFocus}</p>
+        <div className="db-hero-stats">
+          <div className="db-hero-stat">
+            <Mic size={16} />
+            <strong>{summary.averageScore || "—"}</strong>
+            <span>{tr ? "ort skor" : "avg score"}</span>
           </div>
-          <div className="dashboard-hero-mini-grid">
-            <div className="dashboard-mini-card">
-              <Flame size={18} />
-              <div>
-                <strong>{summary.streakDays}d</strong>
-                <span>{tr ? "streak" : "streak"}</span>
-              </div>
-            </div>
-            <div className="dashboard-mini-card">
-              <CalendarClock size={18} />
-              <div>
-                <strong>{summary.remainingMinutesToday}</strong>
-                <span>{tr ? "bugun kalan dk" : "mins left today"}</span>
-              </div>
-            </div>
-            <div className="dashboard-mini-card">
-              <GraduationCap size={18} />
-              <div>
-                <strong>{summary.currentPlan}</strong>
-                <span>{tr ? "mevcut plan" : "current plan"}</span>
-              </div>
-            </div>
+          <div className="db-hero-stat">
+            <Flame size={16} />
+            <strong>{summary.streakDays}</strong>
+            <span>{tr ? "gun seri" : "day streak"}</span>
+          </div>
+          <div className="db-hero-stat">
+            <CalendarClock size={16} />
+            <strong>{summary.remainingMinutesToday}</strong>
+            <span>{tr ? "dk kaldi" : "min left"}</span>
+          </div>
+          <div className="db-hero-stat">
+            <GraduationCap size={16} />
+            <strong>{summary.currentPlan}</strong>
+            <span>{tr ? "plan" : "plan"}</span>
           </div>
         </div>
       </section>
 
-      <section className="dashboard-momentum-grid">
-        {momentumCards.map(({ title, value, note, icon: Icon }) => (
-          <article key={title} className="dashboard-metric-card card">
-            <div className="dashboard-metric-icon">
-              <Icon size={18} />
-            </div>
-            <span>{title}</span>
-            <strong>{value}</strong>
-            <p>{note}</p>
-          </article>
-        ))}
-      </section>
+      {/* BODY */}
+      <div className="db-body-grid">
 
-      <section className="dashboard-main-grid">
-        <div className="dashboard-main-column">
-          <div className="dashboard-focus-card card">
+        {/* LEFT COLUMN */}
+        <div className="db-left-col">
+
+          {/* TODAY'S FOCUS */}
+          <div className="db-focus-card card">
             <div className="dashboard-section-head">
               <span className="eyebrow">{tr ? "Bugunku odak" : "Today's focus"}</span>
               <span className="dashboard-chip">{recentSession ? recentSession.examType : latestExamType}</span>
             </div>
-            <h2>{tr ? "Simdi neye odaklanmalisin?" : "What should you work on next?"}</h2>
-            <p>{nextStudyFocus}</p>
-            <div className="dashboard-note-card">
+            <p className="db-focus-text">{nextStudyFocus}</p>
+            <div className="db-roadmap-block">
               <strong>{tr ? "Yol haritasi" : "Roadmap"}</strong>
               <p>{roadmap}</p>
             </div>
@@ -658,35 +639,37 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div className="dashboard-workspace-grid">
+          {/* WORKSPACE */}
+          <div className="db-workspace-grid">
             {workspaceCards.map(({ title, body, href, cta, icon: Icon }) => (
-              <a key={title} href={href} className="dashboard-workspace-card card">
-                <div className="dashboard-workspace-icon">
+              <a key={title} href={href} className="db-workspace-card card">
+                <div className="db-workspace-icon">
                   <Icon size={18} />
                 </div>
                 <strong>{title}</strong>
                 <p>{body}</p>
-                <span>
+                <span className="db-workspace-cta">
                   {cta}
-                  <ArrowRight size={16} />
+                  <ArrowRight size={14} />
                 </span>
               </a>
             ))}
           </div>
 
-          <div className="dashboard-duo-grid">
+          {/* STATS ROW */}
+          <div className="db-stats-row">
             <TargetCard examType={latestExamType} targetScore={targetScore} onChange={handleTargetScoreChange} tr={tr} />
-            <div className="card dashboard-streak-card">
+            <div className="card db-streak-card">
               <div className="dashboard-section-head">
                 <span className="eyebrow">{tr ? "Son 7 gun" : "Last 7 days"}</span>
                 <span className="dashboard-chip">{summary.streakDays}d</span>
               </div>
-              <div className="dashboard-streak-grid">
+              <div className="db-streak-grid">
                 {streakCalendar.map((day) => (
-                  <div key={day.key} className="dashboard-streak-day">
+                  <div key={day.key} className="db-streak-day">
                     <span>{day.label}</span>
                     <div data-active={day.active ? "true" : "false"}>
-                      {day.active ? <CheckCircle2 size={14} /> : null}
+                      {day.active ? <CheckCircle2 size={13} /> : null}
                     </div>
                   </div>
                 ))}
@@ -694,23 +677,26 @@ export function Dashboard() {
             </div>
           </div>
 
-          <div className="dashboard-duo-grid">
-            <div className="card dashboard-checklist-card">
+          {/* WEEKLY PLAN + PATTERNS */}
+          <div className="db-duo-row">
+            <div className="card db-checklist-card">
               <div className="dashboard-section-head">
                 <span className="eyebrow">{tr ? "Bu haftanin plani" : "This week's plan"}</span>
                 <span className="dashboard-chip">{completedChecklistCount}/{weeklyChecklistItems.length}</span>
               </div>
-              <div className="dashboard-checklist">
+              <div className="db-checklist">
                 {weeklyChecklistItems.map((item) => (
-                  <button key={item.id} type="button" onClick={() => toggleChecklistItem(item.id)} className="dashboard-checklist-item">
-                    <span data-done={item.done ? "true" : "false"}>{item.done ? <CheckCircle2 size={14} /> : null}</span>
-                    <strong>{item.text}</strong>
+                  <button key={item.id} type="button" onClick={() => toggleChecklistItem(item.id)} className="db-checklist-item">
+                    <span data-done={item.done ? "true" : "false"}>
+                      {item.done ? <CheckCircle2 size={13} /> : null}
+                    </span>
+                    <span>{item.text}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="card dashboard-review-card">
+            <div className="card db-patterns-card">
               <div className="dashboard-section-head">
                 <span className="eyebrow">{tr ? "Tekrarlayan kaliplar" : "Repeated patterns"}</span>
                 <span className="dashboard-chip">{mistakeNotebook.weakSkillLabel ?? (tr ? "izleniyor" : "tracking")}</span>
@@ -722,17 +708,21 @@ export function Dashboard() {
                 <NotebookList title={tr ? "Dolgu sozcukler" : "Filler words"} items={mistakeNotebook.repeatedFillers} emptyLabel="" tr={tr} />
               ) : null}
               {mistakeNotebook.repeatedImprovements.length === 0 && mistakeNotebook.repeatedFillers.length === 0 ? (
-                <p className="dashboard-empty-copy">{tr ? "Daha fazla session geldikce tekrar eden kaliplar burada toplanacak." : "As more sessions arrive, repeated patterns will appear here."}</p>
+                <p className="dashboard-empty-copy">{tr ? "Daha fazla session geldikce tekrar eden kaliplar burada toplanacak." : "Repeated patterns appear here as you complete more sessions."}</p>
               ) : null}
               <Link href="/app/review" className="button button-secondary">
                 {tr ? "Tum review panosu" : "Open review board"}
               </Link>
             </div>
           </div>
+
         </div>
 
-        <div className="dashboard-side-column">
-          <div className="card dashboard-session-card">
+        {/* RIGHT SIDEBAR */}
+        <div className="db-sidebar">
+
+          {/* RECENT SESSIONS */}
+          <div className="card db-sessions-card">
             <div className="dashboard-section-head">
               <span className="eyebrow">{tr ? "Son sessionlar" : "Recent sessions"}</span>
               <span className="dashboard-chip">{summary.recentSessions.length}</span>
@@ -740,24 +730,24 @@ export function Dashboard() {
             {summary.recentSessions.length ? (
               summary.recentSessions.slice(0, 6).map((session) => <SessionCard key={session.id} session={session} tr={tr} />)
             ) : (
-              <p className="dashboard-empty-copy">{tr ? "Henuz session yok. Ilk denemeyi baslat ve bu alani doldur." : "No sessions yet. Start your first attempt and this area will fill in."}</p>
+              <p className="dashboard-empty-copy">{tr ? "Henuz session yok. Ilk denemeyi baslat." : "No sessions yet. Start your first attempt."}</p>
             )}
           </div>
 
-          <div className="card dashboard-writing-card">
+          {/* WRITING */}
+          <div className="card db-writing-card">
             <div className="dashboard-section-head">
               <span className="eyebrow">{tr ? "Writing coach" : "Writing coach"}</span>
               <span className="dashboard-chip">{writingSummary.totalSessions}</span>
             </div>
-            <strong>{tr ? "IELTS Writing Task 2 calsma alani" : "IELTS Writing Task 2 workspace"}</strong>
             <p>
               {writingSummary.latestSession?.report
                 ? tr
-                  ? `Son essay tahmini ${writingSummary.latestSession.report.overall}. Buradan yeni essay acip akisin devamini koruyabilirsin.`
-                  : `Your latest essay is estimated at ${writingSummary.latestSession.report.overall}. Continue the flow from here with a new submission.`
+                  ? `Son essay: ${writingSummary.latestSession.report.overall}. Devam etmek icin buradan ac.`
+                  : `Latest essay: ${writingSummary.latestSession.report.overall}. Continue from here.`
                 : tr
-                  ? "Writing denemelerin burada toplanir. Ilk essay ile speaking tarafini writing ile destekle."
-                  : "Your writing work lives here. Add an essay to support your speaking routine with writing feedback."}
+                  ? "Speaking pratiginizi writing ile destekleyin."
+                  : "Support your speaking practice with writing feedback."}
             </p>
             <div className="dashboard-inline-actions">
               <Link href="/app/writing" className="button button-primary">{tr ? "Writing hub" : "Writing hub"}</Link>
@@ -765,20 +755,18 @@ export function Dashboard() {
             </div>
           </div>
 
+          {/* CLASS & HOMEWORK */}
           {signedIn && !currentUser?.isTeacher ? (
-            <div className="card dashboard-support-card">
+            <div className="card db-class-card">
               <div className="dashboard-section-head">
-                <span className="eyebrow">{tr ? "Sinif ve odev merkezi" : "Class and homework center"}</span>
+                <span className="eyebrow">{tr ? "Sinif ve odevler" : "Class & homework"}</span>
                 <span className="dashboard-chip">{pendingHomeworkCount + classCount}</span>
               </div>
 
-              <div className="dashboard-support-block">
-                <div className="dashboard-support-head">
-                  <div className="dashboard-support-icon"><Users size={16} /></div>
-                  <strong>{tr ? "Sinifa katil" : "Join a class"}</strong>
-                </div>
+              <div className="db-join-block">
+                <strong>{tr ? "Sinifa katil" : "Join a class"}</strong>
                 <div className="dashboard-join-row">
-                  <input value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} placeholder={tr ? "Kod: AB12CD" : "Code: AB12CD"} />
+                  <input value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} placeholder={tr ? "Kod gir" : "Enter code"} />
                   <button type="button" className="button button-primary" onClick={joinClass}>{tr ? "Katil" : "Join"}</button>
                 </div>
                 {joinNotice ? <p className="dashboard-success-copy">{joinNotice}</p> : null}
@@ -793,16 +781,13 @@ export function Dashboard() {
                     ))}
                   </div>
                 ) : (
-                  <p className="dashboard-empty-copy">{tr ? "Henuz bagli sinif yok." : "No class memberships yet."}</p>
+                  <p className="dashboard-empty-copy">{tr ? "Henuz sinif yok." : "No classes yet."}</p>
                 )}
               </div>
 
               {homework.length > 0 ? (
-                <div className="dashboard-support-block">
-                  <div className="dashboard-support-head">
-                    <div className="dashboard-support-icon"><ClipboardList size={16} /></div>
-                    <strong>{tr ? "Odevler" : "Homework"}</strong>
-                  </div>
+                <div className="db-hw-block">
+                  <strong className="db-block-label">{tr ? "Odevler" : "Homework"}</strong>
                   <div className="dashboard-homework-list">
                     {homework.slice(0, 3).map((item) => (
                       <div key={item.id} className="dashboard-homework-card">
@@ -821,7 +806,7 @@ export function Dashboard() {
                           ) : null}
                           {!item.completedAt ? (
                             <button type="button" className="button button-secondary" onClick={() => completeHomework(item.id)}>
-                              {tr ? "Tamamlandi" : "Mark done"}
+                              {tr ? "Tamamlandi" : "Done"}
                             </button>
                           ) : null}
                         </div>
@@ -832,11 +817,8 @@ export function Dashboard() {
               ) : null}
 
               {sharedStudyClasses.length > 0 ? (
-                <div className="dashboard-support-block">
-                  <div className="dashboard-support-head">
-                    <div className="dashboard-support-icon"><BookOpenCheck size={16} /></div>
-                    <strong>{tr ? "Ogretmen study listeleri" : "Teacher study lists"}</strong>
-                  </div>
+                <div className="db-hw-block">
+                  <strong className="db-block-label">{tr ? "Ogretmen listeleri" : "Teacher lists"}</strong>
                   <div className="dashboard-shared-list">
                     {sharedStudyClasses.slice(0, 2).map((entry) => (
                       <div key={entry.classId} className="dashboard-shared-card">
@@ -858,11 +840,8 @@ export function Dashboard() {
               ) : null}
 
               {announcements.length > 0 ? (
-                <div className="dashboard-support-block">
-                  <div className="dashboard-support-head">
-                    <div className="dashboard-support-icon"><CircleAlert size={16} /></div>
-                    <strong>{tr ? "Duyurular" : "Announcements"}</strong>
-                  </div>
+                <div className="db-hw-block">
+                  <strong className="db-block-label">{tr ? "Duyurular" : "Announcements"}</strong>
                   <div className="dashboard-announcement-list">
                     {announcements.slice(0, 3).map((item) => (
                       <article key={item.id} className="dashboard-announcement-card">
@@ -876,24 +855,23 @@ export function Dashboard() {
             </div>
           ) : null}
 
+          {/* UPGRADE */}
           {shouldUpsellPlus ? (
-            <section className="card dashboard-upgrade-card">
-              <div className="dashboard-section-head">
-                <span className="eyebrow">{tr ? "Upgrade" : "Upgrade"}</span>
-                <span className="dashboard-chip">{summary.currentPlan}</span>
-              </div>
-              <strong>{tr ? "Gunluk limiti kaldir ve daha derin feedback al" : "Remove the daily cap and unlock deeper feedback"}</strong>
-              <p>{tr ? "Plus ile daha fazla speaking denemesi, daha guclu geri bildirim ve daha rahat tekrar akisi aciliyor." : "SpeakAce Plus unlocks more daily speaking, deeper review, and a more flexible retry workflow."}</p>
+            <section className="card db-upgrade-card">
+              <span className="eyebrow">{tr ? "Upgrade" : "Upgrade"}</span>
+              <strong>{tr ? "Gunluk limiti kaldir" : "Remove the daily cap"}</strong>
+              <p>{tr ? "Plus: 35 dk/gun, 18 session, daha guclu feedback." : "Plus: 35 min/day, 18 sessions, deeper feedback."}</p>
               <div className="dashboard-inline-actions">
                 <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "dashboard_upgrade" })}>
                   {tr ? "Plus'a gec" : "Upgrade to Plus"}
                 </a>
-                <Link className="button button-secondary" href="/pricing">{tr ? "Planlar" : "See plans"}</Link>
+                <Link className="button button-secondary" href="/pricing">{tr ? "Planlar" : "Plans"}</Link>
               </div>
             </section>
           ) : null}
+
         </div>
-      </section>
+      </div>
     </div>
   );
 }

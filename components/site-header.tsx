@@ -854,7 +854,7 @@ export function SiteHeader() {
                 {labels.signIn}
               </Link>
               <a
-                href={buildPlanCheckoutPath({ campaign: "header_cta" })}
+                href="/pricing"
                 style={{
                   padding: "0.375rem 1rem",
                   fontSize: "0.875rem",
@@ -1121,7 +1121,7 @@ export function SiteHeader() {
           ) : (
             <>
               <a
-                href={buildPlanCheckoutPath({ campaign: "mobile_header_cta" })}
+                href="/pricing"
                 style={{
                   display: "block",
                   padding: "0.8rem 1rem",

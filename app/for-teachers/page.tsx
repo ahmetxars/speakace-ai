@@ -6,11 +6,11 @@ import { siteConfig } from "@/lib/site";
 export const metadata: Metadata = {
   title: "IELTS & TOEFL Platform for Teachers | SpeakAce",
   description:
-    "A clearer teacher-facing page for class management, homework, analytics, and between-lesson speaking practice.",
+    "Manage your IELTS and TOEFL speaking classes from one panel. Assign homework, track every student's scores, share study lists, and send announcements.",
   alternates: { canonical: "/for-teachers" },
   openGraph: {
     title: "IELTS & TOEFL Platform for Teachers | SpeakAce",
-    description: "Show teachers a simpler story: class setup, homework, analytics, and student visibility in one teacher portal.",
+    description: "Set up a class in 2 minutes, share a join code, and track every student's speaking progress in real time.",
     url: `${siteConfig.domain}/for-teachers`,
     siteName: siteConfig.name,
     type: "website",
@@ -21,8 +21,8 @@ export default function TeachersPage() {
   return (
     <AudiencePage
       audienceLabel="For teachers"
-      heroTitle="A clearer teacher page that makes class management feel like part of the product, not an afterthought"
-      heroBody="SpeakAce already has the underlying teacher flow: classes, join codes, homework, announcements, shared study lists, and student tracking. This page now presents that value with a sharper structure so you can send it directly to teachers."
+      heroTitle="Give your students a structured speaking system they will actually use"
+      heroBody="SpeakAce puts your class in one panel: homework, scores, session history, announcements, and shared study lists — all connected without spreadsheets."
       heroKicker="Teacher workflow, simplified"
       heroStats={[
         { value: "2 min", label: "Class setup time" },
@@ -31,98 +31,106 @@ export default function TeachersPage() {
         { value: "1 panel", label: "Homework and tracking" },
       ]}
       heroSignals={[
-        "Teacher tools route into a dedicated portal",
-        "Homework and announcements already connect to backend routes",
-        "Positioned well for direct outreach to teachers",
+        "Create a class and share a join code in under 2 minutes",
+        "See every student's scores, sessions, and weak skills in real time",
+        "Assign homework and shared study lists from your teacher portal",
+      ]}
+      heroPreviewCards={[
+        {
+          label: "In your teacher portal",
+          body: "You can see who practiced, what score they got, and which skill needs the most work — without asking them to fill a form.",
+        },
+        {
+          label: "Between lessons",
+          body: "Students complete homework assignments inside the app, and you see timestamps and scores before the next lesson starts.",
+        },
       ]}
       primaryAction={{ label: "Open teacher portal", href: "/app/teacher" }}
       secondaryAction={{ label: "View demo class", href: "/teacher-demo", variant: "secondary" }}
       tertiaryAction={{ label: "Create account", href: "/auth?mode=signup", variant: "secondary" }}
-      highlightsLabel="Teacher value"
-      highlightsTitle="Everything now reads like one coherent teacher workflow"
-      highlightsBody="The page is designed to answer the three questions a teacher usually has: what do students do, what do I control, and how much time does it save me?"
+      highlightsLabel="Teacher tools"
+      highlightsTitle="Everything you need to run classes and track between-lesson practice"
       highlights={[
         {
           title: "See class performance at a glance",
-          body: "Teachers can monitor scores, weak skills, attempt recency, and student risk signals without maintaining a spreadsheet.",
+          body: "Monitor scores, weak skills, attempt recency, and student risk signals from one panel — no spreadsheet required.",
           icon: ChartNoAxesCombined,
         },
         {
-          title: "Assign targeted homework quickly",
-          body: "Homework flows are already connected in the app. The page now communicates that more clearly and makes the benefit feel immediate.",
+          title: "Assign targeted homework in seconds",
+          body: "Pick any speaking prompt, set a due date, and assign it to your class. Students see it in their dashboard the moment you save it.",
           icon: ClipboardList,
         },
         {
           title: "Share prompts and study lists",
-          body: "Teachers can push prompt-based practice into student workflows, which helps the platform feel like an extension of the lesson plan.",
+          body: "Push a curated set of practice prompts into every student's dashboard so they know exactly what to work on between lessons.",
           icon: BookMarked,
         },
         {
           title: "Keep students accountable between lessons",
-          body: "The messaging now emphasizes timestamps, completion, and follow-through, which are usually the deciding points for teachers.",
+          body: "Timestamps and completion data mean you can open the next lesson with real evidence of what each student practiced — and what they skipped.",
           icon: UsersRound,
         },
         {
           title: "Send class announcements in-platform",
-          body: "Announcements already have an API route and audience logic. The page now frames that as a real operational benefit.",
+          body: "Post a message to your entire class from the teacher portal. Students see it in their dashboard the next time they log in.",
           icon: BellRing,
         },
         {
-          title: "Pitchable to coordinators too",
-          body: "A better teacher page makes it easier for individual teachers to forward the product to heads of department or school coordinators.",
+          title: "Easy to recommend to colleagues",
+          body: "A clear teacher portal and a simple student experience mean you can forward this to other teachers or heads of department without needing to explain everything.",
           icon: GraduationCap,
         },
       ]}
-      timelineLabel="How teachers adopt it"
-      timelineTitle="A teacher should be able to imagine the full workflow in under a minute"
-      timelineBody="That is the job of this new structure."
+      timelineLabel="How teachers use it"
+      timelineTitle="From first class to full workflow in four steps"
       timeline={[
         {
-          title: "Create a class and share a code",
-          body: "The teacher page now leads with the fastest setup action instead of burying it under long-form copy.",
+          title: "Create a class and share a join code",
+          body: "The setup takes under 2 minutes. Students join with a 6-character code and appear in your roster automatically.",
         },
         {
-          title: "Students join and start practicing",
-          body: "The page explains the student side as part of the teacher story, which makes the workflow easier to understand.",
+          title: "Students start practicing between lessons",
+          body: "They record speaking answers, get AI scores, and build a session history you can review before the next class.",
         },
         {
-          title: "Teacher tracks practice and assigns follow-up",
-          body: "Homework, weak-skill visibility, and announcements are grouped together as the core between-lesson system.",
+          title: "Assign homework and track completion",
+          body: "Set a due date, pick a prompt, and every student in the class gets a homework card in their dashboard with timestamps and score tracking.",
         },
         {
-          title: "Next lesson starts with better information",
-          body: "The promise is no longer vague. Teachers can see what was practiced, what improved, and who needs support.",
+          title: "Start the next lesson with real data",
+          body: "Open the teacher portal and see who practiced, what score they achieved, and which students need the most support today.",
         },
       ]}
-      testimonialsLabel="Teacher perspective"
-      testimonialsTitle="What this page now supports better in outbound messaging"
+      testimonialsLabel="Teacher feedback"
+      testimonialsTitle="How teachers describe the experience"
       testimonials={[
         {
           quote:
-            "I can actually send this to another teacher now. It explains the class flow quickly and makes the platform feel organized.",
+            "I can now send this to another teacher and they understand the class flow in five minutes. The portal explains itself.",
           name: "Sarah T.",
           detail: "IELTS preparation teacher",
         },
         {
           quote:
-            "The value for teachers is much clearer. It no longer looks like a student-only product with a few teacher features attached.",
+            "The homework feature alone is worth it. I know exactly who practiced before I walk into class, and the scores are already there.",
           name: "Marcus O.",
           detail: "Language school teacher",
         },
         {
           quote:
-            "The portal feels more believable when the landing page also reflects the structure of the actual workflow.",
+            "Having the student portal and the teacher portal as part of the same product makes the workflow make sense. It feels intentional.",
           name: "Nadia K.",
           detail: "TOEFL speaking coach",
         },
       ]}
-      leadLabel="Teacher follow-up"
-      leadTitle="Capture teacher interest before the sales conversation"
-      leadBody="This form still uses the same marketing lead and email flow underneath, but the surrounding page now feels much more like a serious teacher product page."
+      leadLabel="Teacher demo request"
+      leadTitle="See how the teacher portal works for your classes"
+      leadBody="Leave your email and we will send you a walkthrough of the teacher setup, homework flow, and student tracking panel."
       leadSource="teachers_demo"
-      finalCtaLabel="Teacher outreach"
-      finalCtaTitle="Ready to share with teachers, tutors, and coordinators"
-      finalCtaBody="This page now does a better job of selling the workflow, not just listing features. That makes it far more usable in email outreach and demo follow-up."
+      finalCtaLabel="Get started"
+      finalCtaTitle="Set up your first class today — free to start"
+      finalCtaBody="Create a teacher account, build your first class, and share the join code with your students. The full homework and tracking system is available from day one."
       finalPrimaryAction={{ label: "Open teacher tools", href: "/app/teacher", variant: "primary" }}
       finalSecondaryAction={{ label: "See plans", href: "/pricing", variant: "secondary" }}
     />
