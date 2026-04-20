@@ -41,6 +41,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [activeTab, setActiveTab] = useState<"feedback" | "transcript" | "compare" | "history">("feedback");
+  const [historyFilter, setHistoryFilter] = useState<"all" | "IELTS" | "TOEFL">("all");
   const [shareMessage, setShareMessage] = useState<string>("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -81,6 +82,19 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     [session.id, session.prompt.id, summary.recentSessions]
   );
   const transcriptSegments = useMemo(() => buildTranscriptSegments(displayedRawTranscript ?? ""), [displayedRawTranscript]);
+  const allScoredSessions = useMemo(() => summary.recentSessions.filter((item) => item.report), [summary.recentSessions]);
+  const bestScore = useMemo(() => {
+    if (!allScoredSessions.length) return null;
+    return Math.max(...allScoredSessions.map((item) => item.report?.overall ?? 0));
+  }, [allScoredSessions]);
+  const filteredHistory = useMemo(
+    () =>
+      summary.recentSessions.filter((item) => {
+        if (historyFilter === "all") return true;
+        return item.examType === historyFilter;
+      }),
+    [historyFilter, summary.recentSessions]
+  );
   const syncedSegments = useMemo(() => {
     if (!transcriptSegments.length) return [];
     return allocateSegmentTimings(transcriptSegments, audioDuration);
@@ -394,39 +408,39 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
       <div
         style={{
           position: "relative",
-          padding: "2rem 1.5rem",
-          borderRadius: 32,
-          background: "#151e32",
-          border: "1px solid rgba(255,255,255,0.09)",
-          boxShadow: "0 24px 60px rgba(0,0,0,0.42), 0 0 0 1px rgba(255,255,255,0.05)",
+          padding: "1.5rem",
+          borderRadius: 30,
+          background: "linear-gradient(160deg, #0f1d35 0%, #16284a 50%, #10192d 100%)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.38), 0 0 0 1px rgba(255,255,255,0.04)",
           marginBottom: "1.6rem",
           overflow: "hidden"
         }}
       >
-        <div style={{ position: "absolute", top: -50, left: -50, width: 180, height: 180, borderRadius: 999, background: "linear-gradient(135deg, rgba(99,102,241,0.42), rgba(168,85,247,0.28))", filter: "blur(80px)", opacity: 0.75 }} />
-        <div style={{ position: "absolute", bottom: -60, right: -40, width: 180, height: 180, borderRadius: 999, background: "linear-gradient(135deg, rgba(99,102,241,0.24), rgba(168,85,247,0.34))", filter: "blur(80px)", opacity: 0.8 }} />
+        <div style={{ position: "absolute", top: -50, left: -50, width: 180, height: 180, borderRadius: 999, background: "linear-gradient(135deg, rgba(34,211,238,0.3), rgba(59,130,246,0.18))", filter: "blur(80px)", opacity: 0.78 }} />
+        <div style={{ position: "absolute", bottom: -60, right: -40, width: 180, height: 180, borderRadius: 999, background: "linear-gradient(135deg, rgba(129,140,248,0.22), rgba(45,212,191,0.2))", filter: "blur(80px)", opacity: 0.82 }} />
 
         <div
           style={{
             position: "relative",
             zIndex: 1,
             display: "grid",
-            gap: "1.5rem",
-            minHeight: 760
+            gap: "1.2rem",
+            minHeight: 720
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
-            <div style={{ fontSize: "1.35rem", fontWeight: 800, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              SpeakAce
+            <div style={{ fontSize: "1.35rem", fontWeight: 800, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #67e8f9 0%, #818cf8 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              SpeakAce Result
             </div>
-            <div style={{ fontSize: "0.75rem", fontWeight: 700, background: "rgba(255,255,255,0.08)", padding: "0.45rem 0.8rem", borderRadius: 999, color: "#22d3ee", border: "1px solid rgba(34,211,238,0.2)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              AI Certified
+            <div style={{ fontSize: "0.75rem", fontWeight: 700, background: "rgba(103,232,249,0.1)", padding: "0.45rem 0.8rem", borderRadius: 999, color: "#67e8f9", border: "1px solid rgba(103,232,249,0.18)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              {tr ? "AI analizli" : "AI scored"}
             </div>
           </div>
 
           {session.report ? (
             <div style={{ display: "grid", gap: "1.35rem", justifyItems: "center", textAlign: "center", marginBottom: "auto" }}>
-              <div style={{ display: "grid", gap: "0.85rem", justifyItems: "center" }}>
+              <div style={{ display: "grid", gap: "0.9rem", justifyItems: "center" }}>
                 <div style={{ display: "flex", gap: "0.7rem", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
                   <div style={{ width: 56, height: 56, borderRadius: 999, overflow: "hidden", background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)", color: "white", display: "grid", placeItems: "center", fontWeight: 900, fontSize: "1rem" }}>
                     {avatarDataUrl ? (
@@ -441,7 +455,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
                   </div>
                 </div>
                 <h1 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", margin: 0, fontWeight: 800, color: "white", maxWidth: 620 }}>{session.prompt.title}</h1>
-                <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.95rem" }}>{examMeta.leftEyebrow} • {session.examType} • {session.difficulty}</p>
+                <p style={{ margin: 0, color: "rgba(255,255,255,0.62)", fontSize: "0.95rem" }}>{examMeta.leftEyebrow} • {session.examType} • {session.difficulty}</p>
               </div>
 
               <div
@@ -449,26 +463,26 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
                   width: 236,
                   height: 236,
                   borderRadius: "50%",
-                  background: "conic-gradient(#22d3ee 0% 78%, rgba(255,255,255,0.1) 78% 100%)",
+                  background: "conic-gradient(#67e8f9 0% 78%, rgba(255,255,255,0.1) 78% 100%)",
                   display: "grid",
                   placeItems: "center",
-                  boxShadow: "0 0 36px rgba(34,211,238,0.18)",
+                  boxShadow: "0 0 36px rgba(103,232,249,0.18)",
                   animation: "pulse 3s infinite ease-in-out"
                 }}
               >
-                <div style={{ width: 206, height: 206, borderRadius: "50%", background: "#151e32", display: "grid", placeItems: "center" }}>
+                <div style={{ width: 206, height: 206, borderRadius: "50%", background: "#0f172a", display: "grid", placeItems: "center" }}>
                   <div style={{ display: "grid", justifyItems: "center" }}>
                     <div style={{ fontSize: "4.2rem", fontWeight: 900, lineHeight: 1, background: "linear-gradient(to bottom, #fff, #cbd5e1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{session.report.overall}</div>
-                    <div style={{ fontSize: "0.88rem", color: "var(--text-muted)", marginTop: 4 }}>{tr ? "GENEL SKOR" : "OVERALL SCORE"}</div>
+                    <div style={{ fontSize: "0.88rem", color: "rgba(255,255,255,0.58)", marginTop: 4 }}>{tr ? "GENEL SKOR" : "OVERALL SCORE"}</div>
                   </div>
                 </div>
               </div>
 
               <div style={{ display: "grid", gap: "0.75rem", justifyItems: "center" }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", background: "rgba(16,185,129,0.15)", color: "#34d399", padding: "0.5rem 1rem", borderRadius: 999, fontWeight: 700, fontSize: "0.95rem", border: "1px solid rgba(16,185,129,0.2)" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", background: "rgba(16,185,129,0.15)", color: "#86efac", padding: "0.5rem 1rem", borderRadius: 999, fontWeight: 700, fontSize: "0.95rem", border: "1px solid rgba(16,185,129,0.2)" }}>
                   <span>≈ {session.report.scaleLabel}</span>
                 </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", background: "rgba(255,255,255,0.08)", color: "#22d3ee", padding: "0.45rem 0.95rem", borderRadius: 999, fontWeight: 700, fontSize: "0.82rem", border: "1px solid rgba(34,211,238,0.14)" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", background: "rgba(103,232,249,0.1)", color: "#67e8f9", padding: "0.45rem 0.95rem", borderRadius: 999, fontWeight: 700, fontSize: "0.82rem", border: "1px solid rgba(103,232,249,0.16)" }}>
                   {scoreBadge}
                 </div>
                 {delta !== null ? (
@@ -478,12 +492,12 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
                 ) : null}
               </div>
 
-              <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }} className="result-category-grid">
                 {session.report.categories.map((cat, index) => {
                   const tone = getCategoryTone(index);
                   const pct = Math.max(10, Math.min(100, (cat.score / (session.examType === "TOEFL" ? 4 : 9)) * 100));
                   return (
-                    <div key={cat.category} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", padding: "1rem", borderRadius: 16, textAlign: "left" }}>
+                    <div key={cat.category} style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025))", border: "1px solid rgba(255,255,255,0.06)", padding: "1rem", borderRadius: 18, textAlign: "left", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem", gap: "0.5rem" }}>
                         <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>{tr ? translateCategoryLabel(cat.label) : cat.label}</span>
                         <span style={{ fontWeight: 800, color: "white" }}>{cat.score}</span>
@@ -497,7 +511,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
               </div>
 
               <div style={{ width: "100%", paddingTop: "1.2rem", borderTop: "1px solid rgba(255,255,255,0.08)", display: "grid", gap: "0.8rem", justifyItems: "center" }}>
-                <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--text-muted)" }}>{tr ? "SpeakAce AI tarafından analiz edildi." : "Analyzed by SpeakAce AI."}</p>
+                <p style={{ margin: 0, fontSize: "0.9rem", color: "rgba(255,255,255,0.56)" }}>{tr ? "SpeakAce AI tarafından analiz edildi." : "Analyzed by SpeakAce AI."}</p>
                 <p style={{ margin: 0, fontSize: "0.95rem", color: "rgba(255,255,255,0.76)", maxWidth: 560, lineHeight: 1.6 }}>{session.report.nextExercise}</p>
               </div>
             </div>
@@ -523,22 +537,35 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
       </div>
 
       {session.report ? (
-        <div style={{ display: "grid", gap: "0.75rem", marginBottom: "2rem" }}>
-          {session.report.categories.map((cat) => {
-            const max = session.examType === "TOEFL" ? 4 : 9;
-            const pct = Math.round((cat.score / max) * 100);
-            return (
-              <div key={cat.category} style={{ display: "grid", gap: "0.35rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.88rem", fontWeight: 600 }}>{tr ? translateCategoryLabel(cat.label) : cat.label}</span>
-                  <span style={{ fontSize: "0.95rem", fontWeight: 800 }}>{cat.score}</span>
-                </div>
-                <div style={{ height: 8, borderRadius: 999, background: "var(--border)", overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: "var(--primary)", transition: "width 0.6s ease" }} />
-                </div>
-              </div>
-            );
-          })}
+        <div style={{ display: "grid", gap: "0.8rem", marginBottom: "2rem", gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }} className="result-summary-grid">
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.3rem" }}>
+            <span style={{ fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted-foreground)" }}>
+              {tr ? "Ortalama skor" : "Average score"}
+            </span>
+            <strong style={{ fontSize: "1.4rem" }}>{summary.averageScore || session.report.overall}</strong>
+            <span style={{ fontSize: "0.84rem", color: "var(--muted-foreground)" }}>{examMeta.averageNote}</span>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.3rem" }}>
+            <span style={{ fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted-foreground)" }}>
+              {tr ? "En iyi skor" : "Best score"}
+            </span>
+            <strong style={{ fontSize: "1.4rem" }}>{bestScore ?? session.report.overall}</strong>
+            <span style={{ fontSize: "0.84rem", color: "var(--muted-foreground)" }}>{tr ? "Kaydedilen en iyi deneme" : "Best recorded attempt"}</span>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.3rem" }}>
+            <span style={{ fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted-foreground)" }}>
+              {tr ? "Toplam test" : "Total tests"}
+            </span>
+            <strong style={{ fontSize: "1.4rem" }}>{summary.totalSessions}</strong>
+            <span style={{ fontSize: "0.84rem", color: "var(--muted-foreground)" }}>{tr ? "Eski denemeler dahil" : "Including older attempts"}</span>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.3rem" }}>
+            <span style={{ fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted-foreground)" }}>
+              {tr ? "Seri" : "Streak"}
+            </span>
+            <strong style={{ fontSize: "1.4rem" }}>{summary.streakDays}</strong>
+            <span style={{ fontSize: "0.84rem", color: "var(--muted-foreground)" }}>{tr ? "Günlük çalışma ritmi" : "Current practice rhythm"}</span>
+          </div>
         </div>
       ) : null}
 
@@ -694,6 +721,84 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          <div style={{ padding: "1.1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", display: "grid", gap: "0.9rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.96rem" }}>{tr ? "Tüm eski testler" : "All previous tests"}</div>
+                <div style={{ color: "var(--muted-foreground)", fontSize: "0.84rem", marginTop: "0.2rem" }}>
+                  {tr ? `${filteredHistory.length} deneme gösteriliyor` : `Showing ${filteredHistory.length} attempts`}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                {[
+                  { key: "all", label: tr ? "Tümü" : "All" },
+                  { key: "IELTS", label: "IELTS" },
+                  { key: "TOEFL", label: "TOEFL" }
+                ].map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => setHistoryFilter(option.key as "all" | "IELTS" | "TOEFL")}
+                    style={{
+                      background: historyFilter === option.key ? "rgba(29, 111, 117, 0.12)" : undefined,
+                      borderColor: historyFilter === option.key ? "rgba(29, 111, 117, 0.3)" : undefined
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gap: "0.75rem" }}>
+              {filteredHistory.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/app/results/${item.id}`}
+                  className="card"
+                  style={{
+                    padding: "0.95rem",
+                    textDecoration: "none",
+                    color: "inherit",
+                    background: item.id === session.id ? "rgba(29, 111, 117, 0.08)" : "var(--surface-strong)",
+                    border: item.id === session.id ? "1px solid rgba(29, 111, 117, 0.22)" : "1px solid var(--border)",
+                    display: "grid",
+                    gap: "0.55rem"
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "0.8rem", flexWrap: "wrap" }}>
+                    <div style={{ display: "grid", gap: "0.25rem", minWidth: 0 }}>
+                      <strong style={{ fontSize: "0.92rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {item.prompt.title}
+                      </strong>
+                      <span style={{ fontSize: "0.82rem", color: "var(--muted-foreground)" }}>
+                        {new Date(item.createdAt).toLocaleString(tr ? "tr-TR" : "en-US")} • {item.examType} • {item.taskType}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap", alignItems: "center" }}>
+                      {item.id === session.id ? <span className="pill">{tr ? "Şu an açık" : "Open now"}</span> : null}
+                      <span className="pill">{item.report?.overall ?? (tr ? "Bekliyor" : "Pending")}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "auto auto 1fr", gap: "0.7rem", alignItems: "center" }} className="result-history-meta">
+                    <span style={{ fontSize: "0.8rem", color: "var(--muted-foreground)" }}>
+                      {tr ? "Zorluk" : "Difficulty"}: <strong style={{ color: "var(--foreground)" }}>{item.difficulty}</strong>
+                    </span>
+                    <span style={{ fontSize: "0.8rem", color: "var(--muted-foreground)" }}>
+                      {tr ? "Kalite" : "Quality"}: <strong style={{ color: "var(--foreground)" }}>{item.transcriptQualityScore ?? "-"}</strong>
+                    </span>
+                    <span style={{ fontSize: "0.84rem", color: "var(--muted-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {(item.rawTranscript ?? item.transcript ?? "").slice(0, 150)}
+                      {(item.rawTranscript ?? item.transcript ?? "").length > 150 ? "..." : ""}
+                    </span>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
 

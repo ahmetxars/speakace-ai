@@ -569,7 +569,6 @@ export async function getProgressSummary(userId: string): Promise<ProgressSummar
       left join feedback_reports f on f.session_id = s.id
       where s.user_id = ${userId}
       order by s.created_at desc
-      limit 28
     `;
 
     const recentSessions = recentRows.map((row) => {
@@ -634,7 +633,7 @@ export async function getProgressSummary(userId: string): Promise<ProgressSummar
     freeSessionsRemaining: member?.isAdmin ? 999 : remainingSessions,
     remainingMinutesToday: member?.isAdmin ? 999 : remainingMinutesToday,
     currentPlan: member?.isAdmin ? "pro" : plan,
-    recentSessions: recentSessions.slice(0, 28)
+    recentSessions
   };
 }
 
