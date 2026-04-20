@@ -9,7 +9,10 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
   const router = useRouter();
   const { language } = useAppState();
   const tr = language === "tr";
-  const [form, setForm] = useState<StudentProfileType>(profile);
+  const [form, setForm] = useState<StudentProfileType>({
+    ...profile,
+    studyDays: Array.isArray(profile.studyDays) ? profile.studyDays.map(String) : []
+  });
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [step, setStep] = useState(1);
@@ -52,7 +55,8 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
     setTimeout(() => router.push("/app"), 500);
   };
 
-  const studyDaysLabel = form.studyDays.length ? form.studyDays.join(", ") : tr ? "Henuz secilmedi" : "Not selected yet";
+  const studyDays = Array.isArray(form.studyDays) ? form.studyDays : [];
+  const studyDaysLabel = studyDays.length ? studyDays.join(", ") : tr ? "Henuz secilmedi" : "Not selected yet";
   const focusSkillLabel = form.focusSkill || (tr ? "Henuz secilmedi" : "Not selected yet");
   const currentLevelLabel = form.currentLevel || (tr ? "Henuz yazilmadi" : "Not added yet");
   const discoverySourceLabel = form.discoverySource || (tr ? "Henuz yazilmadi" : "Not added yet");
@@ -145,7 +149,7 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
               <span className="practice-meta">{tr ? "Hangi gunler calismayi planliyorsun?" : "Which days do you plan to study?"}</span>
               <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
                 {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => {
-                  const active = form.studyDays.includes(day);
+                  const active = studyDays.includes(day);
                   return (
                     <button
                       key={day}
@@ -155,7 +159,7 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
                       onClick={() =>
                         setForm((current) => ({
                           ...current,
-                          studyDays: active ? current.studyDays.filter((item) => item !== day) : [...current.studyDays, day]
+                          studyDays: active ? studyDays.filter((item) => item !== day) : [...studyDays, day]
                         }))
                       }
                     >

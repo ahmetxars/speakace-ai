@@ -9,22 +9,80 @@ import { siteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "IELTS & TOEFL Speaking Guides | SpeakAce",
-  description:
-    "Read IELTS and TOEFL speaking guides, sample answers, study plans, and score improvement tips. Practice free and get AI feedback ->",
-  alternates: {
-    canonical: "/blog"
-  },
-  openGraph: {
+const blogIndexMeta = {
+  en: {
     title: "IELTS & TOEFL Speaking Guides | SpeakAce",
-    description:
-      "IELTS and TOEFL speaking guides with sample answers, strategy tips, and practice ideas that turn reading into real score improvement.",
-    url: `${siteConfig.domain}/blog`,
-    siteName: siteConfig.name,
-    type: "website"
+    description: "Read IELTS and TOEFL speaking guides, sample answers, study plans, and score improvement tips."
+  },
+  tr: {
+    title: "IELTS ve TOEFL Speaking Rehberleri | SpeakAce",
+    description: "IELTS ve TOEFL speaking rehberleri, örnek cevaplar, çalışma planları ve skor artırma ipuçlarını oku."
+  },
+  de: {
+    title: "IELTS- und TOEFL-Speaking-Leitfäden | SpeakAce",
+    description: "Lies IELTS- und TOEFL-Speaking-Leitfäden, Beispielantworten, Lernpläne und Tipps zur Score-Steigerung."
+  },
+  es: {
+    title: "Guías de IELTS y TOEFL Speaking | SpeakAce",
+    description: "Lee guías de IELTS y TOEFL speaking, respuestas modelo, planes de estudio y consejos para subir tu puntuación."
+  },
+  fr: {
+    title: "Guides IELTS et TOEFL Speaking | SpeakAce",
+    description: "Lisez des guides IELTS et TOEFL speaking, des réponses modèles, des plans d’étude et des conseils pour progresser."
+  },
+  it: {
+    title: "Guide di IELTS e TOEFL Speaking | SpeakAce",
+    description: "Leggi guide di IELTS e TOEFL speaking, risposte modello, piani di studio e consigli per aumentare il punteggio."
+  },
+  pt: {
+    title: "Guias de IELTS e TOEFL Speaking | SpeakAce",
+    description: "Leia guias de IELTS e TOEFL speaking, respostas modelo, planos de estudo e dicas para melhorar sua pontuação."
+  },
+  nl: {
+    title: "IELTS- en TOEFL-speakinggidsen | SpeakAce",
+    description: "Lees IELTS- en TOEFL-speakinggidsen, voorbeeldantwoorden, studieplannen en tips om je score te verhogen."
+  },
+  pl: {
+    title: "Przewodniki IELTS i TOEFL Speaking | SpeakAce",
+    description: "Czytaj przewodniki IELTS i TOEFL speaking, przykładowe odpowiedzi, plany nauki i wskazówki poprawiające wynik."
+  },
+  ru: {
+    title: "Гайды по IELTS и TOEFL Speaking | SpeakAce",
+    description: "Читайте гайды по IELTS и TOEFL speaking, примеры ответов, планы подготовки и советы по росту балла."
+  },
+  ar: {
+    title: "أدلة IELTS وTOEFL Speaking | SpeakAce",
+    description: "اقرأ أدلة IELTS وTOEFL speaking ونماذج الإجابات وخطط الدراسة ونصائح رفع الدرجة."
+  },
+  ja: {
+    title: "IELTS・TOEFL Speaking ガイド | SpeakAce",
+    description: "IELTS・TOEFL speaking のガイド、回答例、学習プラン、スコア向上のヒントを読めます。"
+  },
+  ko: {
+    title: "IELTS·TOEFL Speaking 가이드 | SpeakAce",
+    description: "IELTS·TOEFL speaking 가이드, 샘플 답변, 학습 계획, 점수 향상 팁을 확인하세요."
   }
-};
+} as const;
+
+export async function generateMetadata(): Promise<Metadata> {
+  const language = await getServerLanguage();
+  const meta = blogIndexMeta[language] ?? blogIndexMeta.en;
+
+  return {
+    title: meta.title,
+    description: meta.description,
+    alternates: {
+      canonical: "/blog"
+    },
+    openGraph: {
+      title: meta.title,
+      description: meta.description,
+      url: `${siteConfig.domain}/blog`,
+      siteName: siteConfig.name,
+      type: "website"
+    }
+  };
+}
 
 export default async function BlogIndexPage() {
   const language = await getServerLanguage();
