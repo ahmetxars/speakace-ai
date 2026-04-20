@@ -228,6 +228,136 @@ export async function sendStudyTaskReminderEmail(input: {
   });
 }
 
+export async function sendTeacherWelcomeEmail(input: { to: string; name?: string }) {
+  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const teacherUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app/teacher`;
+  const demoUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/teacher-demo`;
+
+  return sendEmail({
+    to: input.to,
+    subject: "Your SpeakAce teacher portal is ready",
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
+        <h2 style="margin:0 0 12px">Welcome to the SpeakAce teacher portal</h2>
+        <p>Hi ${greeting},</p>
+        <p>Your teacher access is now active. Here's how to get your first class running in the next five minutes:</p>
+        <ol style="padding-left:1.2rem">
+          <li style="margin-bottom:8px"><strong>Create a class</strong> — open the teacher portal and hit "Create class". Give it a name (e.g. "IELTS Evening Group").</li>
+          <li style="margin-bottom:8px"><strong>Share the join code</strong> — copy the 6-character code and send it to students via WhatsApp, email, or your LMS.</li>
+          <li style="margin-bottom:8px"><strong>Approve or auto-approve students</strong> — when students enter the code, they appear in your roster. You control who gets in.</li>
+          <li style="margin-bottom:8px"><strong>Assign homework</strong> — go to the Homework tab inside your class and assign tasks to the whole class in one click.</li>
+          <li style="margin-bottom:8px"><strong>Track practice and spot at-risk students</strong> — the Overview tab shows scores, weak skills, and who hasn't practiced recently.</li>
+        </ol>
+        <p style="margin:24px 0">
+          <a href="${teacherUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Open teacher portal</a>
+          &nbsp;&nbsp;
+          <a href="${demoUrl}" style="background:#1d6f75;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">View demo class</a>
+        </p>
+        <p style="color:#888;font-size:0.9em">If you have questions about class setup, homework, or student tracking, reply to this email — we'll get back to you within one business day.</p>
+        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
+        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you activated teacher access on SpeakAce. <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
+      </div>
+    `,
+    text: `Hi ${greeting}, your SpeakAce teacher portal is ready. Open it here: ${teacherUrl} — or view a demo class: ${demoUrl}`
+  });
+}
+
+export async function sendInstitutionLeadEmail(input: { to: string; name?: string }) {
+  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
+  const demoUrl = `${siteUrl}/teacher-demo`;
+  const institutionUrl = `${siteUrl}/app/teacher/institution`;
+  const pricingUrl = `${siteUrl}/pricing`;
+
+  return sendEmail({
+    to: input.to,
+    subject: "SpeakAce for your school — what to look at next",
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
+        <h2 style="margin:0 0 12px">Thank you for your interest in SpeakAce for schools</h2>
+        <p>Hi ${greeting},</p>
+        <p>We received your request. Here are the three best places to start evaluating SpeakAce for your institution:</p>
+
+        <div style="background:#fff8f2;border:1px solid #e9d9ca;border-radius:16px;padding:20px 22px;margin:20px 0;display:grid;gap:14px">
+          <div>
+            <strong style="display:block;margin-bottom:4px">1. Teacher demo class</strong>
+            <p style="margin:0;color:#555;font-size:0.95em">A pre-filled class with example students, scores, and homework. Walk your coordinator or department head through the full workflow without any setup. <a href="${demoUrl}" style="color:#d95d39">Open demo →</a></p>
+          </div>
+          <div>
+            <strong style="display:block;margin-bottom:4px">2. Institution analytics portal</strong>
+            <p style="margin:0;color:#555;font-size:0.95em">The institution admin view shows class-level performance, at-risk students, and teacher activity across your school. <a href="${institutionUrl}" style="color:#d95d39">View institution portal →</a></p>
+          </div>
+          <div>
+            <strong style="display:block;margin-bottom:4px">3. Pricing and package options</strong>
+            <p style="margin:0;color:#555;font-size:0.95em">Starter cohorts, growth programmes, and full institution rollouts. Individual teachers can start on Plus — school-scale pricing is available on request. <a href="${pricingUrl}" style="color:#d95d39">See pricing →</a></p>
+          </div>
+        </div>
+
+        <p><strong>What SpeakAce gives your institution:</strong></p>
+        <ul>
+          <li>Student speaking practice with AI scoring — no live teacher time required</li>
+          <li>Teacher panel for homework, study lists, announcements, and student risk tracking</li>
+          <li>Institution analytics dashboard across all classes and teachers</li>
+          <li>Browser-based — no app install, works on any device</li>
+          <li>Supports both IELTS and TOEFL programmes</li>
+        </ul>
+
+        <p>If you'd like a live walkthrough tailored to your school's setup, reply to this email with a few available times and we'll arrange it.</p>
+
+        <p style="margin:24px 0">
+          <a href="${demoUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Open teacher demo</a>
+          &nbsp;&nbsp;
+          <a href="${pricingUrl}" style="background:#1d6f75;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">See pricing</a>
+        </p>
+        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
+        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you requested school information on SpeakAce. <a href="${siteUrl}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
+      </div>
+    `,
+    text: `Hi ${greeting}, thank you for your interest in SpeakAce for schools. View the teacher demo: ${demoUrl} — institution portal: ${institutionUrl} — pricing: ${pricingUrl}`
+  });
+}
+
+export async function sendTeacherLeadEmail(input: { to: string; name?: string }) {
+  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
+  const teacherUrl = `${siteUrl}/app/teacher`;
+  const demoUrl = `${siteUrl}/teacher-demo`;
+  const pricingUrl = `${siteUrl}/pricing`;
+
+  return sendEmail({
+    to: input.to,
+    subject: "SpeakAce teacher tools — here's what's included",
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
+        <h2 style="margin:0 0 12px">Your guide to the SpeakAce teacher panel</h2>
+        <p>Hi ${greeting},</p>
+        <p>Here's a quick overview of everything available to you in the SpeakAce teacher portal:</p>
+        <ul>
+          <li style="margin-bottom:8px"><strong>Class management</strong> — create classes, share join codes, approve students, and manage class membership</li>
+          <li style="margin-bottom:8px"><strong>Student progress tracking</strong> — see each student's band score, weak skill, attempt count, and trend direction in one view</li>
+          <li style="margin-bottom:8px"><strong>Homework assignment</strong> — assign tasks to individual students or the whole class, with due dates and instructions</li>
+          <li style="margin-bottom:8px"><strong>Auto-assign rules</strong> — set a score threshold and SpeakAce automatically generates homework for students who fall below it</li>
+          <li style="margin-bottom:8px"><strong>At-risk alerts</strong> — automatically flags students who haven't practiced recently or whose scores are declining</li>
+          <li style="margin-bottom:8px"><strong>Shared study lists</strong> — push specific prompts to your class's practice queue with guidance notes</li>
+          <li style="margin-bottom:8px"><strong>Class announcements</strong> — send messages to all students in a class directly from the portal</li>
+          <li style="margin-bottom:8px"><strong>Score leaderboards</strong> — top scorers and most improved, updated in real time</li>
+          <li style="margin-bottom:8px"><strong>CSV export</strong> — download class-level reports for coordinators or your own records</li>
+        </ul>
+        <p>All teacher tools are included in the SpeakAce Plus plan — no separate teacher licence required.</p>
+        <p style="margin:24px 0">
+          <a href="${demoUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">View demo class</a>
+          &nbsp;&nbsp;
+          <a href="${teacherUrl}" style="background:#1d6f75;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Open teacher portal</a>
+        </p>
+        <p>Compare plans and pricing: <a href="${pricingUrl}" style="color:#d95d39">${pricingUrl}</a></p>
+        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
+        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you requested teacher information on SpeakAce. <a href="${siteUrl}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
+      </div>
+    `,
+    text: `Hi ${greeting}, here's what's in the SpeakAce teacher portal. View demo: ${demoUrl} — open teacher portal: ${teacherUrl} — pricing: ${pricingUrl}`
+  });
+}
+
 export async function sendGeneratedStudyPlanEmail(input: {
   to: string;
   name?: string;

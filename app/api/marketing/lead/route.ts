@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createMarketingLead } from "@/lib/marketing-leads";
-import { sendLaunchOfferEmail, sendLeadMagnetEmail } from "@/lib/server/email";
+import { sendInstitutionLeadEmail, sendLaunchOfferEmail, sendLeadMagnetEmail, sendTeacherLeadEmail } from "@/lib/server/email";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -22,7 +22,13 @@ export async function POST(request: Request) {
   const lead = await createMarketingLead({ email, name, source });
 
   try {
-    await sendLeadMagnetEmail({ to: email, name });
+    if (source.includes("schools") || source.includes("institution")) {
+      await sendInstitutionLeadEmail({ to: email, name });
+    } else if (source.includes("teachers") || source.includes("teacher")) {
+      await sendTeacherLeadEmail({ to: email, name });
+    } else {
+      await sendLeadMagnetEmail({ to: email, name });
+    }
     if (source.includes("pricing") || source.includes("coupon") || source.includes("launch")) {
       await sendLaunchOfferEmail({ to: email, name, couponCode: "LAUNCH20" });
     }
