@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 
-type Mode = "part1" | "part2" | "part3" | "custom";
+type Mode = "part1" | "part2" | "part3" | "toefl-independent" | "toefl-integrated" | "custom";
 type Phase = "prep" | "speaking";
 
 type ModeConfig = {
   id: Mode;
   label: string;
+  exam: "IELTS" | "TOEFL" | "Custom";
   badge: string;
   description: string;
   tip: string;
@@ -20,6 +21,7 @@ const MODES: ModeConfig[] = [
   {
     id: "part1",
     label: "Part 1",
+    exam: "IELTS",
     badge: "5 min warm-up",
     description: "Answer 4–5 interview-style questions naturally.",
     tip: "Answer naturally. Don't over-explain. 2–3 sentences per question.",
@@ -28,6 +30,7 @@ const MODES: ModeConfig[] = [
   {
     id: "part2",
     label: "Part 2",
+    exam: "IELTS",
     badge: "1 min prep + 2 min speaking",
     description: "Prepare notes for 1 minute then speak for 2 minutes.",
     tip: "Use prep time to write 3–4 bullet notes. Don't memorize — just outline.",
@@ -40,10 +43,37 @@ const MODES: ModeConfig[] = [
   {
     id: "part3",
     label: "Part 3",
+    exam: "IELTS",
     badge: "5 min discussion",
     description: "Discuss abstract follow-up topics in depth.",
     tip: "Develop your opinion. Use examples. Aim for 3–4 sentences minimum.",
     totalSeconds: 300,
+  },
+  {
+    id: "toefl-independent",
+    label: "TOEFL Task 1",
+    exam: "TOEFL",
+    badge: "15 sec prep + 45 sec speaking",
+    description: "State one clear opinion and support it with one compact example.",
+    tip: "Choose your side quickly, give one reason, and close with one short example before time ends.",
+    totalSeconds: 60,
+    phases: [
+      { phase: "prep", label: "Preparation", seconds: 15 },
+      { phase: "speaking", label: "Speaking", seconds: 45 },
+    ],
+  },
+  {
+    id: "toefl-integrated",
+    label: "TOEFL Integrated",
+    exam: "TOEFL",
+    badge: "30 sec prep + 60 sec speaking",
+    description: "Summarize source material with a cleaner note structure and calmer delivery.",
+    tip: "Focus on the main point plus two support details. Do not try to repeat every sentence from the source.",
+    totalSeconds: 90,
+    phases: [
+      { phase: "prep", label: "Preparation", seconds: 30 },
+      { phase: "speaking", label: "Speaking", seconds: 60 },
+    ],
   },
 ];
 
@@ -118,6 +148,7 @@ export default function SpeakingTimerClient() {
     const custom: ModeConfig = {
       id: "custom",
       label: "Custom",
+      exam: "Custom",
       badge: `${mins} min`,
       description: "Custom practice session.",
       tip: "Set your own pace. Stay focused and speak continuously.",
@@ -166,11 +197,27 @@ export default function SpeakingTimerClient() {
       <div className="section-head">
         <span className="eyebrow">Speaking Timer</span>
         <h1 style={{ fontSize: "clamp(2.2rem, 5vw, 3.4rem)" }}>
-          IELTS speaking practice timer
+          IELTS and TOEFL speaking practice timer
         </h1>
         <p style={{ color: "var(--muted)" }}>
-          Select a part to start a timed practice session with built-in strategy tips.
+          Select an IELTS or TOEFL format to start a timed practice session with built-in strategy tips.
         </p>
+      </div>
+
+      <div className="card" style={{ padding: "1rem", marginBottom: "1.2rem", display: "grid", gap: "0.65rem" }}>
+        <strong>Use this timer for real exam-shaped speaking practice</strong>
+        <p style={{ margin: 0, color: "var(--muted)" }}>
+          Many visitors land here looking for a quick IELTS or TOEFL timer. Use the correct preset,
+          then move into a scored speaking attempt when you want transcript review, AI feedback, and retry guidance.
+        </p>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          <Link className="button button-primary" href="/app/practice">
+            Start scored practice
+          </Link>
+          <Link className="button button-secondary" href="/toefl-speaking-practice">
+            Open TOEFL practice page
+          </Link>
+        </div>
       </div>
 
       {/* Mode selector */}
@@ -200,7 +247,7 @@ export default function SpeakingTimerClient() {
               }}
             >
               <span className="pill" style={{ marginBottom: "0.5rem", display: "inline-block" }}>
-                {mode.badge}
+                {mode.exam} · {mode.badge}
               </span>
               <h2 style={{ fontSize: "1.3rem", marginTop: 0 }}>{mode.label}</h2>
               <p style={{ color: "var(--muted)", fontSize: "0.95rem", margin: 0 }}>
@@ -347,6 +394,9 @@ export default function SpeakingTimerClient() {
                 </span>
               ) : (
                 <>
+                  <span className="pill" style={{ marginBottom: "0.7rem" }}>
+                    {activeMode.exam}
+                  </span>
                   <span
                     style={{
                       fontSize: "3.2rem",
@@ -397,6 +447,32 @@ export default function SpeakingTimerClient() {
               {activeMode.tip}
             </p>
           </div>
+
+          <div
+            className="card"
+            style={{
+              padding: "1.1rem 1.4rem",
+              maxWidth: 540,
+              width: "100%",
+              display: "grid",
+              gap: "0.8rem",
+            }}
+          >
+            <strong>What to do after the timer</strong>
+            <p style={{ margin: 0, fontSize: "0.95rem", color: "var(--muted)", lineHeight: 1.65 }}>
+              Timing practice helps with pace, but most learners improve faster when they also see
+              a transcript, score direction, and retry advice. Run the same topic in SpeakAce right
+              after this drill to turn timing into measurable progress.
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <Link href="/app/practice" className="button button-primary">
+                Practice with AI feedback
+              </Link>
+              <Link href="/free-ielts-speaking-test" className="button button-secondary">
+                Try a free IELTS test
+              </Link>
+            </div>
+          </div>
         </div>
       )}
 
@@ -412,7 +488,7 @@ export default function SpeakingTimerClient() {
         }}
       >
         <p style={{ color: "var(--muted)", fontSize: "1rem" }}>
-          Ready to speak? Get instant AI feedback on a real IELTS question.
+          Ready to speak? Get instant AI feedback on a real IELTS or TOEFL-style question.
         </p>
         <Link href="/app/practice" className="button button-primary">
           Practice with AI now

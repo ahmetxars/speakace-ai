@@ -3,12 +3,12 @@ import Link from "next/link";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "IELTS Speaking Part 2 Topics",
+  title: "How to Use Cue Cards for IELTS Speaking Part 2 | SpeakAce",
   description:
-    "Learn how to answer IELTS Speaking Part 2 topics with better cue card structure, story flow, and stronger detail.",
+    "Learn how to use cue cards for IELTS Speaking Part 2 with better structure, story flow, prep notes, and stronger detail.",
   alternates: { canonical: "/ielts-speaking-part-2-topics" },
   openGraph: {
-    title: "IELTS Speaking Part 2 Topics | SpeakAce",
+    title: "How to Use Cue Cards for IELTS Speaking Part 2 | SpeakAce",
     description:
       "Cue card strategy, prep guidance, and long-answer speaking flow for IELTS Speaking Part 2.",
     url: `${siteConfig.domain}/ielts-speaking-part-2-topics`,
@@ -24,10 +24,10 @@ export default function Part2GuidePage() {
         <div className="section-head">
           <span className="eyebrow">Part 2 guide</span>
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.5rem)", lineHeight: 0.96 }}>
-            IELTS Speaking Part 2 topics become easier when you stop improvising everything
+            IELTS Speaking Part 2 becomes easier when you know how to use cue cards instead of improvising everything
           </h1>
           <p>
-            The best Part 2 answers are not random stories. They usually follow a simple order:
+            The best cue card answers are not random stories. They usually follow a simple order:
             what it is, one clear moment, one concrete detail, and why it mattered.
           </p>
         </div>

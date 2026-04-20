@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { MarketingPage } from "@/components/marketing-page";
 
 export const metadata: Metadata = {
-  title: "TOEFL Speaking Practice With AI",
+  title: "TOEFL Speaking AI Practice | SpeakAce",
   description:
-    "Practice TOEFL speaking online with AI feedback, integrated speaking tasks, transcripts, and estimated speaking score support.",
+    "Practice TOEFL speaking online with AI feedback, integrated speaking tasks, transcripts, response timers, and estimated score support.",
   alternates: {
     canonical: "/toefl-speaking-practice"
   },
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
     "TOEFL speaking AI",
     "AI English speaking practice",
     "TOEFL integrated speaking",
+    "TOEFL speaking timer",
     "speaking score improvement"
   ]
 };
@@ -21,10 +22,10 @@ export default function TOEFLPage() {
   return (
     <>
       <MarketingPage
-        eyebrow="TOEFL speaking practice"
-        title="TOEFL speaking practice with AI transcript review and timed response drills."
-        description="Prepare for TOEFL speaking tasks with response timers, transcript-based review, and feedback on delivery, language use, and topic development."
-        focus="This page targets TOEFL-specific demand with integrated speaking language, timed independent tasks, and structured score-improvement messaging."
+        eyebrow="TOEFL speaking AI"
+        title="TOEFL speaking AI practice with timed tasks, transcript review, and faster retries."
+        description="Prepare for TOEFL speaking with AI feedback that helps you organize integrated answers, control timing, and retry weak responses with a clearer structure."
+        focus="This landing page now targets TOEFL speaking AI intent more directly, with integrated-task language, timer relevance, and score-improvement positioning designed to convert search visitors into practice users."
         ctaHref="/app/practice"
       />
     </>
