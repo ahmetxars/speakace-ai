@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight, BellRing, BookOpenCheck, CalendarClock, CheckCircle2, CircleAlert, ClipboardList, Flame, GraduationCap, LayoutGrid, Mic, PenSquare, Sparkles, Target, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { InstitutionAdminPanel } from "@/components/institution-admin-panel";
 import { useAppState } from "@/components/providers";
@@ -200,11 +201,6 @@ export function Dashboard() {
     }
   };
 
-  const bestScore = useMemo(() => {
-    if (!scoredSessions.length) return null;
-    return Math.max(...scoredSessions.map((session) => session.report?.overall ?? 0));
-  }, [scoredSessions]);
-
   const skillProfile = useMemo(() => {
     const buckets = new Map<string, { total: number; count: number }>();
 
@@ -387,10 +383,6 @@ export function Dashboard() {
 
   const completedChecklistCount = weeklyChecklistItems.filter((item) => item.done).length;
   const streakCalendar = useMemo(() => buildRecentStreakCalendar(summary.recentSessions), [summary.recentSessions]);
-  const overdueHomeworkCount = useMemo(
-    () => homework.filter((item) => !item.completedAt && item.dueAt && new Date(item.dueAt).getTime() < Date.now()).length,
-    [homework]
-  );
   const needsOnboarding = Boolean(signedIn && currentUser && !isTeacherMember && !isSchoolMember && profile && !profile.onboardingComplete);
   const shouldUpsellPlus = Boolean(signedIn && currentUser && !isTeacherMember && !isSchoolMember && currentUser.plan === "free");
 
@@ -487,297 +479,421 @@ export function Dashboard() {
   }
 
   const firstName = currentUser?.name?.split(" ")[0] ?? "";
+  const pendingHomeworkCount = homework.filter((item) => !item.completedAt).length;
+  const classCount = joinedClasses.length;
+  const hasAnyStudentSupport = pendingHomeworkCount > 0 || classCount > 0 || announcements.length > 0;
+  const recentSession = summary.recentSessions[0] ?? null;
+  const heroStatus = summary.totalSessions
+    ? tr
+      ? `${summary.totalSessions} deneme tamamlandi, seri ${summary.streakDays} gun oldu.`
+      : `${summary.totalSessions} sessions completed, and your streak is now ${summary.streakDays} days.`
+    : tr
+      ? "Bugun ilk denemeni atip dashboardu veriyle doldurmaya baslayabilirsin."
+      : "Start your first attempt today and begin filling the dashboard with real data.";
+  const momentumCards = [
+    {
+      title: tr ? "Speaking ivmesi" : "Speaking momentum",
+      value: summary.averageScore ? `${summary.averageScore}` : "-",
+      note: tr ? "Son session ortalamasi" : "Average across recent attempts",
+      icon: Mic,
+    },
+    {
+      title: tr ? "Hedef mesafesi" : "Target gap",
+      value: scoreGap !== null ? `${scoreGap > 0 ? "-" : "+"}${Math.abs(scoreGap).toFixed(1)}` : tr ? "Yok" : "Unset",
+      note: numericTarget
+        ? tr
+          ? `${targetLabel} ile mevcut ortalama farki`
+          : `Gap between your current average and ${targetLabel}`
+        : tr
+          ? "Daha net yol plani icin hedef belirle"
+          : "Set a target for clearer planning",
+      icon: Target,
+    },
+    {
+      title: tr ? "Bu hafta plan" : "Weekly plan",
+      value: `${completedChecklistCount}/${weeklyChecklistItems.length}`,
+      note: tr ? "Tamamlanan odak maddeleri" : "Checklist items completed",
+      icon: CheckCircle2,
+    },
+    {
+      title: tr ? "Destek merkezi" : "Support center",
+      value: hasAnyStudentSupport ? `${pendingHomeworkCount + announcements.length + classCount}` : "0",
+      note: tr ? "Odev, duyuru ve sinif hareketi" : "Homework, announcements, and class activity",
+      icon: BellRing,
+    },
+  ];
+  const workspaceCards = [
+    {
+      title: tr ? "Speaking practice" : "Speaking practice",
+      body: tr ? "Yeni deneme baslat, transcript incele, tekrar et." : "Start a new attempt, review the transcript, and retry with intent.",
+      href: "/app/practice",
+      cta: tr ? "Pratige git" : "Open practice",
+      icon: Mic,
+    },
+    {
+      title: tr ? "Writing coach" : "Writing coach",
+      body: tr ? "Essay yaz, band tahmini al, duzeltmeleri gor." : "Write an essay, get an estimated band, and review corrections.",
+      href: "/app/writing",
+      cta: tr ? "Writing hub" : "Open writing",
+      icon: PenSquare,
+    },
+    {
+      title: tr ? "Review board" : "Review board",
+      body: tr ? "Tekrarlayan zayif kaliplari tek yerde topla." : "Keep repeated weak patterns in one focused review space.",
+      href: "/app/review",
+      cta: tr ? "Hataya don" : "Open review",
+      icon: BookOpenCheck,
+    },
+    {
+      title: tr ? "Calisma listeleri" : "Study lists",
+      body: tr ? "Kayitli promptlar, ogretmen listeleri ve tekrarlar." : "Saved prompts, teacher study lists, and retry work in one place.",
+      href: "/app/study-lists",
+      cta: tr ? "Listeyi ac" : "Open lists",
+      icon: LayoutGrid,
+    },
+  ];
 
   return (
-    <div className="page-shell section dashboard-page" style={{ display: "grid", gap: "1.25rem" }}>
+    <div className="page-shell section dashboard-page dashboard-redesign">
 
-      {/* ── Onboarding nudge ── */}
       {needsOnboarding ? (
-        <section className="card" style={{ padding: "1rem 1.2rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", background: "rgba(29, 111, 117, 0.07)" }}>
-          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.6 }}>
-            {tr ? "Hedef skorunu belirleyerek dashboard önerilerini kişiselleştir." : "Set your target score to personalise dashboard guidance."}
-          </p>
+        <section className="dashboard-banner card">
+          <div className="dashboard-banner-copy">
+            <span className="dashboard-banner-icon">
+              <Sparkles size={16} />
+            </span>
+            <p>{tr ? "Hedef skorunu ve tercihlerini tamamla; dashboard onerileri daha isabetli hale gelsin." : "Finish your target score and preferences so the dashboard can guide you more precisely."}</p>
+          </div>
           <Link className="button button-secondary" href="/app/onboarding">
             {tr ? "Kurulumu tamamla" : "Complete setup"}
           </Link>
         </section>
       ) : null}
 
-      {/* ── Hero ── */}
-      <section className="card" style={{ padding: "1.6rem 1.8rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1.2rem", flexWrap: "wrap" }}>
-        <div>
-          <span className="eyebrow">{tr ? "Panel" : "Dashboard"}</span>
-          <h1 style={{ fontSize: "clamp(1.7rem, 4vw, 2.6rem)", margin: "0.45rem 0 0.3rem", lineHeight: 1.1 }}>
-            {firstName ? (tr ? `Merhaba, ${firstName}` : `Hi, ${firstName}`) : (tr ? "Hoş geldin" : "Welcome back")}
+      <section className="dashboard-hero card">
+        <div className="dashboard-hero-copy">
+          <span className="eyebrow">{tr ? "Ogrenci dashboard" : "Student dashboard"}</span>
+          <h1>
+            {firstName ? (tr ? `Merhaba, ${firstName}` : `Hi, ${firstName}`) : tr ? "Hos geldin" : "Welcome back"}
           </h1>
-          <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.97rem" }}>
-            {summary.totalSessions
-              ? (tr ? `Toplam ${summary.totalSessions} deneme · Seri: ${summary.streakDays} gün` : `${summary.totalSessions} sessions total · ${summary.streakDays}-day streak`)
-              : (tr ? "Henüz deneme yok — bugün başla." : "No sessions yet — start today.")}
-          </p>
-        </div>
-        <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
-          <Link className="button button-primary" href="/app/practice">{tr ? "Pratiğe başla" : "Start practice"}</Link>
-          {currentUser?.isTeacher
-            ? <Link className="button button-secondary" href="/app/teacher">{tr ? "Öğretmen paneli" : "Teacher panel"}</Link>
-            : <Link className="button button-secondary" href="/app/profile">{tr ? "Profilim" : "My profile"}</Link>}
-        </div>
-      </section>
-
-      {/* ── 4 stat cards ── */}
-      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.9rem" }}>
-        <StatCard label={tr ? "Toplam deneme" : "Total sessions"} value={String(summary.totalSessions)} note={tr ? "Tüm speaking sessionların" : "All speaking attempts"} />
-        <StatCard label={tr ? "Ortalama skor" : "Average score"} value={summary.averageScore ? String(summary.averageScore) : "-"} note={tr ? "Son denemeler geneli" : "Across recent attempts"} />
-        <StatCard label={tr ? "En iyi skor" : "Best score"} value={bestScore !== null ? String(bestScore) : "-"} note={tr ? "Şimdiye kadarki en iyi" : "Your highest scored attempt"} />
-        <StatCard label="Streak" value={`${summary.streakDays}d`} note={tr ? "Ardışık çalışma günü" : "Consecutive practice days"} />
-      </section>
-
-      {/* ── Two-column: Focus + Recent sessions ── */}
-      <section style={{ display: "grid", gridTemplateColumns: "minmax(280px, 1fr) minmax(280px, 1.4fr)", gap: "0.9rem", alignItems: "start" }}>
-        <div style={{ display: "grid", gap: "0.9rem" }}>
-          {/* Today's focus */}
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-            <span className="eyebrow">{tr ? "Bugünkü odak" : "Today's focus"}</span>
-            <p style={{ margin: 0, lineHeight: 1.75, color: "var(--text)" }}>{nextStudyFocus}</p>
-            <div className="card" style={{ padding: "0.85rem", background: "var(--surface-strong)", display: "grid", gap: "0.4rem" }}>
-              <strong style={{ fontSize: "0.9rem" }}>{tr ? "Yol haritası" : "Roadmap"}</strong>
-              <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7, fontSize: "0.92rem" }}>{roadmap}</p>
-            </div>
-            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-              <Link className="button button-primary" href="/app/practice">{tr ? "Pratiğe git" : "Go practice"}</Link>
-              <Link className="button button-secondary" href="/app/review">{tr ? "Hatalarım" : "My mistakes"}</Link>
-            </div>
-          </div>
-          {/* Target */}
-          <TargetCard examType={latestExamType} targetScore={targetScore} onChange={handleTargetScoreChange} tr={tr} />
-          {/* 7-day streak dots */}
-          <div className="card" style={{ padding: "1rem 1.1rem" }}>
-            <span className="eyebrow" style={{ marginBottom: "0.7rem", display: "block" }}>{tr ? "Son 7 gün" : "Last 7 days"}</span>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "0.4rem" }}>
-              {streakCalendar.map((day) => (
-                <div key={day.key} style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "0.72rem", color: "var(--muted)", marginBottom: "0.3rem" }}>{day.label}</div>
-                  <div style={{ width: 28, height: 28, borderRadius: "50%", margin: "0 auto", background: day.active ? "var(--accent)" : "var(--surface-strong)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {day.active ? <span style={{ color: "#fff", fontSize: "0.75rem" }}>✓</span> : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Recent sessions */}
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.75rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem" }}>
-            <span className="eyebrow">{tr ? "Son sessionlar" : "Recent sessions"}</span>
-            <button className="button button-secondary" style={{ fontSize: "0.8rem", padding: "0.3rem 0.8rem" }} type="button" onClick={signedIn ? signOut : undefined}>
-              {signedIn ? (tr ? "Çıkış" : "Sign out") : tr ? "Misafir" : "Guest"}
+          <p>{heroStatus}</p>
+          <div className="dashboard-hero-actions">
+            <Link className="button button-primary" href="/app/practice">
+              {tr ? "Yeni speaking denemesi" : "Start speaking"}
+            </Link>
+            <Link className="button button-secondary" href="/app/profile">
+              {tr ? "Profili ac" : "Open profile"}
+            </Link>
+            <button className="button button-secondary" type="button" onClick={signedIn ? signOut : undefined}>
+              {signedIn ? (tr ? "Cikis yap" : "Sign out") : tr ? "Misafir" : "Guest"}
             </button>
           </div>
-          {summary.recentSessions.length ? (
-            summary.recentSessions.slice(0, 6).map((session) => <SessionCard key={session.id} session={session} tr={tr} />)
-          ) : (
-            <div style={{ padding: "1.5rem", textAlign: "center", color: "var(--muted)", lineHeight: 1.7 }}>
-              {tr ? "Henüz session yok. Aşağıdan başla." : "No sessions yet. Start below."}
-            </div>
-          )}
         </div>
-      </section>
 
-      {/* ── Quick links ── */}
-      <section>
-        <span className="eyebrow" style={{ display: "block", marginBottom: "0.8rem" }}>{tr ? "Hızlı bağlantılar" : "Quick links"}</span>
-        <div className="quick-action-grid">
-          <Link className="card quick-action-card" href="/app/practice">
-            <strong>{tr ? "Yeni practice" : "New practice"}</strong>
-            <div className="practice-meta">{tr ? "Günün speaking denemesi" : "Start a speaking session"}</div>
-          </Link>
-          <Link className="card quick-action-card" href="/app/improve">
-            <strong>{tr ? "Growth OS" : "Growth OS"}</strong>
-            <div className="practice-meta">{tr ? "Tüm gelişim sistemi" : "Full improvement system"}</div>
-          </Link>
-          <Link className="card quick-action-card" href="/app/plan">
-            <strong>{tr ? "Çalışma planım" : "Study plan"}</strong>
-            <div className="practice-meta">{tr ? "Hedef bazlı günlük rota" : "Daily route to your target"}</div>
-          </Link>
-          <Link className="card quick-action-card" href="/app/writing">
-            <strong>{tr ? "Writing coach" : "Writing coach"}</strong>
-            <div className="practice-meta">IELTS Writing Task 2</div>
-          </Link>
-          <Link className="card quick-action-card" href="/app/review">
-            <strong>{tr ? "Hata defteri" : "Mistake log"}</strong>
-            <div className="practice-meta">{tr ? "Tekrar eden zayıf noktalar" : "Repeated weak patterns"}</div>
-          </Link>
-          <Link className="card quick-action-card" href="/app/study-lists">
-            <strong>{tr ? "Çalışma listeleri" : "Study lists"}</strong>
-            <div className="practice-meta">{tr ? "Kayıtlı sorular" : "Saved prompts & retry"}</div>
-          </Link>
-        </div>
-      </section>
-
-      {/* ── Writing coach card ── */}
-      <section className="card" style={{ padding: "1.2rem 1.4rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1.2rem", flexWrap: "wrap" }}>
-        <div>
-          <span className="eyebrow">{tr ? "Writing coach" : "Writing coach"}</span>
-          <strong style={{ display: "block", margin: "0.35rem 0 0.25rem", fontSize: "1.05rem" }}>
-            {tr ? "IELTS Writing Task 2 — band tahmini, düzeltme, PDF rapor" : "IELTS Writing Task 2 — band estimate, correction, PDF report"}
-          </strong>
-          <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.93rem" }}>
-            {writingSummary.latestSession?.report
-              ? (tr ? `Son essay: ${writingSummary.latestSession.report.overall} band tahmini.` : `Latest essay: estimated ${writingSummary.latestSession.report.overall}.`)
-              : (tr ? "Henüz writing denemesi yok." : "No writing attempts yet.")}
-            {writingSummary.totalSessions > 0 ? (tr ? ` Toplam ${writingSummary.totalSessions} deneme.` : ` ${writingSummary.totalSessions} total attempts.`) : null}
-          </p>
-        </div>
-        <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-          <Link href="/app/writing" className="button button-primary">{tr ? "Writing hub" : "Writing hub"}</Link>
-          <Link href="/app/writing/task-2" className="button button-secondary">{tr ? "Yeni essay" : "New essay"}</Link>
-        </div>
-      </section>
-
-      {/* ── Weekly checklist + Mistake notebook ── */}
-      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.9rem", alignItems: "start" }}>
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem" }}>
-            <span className="eyebrow">{tr ? "Bu haftanın planı" : "This week's plan"}</span>
-            <span style={{ color: "var(--muted)", fontSize: "0.88rem" }}>{completedChecklistCount}/{weeklyChecklistItems.length} {tr ? "tamamlandı" : "done"}</span>
+        <div className="dashboard-hero-panel">
+          <div className="dashboard-hero-panel-card">
+            <span>{tr ? "Bir sonraki odak" : "Next focus"}</span>
+            <strong>{hasBalancedSkillProfile ? (tr ? "Dengeli profil" : "Balanced profile") : mistakeNotebook.weakSkillLabel ?? (tr ? "Daha fazla veri gerek" : "Need more data")}</strong>
+            <p>{nextStudyFocus}</p>
           </div>
-          <div style={{ display: "grid", gap: "0.55rem" }}>
-            {weeklyChecklistItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => toggleChecklistItem(item.id)}
-                style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", background: "none", border: "none", padding: 0, cursor: "pointer", textAlign: "left", color: "inherit" }}
-              >
-                <span style={{ flexShrink: 0, marginTop: "0.2rem", width: 18, height: 18, borderRadius: 4, border: "2px solid var(--line)", background: item.done ? "var(--accent)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {item.done ? <span style={{ color: "#fff", fontSize: "0.7rem", fontWeight: 800 }}>✓</span> : null}
+          <div className="dashboard-hero-mini-grid">
+            <div className="dashboard-mini-card">
+              <Flame size={18} />
+              <div>
+                <strong>{summary.streakDays}d</strong>
+                <span>{tr ? "streak" : "streak"}</span>
+              </div>
+            </div>
+            <div className="dashboard-mini-card">
+              <CalendarClock size={18} />
+              <div>
+                <strong>{summary.remainingMinutesToday}</strong>
+                <span>{tr ? "bugun kalan dk" : "mins left today"}</span>
+              </div>
+            </div>
+            <div className="dashboard-mini-card">
+              <GraduationCap size={18} />
+              <div>
+                <strong>{summary.currentPlan}</strong>
+                <span>{tr ? "mevcut plan" : "current plan"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="dashboard-momentum-grid">
+        {momentumCards.map(({ title, value, note, icon: Icon }) => (
+          <article key={title} className="dashboard-metric-card card">
+            <div className="dashboard-metric-icon">
+              <Icon size={18} />
+            </div>
+            <span>{title}</span>
+            <strong>{value}</strong>
+            <p>{note}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="dashboard-main-grid">
+        <div className="dashboard-main-column">
+          <div className="dashboard-focus-card card">
+            <div className="dashboard-section-head">
+              <span className="eyebrow">{tr ? "Bugunku odak" : "Today's focus"}</span>
+              <span className="dashboard-chip">{recentSession ? recentSession.examType : latestExamType}</span>
+            </div>
+            <h2>{tr ? "Simdi neye odaklanmalisin?" : "What should you work on next?"}</h2>
+            <p>{nextStudyFocus}</p>
+            <div className="dashboard-note-card">
+              <strong>{tr ? "Yol haritasi" : "Roadmap"}</strong>
+              <p>{roadmap}</p>
+            </div>
+            <div className="dashboard-inline-actions">
+              <Link className="button button-primary" href="/app/practice">
+                {tr ? "Pratige git" : "Go practice"}
+              </Link>
+              <Link className="button button-secondary" href="/app/review">
+                {tr ? "Review board" : "Review board"}
+              </Link>
+            </div>
+          </div>
+
+          <div className="dashboard-workspace-grid">
+            {workspaceCards.map(({ title, body, href, cta, icon: Icon }) => (
+              <a key={title} href={href} className="dashboard-workspace-card card">
+                <div className="dashboard-workspace-icon">
+                  <Icon size={18} />
+                </div>
+                <strong>{title}</strong>
+                <p>{body}</p>
+                <span>
+                  {cta}
+                  <ArrowRight size={16} />
                 </span>
-                <span style={{ lineHeight: 1.6, color: item.done ? "var(--muted)" : "var(--text)", textDecoration: item.done ? "line-through" : "none", fontSize: "0.95rem" }}>{item.text}</span>
-              </button>
+              </a>
             ))}
+          </div>
+
+          <div className="dashboard-duo-grid">
+            <TargetCard examType={latestExamType} targetScore={targetScore} onChange={handleTargetScoreChange} tr={tr} />
+            <div className="card dashboard-streak-card">
+              <div className="dashboard-section-head">
+                <span className="eyebrow">{tr ? "Son 7 gun" : "Last 7 days"}</span>
+                <span className="dashboard-chip">{summary.streakDays}d</span>
+              </div>
+              <div className="dashboard-streak-grid">
+                {streakCalendar.map((day) => (
+                  <div key={day.key} className="dashboard-streak-day">
+                    <span>{day.label}</span>
+                    <div data-active={day.active ? "true" : "false"}>
+                      {day.active ? <CheckCircle2 size={14} /> : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="dashboard-duo-grid">
+            <div className="card dashboard-checklist-card">
+              <div className="dashboard-section-head">
+                <span className="eyebrow">{tr ? "Bu haftanin plani" : "This week's plan"}</span>
+                <span className="dashboard-chip">{completedChecklistCount}/{weeklyChecklistItems.length}</span>
+              </div>
+              <div className="dashboard-checklist">
+                {weeklyChecklistItems.map((item) => (
+                  <button key={item.id} type="button" onClick={() => toggleChecklistItem(item.id)} className="dashboard-checklist-item">
+                    <span data-done={item.done ? "true" : "false"}>{item.done ? <CheckCircle2 size={14} /> : null}</span>
+                    <strong>{item.text}</strong>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="card dashboard-review-card">
+              <div className="dashboard-section-head">
+                <span className="eyebrow">{tr ? "Tekrarlayan kaliplar" : "Repeated patterns"}</span>
+                <span className="dashboard-chip">{mistakeNotebook.weakSkillLabel ?? (tr ? "izleniyor" : "tracking")}</span>
+              </div>
+              {mistakeNotebook.repeatedImprovements.length > 0 ? (
+                <NotebookList title={tr ? "Gelisim alanlari" : "Improvement areas"} items={mistakeNotebook.repeatedImprovements} emptyLabel="" tr={tr} />
+              ) : null}
+              {mistakeNotebook.repeatedFillers.length > 0 ? (
+                <NotebookList title={tr ? "Dolgu sozcukler" : "Filler words"} items={mistakeNotebook.repeatedFillers} emptyLabel="" tr={tr} />
+              ) : null}
+              {mistakeNotebook.repeatedImprovements.length === 0 && mistakeNotebook.repeatedFillers.length === 0 ? (
+                <p className="dashboard-empty-copy">{tr ? "Daha fazla session geldikce tekrar eden kaliplar burada toplanacak." : "As more sessions arrive, repeated patterns will appear here."}</p>
+              ) : null}
+              <Link href="/app/review" className="button button-secondary">
+                {tr ? "Tum review panosu" : "Open review board"}
+              </Link>
+            </div>
           </div>
         </div>
 
-        {scoredSessions.length > 0 && (mistakeNotebook.repeatedImprovements.length > 0 || mistakeNotebook.repeatedFillers.length > 0) ? (
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.75rem" }}>
-            <span className="eyebrow">{tr ? "Tekrarlayan hatalar" : "Repeated patterns"}</span>
-            {mistakeNotebook.repeatedImprovements.length > 0 ? (
-              <NotebookList title={tr ? "Gelişim noktaları" : "Improvement areas"} items={mistakeNotebook.repeatedImprovements} emptyLabel="" tr={tr} />
-            ) : null}
-            {mistakeNotebook.repeatedFillers.length > 0 ? (
-              <NotebookList title={tr ? "Dolgu sözcükler" : "Filler words"} items={mistakeNotebook.repeatedFillers} emptyLabel="" tr={tr} />
-            ) : null}
-            <Link href="/app/review" className="button button-secondary" style={{ width: "fit-content", fontSize: "0.88rem" }}>
-              {tr ? "Tüm hata panosunu aç" : "Open full review board"}
-            </Link>
-          </div>
-        ) : null}
-      </section>
-
-      {/* ── Homework (only when assigned) ── */}
-      {signedIn && !currentUser?.isTeacher && homework.length > 0 ? (
-        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
-            <span className="eyebrow">{tr ? "Ödev" : "Homework"}</span>
-            {overdueHomeworkCount > 0 ? <span className="pill" style={{ background: "rgba(188,92,58,0.12)", color: "var(--accent-deep)" }}>{overdueHomeworkCount} {tr ? "gecikti" : "overdue"}</span> : null}
-          </div>
-          <div style={{ display: "grid", gap: "0.65rem" }}>
-            {homework.slice(0, 4).map((item) => (
-              <div key={item.id} className="card" style={{ padding: "0.9rem", background: item.completedAt ? "rgba(47,125,75,0.07)" : "var(--surface-strong)", display: "grid", gap: "0.4rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
-                  <strong>{item.title}</strong>
-                  <span className="pill">{item.completedAt ? (tr ? "Tamam" : "Done") : item.dueAt && new Date(item.dueAt).getTime() < Date.now() ? (tr ? "Gecikti" : "Overdue") : (tr ? "Bekliyor" : "Pending")}</span>
-                </div>
-                {item.dueAt ? <div className="practice-meta">{tr ? "Teslim" : "Due"}: {new Date(item.dueAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</div> : null}
-                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.25rem" }}>
-                  {item.promptId ? (
-                    <Link className="button button-secondary" style={{ fontSize: "0.82rem" }} href={{ pathname: "/app/practice", query: { promptId: item.promptId, examType: item.recommendedTaskType.startsWith("toefl") ? "TOEFL" : "IELTS", taskType: item.recommendedTaskType, difficulty: "Target" } }}>
-                      {tr ? "Aç" : "Open"}
-                    </Link>
-                  ) : null}
-                  {!item.completedAt ? (
-                    <button type="button" className="button button-secondary" style={{ fontSize: "0.82rem" }} onClick={() => completeHomework(item.id)}>
-                      {tr ? "Tamamlandı" : "Mark done"}
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {/* ── Class join + joined classes ── */}
-      {signedIn && !currentUser?.isTeacher ? (
-        <section style={{ display: "grid", gridTemplateColumns: "minmax(260px, 1fr) minmax(260px, 1fr)", gap: "0.9rem", alignItems: "start" }}>
-          <div className="card" style={{ padding: "1.1rem", display: "grid", gap: "0.7rem" }}>
-            <span className="eyebrow">{tr ? "Sınıfa katıl" : "Join a class"}</span>
-            <input value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} placeholder={tr ? "Kod: AB12CD" : "Code: AB12CD"} style={{ padding: "0.75rem", borderRadius: 12, border: "1px solid var(--line)", background: "var(--background)", color: "var(--text)", font: "inherit" }} />
-            <button type="button" className="button button-primary" onClick={joinClass}>{tr ? "Katıl" : "Join"}</button>
-            {joinNotice ? <p style={{ margin: 0, color: "var(--success)", fontSize: "0.9em" }}>{joinNotice}</p> : null}
-            {joinError ? <p style={{ margin: 0, color: "var(--accent-deep)", fontSize: "0.9em" }}>{joinError}</p> : null}
-          </div>
-          <div className="card" style={{ padding: "1.1rem", display: "grid", gap: "0.65rem" }}>
-            <span className="eyebrow">{tr ? "Bağlı sınıflar" : "Joined classes"}</span>
-            {joinedClasses.length ? joinedClasses.map((item) => (
-              <div key={`${item.classId}-${item.joinedAt}`} className="card" style={{ padding: "0.8rem", background: "var(--surface-strong)" }}>
-                <strong>{item.className}</strong>
-                <div className="practice-meta" style={{ marginTop: "0.25rem" }}>{item.teacherName}</div>
-              </div>
-            )) : <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.9em" }}>{tr ? "Henüz sınıf yok." : "No classes yet."}</p>}
-          </div>
-        </section>
-      ) : null}
-
-      {/* ── Shared study list ── */}
-      {signedIn && !currentUser?.isTeacher && sharedStudyClasses.length > 0 ? (
-        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <span className="eyebrow">{tr ? "Öğretmenden study listesi" : "Teacher's study list"}</span>
-          {sharedStudyClasses.slice(0, 2).map((entry) => (
-            <div key={entry.classId} style={{ display: "grid", gap: "0.55rem" }}>
-              <div className="practice-meta">{entry.className} · {entry.teacherName}</div>
-              {entry.items.slice(0, 3).map((item) => (
-                <div key={item.id} className="card" style={{ padding: "0.75rem", background: "var(--surface-strong)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
-                  <strong style={{ fontSize: "0.95rem" }}>{item.title}</strong>
-                  <Link className="button button-secondary" style={{ fontSize: "0.82rem" }} href={{ pathname: "/app/practice", query: { promptId: item.promptId, examType: item.examType, taskType: item.taskType, difficulty: item.difficulty } }}>
-                    {tr ? "Aç" : "Open"}
-                  </Link>
-                </div>
-              ))}
+        <div className="dashboard-side-column">
+          <div className="card dashboard-session-card">
+            <div className="dashboard-section-head">
+              <span className="eyebrow">{tr ? "Son sessionlar" : "Recent sessions"}</span>
+              <span className="dashboard-chip">{summary.recentSessions.length}</span>
             </div>
-          ))}
-        </section>
-      ) : null}
+            {summary.recentSessions.length ? (
+              summary.recentSessions.slice(0, 6).map((session) => <SessionCard key={session.id} session={session} tr={tr} />)
+            ) : (
+              <p className="dashboard-empty-copy">{tr ? "Henuz session yok. Ilk denemeyi baslat ve bu alani doldur." : "No sessions yet. Start your first attempt and this area will fill in."}</p>
+            )}
+          </div>
 
-      {/* ── Announcements ── */}
-      {announcements.length > 0 ? (
-        <section className="card" style={{ padding: "1.1rem", display: "grid", gap: "0.7rem" }}>
-          <span className="eyebrow">{tr ? "Duyurular" : "Announcements"}</span>
-          {announcements.slice(0, 3).map((item) => (
-            <div key={item.id} className="card" style={{ padding: "0.85rem", background: "var(--surface-strong)" }}>
-              <strong>{item.title}</strong>
-              <p style={{ margin: "0.35rem 0 0", lineHeight: 1.65, color: "var(--muted)" }}>{item.body}</p>
+          <div className="card dashboard-writing-card">
+            <div className="dashboard-section-head">
+              <span className="eyebrow">{tr ? "Writing coach" : "Writing coach"}</span>
+              <span className="dashboard-chip">{writingSummary.totalSessions}</span>
             </div>
-          ))}
-        </section>
-      ) : null}
-
-      {/* ── Upsell (free users only, subtle) ── */}
-      {shouldUpsellPlus ? (
-        <section className="card" style={{ padding: "1.2rem 1.4rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1.2rem", flexWrap: "wrap", background: "rgba(217,93,57,0.05)", borderColor: "rgba(217,93,57,0.15)" }}>
-          <div>
-            <strong style={{ display: "block", marginBottom: "0.3rem" }}>{tr ? "Günlük limiti kaldır" : "Remove the daily limit"}</strong>
-            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.93rem" }}>
-              {tr ? "Plus ile günde 18 session, daha derin feedback ve sınırsız tekrar." : "Plus: 18 sessions/day, deeper feedback, unlimited retries."}
+            <strong>{tr ? "IELTS Writing Task 2 calsma alani" : "IELTS Writing Task 2 workspace"}</strong>
+            <p>
+              {writingSummary.latestSession?.report
+                ? tr
+                  ? `Son essay tahmini ${writingSummary.latestSession.report.overall}. Buradan yeni essay acip akisin devamini koruyabilirsin.`
+                  : `Your latest essay is estimated at ${writingSummary.latestSession.report.overall}. Continue the flow from here with a new submission.`
+                : tr
+                  ? "Writing denemelerin burada toplanir. Ilk essay ile speaking tarafini writing ile destekle."
+                  : "Your writing work lives here. Add an essay to support your speaking routine with writing feedback."}
             </p>
+            <div className="dashboard-inline-actions">
+              <Link href="/app/writing" className="button button-primary">{tr ? "Writing hub" : "Writing hub"}</Link>
+              <Link href="/app/writing/task-2" className="button button-secondary">{tr ? "Yeni essay" : "New essay"}</Link>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-            <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "dashboard_upgrade" })}>{tr ? "Plus'a geç" : "Upgrade"}</a>
-            <Link className="button button-secondary" href="/pricing">{tr ? "Planlar" : "See plans"}</Link>
-          </div>
-        </section>
-      ) : null}
+
+          {signedIn && !currentUser?.isTeacher ? (
+            <div className="card dashboard-support-card">
+              <div className="dashboard-section-head">
+                <span className="eyebrow">{tr ? "Sinif ve odev merkezi" : "Class and homework center"}</span>
+                <span className="dashboard-chip">{pendingHomeworkCount + classCount}</span>
+              </div>
+
+              <div className="dashboard-support-block">
+                <div className="dashboard-support-head">
+                  <div className="dashboard-support-icon"><Users size={16} /></div>
+                  <strong>{tr ? "Sinifa katil" : "Join a class"}</strong>
+                </div>
+                <div className="dashboard-join-row">
+                  <input value={joinCode} onChange={(e) => setJoinCode(e.target.value.toUpperCase())} placeholder={tr ? "Kod: AB12CD" : "Code: AB12CD"} />
+                  <button type="button" className="button button-primary" onClick={joinClass}>{tr ? "Katil" : "Join"}</button>
+                </div>
+                {joinNotice ? <p className="dashboard-success-copy">{joinNotice}</p> : null}
+                {joinError ? <p className="dashboard-error-copy">{joinError}</p> : null}
+                {joinedClasses.length ? (
+                  <div className="dashboard-pill-list">
+                    {joinedClasses.map((item) => (
+                      <div key={`${item.classId}-${item.joinedAt}`} className="dashboard-info-pill">
+                        <strong>{item.className}</strong>
+                        <span>{item.teacherName}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="dashboard-empty-copy">{tr ? "Henuz bagli sinif yok." : "No class memberships yet."}</p>
+                )}
+              </div>
+
+              {homework.length > 0 ? (
+                <div className="dashboard-support-block">
+                  <div className="dashboard-support-head">
+                    <div className="dashboard-support-icon"><ClipboardList size={16} /></div>
+                    <strong>{tr ? "Odevler" : "Homework"}</strong>
+                  </div>
+                  <div className="dashboard-homework-list">
+                    {homework.slice(0, 3).map((item) => (
+                      <div key={item.id} className="dashboard-homework-card">
+                        <div>
+                          <strong>{item.title}</strong>
+                          {item.dueAt ? <span>{tr ? "Teslim" : "Due"}: {new Date(item.dueAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</span> : null}
+                        </div>
+                        <div className="dashboard-inline-actions">
+                          {item.promptId ? (
+                            <Link
+                              className="button button-secondary"
+                              href={{ pathname: "/app/practice", query: { promptId: item.promptId, examType: item.recommendedTaskType.startsWith("toefl") ? "TOEFL" : "IELTS", taskType: item.recommendedTaskType, difficulty: "Target" } }}
+                            >
+                              {tr ? "Ac" : "Open"}
+                            </Link>
+                          ) : null}
+                          {!item.completedAt ? (
+                            <button type="button" className="button button-secondary" onClick={() => completeHomework(item.id)}>
+                              {tr ? "Tamamlandi" : "Mark done"}
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {sharedStudyClasses.length > 0 ? (
+                <div className="dashboard-support-block">
+                  <div className="dashboard-support-head">
+                    <div className="dashboard-support-icon"><BookOpenCheck size={16} /></div>
+                    <strong>{tr ? "Ogretmen study listeleri" : "Teacher study lists"}</strong>
+                  </div>
+                  <div className="dashboard-shared-list">
+                    {sharedStudyClasses.slice(0, 2).map((entry) => (
+                      <div key={entry.classId} className="dashboard-shared-card">
+                        <span>{entry.className} · {entry.teacherName}</span>
+                        {entry.items.slice(0, 2).map((item) => (
+                          <Link
+                            key={item.id}
+                            className="dashboard-shared-link"
+                            href={{ pathname: "/app/practice", query: { promptId: item.promptId, examType: item.examType, taskType: item.taskType, difficulty: item.difficulty } }}
+                          >
+                            <strong>{item.title}</strong>
+                            <ArrowRight size={14} />
+                          </Link>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {announcements.length > 0 ? (
+                <div className="dashboard-support-block">
+                  <div className="dashboard-support-head">
+                    <div className="dashboard-support-icon"><CircleAlert size={16} /></div>
+                    <strong>{tr ? "Duyurular" : "Announcements"}</strong>
+                  </div>
+                  <div className="dashboard-announcement-list">
+                    {announcements.slice(0, 3).map((item) => (
+                      <article key={item.id} className="dashboard-announcement-card">
+                        <strong>{item.title}</strong>
+                        <p>{item.body}</p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {shouldUpsellPlus ? (
+            <section className="card dashboard-upgrade-card">
+              <div className="dashboard-section-head">
+                <span className="eyebrow">{tr ? "Upgrade" : "Upgrade"}</span>
+                <span className="dashboard-chip">{summary.currentPlan}</span>
+              </div>
+              <strong>{tr ? "Gunluk limiti kaldir ve daha derin feedback al" : "Remove the daily cap and unlock deeper feedback"}</strong>
+              <p>{tr ? "Plus ile daha fazla speaking denemesi, daha guclu geri bildirim ve daha rahat tekrar akisi aciliyor." : "SpeakAce Plus unlocks more daily speaking, deeper review, and a more flexible retry workflow."}</p>
+              <div className="dashboard-inline-actions">
+                <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "dashboard_upgrade" })}>
+                  {tr ? "Plus'a gec" : "Upgrade to Plus"}
+                </a>
+                <Link className="button button-secondary" href="/pricing">{tr ? "Planlar" : "See plans"}</Link>
+              </div>
+            </section>
+          ) : null}
+        </div>
+      </section>
     </div>
   );
 }
@@ -812,16 +928,6 @@ function TargetCard({
           ? "Istersen hedef band belirle; dashboard ortalaman ile farki hesaplayip daha net bir yol plani cikarsin."
           : "Set an optional target so the dashboard can map your average against a clearer improvement plan."}
       </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <div className="card" style={{ padding: "1.2rem", background: "var(--surface-strong)" }}>
-      <div style={{ color: "var(--muted)", marginBottom: "0.5rem" }}>{label}</div>
-      <div style={{ fontSize: "2rem", fontWeight: 800 }}>{value}</div>
-      <div style={{ color: "var(--muted)", marginTop: "0.45rem", lineHeight: 1.55 }}>{note}</div>
     </div>
   );
 }
