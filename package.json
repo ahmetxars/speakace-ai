@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
+    "audit:i18n": "node scripts/audit-i18n.mjs",
     "db:push": "node scripts/apply-schema.mjs",
     "send:campaign": "node scripts/send-campaign.mjs"
   },

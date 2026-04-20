@@ -35,6 +35,57 @@ function defaultProfile(userId: string): StudentProfile {
   };
 }
 
+function normalizeStudyDays(value: unknown) {
+  if (Array.isArray(value)) {
+    return value.map(String).slice(0, 7);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.map(String).slice(0, 7);
+      }
+    } catch {
+      return trimmed.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 7);
+    }
+  }
+
+  return [];
+}
+
+function normalizeStudentProfile(userId: string, input?: Partial<StudentProfile> | null): StudentProfile {
+  const fallback = defaultProfile(userId);
+  const studyDays = normalizeStudyDays(input?.studyDays);
+
+  return {
+    userId,
+    preferredExamType: input?.preferredExamType === "TOEFL" ? "TOEFL" : fallback.preferredExamType,
+    targetScore: typeof input?.targetScore === "number" ? input.targetScore : fallback.targetScore,
+    weeklyGoal: typeof input?.weeklyGoal === "number" && Number.isFinite(input.weeklyGoal) ? input.weeklyGoal : fallback.weeklyGoal,
+    dailyMinutesGoal:
+      typeof input?.dailyMinutesGoal === "number" && Number.isFinite(input.dailyMinutesGoal)
+        ? input.dailyMinutesGoal
+        : fallback.dailyMinutesGoal,
+    studyDays: studyDays.length ? studyDays : fallback.studyDays,
+    currentLevel: typeof input?.currentLevel === "string" && input.currentLevel.trim() ? input.currentLevel : fallback.currentLevel,
+    focusSkill: typeof input?.focusSkill === "string" && input.focusSkill.trim() ? input.focusSkill : fallback.focusSkill,
+    examDate: typeof input?.examDate === "string" && input.examDate.trim() ? input.examDate : fallback.examDate,
+    targetReason:
+      typeof input?.targetReason === "string" && input.targetReason.trim() ? input.targetReason : fallback.targetReason,
+    discoverySource:
+      typeof input?.discoverySource === "string" && input.discoverySource.trim()
+        ? input.discoverySource
+        : fallback.discoverySource,
+    bio: typeof input?.bio === "string" ? input.bio : fallback.bio,
+    avatarDataUrl: typeof input?.avatarDataUrl === "string" ? input.avatarDataUrl : fallback.avatarDataUrl,
+    onboardingComplete: Boolean(input?.onboardingComplete),
+    updatedAt: typeof input?.updatedAt === "string" && input.updatedAt ? input.updatedAt : fallback.updatedAt
+  };
+}
+
 let ensuredAvatarColumn = false;
 
 async function ensureStudentProfileColumns() {
@@ -69,10 +120,10 @@ export async function getStudentProfile(userId: string) {
       where user_id = ${userId}
       limit 1
     `) as unknown as StudentProfile[];
-    return rows[0] ?? defaultProfile(userId);
+    return normalizeStudentProfile(userId, rows[0]);
   }
 
-  return getStore().profiles.get(userId) ?? defaultProfile(userId);
+  return normalizeStudentProfile(userId, getStore().profiles.get(userId));
 }
 
 export async function upsertStudentProfile(input: {
@@ -162,9 +213,9 @@ export async function upsertStudentProfile(input: {
         onboarding_complete as "onboardingComplete",
         updated_at as "updatedAt"
     `) as unknown as StudentProfile[];
-    return rows[0];
+    return normalizeStudentProfile(next.userId, rows[0]);
   }
 
   getStore().profiles.set(next.userId, next);
-  return next;
+  return normalizeStudentProfile(next.userId, next);
 }
