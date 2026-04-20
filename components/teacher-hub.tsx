@@ -126,10 +126,12 @@ export function TeacherHub() {
     () => [...new Set(students.map((item) => item.weakestSkill).filter(Boolean))] as string[],
     [students]
   );
+
   const atRiskStudents = useMemo(
     () => filteredStudents.filter((item) => (item.riskFlags?.length ?? 0) > 0).slice(0, 6),
     [filteredStudents]
   );
+
   const priorityActions = useMemo(() => {
     const items: Array<{ title: string; description: string }> = [];
 
@@ -503,74 +505,144 @@ export function TeacherHub() {
 
   return (
     <div className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
+
+      {/* ── 1. Hero ─────────────────────────────────────────────────────────── */}
       <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
         <span className="eyebrow">Teacher hub</span>
-        <h1 style={{ fontSize: "clamp(2rem, 4vw, 3.2rem)", margin: 0 }}>{tr ? "Sinif ve ogrenci paneli" : "Class and student panel"}</h1>
-        <p style={{ color: "var(--muted)", lineHeight: 1.75, margin: 0 }}>
-          {tr
-            ? "Sinif olustur, filtrele, gelisimi izle, ortak calisma listesi paylas ve dusuk skorlari otomatik homework ile toparla."
-            : "Create classes, filter students, track improvement, share class study lists, and recover low scores with adaptive homework."}
-        </p>
-        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.75rem" }}>
-          <TeacherStat label={tr ? "Toplam homework" : "Total homework"} value={String(homeworkSummary.total)} />
+        <h1 style={{ fontSize: "clamp(2rem, 4vw, 3.2rem)", margin: 0 }}>
+          {tr ? "Öğretmen paneli" : "Teacher panel"}
+        </h1>
+        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.7rem" }}>
+          <TeacherStat label={tr ? "Toplam ödev" : "Total homework"} value={String(homeworkSummary.total)} />
           <TeacherStat label={tr ? "Tamamlanan" : "Completed"} value={String(homeworkSummary.completed)} />
           <TeacherStat label={tr ? "Bekleyen" : "Pending"} value={String(homeworkSummary.pending)} />
           <TeacherStat label={tr ? "Geciken" : "Overdue"} value={String(homeworkSummary.overdue)} />
         </div>
+        <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
+          <button type="button" className="button button-secondary" onClick={runAutoAssignNow} disabled={!selectedClassId}>
+            {tr ? "Otomatik ödevi çalıştır" : "Run auto homework"}
+          </button>
+          <button type="button" className="button button-secondary" onClick={copyInviteMessage} disabled={!selectedClass}>
+            {tr ? "Davet mesajını kopyala" : "Copy invite message"}
+          </button>
+          <Link className="button button-secondary" href="/app/teacher/institution">
+            {tr ? "Kurum analitiği" : "Institution analytics"}
+          </Link>
+        </div>
       </section>
 
-      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1.25fr) minmax(280px, 0.75fr)", gap: "1rem", alignItems: "start" }}>
+      {/* ── 2. Notice / error ───────────────────────────────────────────────── */}
+      {(notice || error) && (
+        <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
+          {notice && <p style={{ color: "var(--success)", margin: 0 }}>{notice}</p>}
+          {error && <p style={{ color: "var(--accent-deep)", margin: 0 }}>{error}</p>}
+        </div>
+      )}
+
+      {/* ── 3. Class selector + control center ─────────────────────────────── */}
+      <section className="grid" style={{ gridTemplateColumns: "minmax(280px, 1fr) minmax(280px, 1.4fr)", gap: "1rem", alignItems: "start" }}>
+
+        {/* Left: class list + create */}
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-          <div>
-            <span className="eyebrow">{tr ? "Hızlı aksiyonlar" : "Quick actions"}</span>
-            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Önce ne yapmalısın?" : "What should you do first?"}</h2>
+          <span className="eyebrow">{tr ? "Sınıflar" : "Classes"}</span>
+          <h2 style={{ fontSize: "1.8rem", margin: 0 }}>{tr ? "Sınıf seç veya oluştur" : "Select or create a class"}</h2>
+          <div style={{ display: "flex", gap: "0.6rem" }}>
+            <input
+              value={newClassName}
+              onChange={(event) => setNewClassName(event.target.value)}
+              placeholder={tr ? "Yeni sınıf adı" : "New class name"}
+              style={{ flex: 1, padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)" }}
+            />
+            <button type="button" className="button button-primary" onClick={createClass} disabled={!newClassName.trim()}>
+              {tr ? "Oluştur" : "Create"}
+            </button>
           </div>
-          <div className="quick-action-grid">
-            <button type="button" className="card quick-action-card" onClick={createClass}>
-              <strong>{tr ? "Yeni sınıf aç" : "Create class"}</strong>
-              <div className="practice-meta">{tr ? "Yeni speaking grubu ekle" : "Open a new speaking class group"}</div>
-            </button>
-            <button type="button" className="card quick-action-card" onClick={copyInviteMessage} disabled={!selectedClass}>
-              <strong>{tr ? "Davet mesajını kopyala" : "Copy invite message"}</strong>
-              <div className="practice-meta">{tr ? "Öğrenci katılımını hızlandır" : "Speed up student onboarding"}</div>
-            </button>
-            <button type="button" className="card quick-action-card" onClick={runAutoAssignNow} disabled={!selectedClassId}>
-              <strong>{tr ? "Otomatik ödevi çalıştır" : "Run auto homework"}</strong>
-              <div className="practice-meta">{tr ? "Düşük skorları hemen göreve çevir" : "Turn weak scores into tasks instantly"}</div>
-            </button>
-            <Link className="card quick-action-card" href="/app/teacher/institution">
-              <strong>{tr ? "Kurum analitiğini aç" : "Open institution analytics"}</strong>
-              <div className="practice-meta">{tr ? "Genel kullanım ve risk görünümü" : "See usage, risk, and class performance"}</div>
-            </Link>
+          <div style={{ display: "grid", gap: "0.55rem" }}>
+            {classes.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="card"
+                onClick={() => setSelectedClassId(item.id)}
+                style={{
+                  padding: "0.9rem",
+                  textAlign: "left",
+                  background: selectedClassId === item.id ? "rgba(29, 111, 117, 0.1)" : "var(--surface)",
+                  cursor: "pointer",
+                  border: selectedClassId === item.id ? "1.5px solid var(--accent)" : "1px solid var(--line)"
+                }}
+              >
+                <strong>{item.name}</strong>
+                <div className="practice-meta" style={{ marginTop: "0.3rem" }}>
+                  {tr
+                    ? `Kod: ${item.joinCode} · ${item.studentCount} öğrenci${(item.pendingCount ?? 0) > 0 ? ` · ${item.pendingCount} bekleyen` : ""}`
+                    : `Code: ${item.joinCode} · ${item.studentCount} students${(item.pendingCount ?? 0) > 0 ? ` · ${item.pendingCount} pending` : ""}`}
+                </div>
+              </button>
+            ))}
+            {!classes.length && (
+              <p style={{ margin: 0, color: "var(--muted)" }}>
+                {tr ? "Henüz sınıf yok. Yukarıdan ilk sınıfını oluştur." : "No classes yet. Create your first one above."}
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem", background: "rgba(29, 111, 117, 0.08)" }}>
-          <span className="eyebrow">{tr ? "Kontrol merkezi" : "Control center"}</span>
-          <h2 style={{ fontSize: "1.9rem", margin: "0.6rem 0 0.2rem" }}>{selectedClass ? selectedClass.name : tr ? "Bir sınıf seç" : "Select a class"}</h2>
-          <p className="practice-copy">
-            {selectedClass
-              ? (tr
-                ? `Kod ${selectedClass.joinCode} ile öğrenci ekleyebilir, bekleyen onayları yönetebilir ve sınıfın weak skill desenini izleyebilirsin.`
-                : `Use code ${selectedClass.joinCode} to bring students in, manage approvals, and monitor weak skill patterns.`)
-              : (tr
-                ? "Soldan bir sınıf seçtiğinde davet, onay, öğrenci listesi ve homework akışı burada odaklanır."
-                : "Once you select a class, invites, approvals, roster, and homework controls will focus here.")}
-          </p>
+        {/* Right: selected class overview */}
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem", background: "rgba(29, 111, 117, 0.06)" }}>
+          <span className="eyebrow">{tr ? "Seçili sınıf" : "Selected class"}</span>
           {selectedClass ? (
-            <div className="grid" style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.7rem" }}>
-              <TeacherStat label={tr ? "Öğrenci" : "Students"} value={String(selectedClass.studentCount)} />
-              <TeacherStat label={tr ? "Bekleyen" : "Pending"} value={String(selectedClass.pendingCount ?? 0)} />
-            </div>
-          ) : null}
+            <>
+              <h2 style={{ fontSize: "1.9rem", margin: 0 }}>{selectedClass.name}</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
+                <span className="pill" style={{ fontSize: "1.05rem", letterSpacing: "0.08em" }}>{selectedClass.joinCode}</span>
+                <button type="button" className="button button-secondary" onClick={copyJoinCode}>
+                  {copiedCode === selectedClass.joinCode ? (tr ? "Kopyalandı ✓" : "Copied ✓") : (tr ? "Kodu kopyala" : "Copy code")}
+                </button>
+                <button type="button" className="button button-secondary" onClick={copyInviteMessage}>
+                  {tr ? "Davet mesajı" : "Invite message"}
+                </button>
+              </div>
+              {analytics ? (
+                <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.6rem" }}>
+                  <TeacherStat label={tr ? "Sınıf ort." : "Class avg"} value={analytics.classAverageScore ? analytics.classAverageScore.toFixed(1) : "-"} />
+                  <TeacherStat label={tr ? "Aktif" : "Active"} value={String(analytics.activeStudents)} />
+                  <TeacherStat label={tr ? "Deneme" : "Attempts"} value={String(analytics.totalAttempts)} />
+                  <TeacherStat label={tr ? "Ödev oranı" : "HW rate"} value={`${analytics.homeworkCompletionRate ?? 0}%`} />
+                  <TeacherStat label={tr ? "Geciken" : "Overdue"} value={String(analytics.overdueHomeworkCount ?? 0)} />
+                  <TeacherStat label={tr ? "Bekleyen" : "Pending"} value={String(analytics.pendingApprovalCount ?? 0)} />
+                  <TeacherStat label={tr ? "Riskli" : "At-risk"} value={String(analytics.atRiskStudentCount ?? 0)} />
+                  <TeacherStat
+                    label={tr ? "Zayıf alan" : "Weak area"}
+                    value={analytics.mostCommonWeakestSkill ? translateCategoryLabel(analytics.mostCommonWeakestSkill, tr) : "-"}
+                  />
+                </div>
+              ) : (
+                <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Analitik yükleniyor…" : "Loading analytics…"}</p>
+              )}
+              <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+                <a className="button button-secondary" href={`/api/teacher/classes/${selectedClassId}/export`}>
+                  {tr ? "CSV rapor indir" : "Download CSV"}
+                </a>
+                <Link className="button button-secondary" href="/app/teacher/compare">
+                  {tr ? "Öğrenci karşılaştır" : "Compare students"}
+                </Link>
+              </div>
+            </>
+          ) : (
+            <p style={{ margin: 0, color: "var(--muted)" }}>
+              {tr ? "Soldan bir sınıf seçtiğinde detaylar burada görünür." : "Select a class on the left to see details here."}
+            </p>
+          )}
         </div>
       </section>
 
+      {/* ── 4. Priority board (always visible, content changes per class) ──── */}
       <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
         <div>
           <span className="eyebrow">{tr ? "Öncelik panosu" : "Priority board"}</span>
-          <h2 style={{ fontSize: "1.8rem", margin: "0.6rem 0 0.2rem" }}>
-            {tr ? "Bugün en çok etkisi olacak 3 iş" : "The 3 highest-impact actions for today"}
+          <h2 style={{ fontSize: "1.7rem", margin: "0.4rem 0 0" }}>
+            {tr ? "Bugün en çok etkisi olacak adımlar" : "Highest-impact actions for today"}
           </h2>
         </div>
         <div className="quick-action-grid">
@@ -583,412 +655,392 @@ export function TeacherHub() {
         </div>
       </section>
 
-      <section className="grid" style={{ gridTemplateColumns: "minmax(300px, 0.92fr) minmax(360px, 1.28fr)", gap: "1rem", alignItems: "start" }}>
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem" }}>
+      {/* ── 5. Pending approvals (only when there are some) ─────────────────── */}
+      {selectedClass && pendingRequests.length > 0 && (
+        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem", background: "rgba(255, 200, 0, 0.06)" }}>
           <div>
-            <span className="eyebrow">{tr ? "Siniflar" : "Classes"}</span>
-            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{tr ? "Sinif olustur" : "Create a class"}</h2>
+            <span className="eyebrow">{tr ? "Katılım onayları" : "Join approvals"}</span>
+            <h2 style={{ fontSize: "1.7rem", margin: "0.4rem 0 0" }}>
+              {tr ? `${pendingRequests.length} öğrenci onay bekliyor` : `${pendingRequests.length} students awaiting approval`}
+            </h2>
           </div>
-          <input
-            value={newClassName}
-            onChange={(event) => setNewClassName(event.target.value)}
-            placeholder={tr ? "Ornek: IELTS Aksam Grubu" : "Example: IELTS Evening Group"}
-            style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
-          />
-          <button type="button" className="button button-primary" onClick={createClass}>
-            {tr ? "Sinifi olustur" : "Create class"}
-          </button>
-          <div style={{ display: "grid", gap: "0.7rem" }}>
-            {classes.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="card"
-                onClick={() => setSelectedClassId(item.id)}
-                style={{
-                  padding: "1rem",
-                  textAlign: "left",
-                  background: selectedClassId === item.id ? "rgba(29, 111, 117, 0.08)" : "var(--surface)",
-                  cursor: "pointer"
-                }}
-              >
-                <strong>{item.name}</strong>
-                <div className="practice-meta" style={{ marginTop: "0.35rem" }}>
-                  {tr ? `Kod: ${item.joinCode} · ${item.studentCount} ogrenci · ${item.pendingCount ?? 0} bekleyen` : `Code: ${item.joinCode} · ${item.studentCount} students · ${item.pendingCount ?? 0} pending`}
+          <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "0.7rem" }}>
+            {pendingRequests.map((item) => (
+              <div key={item.student.id} className="card" style={{ padding: "1rem", display: "grid", gap: "0.5rem" }}>
+                <strong>{item.student.name}</strong>
+                <div className="practice-meta">{item.student.email}</div>
+                <div className="practice-meta">{new Date(item.requestedAt).toLocaleString(tr ? "tr-TR" : "en-US")}</div>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <button type="button" className="button button-primary" onClick={() => handleApproval(item.student.id, "approve")}>
+                    {tr ? "Onayla" : "Approve"}
+                  </button>
+                  <button type="button" className="button button-secondary" onClick={() => handleApproval(item.student.id, "reject")}>
+                    {tr ? "Reddet" : "Reject"}
+                  </button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
-        </div>
+        </section>
+      )}
 
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem" }}>
+      {/* ── 6. At-risk alerts (only when there are some) ────────────────────── */}
+      {selectedClass && atRiskStudents.length > 0 && (
+        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem", background: "rgba(217, 93, 57, 0.07)" }}>
           <div>
-            <span className="eyebrow">{tr ? "Ogrenciler" : "Students"}</span>
-            <h2 style={{ fontSize: "2rem", margin: "0.6rem 0 0.2rem" }}>{selectedClass ? selectedClass.name : tr ? "Bir sinif sec" : "Select a class"}</h2>
+            <span className="eyebrow">{tr ? "Risk sinyali" : "At-risk"}</span>
+            <h2 style={{ fontSize: "1.7rem", margin: "0.4rem 0 0" }}>
+              {tr ? `${atRiskStudents.length} öğrencide uyarı sinyali var` : `${atRiskStudents.length} students with risk signals`}
+            </h2>
           </div>
-          {selectedClass ? (
-            <>
-              <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-                <div>
-                  <strong>{tr ? "Davet kodu" : "Invite code"}</strong>
-                  <div className="practice-meta" style={{ marginTop: "0.35rem" }}>
-                    {selectedClass.joinCode} {copiedCode === selectedClass.joinCode ? (tr ? "· kopyalandi" : "· copied") : ""} {selectedClass.approvalRequired ? `· ${tr ? "onayli katilim" : "approval required"}` : ""}
-                  </div>
-                </div>
-                <button type="button" className="button button-secondary" onClick={copyJoinCode}>
-                  {tr ? "Kodu kopyala" : "Copy code"}
-                </button>
-                <button type="button" className="button button-secondary" onClick={copyInviteMessage}>
-                  {tr ? "Davet mesajini kopyala" : "Copy invite message"}
-                </button>
-              </div>
+          <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "0.6rem" }}>
+            {atRiskStudents.map((item) => (
+              <Link key={item.student.id} href={`/app/teacher/student/${item.student.id}`} className="card" style={{ padding: "0.9rem", display: "grid", gap: "0.3rem" }}>
+                <strong>{item.student.name}</strong>
+                <div className="practice-meta">{(item.riskFlags ?? []).join(" · ")}</div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
-              {analytics ? (
-                <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.75rem" }}>
-                  <TeacherStat label={tr ? "Sinif ortalamasi" : "Class average"} value={analytics.classAverageScore ? analytics.classAverageScore.toFixed(1) : "-"} />
-                  <TeacherStat label={tr ? "Aktif ogrenci" : "Active students"} value={String(analytics.activeStudents)} />
-                  <TeacherStat label={tr ? "Toplam deneme" : "Total attempts"} value={String(analytics.totalAttempts)} />
-                  <TeacherStat
-                    label={tr ? "Ortak zayif alan" : "Common weak area"}
-                    value={analytics.mostCommonWeakestSkill ? translateCategoryLabel(analytics.mostCommonWeakestSkill, tr) : "-"}
-                  />
-                  <TeacherStat label={tr ? "Homework tamamlama" : "Homework completion"} value={`${analytics.homeworkCompletionRate ?? 0}%`} />
-                  <TeacherStat label={tr ? "Geciken homework" : "Overdue homework"} value={String(analytics.overdueHomeworkCount ?? 0)} />
-                  <TeacherStat label={tr ? "Bekleyen onay" : "Pending approvals"} value={String(analytics.pendingApprovalCount ?? 0)} />
-                  <TeacherStat label={tr ? "Riskli ogrenci" : "At-risk students"} value={String(analytics.atRiskStudentCount ?? 0)} />
-                </div>
-              ) : null}
+      {/* ── 7. Student list (when class selected) ───────────────────────────── */}
+      {selectedClass && (
+        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "0.8rem" }}>
+            <div>
+              <span className="eyebrow">{tr ? "Öğrenci listesi" : "Student roster"}</span>
+              <h2 style={{ fontSize: "1.7rem", margin: "0.4rem 0 0" }}>
+                {filteredStudents.length === students.length
+                  ? (tr ? `${students.length} öğrenci` : `${students.length} students`)
+                  : (tr ? `${filteredStudents.length} / ${students.length} öğrenci` : `${filteredStudents.length} of ${students.length} students`)}
+              </h2>
+            </div>
+            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+              <input
+                value={studentSearch}
+                onChange={(event) => setStudentSearch(event.target.value)}
+                placeholder={tr ? "Öğrenci ara…" : "Search students…"}
+                style={{ padding: "0.7rem 1rem", borderRadius: 14, border: "1px solid var(--line)", minWidth: 160 }}
+              />
+              <select value={filters.exam} onChange={(event) => setFilters((current) => ({ ...current, exam: event.target.value as "all" | ExamType }))} style={selectStyle}>
+                <option value="all">{tr ? "Tüm sınavlar" : "All exams"}</option>
+                <option value="IELTS">IELTS</option>
+                <option value="TOEFL">TOEFL</option>
+              </select>
+              <select value={filters.task} onChange={(event) => setFilters((current) => ({ ...current, task: event.target.value as "all" | TaskType }))} style={selectStyle}>
+                <option value="all">{tr ? "Tüm taskler" : "All tasks"}</option>
+                {[...IELTS_TASKS, ...TOEFL_TASKS].map((task) => (
+                  <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>
+                ))}
+              </select>
+              {filterSkillOptions.length > 0 && (
+                <select value={filters.skill} onChange={(event) => setFilters((current) => ({ ...current, skill: event.target.value }))} style={selectStyle}>
+                  <option value="all">{tr ? "Tüm beceriler" : "All skills"}</option>
+                  {filterSkillOptions.map((skill) => (
+                    <option key={skill} value={skill}>{translateCategoryLabel(skill, tr)}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </div>
 
-              <div className="grid" style={{ gridTemplateColumns: "minmax(240px, 0.9fr) minmax(280px, 1.1fr)", gap: "0.85rem", alignItems: "start" }}>
-                <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
-                  <strong>{tr ? "Teacher class approval" : "Teacher class approval"}</strong>
-                  <label style={{ display: "grid", gap: "0.35rem" }}>
-                    <span className="practice-meta">{tr ? "Join request onayi gerekli" : "Require approval for join requests"}</span>
-                    <input type="checkbox" checked={classSettings.approvalRequired} onChange={(event) => setClassSettings((current) => ({ ...current, approvalRequired: event.target.checked }))} />
-                  </label>
-                  <textarea
-                    value={classSettings.joinMessage}
-                    onChange={(event) => setClassSettings((current) => ({ ...current, joinMessage: event.target.value }))}
-                    rows={3}
-                    placeholder={tr ? "Katilim sonrasi ogrencinin gorecegi kisa mesaj..." : "Short note students will see after joining..."}
-                    style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }}
-                  />
-                  <button type="button" className="button button-secondary" onClick={updateClassSettings}>
-                    {tr ? "Ayarları kaydet" : "Save settings"}
-                  </button>
-                  {pendingRequests.length ? (
-                    <div style={{ display: "grid", gap: "0.55rem" }}>
-                      {pendingRequests.map((item) => (
-                        <div key={item.student.id} className="card" style={{ padding: "0.8rem", display: "grid", gap: "0.45rem", background: "rgba(255,255,255,0.55)" }}>
-                          <strong>{item.student.name}</strong>
-                          <div className="practice-meta">{item.student.email}</div>
-                          <div className="practice-meta">{new Date(item.requestedAt).toLocaleString(tr ? "tr-TR" : "en-US")}</div>
-                          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                            <button type="button" className="button button-secondary" onClick={() => handleApproval(item.student.id, "approve")}>{tr ? "Onayla" : "Approve"}</button>
-                            <button type="button" className="button button-secondary" onClick={() => handleApproval(item.student.id, "reject")}>{tr ? "Reddet" : "Reject"}</button>
-                          </div>
-                        </div>
-                      ))}
+          <div style={{ display: "grid", gap: "0.55rem" }}>
+            {filteredStudents.length ? (
+              filteredStudents.map((item) => (
+                <Link key={item.student.id} href={`/app/teacher/student/${item.student.id}`} className="card" style={{ padding: "1rem", display: "grid", gap: "0.5rem", background: "var(--surface-strong)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "flex-start", flexWrap: "wrap" }}>
+                    <div>
+                      <strong>{item.student.name}</strong>
+                      <div className="practice-meta" style={{ marginTop: "0.2rem" }}>{item.student.email}</div>
                     </div>
-                  ) : (
-                    <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Bekleyen katilim talebi yok." : "No pending join requests."}</p>
-                  )}
-                </div>
-
-                <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
-                  <strong>{tr ? "Toplu odev atama" : "Bulk homework assignment"}</strong>
-                  <input value={bulkHomework.title} onChange={(event) => setBulkHomework((current) => ({ ...current, title: event.target.value }))} placeholder={tr ? "Ornek: Part 2 akicilik odev paketi" : "Example: Part 2 fluency pack"} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }} />
-                  <textarea value={bulkHomework.instructions} onChange={(event) => setBulkHomework((current) => ({ ...current, instructions: event.target.value }))} rows={4} placeholder={tr ? "Tum sinifa gidecek odev yonergesi..." : "Instructions that will be sent to the entire class..."} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }} />
-                  <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.6rem" }}>
-                    <input value={bulkHomework.focusSkill} onChange={(event) => setBulkHomework((current) => ({ ...current, focusSkill: event.target.value }))} placeholder={tr ? "Odak skill" : "Focus skill"} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }} />
-                    <select value={bulkHomework.recommendedTaskType} onChange={(event) => setBulkHomework((current) => ({ ...current, recommendedTaskType: event.target.value as TaskType }))} style={selectStyle}>
-                      {[...IELTS_TASKS, ...TOEFL_TASKS].map((task) => (
-                        <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>
-                      ))}
-                    </select>
-                    <input type="number" min="1" max="21" value={bulkHomework.dueDays} onChange={(event) => setBulkHomework((current) => ({ ...current, dueDays: Number(event.target.value) || 7 }))} placeholder={tr ? "Teslim gunu" : "Due days"} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }} />
+                    <span className="pill">{item.averageScore ? item.averageScore.toFixed(1) : "-"}</span>
                   </div>
-                  <button type="button" className="button button-secondary" onClick={assignBulkHomework}>
-                    {tr ? "Tum secili ogrencilere ata" : "Assign to current class"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>
-                <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
-                  <strong>{tr ? "Class leaderboard" : "Class leaderboard"}</strong>
-                  {leaderboard.length ? (
-                    leaderboard.map((item, index) => (
-                      <div key={item.student.id} style={{ display: "grid", gridTemplateColumns: "36px minmax(0, 1fr) auto", gap: "0.8rem", alignItems: "center" }}>
-                        <span className="pill">#{index + 1}</span>
-                        <div>
-                          <strong>{item.student.name}</strong>
-                          <div className="practice-meta">{item.averageScore ? item.averageScore.toFixed(1) : "-"}</div>
-                        </div>
-                        <strong>{item.bestScore?.toFixed(1) ?? "-"}</strong>
-                      </div>
-                    ))
-                  ) : (
-                    <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Leaderboard icin veri yok." : "No data yet for leaderboard."}</p>
-                  )}
-                </div>
-
-                <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
-                  <strong>{tr ? "Gelisim leaderboard" : "Improvement leaderboard"}</strong>
-                  {improvementLeaderboard.length ? (
-                    improvementLeaderboard.map((item, index) => (
-                      <div key={item.student.id} style={{ display: "grid", gridTemplateColumns: "36px minmax(0, 1fr) auto", gap: "0.8rem", alignItems: "center" }}>
-                        <span className="pill">+{index + 1}</span>
-                        <div>
-                          <strong>{item.student.name}</strong>
-                          <div className="practice-meta">
-                            {item.lastTaskType ? humanizeTaskType(item.lastTaskType, tr) : tr ? "Son task yok" : "No recent task"}
-                          </div>
-                        </div>
-                        <strong style={{ color: (item.scoreDelta ?? 0) >= 0 ? "var(--success)" : "var(--accent-deep)" }}>
-                          {formatDelta(item.scoreDelta)}
-                        </strong>
-                      </div>
-                    ))
-                  ) : (
-                    <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Skor artis verisi henuz yeterli degil." : "Not enough score delta data yet."}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
-                <strong>{tr ? "Teacher class filters" : "Teacher class filters"}</strong>
-                <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.7rem" }}>
-                  <input
-                    value={studentSearch}
-                    onChange={(event) => setStudentSearch(event.target.value)}
-                    placeholder={tr ? "Ogrenci ara" : "Search students"}
-                    style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }}
-                  />
-                  <select value={filters.exam} onChange={(event) => setFilters((current) => ({ ...current, exam: event.target.value as "all" | ExamType }))} style={selectStyle}>
-                    <option value="all">{tr ? "Tum sinavlar" : "All exams"}</option>
-                    <option value="IELTS">IELTS</option>
-                    <option value="TOEFL">TOEFL</option>
-                  </select>
-                  <select value={filters.task} onChange={(event) => setFilters((current) => ({ ...current, task: event.target.value as "all" | TaskType }))} style={selectStyle}>
-                    <option value="all">{tr ? "Tum taskler" : "All tasks"}</option>
-                    {[...IELTS_TASKS, ...TOEFL_TASKS].map((task) => (
-                      <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>
-                    ))}
-                  </select>
-                  <select value={filters.skill} onChange={(event) => setFilters((current) => ({ ...current, skill: event.target.value }))} style={selectStyle}>
-                    <option value="all">{tr ? "Tum skilller" : "All skills"}</option>
-                    {filterSkillOptions.map((skill) => (
-                      <option key={skill} value={skill}>{translateCategoryLabel(skill, tr)}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid" style={{ gridTemplateColumns: "minmax(260px, 0.9fr) minmax(280px, 1.1fr)", gap: "0.85rem", alignItems: "start" }}>
-                <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
-                  <strong>{tr ? "Otomatik homework kurali" : "Auto homework rule"}</strong>
-                  <label style={{ display: "grid", gap: "0.3rem" }}>
-                    <span className="practice-meta">{tr ? "Aktif" : "Enabled"}</span>
-                    <input type="checkbox" checked={Boolean(rule?.enabled)} onChange={(event) => setRule((current) => current ? { ...current, enabled: event.target.checked } : current)} />
-                  </label>
-                  <label style={{ display: "grid", gap: "0.3rem" }}>
-                    <span className="practice-meta">{tr ? "Skor esigi" : "Score threshold"}</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max="9"
-                      step="0.1"
-                      value={rule?.scoreThreshold ?? 5.5}
-                      onChange={(event) => setRule((current) => current ? { ...current, scoreThreshold: Number(event.target.value) } : current)}
-                      style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: "0.3rem" }}>
-                    <span className="practice-meta">{tr ? "Teslim gunu" : "Due in days"}</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max="21"
-                      value={rule?.dueDays ?? 7}
-                      onChange={(event) => setRule((current) => current ? { ...current, dueDays: Number(event.target.value) } : current)}
-                      style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }}
-                    />
-                  </label>
-                  <label style={{ display: "grid", gap: "0.3rem" }}>
-                    <span className="practice-meta">{tr ? "Sinav filtresi" : "Exam filter"}</span>
-                    <select value={rule?.examType ?? "all"} onChange={(event) => setRule((current) => current ? { ...current, examType: event.target.value as HomeworkAutoAssignRule["examType"] } : current)} style={selectStyle}>
-                      <option value="all">{tr ? "Tum sinavlar" : "All exams"}</option>
-                      <option value="IELTS">IELTS</option>
-                      <option value="TOEFL">TOEFL</option>
-                    </select>
-                  </label>
-                  <label style={{ display: "grid", gap: "0.3rem" }}>
-                    <span className="practice-meta">{tr ? "Task filtresi" : "Task filter"}</span>
-                    <select value={rule?.taskType ?? "all"} onChange={(event) => setRule((current) => current ? { ...current, taskType: event.target.value as HomeworkAutoAssignRule["taskType"] } : current)} style={selectStyle}>
-                      <option value="all">{tr ? "Tum taskler" : "All tasks"}</option>
-                      {[...IELTS_TASKS, ...TOEFL_TASKS].map((task) => (
-                        <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label style={{ display: "grid", gap: "0.3rem" }}>
-                    <span className="practice-meta">{tr ? "Weak skill filtresi" : "Weak skill filter"}</span>
-                    <select value={rule?.focusSkill ?? ""} onChange={(event) => setRule((current) => current ? { ...current, focusSkill: event.target.value || null } : current)} style={selectStyle}>
-                      <option value="">{tr ? "Hepsi" : "Any skill"}</option>
-                      {filterSkillOptions.map((skill) => (
-                        <option key={skill} value={skill}>{translateCategoryLabel(skill, tr)}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-                    <button type="button" className="button button-secondary" onClick={saveAutoAssignRule}>{tr ? "Kurali kaydet" : "Save rule"}</button>
-                    <button type="button" className="button button-secondary" onClick={runAutoAssignNow}>{tr ? "Simdi calistir" : "Run now"}</button>
+                  <div className="grid" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.5rem" }}>
+                    <TeacherStat label={tr ? "Deneme" : "Attempts"} value={String(item.totalSessions)} />
+                    <TeacherStat label="Best" value={item.bestScore?.toFixed(1) ?? "-"} />
+                    <TeacherStat label={tr ? "Zayıf" : "Weak"} value={item.weakestSkill ? translateCategoryLabel(item.weakestSkill, tr) : "-"} />
+                    <TeacherStat label={tr ? "Artış" : "Delta"} value={formatDelta(item.scoreDelta)} />
                   </div>
-                </div>
+                </Link>
+              ))
+            ) : (
+              <div className="card" style={{ padding: "1rem", color: "var(--muted)" }}>
+                {tr ? "Bu filtrelerle eşleşen öğrenci yok." : "No students match the current filters."}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
-                <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
-                  <strong>{tr ? "Study list'i sinifla paylas" : "Share study list with class"}</strong>
-                  <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.6rem" }}>
-                    <select value={shareExamType} onChange={(event) => setShareExamType(event.target.value as ExamType)} style={selectStyle}>
-                      <option value="IELTS">IELTS</option>
-                      <option value="TOEFL">TOEFL</option>
-                    </select>
-                    <select value={shareTaskType} onChange={(event) => setShareTaskType(event.target.value as TaskType)} style={selectStyle}>
-                      {availableTasks.map((task) => (
-                        <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>
-                      ))}
-                    </select>
+      {/* ── 8. Leaderboards (when class selected) ───────────────────────────── */}
+      {selectedClass && (leaderboard.length > 0 || improvementLeaderboard.length > 0) && (
+        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem", alignItems: "start" }}>
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <span className="eyebrow">{tr ? "En yüksek skorlar" : "Top scorers"}</span>
+            {leaderboard.map((item, index) => (
+              <div key={item.student.id} style={{ display: "grid", gridTemplateColumns: "28px minmax(0, 1fr) auto", gap: "0.7rem", alignItems: "center" }}>
+                <span className="pill" style={{ fontSize: "0.8rem" }}>#{index + 1}</span>
+                <div>
+                  <strong>{item.student.name}</strong>
+                  <div className="practice-meta">{tr ? "Ort." : "Avg"} {item.averageScore ? item.averageScore.toFixed(1) : "-"}</div>
+                </div>
+                <strong>{item.bestScore?.toFixed(1) ?? "-"}</strong>
+              </div>
+            ))}
+          </div>
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <span className="eyebrow">{tr ? "En çok gelişenler" : "Most improved"}</span>
+            {improvementLeaderboard.length ? (
+              improvementLeaderboard.map((item, index) => (
+                <div key={item.student.id} style={{ display: "grid", gridTemplateColumns: "28px minmax(0, 1fr) auto", gap: "0.7rem", alignItems: "center" }}>
+                  <span className="pill" style={{ fontSize: "0.8rem" }}>+{index + 1}</span>
+                  <div>
+                    <strong>{item.student.name}</strong>
+                    <div className="practice-meta">{item.lastTaskType ? humanizeTaskType(item.lastTaskType, tr) : "-"}</div>
                   </div>
-                  <select value={sharePromptId} onChange={(event) => setSharePromptId(event.target.value)} style={selectStyle}>
-                    {availableSharePrompts.map((prompt) => (
-                      <option key={prompt.id} value={prompt.id}>{prompt.title}</option>
-                    ))}
-                  </select>
-                  <textarea
-                    value={shareNote}
-                    onChange={(event) => setShareNote(event.target.value)}
-                    rows={3}
-                    placeholder={tr ? "Sinifa kisa yonlendirme notu..." : "Short guidance note for the class..."}
-                    style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }}
-                  />
-                  <button type="button" className="button button-secondary" onClick={sharePromptToClass}>
-                    {tr ? "Prompt paylas" : "Share prompt"}
-                  </button>
+                  <strong style={{ color: (item.scoreDelta ?? 0) >= 0 ? "var(--success)" : "var(--accent-deep)" }}>
+                    {formatDelta(item.scoreDelta)}
+                  </strong>
                 </div>
-              </div>
+              ))
+            ) : (
+              <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Henüz yeterli delta verisi yok." : "Not enough score delta data yet."}</p>
+            )}
+          </div>
+        </section>
+      )}
 
-              <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "center", flexWrap: "wrap" }}>
-                  <strong>{tr ? "Sinifa duyuru gonder" : "Send class announcement"}</strong>
-                  <a className="button button-secondary" href={`/api/teacher/classes/${selectedClassId}/export`}>
-                    {tr ? "CSV rapor indir" : "Download CSV report"}
-                  </a>
-                </div>
-                <input value={announcementTitle} onChange={(event) => setAnnouncementTitle(event.target.value)} placeholder={tr ? "Duyuru basligi" : "Announcement title"} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)" }} />
-                <textarea value={announcementBody} onChange={(event) => setAnnouncementBody(event.target.value)} rows={3} placeholder={tr ? "Secili sinifa gidecek duyuru..." : "Announcement for the current class..."} style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }} />
-                <button type="button" className="button button-secondary" onClick={sendClassAnnouncement}>
-                  {tr ? "Duyuruyu gonder" : "Send announcement"}
-                </button>
-              </div>
+      {/* ── 9. Homework tools (when class selected) ─────────────────────────── */}
+      {selectedClass && (
+        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem", alignItems: "start" }}>
 
-              <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
-                <strong>{tr ? "Sinif shared study list" : "Class shared study list"}</strong>
-                {sharedItems.length ? (
-                  sharedItems.map((item) => (
-                    <div key={item.id} className="card" style={{ padding: "0.85rem", background: "rgba(29, 111, 117, 0.06)", display: "grid", gap: "0.4rem" }}>
-                      <strong>{item.title}</strong>
-                      <div className="practice-meta">{item.examType} · {humanizeTaskType(item.taskType, tr)}</div>
-                      {item.note ? <div className="practice-meta">{item.note}</div> : null}
-                      <button type="button" className="button button-secondary" onClick={() => removeSharedItem(item.id)}>
-                        {tr ? "Kaldir" : "Remove"}
+          {/* Bulk homework */}
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <span className="eyebrow">{tr ? "Toplu ödev" : "Bulk homework"}</span>
+            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Sınıfa ödev ata" : "Assign to whole class"}</h2>
+            <input
+              value={bulkHomework.title}
+              onChange={(event) => setBulkHomework((current) => ({ ...current, title: event.target.value }))}
+              placeholder={tr ? "Ödev başlığı" : "Homework title"}
+              style={{ padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)" }}
+            />
+            <textarea
+              value={bulkHomework.instructions}
+              onChange={(event) => setBulkHomework((current) => ({ ...current, instructions: event.target.value }))}
+              rows={3}
+              placeholder={tr ? "Tüm sınıfa gidecek yönergeler…" : "Instructions for the entire class…"}
+              style={{ padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }}
+            />
+            <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+              <select value={bulkHomework.recommendedTaskType} onChange={(event) => setBulkHomework((current) => ({ ...current, recommendedTaskType: event.target.value as TaskType }))} style={selectStyle}>
+                {[...IELTS_TASKS, ...TOEFL_TASKS].map((task) => (
+                  <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min="1"
+                max="21"
+                value={bulkHomework.dueDays}
+                onChange={(event) => setBulkHomework((current) => ({ ...current, dueDays: Number(event.target.value) || 7 }))}
+                placeholder={tr ? "Teslim günü" : "Due in days"}
+                style={{ padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)" }}
+              />
+            </div>
+            <button type="button" className="button button-primary" onClick={assignBulkHomework}>
+              {tr ? "Sınıfa ata" : "Assign to class"}
+            </button>
+          </div>
+
+          {/* Auto-assign rule */}
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <span className="eyebrow">{tr ? "Otomatik atama" : "Auto-assign"}</span>
+            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Düşük skor kuralı" : "Low-score rule"}</h2>
+            <label style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <input type="checkbox" checked={Boolean(rule?.enabled)} onChange={(event) => setRule((current) => current ? { ...current, enabled: event.target.checked } : current)} />
+              <span className="practice-meta">{tr ? "Otomatik atamayı etkinleştir" : "Enable auto-assign"}</span>
+            </label>
+            <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+              <label style={{ display: "grid", gap: "0.3rem" }}>
+                <span className="practice-meta">{tr ? "Skor eşiği" : "Score threshold"}</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="9"
+                  step="0.1"
+                  value={rule?.scoreThreshold ?? 5.5}
+                  onChange={(event) => setRule((current) => current ? { ...current, scoreThreshold: Number(event.target.value) } : current)}
+                  style={{ padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)" }}
+                />
+              </label>
+              <label style={{ display: "grid", gap: "0.3rem" }}>
+                <span className="practice-meta">{tr ? "Teslim günü" : "Due in days"}</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="21"
+                  value={rule?.dueDays ?? 7}
+                  onChange={(event) => setRule((current) => current ? { ...current, dueDays: Number(event.target.value) } : current)}
+                  style={{ padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)" }}
+                />
+              </label>
+              <select value={rule?.examType ?? "all"} onChange={(event) => setRule((current) => current ? { ...current, examType: event.target.value as HomeworkAutoAssignRule["examType"] } : current)} style={selectStyle}>
+                <option value="all">{tr ? "Tüm sınavlar" : "All exams"}</option>
+                <option value="IELTS">IELTS</option>
+                <option value="TOEFL">TOEFL</option>
+              </select>
+              <select value={rule?.taskType ?? "all"} onChange={(event) => setRule((current) => current ? { ...current, taskType: event.target.value as HomeworkAutoAssignRule["taskType"] } : current)} style={selectStyle}>
+                <option value="all">{tr ? "Tüm taskler" : "All tasks"}</option>
+                {[...IELTS_TASKS, ...TOEFL_TASKS].map((task) => (
+                  <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+              <button type="button" className="button button-secondary" onClick={saveAutoAssignRule}>{tr ? "Kuralı kaydet" : "Save rule"}</button>
+              <button type="button" className="button button-secondary" onClick={runAutoAssignNow}>{tr ? "Şimdi çalıştır" : "Run now"}</button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── 10. Study list share (when class selected) ──────────────────────── */}
+      {selectedClass && (
+        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem", alignItems: "start" }}>
+
+          {/* Share prompt */}
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <span className="eyebrow">{tr ? "Study list paylaş" : "Share study list"}</span>
+            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Sınıfa prompt ekle" : "Add prompt to class"}</h2>
+            <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+              <select value={shareExamType} onChange={(event) => setShareExamType(event.target.value as ExamType)} style={selectStyle}>
+                <option value="IELTS">IELTS</option>
+                <option value="TOEFL">TOEFL</option>
+              </select>
+              <select value={shareTaskType} onChange={(event) => setShareTaskType(event.target.value as TaskType)} style={selectStyle}>
+                {availableTasks.map((task) => (
+                  <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>
+                ))}
+              </select>
+            </div>
+            <select value={sharePromptId} onChange={(event) => setSharePromptId(event.target.value)} style={selectStyle}>
+              {availableSharePrompts.map((prompt) => (
+                <option key={prompt.id} value={prompt.id}>{prompt.title}</option>
+              ))}
+            </select>
+            <textarea
+              value={shareNote}
+              onChange={(event) => setShareNote(event.target.value)}
+              rows={2}
+              placeholder={tr ? "Kısa yönlendirme notu…" : "Short guidance note for the class…"}
+              style={{ padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }}
+            />
+            <button type="button" className="button button-primary" onClick={sharePromptToClass}>
+              {tr ? "Promptu paylaş" : "Share prompt"}
+            </button>
+          </div>
+
+          {/* Shared items */}
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <span className="eyebrow">{tr ? "Paylaşılan promptlar" : "Shared prompts"}</span>
+            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Sınıf study list" : "Class study list"}</h2>
+            {sharedItems.length ? (
+              <div style={{ display: "grid", gap: "0.55rem" }}>
+                {sharedItems.map((item) => (
+                  <div key={item.id} className="card" style={{ padding: "0.85rem", background: "rgba(29, 111, 117, 0.06)", display: "grid", gap: "0.35rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.6rem" }}>
+                      <strong style={{ fontSize: "0.95rem" }}>{item.title}</strong>
+                      <button type="button" className="button button-secondary" style={{ fontSize: "0.8rem", padding: "0.3rem 0.7rem" }} onClick={() => removeSharedItem(item.id)}>
+                        {tr ? "Kaldır" : "Remove"}
                       </button>
                     </div>
-                  ))
-                ) : (
-                  <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Bu sinif icin henuz study list paylasilmadi." : "No class study list has been shared yet."}</p>
-                )}
-              </div>
-
-              <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.75rem" }}>
-                <strong>{tr ? "Ogrenci ekle" : "Add student"}</strong>
-                <input
-                  value={studentEmail}
-                  onChange={(event) => setStudentEmail(event.target.value)}
-                  placeholder="student@example.com"
-                  style={{ padding: "0.9rem", borderRadius: 14, border: "1px solid var(--line)" }}
-                />
-                <button type="button" className="button button-secondary" onClick={addStudent}>
-                  {tr ? "Ogrenciyi ekle" : "Add student"}
-                </button>
-                <Link className="button button-secondary" href="/app/teacher/billing" style={{ justifyContent: "center" }}>
-                  {tr ? "Kurum paketini yonet" : "Manage institution plan"}
-                </Link>
-                <Link className="button button-secondary" href="/app/teacher/institution" style={{ justifyContent: "center" }}>
-                  {tr ? "Kurum analitigi" : "Institution analytics"}
-                </Link>
-                <Link className="button button-secondary" href="/app/teacher/compare" style={{ justifyContent: "center" }}>
-                  {tr ? "Ogrenci karsilastir" : "Compare students"}
-                </Link>
-              </div>
-
-              {notice ? <p style={{ color: "var(--success)", margin: 0 }}>{notice}</p> : null}
-              {error ? <p style={{ color: "var(--accent-deep)", margin: 0 }}>{error}</p> : null}
-
-              <div className="card" style={{ padding: "1rem", background: "rgba(217, 93, 57, 0.08)", display: "grid", gap: "0.7rem" }}>
-                <strong>{tr ? "Riskli ogrenci uyarilari" : "At-risk student warnings"}</strong>
-                {atRiskStudents.length ? atRiskStudents.map((item) => (
-                  <div key={item.student.id} style={{ display: "grid", gap: "0.25rem" }}>
-                    <strong>{item.student.name}</strong>
-                    <div className="practice-meta">{(item.riskFlags ?? []).join(" · ")}</div>
+                    <div className="practice-meta">{item.examType} · {humanizeTaskType(item.taskType, tr)}</div>
+                    {item.note && <div className="practice-meta">{item.note}</div>}
                   </div>
-                )) : (
-                  <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Su anda riskli gorunen ogrenci yok." : "No at-risk students detected right now."}</p>
-                )}
+                ))}
               </div>
+            ) : (
+              <p style={{ margin: 0, color: "var(--muted)" }}>
+                {tr ? "Henüz paylaşılan prompt yok." : "No prompts shared with this class yet."}
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
-              <div className="grid" style={{ gap: "0.8rem" }}>
-                {filteredStudents.length ? (
-                  filteredStudents.map((item) => (
-                    <Link key={item.student.id} href={`/app/teacher/student/${item.student.id}`} className="card" style={{ padding: "1rem", display: "grid", gap: "0.7rem", background: "var(--surface-strong)" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "flex-start" }}>
-                        <div>
-                          <strong>{item.student.name}</strong>
-                          <div className="practice-meta" style={{ marginTop: "0.35rem" }}>{item.student.email}</div>
-                        </div>
-                        <span className="pill">{item.averageScore || 0}</span>
-                      </div>
-                      <div className="grid" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.7rem" }}>
-                        <TeacherStat label={tr ? "Deneme" : "Attempts"} value={String(item.totalSessions)} />
-                        <TeacherStat label="Best" value={item.bestScore?.toFixed(1) ?? "-"} />
-                        <TeacherStat label={tr ? "Weakest" : "Weakest"} value={item.weakestSkill ? translateCategoryLabel(item.weakestSkill, tr) : "-"} />
-                        <TeacherStat label={tr ? "Artis" : "Delta"} value={formatDelta(item.scoreDelta)} />
-                      </div>
-                      <span style={{ color: "var(--accent-deep)", fontWeight: 700 }}>{tr ? "Ogrenci detayini ac" : "Open student detail"}</span>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="card" style={{ padding: "1rem" }}>
-                    {tr ? "Bu filtrelerle eslesen ogrenci yok." : "No students match the current filters."}
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="card" style={{ padding: "1rem" }}>
-              {tr ? "Sag tarafta ogrencileri gormek icin once soldan bir sinif sec." : "Select a class on the left to view students here."}
+      {/* ── 11. Announcement + Class settings (when class selected) ─────────── */}
+      {selectedClass && (
+        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem", alignItems: "start" }}>
+
+          {/* Announcement */}
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <span className="eyebrow">{tr ? "Duyuru" : "Announcement"}</span>
+            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Sınıfa mesaj gönder" : "Message the class"}</h2>
+            <input
+              value={announcementTitle}
+              onChange={(event) => setAnnouncementTitle(event.target.value)}
+              placeholder={tr ? "Duyuru başlığı" : "Announcement title"}
+              style={{ padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)" }}
+            />
+            <textarea
+              value={announcementBody}
+              onChange={(event) => setAnnouncementBody(event.target.value)}
+              rows={3}
+              placeholder={tr ? "Sınıfa gidecek duyuru…" : "Announcement for the class…"}
+              style={{ padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }}
+            />
+            <button type="button" className="button button-primary" onClick={sendClassAnnouncement}>
+              {tr ? "Duyuruyu gönder" : "Send announcement"}
+            </button>
+          </div>
+
+          {/* Class settings + add student */}
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <span className="eyebrow">{tr ? "Sınıf ayarları" : "Class settings"}</span>
+            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Katılım & öğrenci" : "Enrollment & students"}</h2>
+            <label style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <input type="checkbox" checked={classSettings.approvalRequired} onChange={(event) => setClassSettings((current) => ({ ...current, approvalRequired: event.target.checked }))} />
+              <span className="practice-meta">{tr ? "Katılım onayı gereksin" : "Require approval to join"}</span>
+            </label>
+            <textarea
+              value={classSettings.joinMessage}
+              onChange={(event) => setClassSettings((current) => ({ ...current, joinMessage: event.target.value }))}
+              rows={2}
+              placeholder={tr ? "Katılım sonrası öğrenciye kısa mesaj…" : "Short note students see after joining…"}
+              style={{ padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical" }}
+            />
+            <button type="button" className="button button-secondary" onClick={updateClassSettings}>
+              {tr ? "Ayarları kaydet" : "Save settings"}
+            </button>
+            <div style={{ display: "flex", gap: "0.6rem" }}>
+              <input
+                value={studentEmail}
+                onChange={(event) => setStudentEmail(event.target.value)}
+                placeholder="student@example.com"
+                style={{ flex: 1, padding: "0.8rem", borderRadius: 14, border: "1px solid var(--line)" }}
+              />
+              <button type="button" className="button button-secondary" onClick={addStudent}>
+                {tr ? "Ekle" : "Add"}
+              </button>
             </div>
-          )}
-        </div>
-      </section>
+            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+              <Link className="button button-secondary" href="/app/teacher/billing">
+                {tr ? "Kurum paketi" : "Institution plan"}
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
     </div>
   );
 }
 
 function TeacherStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card" style={{ padding: "0.8rem", background: "rgba(255,255,255,0.6)" }}>
-      <div style={{ color: "var(--muted)", fontSize: "0.84rem", marginBottom: "0.25rem" }}>{label}</div>
+    <div className="card" style={{ padding: "0.75rem", background: "rgba(255,255,255,0.6)" }}>
+      <div style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "0.2rem" }}>{label}</div>
       <strong>{value}</strong>
     </div>
   );
@@ -997,13 +1049,13 @@ function TeacherStat({ label, value }: { label: string; value: string }) {
 function translateCategoryLabel(label: string, tr: boolean) {
   if (!tr) return label;
   const labels: Record<string, string> = {
-    "Fluency and Coherence": "Akicilik ve Tutarlilik",
-    "Lexical Resource": "Kelime Kullanimi",
-    "Grammatical Range and Accuracy": "Dilbilgisi ve Dogruluk",
+    "Fluency and Coherence": "Akıcılık ve Tutarlılık",
+    "Lexical Resource": "Kelime Kullanımı",
+    "Grammatical Range and Accuracy": "Dilbilgisi ve Doğruluk",
     Pronunciation: "Telaffuz",
     Delivery: "Delivery",
-    "Language Use": "Dil kullanimi",
-    "Topic Development": "Icerik gelisimi"
+    "Language Use": "Dil kullanımı",
+    "Topic Development": "İçerik gelişimi"
   };
   return labels[label] ?? label;
 }
@@ -1029,7 +1081,7 @@ function formatDelta(value: number | null | undefined) {
 }
 
 const selectStyle: CSSProperties = {
-  padding: "0.85rem",
+  padding: "0.8rem",
   borderRadius: 14,
   border: "1px solid var(--line)",
   background: "white"
