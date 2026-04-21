@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Download, Link2, Linkedin, MessageCircle, Share2 } from "lucide-react";
+import { Download, Link2, MessageCircle, Share2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
 import { trackClientEvent } from "@/lib/analytics-client";
@@ -553,7 +553,9 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
                 <span>WhatsApp</span>
               </button>
               <button type="button" className="share-option" onClick={() => openSocialShare("linkedin")}>
-                <Linkedin size={22} />
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" />
+                </svg>
                 <span>LinkedIn</span>
               </button>
               <button type="button" className="share-option" onClick={() => void shareResult()}>
