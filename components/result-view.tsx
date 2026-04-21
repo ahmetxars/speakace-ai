@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Download, Link2, Linkedin, MessageCircle, Share2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
 import { trackClientEvent } from "@/lib/analytics-client";
@@ -42,6 +43,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
   const [audioDuration, setAudioDuration] = useState(0);
   const [activeTab, setActiveTab] = useState<"feedback" | "transcript" | "compare" | "history">("feedback");
   const [shareMessage, setShareMessage] = useState<string>("");
+  const [shareOpen, setShareOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -391,154 +393,153 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
 
   return (
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "2rem 1.5rem" }}>
-      <div
-        style={{
-          position: "relative",
-          padding: "2rem 1.5rem",
-          borderRadius: 32,
-          background: "#151e32",
-          border: "1px solid rgba(255,255,255,0.09)",
-          boxShadow: "0 24px 60px rgba(0,0,0,0.42), 0 0 0 1px rgba(255,255,255,0.05)",
-          marginBottom: "1.6rem",
-          overflow: "hidden"
-        }}
-      >
-        <div style={{ position: "absolute", top: -50, left: -50, width: 180, height: 180, borderRadius: 999, background: "linear-gradient(135deg, rgba(99,102,241,0.42), rgba(168,85,247,0.28))", filter: "blur(80px)", opacity: 0.75 }} />
-        <div style={{ position: "absolute", bottom: -60, right: -40, width: 180, height: 180, borderRadius: 999, background: "linear-gradient(135deg, rgba(99,102,241,0.24), rgba(168,85,247,0.34))", filter: "blur(80px)", opacity: 0.8 }} />
+      {/* ── SHARE CARD ─────────────────────────────────────────────────────── */}
+      <div className="rsc-card">
 
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            display: "grid",
-            gap: "1.5rem",
-            minHeight: 760
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem" }}>
-            <div style={{ fontSize: "1.35rem", fontWeight: 800, letterSpacing: "-0.03em", background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              SpeakAce
-            </div>
-            <div style={{ fontSize: "0.75rem", fontWeight: 700, background: "rgba(255,255,255,0.08)", padding: "0.45rem 0.8rem", borderRadius: 999, color: "#22d3ee", border: "1px solid rgba(34,211,238,0.2)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              AI Certified
-            </div>
+        {/* Top bar */}
+        <div className="rsc-topbar">
+          <span className="rsc-brand">SpeakAce</span>
+          <span className="rsc-exam-tag">{session.examType}</span>
+        </div>
+
+        {/* User */}
+        <div className="rsc-user-row">
+          <div className="rsc-avatar">
+            {avatarDataUrl ? (
+              <img src={avatarDataUrl} alt={learnerName} />
+            ) : (
+              <span>{avatarInitials}</span>
+            )}
           </div>
+          <div className="rsc-user-info">
+            <strong>{learnerName}</strong>
+            <span>{localeFlag} {streakLabel}</span>
+          </div>
+        </div>
 
-          {session.report ? (
-            <div style={{ display: "grid", gap: "1.35rem", justifyItems: "center", textAlign: "center", marginBottom: "auto" }}>
-              <div style={{ display: "grid", gap: "0.85rem", justifyItems: "center" }}>
-                <div style={{ display: "flex", gap: "0.7rem", alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
-                  <div style={{ width: 56, height: 56, borderRadius: 999, overflow: "hidden", background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)", color: "white", display: "grid", placeItems: "center", fontWeight: 900, fontSize: "1rem" }}>
-                    {avatarDataUrl ? (
-                      <img src={avatarDataUrl} alt={learnerName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : (
-                      avatarInitials
-                    )}
-                  </div>
-                  <div style={{ display: "grid", gap: "0.15rem", textAlign: "left" }}>
-                    <div style={{ color: "white", fontWeight: 700, fontSize: "1rem" }}>{learnerName}</div>
-                    <div style={{ color: "var(--text-muted)", fontSize: "0.84rem" }}>{localeFlag} {streakLabel}</div>
-                  </div>
-                </div>
-                <h1 style={{ fontSize: "clamp(1.4rem, 3vw, 2rem)", margin: 0, fontWeight: 800, color: "white", maxWidth: 620 }}>{session.prompt.title}</h1>
-                <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.95rem" }}>{examMeta.leftEyebrow} • {session.examType} • {session.difficulty}</p>
-              </div>
-
+        {session.report ? (
+          <>
+            {/* Score + meta */}
+            <div className="rsc-score-row">
               <div
+                className="rsc-score-ring"
                 style={{
-                  width: 236,
-                  height: 236,
-                  borderRadius: "50%",
-                  background: "conic-gradient(#22d3ee 0% 78%, rgba(255,255,255,0.1) 78% 100%)",
-                  display: "grid",
-                  placeItems: "center",
-                  boxShadow: "0 0 36px rgba(34,211,238,0.18)",
-                  animation: "pulse 3s infinite ease-in-out"
+                  background: `conic-gradient(#22d3ee 0% ${Math.round((session.report.overall / (session.examType === "TOEFL" ? 4 : 9)) * 100)}%, rgba(255,255,255,0.08) 0%)`
                 }}
               >
-                <div style={{ width: 206, height: 206, borderRadius: "50%", background: "#151e32", display: "grid", placeItems: "center" }}>
-                  <div style={{ display: "grid", justifyItems: "center" }}>
-                    <div style={{ fontSize: "4.2rem", fontWeight: 900, lineHeight: 1, background: "linear-gradient(to bottom, #fff, #cbd5e1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{session.report.overall}</div>
-                    <div style={{ fontSize: "0.88rem", color: "var(--text-muted)", marginTop: 4 }}>{tr ? "GENEL SKOR" : "OVERALL SCORE"}</div>
-                  </div>
+                <div className="rsc-score-inner">
+                  <strong>{session.report.overall}</strong>
+                  <span>{tr ? "GENEL SKOR" : "OVERALL"}</span>
                 </div>
               </div>
-
-              <div style={{ display: "grid", gap: "0.75rem", justifyItems: "center" }}>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", background: "rgba(16,185,129,0.15)", color: "#34d399", padding: "0.5rem 1rem", borderRadius: 999, fontWeight: 700, fontSize: "0.95rem", border: "1px solid rgba(16,185,129,0.2)" }}>
-                  <span>≈ {session.report.scaleLabel}</span>
-                </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.45rem", background: "rgba(255,255,255,0.08)", color: "#22d3ee", padding: "0.45rem 0.95rem", borderRadius: 999, fontWeight: 700, fontSize: "0.82rem", border: "1px solid rgba(34,211,238,0.14)" }}>
-                  {scoreBadge}
-                </div>
+              <div className="rsc-score-meta">
+                <span className="rsc-scale-label">≈ {session.report.scaleLabel}</span>
+                <span className="rsc-badge-label">{scoreBadge}</span>
                 {delta !== null ? (
-                  <div style={{ padding: "0.45rem 0.95rem", borderRadius: 999, background: delta >= 0 ? "rgba(16,185,129,0.16)" : "rgba(248,113,113,0.16)", color: delta >= 0 ? "#6ee7b7" : "#fca5a5", fontWeight: 800, fontSize: "0.92rem" }}>
-                    {delta >= 0 ? `+${delta}` : `${delta}`} {tr ? "son denemeye göre" : "vs last try"}
-                  </div>
+                  <span className={`rsc-delta ${delta >= 0 ? "rsc-delta-pos" : "rsc-delta-neg"}`}>
+                    {delta >= 0 ? `+${delta}` : `${delta}`} {tr ? "son denemeden" : "vs last try"}
+                  </span>
                 ) : null}
               </div>
+            </div>
 
-              <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                {session.report.categories.map((cat, index) => {
-                  const tone = getCategoryTone(index);
-                  const pct = Math.max(10, Math.min(100, (cat.score / (session.examType === "TOEFL" ? 4 : 9)) * 100));
-                  return (
-                    <div key={cat.category} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", padding: "1rem", borderRadius: 16, textAlign: "left" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem", gap: "0.5rem" }}>
-                        <span style={{ fontSize: "0.9rem", color: "var(--text-muted)" }}>{tr ? translateCategoryLabel(cat.label) : cat.label}</span>
-                        <span style={{ fontWeight: 800, color: "white" }}>{cat.score}</span>
-                      </div>
-                      <div style={{ width: "100%", height: 8, background: "rgba(255,255,255,0.1)", borderRadius: 999, overflow: "hidden" }}>
-                        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: tone.fill, boxShadow: tone.glow }} />
-                      </div>
+            {/* Category bars */}
+            <div className="rsc-categories">
+              {session.report.categories.map((cat, index) => {
+                const max = session.examType === "TOEFL" ? 4 : 9;
+                const pct = Math.max(6, Math.min(100, (cat.score / max) * 100));
+                return (
+                  <div key={cat.category} className="rsc-cat-row">
+                    <span>{tr ? translateCategoryLabel(cat.label) : cat.label}</span>
+                    <div className="rsc-cat-track">
+                      <div className="rsc-cat-fill" style={{ width: `${pct}%` }} data-idx={String(index)} />
                     </div>
-                  );
-                })}
-              </div>
+                    <strong>{cat.score}</strong>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : null}
 
-              <div style={{ width: "100%", paddingTop: "1.2rem", borderTop: "1px solid rgba(255,255,255,0.08)", display: "grid", gap: "0.8rem", justifyItems: "center" }}>
-                <p style={{ margin: 0, fontSize: "0.9rem", color: "var(--text-muted)" }}>{tr ? "SpeakAce AI tarafından analiz edildi." : "Analyzed by SpeakAce AI."}</p>
-                <p style={{ margin: 0, fontSize: "0.95rem", color: "rgba(255,255,255,0.76)", maxWidth: 560, lineHeight: 1.6 }}>{session.report.nextExercise}</p>
-              </div>
-            </div>
-          ) : null}
+        {/* Prompt + exam info */}
+        <div className="rsc-prompt-row">
+          <p>{session.prompt.title}</p>
+          <span>{examMeta.leftEyebrow} · {session.difficulty}</span>
+        </div>
 
-          <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-              <button type="button" className="button button-secondary" onClick={() => void downloadScoreImage()}>
-                {tr ? "PNG indir" : "Download PNG"}
-              </button>
-              <button type="button" className="button button-primary" onClick={() => void shareResult()}>
-                {tr ? "Hızlı paylaş" : "Quick share"}
-              </button>
-            </div>
-            <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
-              <button type="button" className="button button-secondary" onClick={() => openSocialShare("x")}>Share to X</button>
-              <button type="button" className="button button-secondary" onClick={() => openSocialShare("whatsapp")}>WhatsApp</button>
-              <button type="button" className="button button-secondary" onClick={() => openSocialShare("linkedin")}>LinkedIn</button>
-            </div>
-          </div>
-          {shareMessage ? <p style={{ margin: 0, color: "rgba(255,255,255,0.68)", fontSize: "0.88rem" }}>{shareMessage}</p> : null}
+        {/* Footer */}
+        <div className="rsc-footer">
+          <span className="rsc-footer-tag">
+            {tr ? "SpeakAce AI ile speaking pratiği" : "Practice IELTS / TOEFL speaking with AI"}
+          </span>
+          <span className="rsc-domain">speakace.ai</span>
         </div>
       </div>
 
-      {session.report ? (
-        <div style={{ display: "grid", gap: "0.75rem", marginBottom: "2rem" }}>
-          {session.report.categories.map((cat) => {
-            const max = session.examType === "TOEFL" ? 4 : 9;
-            const pct = Math.round((cat.score / max) * 100);
-            return (
-              <div key={cat.category} style={{ display: "grid", gap: "0.35rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.88rem", fontWeight: 600 }}>{tr ? translateCategoryLabel(cat.label) : cat.label}</span>
-                  <span style={{ fontSize: "0.95rem", fontWeight: 800 }}>{cat.score}</span>
-                </div>
-                <div style={{ height: 8, borderRadius: 999, background: "var(--border)", overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: "var(--primary)", transition: "width 0.6s ease" }} />
-                </div>
-              </div>
-            );
-          })}
+      {/* ── ACTIONS ────────────────────────────────────────────────────────── */}
+      <div className="rsc-actions">
+        <Link className="button button-secondary" href={retryHref}>
+          {tr ? "Tekrar dene" : "Retry"}
+        </Link>
+        {session.report ? (
+          <button type="button" className="button button-primary" onClick={() => setShareOpen(true)}>
+            <Share2 size={15} />
+            {tr ? "Paylaş" : "Share result"}
+          </button>
+        ) : null}
+      </div>
+
+      {/* ── SHARE MODAL ────────────────────────────────────────────────────── */}
+      {shareOpen ? (
+        <div className="share-overlay" onClick={() => setShareOpen(false)}>
+          <div className="share-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="share-sheet-handle" />
+            <strong className="share-sheet-title">
+              {tr ? "Sonucunu paylaş" : "Share your result"}
+            </strong>
+            <p className="share-sheet-body">
+              {tr
+                ? "Sonuç kartını PNG olarak indir veya sosyal medyada paylaş."
+                : "Download your result card as PNG or share it on social media."}
+            </p>
+            <div className="share-options">
+              <button
+                type="button"
+                className="share-option"
+                onClick={() => { void downloadScoreImage(); setShareOpen(false); }}
+              >
+                <Download size={22} />
+                <span>{tr ? "PNG indir" : "Download"}</span>
+              </button>
+              <button type="button" className="share-option" onClick={() => openSocialShare("x")}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.259 5.63L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
+                </svg>
+                <span>X / Twitter</span>
+              </button>
+              <button type="button" className="share-option" onClick={() => openSocialShare("whatsapp")}>
+                <MessageCircle size={22} />
+                <span>WhatsApp</span>
+              </button>
+              <button type="button" className="share-option" onClick={() => openSocialShare("linkedin")}>
+                <Linkedin size={22} />
+                <span>LinkedIn</span>
+              </button>
+              <button type="button" className="share-option" onClick={() => void shareResult()}>
+                <Link2 size={22} />
+                <span>{tr ? "Link kopyala" : "Copy link"}</span>
+              </button>
+            </div>
+            {shareMessage ? <p className="share-status-msg">{shareMessage}</p> : null}
+            <button
+              type="button"
+              className="button button-secondary share-sheet-close"
+              onClick={() => setShareOpen(false)}
+            >
+              {tr ? "Kapat" : "Close"}
+            </button>
+          </div>
         </div>
       ) : null}
 
@@ -1047,9 +1048,7 @@ function buildScoreCardSvg(input: {
         <text x="168" y="33" text-anchor="middle" fill="#34d399" font-size="24" font-weight="700" font-family="Arial, sans-serif">≈ ${escapeXml(input.scaleLabel)}</text>
       </g>
       ${deltaBadge}
-      <foreignObject x="140" y="780" width="1120" height="80">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Arial, sans-serif; color: rgba(148,163,184,1); font-size: 24px; text-align: center; line-height: 1.4;">${escapeHtml(truncateForCard(input.examLine, 44))}</div>
-      </foreignObject>
+      <text x="700" y="806" text-anchor="middle" fill="rgba(148,163,184,1)" font-size="24" font-family="Arial, sans-serif">${escapeXml(truncateForCard(input.examLine, 44))}</text>
 
       ${rows}
 
