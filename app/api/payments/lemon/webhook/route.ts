@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import { applyBillingPlanByEmail, applyInstitutionBillingByUserId, recordBillingEvent } from "@/lib/store";
+import {
+  applyBillingPlanByEmail,
+  applyBillingPlanByUserId,
+  applyInstitutionBillingByUserId,
+  recordBillingEvent
+} from "@/lib/store";
 import {
   getLemonCustomerId,
   getLemonEmail,
@@ -93,15 +98,28 @@ export async function POST(request: Request) {
         seatCount: getInstitutionSeatCount(payload)
       });
     }
-  } else if (email) {
-    // Regular individual subscription
-    await applyBillingPlanByEmail({
-      email,
-      plan: nextPlan,
-      billingStatus: status,
-      providerCustomerId,
-      providerSubscriptionId
-    });
+  } else {
+    // Individual subscription — prefer the authenticated user id captured at checkout,
+    // then fall back to email to support older checkout links.
+    const updatedByUserId = userId
+      ? await applyBillingPlanByUserId({
+          userId,
+          plan: nextPlan,
+          billingStatus: status,
+          providerCustomerId,
+          providerSubscriptionId
+        })
+      : null;
+
+    if (!updatedByUserId && email) {
+      await applyBillingPlanByEmail({
+        email,
+        plan: nextPlan,
+        billingStatus: status,
+        providerCustomerId,
+        providerSubscriptionId
+      });
+    }
   }
 
   return NextResponse.json({ received: true });

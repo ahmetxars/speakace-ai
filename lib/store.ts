@@ -792,6 +792,56 @@ export async function getActiveBillingPlanForEmail(email: string): Promise<Membe
   return rows[0]?.plan ?? null;
 }
 
+export async function syncBillingStateForMember(member: MemberProfile) {
+  if (!hasDatabaseUrl()) return member;
+
+  const normalizedEmail = member.email.trim().toLowerCase();
+  const sql = getSql();
+  const rows = await sql<
+    Array<{
+      plan: MemberProfile["plan"];
+      billingStatus: BillingStatus;
+      providerCustomerId: string | null;
+      providerSubscriptionId: string | null;
+    }>
+  >`
+    select
+      plan,
+      billing_status as "billingStatus",
+      provider_customer_id as "providerCustomerId",
+      provider_subscription_id as "providerSubscriptionId"
+    from billing_events
+    where (
+      user_id = ${member.id}
+      or lower(user_email) = ${normalizedEmail}
+    )
+      and coalesce(payload_json->'meta'->'custom_data'->>'type', '') <> 'institution'
+    order by created_at desc
+    limit 1
+  `;
+
+  const latest = rows[0];
+  if (!latest) return member;
+
+  const hasChange =
+    latest.plan !== member.plan ||
+    latest.billingStatus !== (member.billingStatus ?? "free") ||
+    (latest.providerCustomerId ?? null) !== (member.lemonCustomerId ?? null) ||
+    (latest.providerSubscriptionId ?? null) !== (member.lemonSubscriptionId ?? null);
+
+  if (!hasChange) return member;
+
+  return (
+    (await applyBillingPlanByUserId({
+      userId: member.id,
+      plan: latest.plan,
+      billingStatus: latest.billingStatus,
+      providerCustomerId: latest.providerCustomerId,
+      providerSubscriptionId: latest.providerSubscriptionId
+    })) ?? member
+  );
+}
+
 export async function applyBillingPlanByEmail(input: {
   email: string;
   plan: MemberProfile["plan"];
@@ -824,7 +874,54 @@ export async function applyBillingPlanByEmail(input: {
 
   const member = await getMemberByEmail(normalizedEmail);
   if (!member) return null;
-  return upsertMember({ ...member, plan: input.plan });
+  return upsertMember({
+    ...member,
+    plan: input.plan,
+    billingStatus: input.billingStatus,
+    lemonCustomerId: input.providerCustomerId ?? member.lemonCustomerId ?? null,
+    lemonSubscriptionId: input.providerSubscriptionId ?? member.lemonSubscriptionId ?? null
+  });
+}
+
+export async function applyBillingPlanByUserId(input: {
+  userId: string;
+  plan: MemberProfile["plan"];
+  billingStatus: BillingStatus;
+  providerCustomerId?: string | null;
+  providerSubscriptionId?: string | null;
+}) {
+  const normalizedUserId = input.userId.trim();
+  if (!normalizedUserId) return null;
+
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const rows = await sql<MemberProfile[]>`
+      update users
+      set
+        plan = ${input.plan},
+        billing_status = ${input.billingStatus},
+        lemon_customer_id = coalesce(${input.providerCustomerId ?? null}, lemon_customer_id),
+        lemon_subscription_id = coalesce(${input.providerSubscriptionId ?? null}, lemon_subscription_id)
+      where id = ${normalizedUserId}
+      returning
+        id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan,
+        billing_status as "billingStatus", lemon_customer_id as "lemonCustomerId", lemon_subscription_id as "lemonSubscriptionId",
+        trial_ends_at as "trialEndsAt", referral_code_used as "referralCodeUsed",
+        email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+    `;
+
+    return rows[0] ? withAdminPrivileges(rows[0]) : null;
+  }
+
+  const member = await getMember(normalizedUserId);
+  if (!member) return null;
+  return upsertMember({
+    ...member,
+    plan: input.plan,
+    billingStatus: input.billingStatus,
+    lemonCustomerId: input.providerCustomerId ?? member.lemonCustomerId ?? null,
+    lemonSubscriptionId: input.providerSubscriptionId ?? member.lemonSubscriptionId ?? null
+  });
 }
 
 export async function applyInstitutionBillingByUserId(input: {
