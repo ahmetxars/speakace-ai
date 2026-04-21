@@ -1,6 +1,13 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { createMemberProfile, createGuestProfile } from "@/lib/membership";
-import { createSession, evaluateStoredSession, getProgressSummary, resetStore, uploadSessionAudio } from "@/lib/store";
+import {
+  applyBillingPlanByUserId,
+  createSession,
+  evaluateStoredSession,
+  getProgressSummary,
+  resetStore,
+  uploadSessionAudio
+} from "@/lib/store";
 import { upsertMember } from "@/lib/store";
 
 describe("session store", () => {
@@ -77,5 +84,23 @@ describe("session store", () => {
     expect(summary.totalSessions).toBe(1);
     expect(summary.averageScore).toBeGreaterThan(0);
     expect(summary.recentSessions).toHaveLength(1);
+  });
+
+  it("applies a paid plan by user id when checkout email differs", async () => {
+    const member = createMemberProfile("account@example.com", "Account Owner");
+    await upsertMember(member);
+
+    const updated = await applyBillingPlanByUserId({
+      userId: member.id,
+      plan: "pro",
+      billingStatus: "active",
+      providerCustomerId: "customer_123",
+      providerSubscriptionId: "subscription_123"
+    });
+
+    expect(updated?.plan).toBe("pro");
+    expect(updated?.billingStatus).toBe("active");
+    expect(updated?.lemonCustomerId).toBe("customer_123");
+    expect(updated?.lemonSubscriptionId).toBe("subscription_123");
   });
 });

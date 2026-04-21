@@ -44,7 +44,7 @@ export function getLemonEmail(payload: LemonPayload) {
 export function getLemonUserId(payload: LemonPayload) {
   const customData = payload.meta?.custom_data ?? {};
   const userId = customData.user_id ?? customData.userid;
-  return typeof userId === "string" ? userId : null;
+  return typeof userId === "string" || typeof userId === "number" ? String(userId) : null;
 }
 
 export function getLemonCustomerId(payload: LemonPayload) {
