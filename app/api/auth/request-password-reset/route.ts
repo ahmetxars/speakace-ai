@@ -4,6 +4,7 @@ import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const exposeAuthUrls = process.env.APP_ENV !== "production";
     const body = await request.json();
     const email = String(body.email ?? "").trim().toLowerCase();
     const ip = getRequestIp(request);
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
       ok: true,
       message: "If that account exists, a password reset link is ready.",
       emailSent: "emailSent" in result ? result.emailSent : false,
-      resetUrl: "resetUrl" in result ? result.resetUrl : undefined
+      ...(exposeAuthUrls && "resetUrl" in result ? { resetUrl: result.resetUrl } : {})
     });
   } catch (error) {
     return NextResponse.json(

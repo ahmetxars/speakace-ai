@@ -126,7 +126,7 @@ export default async function SharedResultPage({ params }: { params: Promise<{ s
 
           <div className="rsc-footer">
             <span className="rsc-footer-tag">{rankMeta.countrySignal}</span>
-            <span className="rsc-domain">speakace.ai</span>
+            <span className="rsc-domain">speakace.org</span>
           </div>
         </div>
 

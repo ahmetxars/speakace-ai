@@ -1,8 +1,15 @@
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 import { WritingResultView } from "@/components/writing-result-view";
+import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { getWritingSession, getWritingSummary } from "@/lib/writing-store";
 
 export default async function WritingResultPage({ params }: { params: Promise<{ id: string }> }) {
+  const profile = await getAuthenticatedUserFromCookies();
+  if (!profile || profile.role === "guest") {
+    redirect("/auth");
+  }
+
   const { id } = await params;
   const session = await getWritingSession(id);
 
@@ -20,6 +27,10 @@ export default async function WritingResultPage({ params }: { params: Promise<{ 
         </div>
       </main>
     );
+  }
+
+  if (session.userId !== profile.id && !profile.isAdmin) {
+    notFound();
   }
 
   const summary = await getWritingSummary(session.userId);

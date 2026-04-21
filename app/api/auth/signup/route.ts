@@ -14,6 +14,7 @@ import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const exposeAuthUrls = process.env.APP_ENV !== "production";
     const ip = getRequestIp(request);
     const limit = checkRateLimit({
       key: `signup:${ip}`,
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
       profile,
       verificationRequired: !autoVerified,
       emailSent: "emailSent" in verification ? verification.emailSent : false,
-      verificationUrl: "verificationUrl" in verification ? verification.verificationUrl : undefined,
+      ...(exposeAuthUrls && "verificationUrl" in verification ? { verificationUrl: verification.verificationUrl } : {}),
       classJoinMessage
     });
   } catch (error) {

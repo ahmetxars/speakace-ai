@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
+import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { getAudioPayloadStats, hasOpenAiKey, transcribeAudio } from "@/lib/server/openai";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 import { getSession, uploadSessionAudio } from "@/lib/store";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const profile = await getAuthenticatedUserFromCookies();
+  if (!profile || profile.role === "guest") {
+    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+  }
+
   const body = await request.json();
   const { id } = await params;
   const ip = getRequestIp(request);
@@ -18,7 +24,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const audioBase64 = typeof body.audioBase64 === "string" ? body.audioBase64 : "";
   const existing = await getSession(id);
 
-  if (!existing) {
+  if (!existing || (existing.userId !== profile.id && !profile.isAdmin)) {
     return NextResponse.json({ error: "Session not found." }, { status: 404 });
   }
 

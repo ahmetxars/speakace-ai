@@ -94,6 +94,7 @@ export function PracticeConsole() {
   const searchParams = useSearchParams();
   const { currentUser, language } = useAppState();
   const tr = language === "tr";
+  const canPractice = Boolean(currentUser && currentUser.role !== "guest");
 
   const [examType, setExamType] = useState<ExamType>("IELTS");
   const [taskType, setTaskType] = useState<TaskType>("ielts-part-1");
@@ -131,6 +132,7 @@ export function PracticeConsole() {
     const nextTask = searchParams.get("taskType");
     const nextDifficulty = searchParams.get("difficulty");
     const nextPromptId = searchParams.get("promptId");
+    const nextRunMode = searchParams.get("runMode");
 
     if (nextExam === "IELTS" || nextExam === "TOEFL") {
       setExamType(nextExam);
@@ -140,6 +142,9 @@ export function PracticeConsole() {
     }
     if (nextDifficulty && ["Starter", "Target", "Stretch"].includes(nextDifficulty)) {
       setDifficulty(nextDifficulty as Difficulty);
+    }
+    if (nextRunMode && ["drill", "simulation", "pronunciation", "interview"].includes(nextRunMode)) {
+      setRunMode(nextRunMode as RunMode);
     }
     setPreferredPromptId(nextPromptId ?? undefined);
   }, [searchParams]);
@@ -158,16 +163,16 @@ export function PracticeConsole() {
   }, [examType]);
 
   useEffect(() => {
-    if (!currentUser) {
+    if (!canPractice) {
       setSummary(emptySummary);
       return;
     }
 
-    fetch(`/api/progress/summary?userId=${encodeURIComponent(currentUser.id)}`)
+    fetch("/api/progress/summary")
       .then((response) => response.json())
       .then((data: ProgressSummary) => setSummary(data))
       .catch(() => setSummary(emptySummary));
-  }, [currentUser]);
+  }, [canPractice]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -328,8 +333,8 @@ export function PracticeConsole() {
       return false;
     }
 
-    if (!currentUser) {
-      setError(tr ? "Kullanıcı profili henüz yükleniyor. Lütfen birkaç saniye bekle." : "User profile is loading. Please wait a moment.");
+    if (!canPractice) {
+      setError(tr ? "Practice için giriş yapman gerekiyor." : "You need to sign in to start practice.");
       return false;
     }
 
@@ -428,7 +433,7 @@ export function PracticeConsole() {
       setStatus(tr ? "Speaking calismasi icin mikrofon izni gerekli." : "Microphone access is required for speaking practice.");
       return false;
     }
-  }, [cleanupMedia, currentUser, evaluateSessionNow, tr]);
+  }, [canPractice, cleanupMedia, currentUser, evaluateSessionNow, tr]);
 
   const beginRecording = useCallback(async () => {
     if (!recorderRef.current) {
@@ -545,8 +550,7 @@ export function PracticeConsole() {
         taskType: requestedTaskType,
         difficulty: requestedDifficulty,
         promptId: requestedPromptId,
-        customPrompt,
-        userId: currentUser?.id
+        customPrompt
       })
     });
 
@@ -593,14 +597,19 @@ export function PracticeConsole() {
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     const quickStart = searchParams.get("quickStart") === "1";
+    const requestedRunMode = searchParams.get("runMode");
 
     if (!quickStart || autoStartedRef.current || mode !== "idle" || session) {
       return;
     }
 
+    if (requestedRunMode && requestedRunMode !== runMode) {
+      return;
+    }
+
     autoStartedRef.current = true;
     void startSession();
-  }, [mode, searchParams, session]);
+  }, [mode, runMode, searchParams, session]);
   /* eslint-enable react-hooks/exhaustive-deps */
 
   const endEarly = useCallback(() => {
@@ -990,7 +999,7 @@ export function PracticeConsole() {
                   transition: "all 0.15s",
                   cursor: "pointer"
                 }}
-                onClick={() => !currentUser || mode !== "idle" ? undefined : void pickPromptAndStart(prompt.id)}
+                onClick={() => !canPractice || mode !== "idle" ? undefined : void pickPromptAndStart(prompt.id)}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, marginBottom: "0.2rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prompt.title}</div>
@@ -1000,7 +1009,7 @@ export function PracticeConsole() {
                   type="button"
                   className="button button-primary"
                   onClick={e => { e.stopPropagation(); void pickPromptAndStart(prompt.id); }}
-                  disabled={!currentUser || mode !== "idle"}
+                  disabled={!canPractice || mode !== "idle"}
                   style={{ flexShrink: 0, padding: "0.45rem 1rem", fontSize: "0.85rem" }}
                 >
                   {tr ? "Başla" : "Start"}
@@ -1028,7 +1037,7 @@ export function PracticeConsole() {
                       <div style={{ fontWeight: 600, fontSize: "0.9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prompt.title}</div>
                       <div style={{ fontSize: "0.78rem", color: "var(--muted-foreground)" }}>{humanizeTaskType(prompt.taskType, tr)} · {tr ? translateDifficulty(prompt.difficulty) : prompt.difficulty}</div>
                     </div>
-                    <button type="button" className="button button-secondary" onClick={() => void pickPromptAndStart(prompt.id)} disabled={!currentUser || mode !== "idle"} style={{ padding: "0.4rem 0.9rem", fontSize: "0.82rem", flexShrink: 0 }}>
+                    <button type="button" className="button button-secondary" onClick={() => void pickPromptAndStart(prompt.id)} disabled={!canPractice || mode !== "idle"} style={{ padding: "0.4rem 0.9rem", fontSize: "0.82rem", flexShrink: 0 }}>
                       {tr ? "Başlat" : "Start"}
                     </button>
                   </div>
@@ -1172,7 +1181,7 @@ export function PracticeConsole() {
           className="button button-primary"
           type="button"
           onClick={() => void startSession()}
-          disabled={!currentUser || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
+          disabled={!canPractice || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
           style={{ width: "100%", padding: "1rem", fontSize: "1rem", fontWeight: 700, borderRadius: 14 }}
         >
           {mode === "saving"

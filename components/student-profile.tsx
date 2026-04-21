@@ -55,7 +55,7 @@ function normalizeProfile(profile: StudentProfileType | null): StudentProfileTyp
 }
 
 export function StudentProfile() {
-  const { currentUser, language } = useAppState();
+  const { currentUser, language, signedIn } = useAppState();
   const tr = language === "tr";
   const [profile, setProfile] = useState<StudentProfileType | null>(null);
   const [summary, setSummary] = useState<ProgressSummary>(emptySummary);
@@ -113,12 +113,12 @@ export function StudentProfile() {
   }, []);
 
   useEffect(() => {
-    if (!currentUser?.id) return;
-    fetch(`/api/progress/summary?userId=${encodeURIComponent(currentUser.id)}`)
+    if (!signedIn || !currentUser || currentUser.role === "guest") return;
+    fetch("/api/progress/summary")
       .then((response) => response.json())
       .then((data: ProgressSummary) => setSummary(data))
       .catch(() => setSummary(emptySummary));
-  }, [currentUser?.id]);
+  }, [currentUser, signedIn]);
 
   const profileReadiness = useMemo(() => {
     if (!profile?.targetScore || !summary.averageScore) {

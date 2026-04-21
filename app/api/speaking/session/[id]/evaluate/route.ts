@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
+import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 import { evaluateStoredSession, getSession } from "@/lib/store";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const profile = await getAuthenticatedUserFromCookies();
+  if (!profile || profile.role === "guest") {
+    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+  }
+
   const { id } = await params;
   const ip = getRequestIp(request);
   const limit = checkRateLimit({
@@ -15,7 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
   const existing = await getSession(id);
 
-  if (!existing) {
+  if (!existing || (existing.userId !== profile.id && !profile.isAdmin)) {
     return NextResponse.json({ error: "Session not found." }, { status: 404 });
   }
 

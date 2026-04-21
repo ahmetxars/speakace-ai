@@ -1,8 +1,15 @@
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 import { SessionReplay } from "@/components/session-replay";
+import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { getProgressSummary, getSession } from "@/lib/store";
 
 export default async function SessionReplayPage({ params }: { params: Promise<{ id: string }> }) {
+  const profile = await getAuthenticatedUserFromCookies();
+  if (!profile || profile.role === "guest") {
+    redirect("/auth");
+  }
+
   const { id } = await params;
   const session = await getSession(id);
   if (!session) {
@@ -25,6 +32,9 @@ export default async function SessionReplayPage({ params }: { params: Promise<{ 
         </div>
       </main>
     );
+  }
+  if (session.userId !== profile.id && !profile.isAdmin) {
+    notFound();
   }
   const summary = await getProgressSummary(session.userId);
   return <SessionReplay session={session} summary={summary} />;

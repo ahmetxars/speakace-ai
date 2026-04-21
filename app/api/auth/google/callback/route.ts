@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { isAdminEmail, withAdminPrivileges } from "@/lib/admin";
@@ -29,6 +30,23 @@ interface GoogleUserInfo {
   name?: string;
   given_name?: string;
   picture?: string;
+}
+
+const GOOGLE_OAUTH_STATE_COOKIE = "speakace_google_oauth_state";
+
+function signGoogleState(payload: string, secret: string) {
+  return createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+function clearGoogleOAuthStateCookie(response: NextResponse) {
+  response.cookies.set(GOOGLE_OAUTH_STATE_COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.APP_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0
+  });
+  return response;
 }
 
 async function exchangeCodeForTokens(code: string): Promise<GoogleTokenResponse> {
@@ -162,36 +180,47 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const error = searchParams.get("error");
   const rawState = searchParams.get("state");
+  const cookieStore = await cookies();
+  const expectedNonce = cookieStore.get(GOOGLE_OAUTH_STATE_COOKIE)?.value;
 
   if (error || !code) {
-    return NextResponse.redirect(`${siteUrl}/auth?error=google_denied`);
+    return clearGoogleOAuthStateCookie(NextResponse.redirect(`${siteUrl}/auth?error=google_denied`));
   }
 
   try {
+    if (!rawState || !expectedNonce) {
+      return clearGoogleOAuthStateCookie(NextResponse.redirect(`${siteUrl}/auth?error=google_state_invalid`));
+    }
+
+    const [payload, signature] = rawState.split(".", 2);
+    if (!payload || !signature || signGoogleState(payload, clientSecret) !== signature) {
+      return clearGoogleOAuthStateCookie(NextResponse.redirect(`${siteUrl}/auth?error=google_state_invalid`));
+    }
+
+    const parsedState = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
+      nonce?: string | null;
+      cta?: string | null;
+      invite?: string | null;
+    };
+
+    if (parsedState.nonce !== expectedNonce) {
+      return clearGoogleOAuthStateCookie(NextResponse.redirect(`${siteUrl}/auth?error=google_state_invalid`));
+    }
+
     const tokens = await exchangeCodeForTokens(code);
 
     if (tokens.error || !tokens.access_token) {
-      return NextResponse.redirect(`${siteUrl}/auth?error=google_token_failed`);
+      return clearGoogleOAuthStateCookie(NextResponse.redirect(`${siteUrl}/auth?error=google_token_failed`));
     }
 
     const googleUser = await getGoogleUserInfo(tokens.access_token);
 
     if (!googleUser.email) {
-      return NextResponse.redirect(`${siteUrl}/auth?error=google_no_email`);
+      return clearGoogleOAuthStateCookie(NextResponse.redirect(`${siteUrl}/auth?error=google_no_email`));
     }
 
-    let attributionPath: string | null = null;
-    let inviteReferrerId: string | null = null;
-    if (rawState) {
-      try {
-        const parsed = JSON.parse(Buffer.from(rawState, "base64url").toString("utf8")) as { cta?: string | null; invite?: string | null };
-        attributionPath = typeof parsed.cta === "string" ? parsed.cta : null;
-        inviteReferrerId = typeof parsed.invite === "string" ? parsed.invite : null;
-      } catch {
-        attributionPath = null;
-        inviteReferrerId = null;
-      }
-    }
+    const attributionPath = typeof parsedState.cta === "string" ? parsedState.cta : null;
+    const inviteReferrerId = typeof parsedState.invite === "string" ? parsedState.invite : null;
 
     const { profile, isNewUser } = await findOrCreateGoogleUser(googleUser);
     if (isNewUser && inviteReferrerId) {
@@ -206,12 +235,11 @@ export async function GET(request: Request) {
     }
     const session = await createAuthSession(profile.id);
 
-    const cookieStore = await cookies();
-    cookieStore.set(getSessionCookieName(), session.token, getSessionCookieOptions(session.expiresAt));
-
-    return NextResponse.redirect(`${siteUrl}/app`);
+    const response = NextResponse.redirect(`${siteUrl}/app`);
+    response.cookies.set(getSessionCookieName(), session.token, getSessionCookieOptions(session.expiresAt));
+    return clearGoogleOAuthStateCookie(response);
   } catch (err) {
     console.error("[Google OAuth callback error]", err);
-    return NextResponse.redirect(`${siteUrl}/auth?error=google_failed`);
+    return clearGoogleOAuthStateCookie(NextResponse.redirect(`${siteUrl}/auth?error=google_failed`));
   }
 }

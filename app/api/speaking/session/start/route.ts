@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { createSession } from "@/lib/store";
 
 export async function POST(request: Request) {
   try {
+    const profile = await getAuthenticatedUserFromCookies();
+    if (!profile || profile.role === "guest") {
+      return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+    }
+
     const body = await request.json();
     const ip = getRequestIp(request);
-    const userId = String(body.userId ?? "demo-user");
     const limit = checkRateLimit({
-      key: `session-start:${ip}:${userId}`,
+      key: `session-start:${ip}:${profile.id}`,
       windowMs: 1000 * 60 * 15,
       max: 18
     });
@@ -17,7 +22,7 @@ export async function POST(request: Request) {
     }
 
     const result = await createSession({
-      userId,
+      userId: profile.id,
       examType: body.examType,
       taskType: body.taskType,
       difficulty: body.difficulty,

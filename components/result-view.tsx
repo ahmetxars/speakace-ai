@@ -481,7 +481,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
           <span className="rsc-footer-tag">
             {tr ? "SpeakAce AI ile speaking pratiği" : "Practice IELTS / TOEFL speaking with AI"}
           </span>
-          <span className="rsc-domain">speakace.ai</span>
+          <span className="rsc-domain">speakace.org</span>
         </div>
       </div>
 

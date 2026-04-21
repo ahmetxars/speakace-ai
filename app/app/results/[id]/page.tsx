@@ -1,8 +1,15 @@
 import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 import { ResultView } from "@/components/result-view";
+import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { getProgressSummary, getSession } from "@/lib/store";
 
 export default async function ResultPage({ params }: { params: Promise<{ id: string }> }) {
+  const profile = await getAuthenticatedUserFromCookies();
+  if (!profile || profile.role === "guest") {
+    redirect("/auth");
+  }
+
   const { id } = await params;
   const session = await getSession(id);
 
@@ -26,6 +33,10 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
         </div>
       </main>
     );
+  }
+
+  if (session.userId !== profile.id && !profile.isAdmin) {
+    notFound();
   }
 
   const summary = await getProgressSummary(session.userId);

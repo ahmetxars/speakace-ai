@@ -40,12 +40,12 @@ export function Dashboard() {
   const isTeacherMember = Boolean(signedIn && currentUser?.memberType === "teacher");
 
   useEffect(() => {
-    if (!currentUser) return;
-    fetch(`/api/progress/summary?userId=${encodeURIComponent(currentUser.id)}`)
+    if (!signedIn || !currentUser) return;
+    fetch("/api/progress/summary")
       .then((r) => r.json())
       .then((data: ProgressSummary) => setSummary(data))
       .catch(() => setSummary(emptySummary));
-  }, [currentUser]);
+  }, [currentUser, signedIn]);
 
   useEffect(() => {
     if (!signedIn || !currentUser || isTeacherMember || isSchoolMember) {
@@ -124,7 +124,11 @@ export function Dashboard() {
   const handleTargetScoreChange = (value: string) => {
     setTargetScore(value);
     if (typeof window !== "undefined") {
-      value ? window.localStorage.setItem(storageKey, value) : window.localStorage.removeItem(storageKey);
+      if (value) {
+        window.localStorage.setItem(storageKey, value);
+      } else {
+        window.localStorage.removeItem(storageKey);
+      }
     }
     setProfile((p) => (p ? { ...p, targetScore: value ? Number(value) : null } : p));
     if (currentUser?.id) {

@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
+import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { getMember, upsertMember } from "@/lib/store";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId") ?? "";
-
-    if (!userId) {
+    const profile = await getAuthenticatedUserFromCookies();
+    if (!profile || profile.role === "guest") {
       return NextResponse.json({ profile: null }, { status: 200 });
     }
 
-    const profile = await getMember(userId);
-    return NextResponse.json({ profile: profile ?? null });
+    const currentProfile = await getMember(profile.id);
+    return NextResponse.json({ profile: currentProfile ?? null });
   } catch {
     return NextResponse.json({ profile: null }, { status: 200 });
   }
@@ -19,8 +18,23 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const profile = await request.json();
-    return NextResponse.json({ profile: await upsertMember(profile) });
+    const currentProfile = await getAuthenticatedUserFromCookies();
+    if (!currentProfile || currentProfile.role === "guest") {
+      return NextResponse.json({ ok: false, skipped: true }, { status: 401 });
+    }
+
+    const body = await request.json();
+    return NextResponse.json({
+      profile: await upsertMember({
+        ...currentProfile,
+        ...body,
+        id: currentProfile.id,
+        email: currentProfile.email,
+        role: currentProfile.role,
+        memberType: currentProfile.memberType,
+        createdAt: currentProfile.createdAt
+      })
+    });
   } catch {
     return NextResponse.json({ ok: false, skipped: true }, { status: 200 });
   }

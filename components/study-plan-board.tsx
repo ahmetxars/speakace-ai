@@ -18,7 +18,7 @@ const emptySummary: ProgressSummary = {
 };
 
 export function StudyPlanBoard() {
-  const { currentUser, language } = useAppState();
+  const { currentUser, language, signedIn } = useAppState();
   const tr = language === "tr";
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [summary, setSummary] = useState<ProgressSummary>(emptySummary);
@@ -31,12 +31,12 @@ export function StudyPlanBoard() {
   }, []);
 
   useEffect(() => {
-    if (!currentUser?.id) return;
-    fetch(`/api/progress/summary?userId=${encodeURIComponent(currentUser.id)}`)
+    if (!signedIn || !currentUser || currentUser.role === "guest") return;
+    fetch("/api/progress/summary")
       .then((response) => response.json())
       .then((data: ProgressSummary) => setSummary(data))
       .catch(() => setSummary(emptySummary));
-  }, [currentUser?.id]);
+  }, [currentUser, signedIn]);
 
   const plan = useMemo(() => buildStudyPlan(profile, summary, tr), [profile, summary, tr]);
   const progress = useMemo(() => buildBandProgress(profile, summary, tr), [profile, summary, tr]);

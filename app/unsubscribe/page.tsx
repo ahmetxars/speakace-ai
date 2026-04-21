@@ -33,9 +33,9 @@ function UnsubscribeForm() {
   if (status === "done") {
     return (
       <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
-        <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>You've been unsubscribed</h1>
+        <h1 style={{ fontSize: "2rem", marginBottom: "1rem" }}>You&apos;ve been unsubscribed</h1>
         <p style={{ color: "var(--text-muted)", marginBottom: "2rem" }}>
-          You won't receive any more marketing emails from SpeakAce.
+          You won&apos;t receive any more marketing emails from SpeakAce.
           <br />
           Transactional emails (password reset, etc.) will still be sent.
         </p>

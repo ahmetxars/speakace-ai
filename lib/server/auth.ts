@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { compare, hash } from "bcryptjs";
+import { cookies } from "next/headers";
 import { isAdminEmail, withAdminPrivileges } from "@/lib/admin";
 import { createMemberProfile } from "@/lib/membership";
 import { buildInviteReferralCode, getInviteReferrer } from "@/lib/referrals";
@@ -67,6 +68,12 @@ export function getSessionCookieOptions(expires: Date) {
     path: "/",
     expires
   };
+}
+
+export async function getAuthenticatedUserFromCookies() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(getSessionCookieName())?.value;
+  return getAuthenticatedUser(token);
 }
 
 export async function signUpWithPassword(input: {

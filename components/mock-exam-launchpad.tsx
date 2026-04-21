@@ -21,6 +21,23 @@ export function MockExamLaunchpad() {
 
       <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+          <strong>{tr ? "Tam IELTS / TOEFL oturumu" : "Full IELTS / TOEFL session"}</strong>
+          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
+            {tr
+              ? "Artık tek tek görev seçmek zorunda değilsin. Bir butonla komple IELTS Part 1-2-3 veya komple TOEFL Task 1-2-3-4 zinciri başlar."
+              : "You no longer need to build the test one task at a time. One click now starts the full IELTS Part 1-2-3 or full TOEFL Task 1-2-3-4 chain."}
+          </p>
+          <div style={{ display: "grid", gap: "0.7rem" }}>
+            <Link href="/app/practice?runMode=simulation&examType=IELTS&difficulty=Target&quickStart=1" className="button button-primary">
+              {tr ? "Komple IELTS mock başlat" : "Start full IELTS mock"}
+            </Link>
+            <Link href="/app/practice?runMode=simulation&examType=TOEFL&difficulty=Target&quickStart=1" className="button button-secondary">
+              {tr ? "Komple TOEFL mock başlat" : "Start full TOEFL mock"}
+            </Link>
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
           <strong>{tr ? "Mock exam neden önemli?" : "Why mock exam mode matters"}</strong>
           {[
             tr ? "Gerçek sınav ritmini ve enerji yönetimini gösterir." : "Shows your real exam rhythm and pacing under pressure.",
@@ -29,10 +46,10 @@ export function MockExamLaunchpad() {
           ].map((item) => (
             <div key={item} className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)" }}>{item}</div>
           ))}
-          <Link href="/app/practice" className="button button-primary">{tr ? "Practice konsolunu aç" : "Open practice console"}</Link>
+          <Link href="/app/practice?runMode=simulation" className="button button-secondary">{tr ? "Mock ayarlarını aç" : "Open mock settings"}</Link>
         </div>
 
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem", gridColumn: "1 / -1" }}>
           <strong>{tr ? "Simülasyon sonrası akış" : "After the simulation"}</strong>
           <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.45rem" }}>
             <strong>{tr ? "1. Tamamla" : "1. Complete"}</strong>
