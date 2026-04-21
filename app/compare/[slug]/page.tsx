@@ -1,8 +1,28 @@
 import type { Metadata } from "next";
+import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { comparisonPages } from "@/lib/seo-growth";
 import { siteConfig } from "@/lib/site";
+
+function getComparisonLinks(slug: string) {
+  if (slug.includes("best-ielts-speaking-app")) {
+    return [
+      { href: "/free-ielts-speaking-test", label: "Try free IELTS test" },
+      { href: "/reviews", label: "Read reviews" }
+    ];
+  }
+  if (slug.includes("toefl")) {
+    return [
+      { href: "/toefl-speaking-practice", label: "Open TOEFL practice" },
+      { href: "/speaking-timer", label: "Use speaking timer" }
+    ];
+  }
+  return [
+    { href: "/app/practice", label: "Start practice" },
+    { href: "/pricing", label: "See Plus" }
+  ];
+}
 
 export function generateStaticParams() {
   return comparisonPages.map((item) => ({ slug: item.slug }));
@@ -38,6 +58,7 @@ export default async function ComparisonDetailPage({
   const { slug } = await params;
   const page = comparisonPages.find((item) => item.slug === slug);
   if (!page) notFound();
+  const relatedLinks = getComparisonLinks(page.slug);
 
   return (
     <>
@@ -55,6 +76,21 @@ export default async function ComparisonDetailPage({
             </article>
           ))}
         </div>
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+          <span className="eyebrow">Decision helper</span>
+          <h2 style={{ margin: 0 }}>Comparison traffic converts when the visitor can test the difference fast</h2>
+          <p className="practice-copy" style={{ margin: 0 }}>
+            People searching comparison queries are already evaluating options. The strongest next
+            step is a direct hands-on action that lets them feel the workflow instead of reading one more paragraph.
+          </p>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            {relatedLinks.map((item) => (
+              <Link key={item.href} className="button button-secondary" href={item.href as Route}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
         <div className="card institution-cta">
           <div>
             <span className="eyebrow">Try it yourself</span>
@@ -68,9 +104,11 @@ export default async function ComparisonDetailPage({
             <Link className="button button-primary" href="/app/practice">
               Start practice
             </Link>
-            <Link className="button button-secondary" href="/pricing">
-              See Plus
-            </Link>
+            {relatedLinks.map((item) => (
+              <Link key={item.href} className="button button-secondary" href={item.href as Route}>
+                {item.label}
+              </Link>
+            ))}
           </div>
         </div>
       </main>

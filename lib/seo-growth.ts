@@ -601,6 +601,32 @@ toolPages.push(
     ],
     cta: "Use onboarding and daily prompt pages to build a realistic practice habit.",
     actionLabel: "Build daily goal"
+  },
+  {
+    slug: "toefl-speaking-timer",
+    title: "TOEFL Speaking Timer",
+    description: "Use a TOEFL speaking timer with realistic prep and response windows for independent and integrated task practice.",
+    intro: "Many TOEFL learners search for a timer first because they want a low-friction way to practice pacing before they trust a full speaking platform.",
+    bullets: [
+      "The right prep window helps you organize faster under pressure.",
+      "Integrated timing gets easier when note structure is shorter.",
+      "Timer pages convert better when they also point to transcript-based practice."
+    ],
+    cta: "Open the speaking timer, then move into TOEFL AI practice for transcript review and retries.",
+    actionLabel: "Open TOEFL timer"
+  },
+  {
+    slug: "session-replay-tool",
+    title: "Session Replay Tool",
+    description: "Use a session replay tool for speaking practice so you can review audio, transcript, notes, and retry decisions after each attempt.",
+    intro: "Replay tools matter because students often improve faster when they can revisit one weak answer instead of jumping to a completely new prompt.",
+    bullets: [
+      "Replay makes pacing mistakes easier to hear.",
+      "Transcript review helps the learner connect what they said to what they intended to say.",
+      "One replay plus one retry often teaches more than several random new attempts."
+    ],
+    cta: "Use SpeakAce session review and replay-style feedback to learn more from every attempt.",
+    actionLabel: "Review session"
   }
 );
 
@@ -628,5 +654,29 @@ guidePages.push(
       "A calm review loop helps the learner trust improvement."
     ],
     cta: "Use the weekly challenge and daily prompt pages to create a confidence routine."
+  },
+  {
+    slug: "how-to-use-cue-cards",
+    title: "How to Use Cue Cards for IELTS Speaking",
+    description: "Learn how to use cue cards for IELTS Speaking Part 2 with a simple note system, cleaner story flow, and better timing.",
+    intro: "Cue cards work best when the learner treats them as a structure prompt, not as a script to memorize word for word.",
+    bullets: [
+      "Use the one-minute prep time to choose one clear story, not three ideas.",
+      "A cue card answer becomes easier when each bullet point gets one short supporting detail.",
+      "Reviewing the transcript after one attempt shows where the story lost focus."
+    ],
+    cta: "Open a Part 2 prompt, build four quick notes, and turn the cue card into a cleaner speaking answer."
+  },
+  {
+    slug: "fluency-for-ielts-speaking",
+    title: "Fluency for IELTS Speaking",
+    description: "Improve fluency for IELTS speaking with steadier answer flow, fewer dead pauses, and more repeat-based practice.",
+    intro: "Fluency is usually less about speed and more about keeping an answer moving with a clear idea path and simpler sentence control.",
+    bullets: [
+      "Repeated topics improve fluency faster than random new questions.",
+      "One reason plus one example is often enough to keep the answer moving.",
+      "A transcript makes hesitation patterns easier to notice and fix."
+    ],
+    cta: "Use daily speaking drills and retry loops to build steadier IELTS fluency."
   }
 );

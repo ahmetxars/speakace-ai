@@ -42,6 +42,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
   const [activeSentenceIndex, setActiveSentenceIndex] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [activeTab, setActiveTab] = useState<"feedback" | "transcript" | "compare" | "history">("feedback");
+  const [historyFilter, setHistoryFilter] = useState<"all" | "IELTS" | "TOEFL">("all");
   const [shareMessage, setShareMessage] = useState<string>("");
   const [shareOpen, setShareOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -83,6 +84,19 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     [session.id, session.prompt.id, summary.recentSessions]
   );
   const transcriptSegments = useMemo(() => buildTranscriptSegments(displayedRawTranscript ?? ""), [displayedRawTranscript]);
+  const allScoredSessions = useMemo(() => summary.recentSessions.filter((item) => item.report), [summary.recentSessions]);
+  const bestScore = useMemo(() => {
+    if (!allScoredSessions.length) return null;
+    return Math.max(...allScoredSessions.map((item) => item.report?.overall ?? 0));
+  }, [allScoredSessions]);
+  const filteredHistory = useMemo(
+    () =>
+      summary.recentSessions.filter((item) => {
+        if (historyFilter === "all") return true;
+        return item.examType === historyFilter;
+      }),
+    [historyFilter, summary.recentSessions]
+  );
   const syncedSegments = useMemo(() => {
     if (!transcriptSegments.length) return [];
     return allocateSegmentTimings(transcriptSegments, audioDuration);
@@ -393,16 +407,14 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
 
   return (
     <div style={{ maxWidth: 860, margin: "0 auto", padding: "2rem 1.5rem" }}>
-      {/* ── SHARE CARD ─────────────────────────────────────────────────────── */}
-      <div className="rsc-card">
 
-        {/* Top bar */}
+      {/* ── SHARE CARD ── */}
+      <div className="rsc-card">
         <div className="rsc-topbar">
           <span className="rsc-brand">SpeakAce</span>
           <span className="rsc-exam-tag">{session.examType}</span>
         </div>
 
-        {/* User */}
         <div className="rsc-user-row">
           <div className="rsc-avatar">
             {avatarDataUrl ? (
@@ -419,7 +431,6 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
 
         {session.report ? (
           <>
-            {/* Score + meta */}
             <div className="rsc-score-row">
               <div
                 className="rsc-score-ring"
@@ -443,7 +454,6 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
               </div>
             </div>
 
-            {/* Category bars */}
             <div className="rsc-categories">
               {session.report.categories.map((cat, index) => {
                 const max = session.examType === "TOEFL" ? 4 : 9;
@@ -462,13 +472,11 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
           </>
         ) : null}
 
-        {/* Prompt + exam info */}
         <div className="rsc-prompt-row">
           <p>{session.prompt.title}</p>
           <span>{examMeta.leftEyebrow} · {session.difficulty}</span>
         </div>
 
-        {/* Footer */}
         <div className="rsc-footer">
           <span className="rsc-footer-tag">
             {tr ? "SpeakAce AI ile speaking pratiği" : "Practice IELTS / TOEFL speaking with AI"}
@@ -477,7 +485,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         </div>
       </div>
 
-      {/* ── ACTIONS ────────────────────────────────────────────────────────── */}
+      {/* ── ACTIONS ── */}
       <div className="rsc-actions">
         <Link className="button button-secondary" href={retryHref}>
           {tr ? "Tekrar dene" : "Retry"}
@@ -490,7 +498,33 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         ) : null}
       </div>
 
-      {/* ── SHARE MODAL ────────────────────────────────────────────────────── */}
+      {/* ── SESSION STATS ── */}
+      {session.report ? (
+        <div className="result-summary-grid">
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.3rem" }}>
+            <span style={{ fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>{tr ? "Ortalama skor" : "Average score"}</span>
+            <strong style={{ fontSize: "1.4rem" }}>{summary.averageScore || session.report.overall}</strong>
+            <span style={{ fontSize: "0.84rem", color: "var(--muted)" }}>{examMeta.averageNote}</span>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.3rem" }}>
+            <span style={{ fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>{tr ? "En iyi skor" : "Best score"}</span>
+            <strong style={{ fontSize: "1.4rem" }}>{bestScore ?? session.report.overall}</strong>
+            <span style={{ fontSize: "0.84rem", color: "var(--muted)" }}>{tr ? "Kaydedilen en iyi" : "Best recorded"}</span>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.3rem" }}>
+            <span style={{ fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>{tr ? "Toplam test" : "Total tests"}</span>
+            <strong style={{ fontSize: "1.4rem" }}>{summary.totalSessions}</strong>
+            <span style={{ fontSize: "0.84rem", color: "var(--muted)" }}>{tr ? "Tüm denemeler" : "All attempts"}</span>
+          </div>
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.3rem" }}>
+            <span style={{ fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>{tr ? "Seri" : "Streak"}</span>
+            <strong style={{ fontSize: "1.4rem" }}>{summary.streakDays}</strong>
+            <span style={{ fontSize: "0.84rem", color: "var(--muted)" }}>{tr ? "Günlük pratik ritmi" : "Practice rhythm"}</span>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── SHARE MODAL ── */}
       {shareOpen ? (
         <div className="share-overlay" onClick={() => setShareOpen(false)}>
           <div className="share-sheet" onClick={(e) => e.stopPropagation()}>
@@ -504,11 +538,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
                 : "Download your result card as PNG or share it on social media."}
             </p>
             <div className="share-options">
-              <button
-                type="button"
-                className="share-option"
-                onClick={() => { void downloadScoreImage(); setShareOpen(false); }}
-              >
+              <button type="button" className="share-option" onClick={() => { void downloadScoreImage(); setShareOpen(false); }}>
                 <Download size={22} />
                 <span>{tr ? "PNG indir" : "Download"}</span>
               </button>
@@ -532,11 +562,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
               </button>
             </div>
             {shareMessage ? <p className="share-status-msg">{shareMessage}</p> : null}
-            <button
-              type="button"
-              className="button button-secondary share-sheet-close"
-              onClick={() => setShareOpen(false)}
-            >
+            <button type="button" className="button button-secondary share-sheet-close" onClick={() => setShareOpen(false)}>
               {tr ? "Kapat" : "Close"}
             </button>
           </div>
@@ -695,6 +721,84 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          <div style={{ padding: "1.1rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", display: "grid", gap: "0.9rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.96rem" }}>{tr ? "Tüm eski testler" : "All previous tests"}</div>
+                <div style={{ color: "var(--muted-foreground)", fontSize: "0.84rem", marginTop: "0.2rem" }}>
+                  {tr ? `${filteredHistory.length} deneme gösteriliyor` : `Showing ${filteredHistory.length} attempts`}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                {[
+                  { key: "all", label: tr ? "Tümü" : "All" },
+                  { key: "IELTS", label: "IELTS" },
+                  { key: "TOEFL", label: "TOEFL" }
+                ].map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => setHistoryFilter(option.key as "all" | "IELTS" | "TOEFL")}
+                    style={{
+                      background: historyFilter === option.key ? "rgba(29, 111, 117, 0.12)" : undefined,
+                      borderColor: historyFilter === option.key ? "rgba(29, 111, 117, 0.3)" : undefined
+                    }}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gap: "0.75rem" }}>
+              {filteredHistory.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/app/results/${item.id}`}
+                  className="card"
+                  style={{
+                    padding: "0.95rem",
+                    textDecoration: "none",
+                    color: "inherit",
+                    background: item.id === session.id ? "rgba(29, 111, 117, 0.08)" : "var(--surface-strong)",
+                    border: item.id === session.id ? "1px solid rgba(29, 111, 117, 0.22)" : "1px solid var(--border)",
+                    display: "grid",
+                    gap: "0.55rem"
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "0.8rem", flexWrap: "wrap" }}>
+                    <div style={{ display: "grid", gap: "0.25rem", minWidth: 0 }}>
+                      <strong style={{ fontSize: "0.92rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {item.prompt.title}
+                      </strong>
+                      <span style={{ fontSize: "0.82rem", color: "var(--muted-foreground)" }}>
+                        {new Date(item.createdAt).toLocaleString(tr ? "tr-TR" : "en-US")} • {item.examType} • {item.taskType}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap", alignItems: "center" }}>
+                      {item.id === session.id ? <span className="pill">{tr ? "Şu an açık" : "Open now"}</span> : null}
+                      <span className="pill">{item.report?.overall ?? (tr ? "Bekliyor" : "Pending")}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "auto auto 1fr", gap: "0.7rem", alignItems: "center" }} className="result-history-meta">
+                    <span style={{ fontSize: "0.8rem", color: "var(--muted-foreground)" }}>
+                      {tr ? "Zorluk" : "Difficulty"}: <strong style={{ color: "var(--foreground)" }}>{item.difficulty}</strong>
+                    </span>
+                    <span style={{ fontSize: "0.8rem", color: "var(--muted-foreground)" }}>
+                      {tr ? "Kalite" : "Quality"}: <strong style={{ color: "var(--foreground)" }}>{item.transcriptQualityScore ?? "-"}</strong>
+                    </span>
+                    <span style={{ fontSize: "0.84rem", color: "var(--muted-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {(item.rawTranscript ?? item.transcript ?? "").slice(0, 150)}
+                      {(item.rawTranscript ?? item.transcript ?? "").length > 150 ? "..." : ""}
+                    </span>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
 

@@ -62,6 +62,49 @@ export function StudentProfile() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
+  const fieldText = {
+    preferredExamType: {
+      label: tr ? "Hazırlandığın sınav" : "Preferred exam",
+      help: tr ? "Dashboard ve öneriler bu sınava göre şekillenir." : "Dashboard recommendations will adapt to this exam."
+    },
+    targetScore: {
+      label: tr ? "Hedef skor" : "Target score",
+      help: tr ? "Ulaşmak istediğin yaklaşık band ya da task skoru." : "The score or band you want to reach."
+    },
+    weeklyGoal: {
+      label: tr ? "Haftalık test hedefi" : "Weekly session goal",
+      help: tr ? "Haftada kaç speaking denemesi yapmak istediğin." : "How many speaking attempts you want each week."
+    },
+    dailyMinutesGoal: {
+      label: tr ? "Günlük speaking süresi" : "Daily speaking minutes",
+      help: tr ? "Her gün ayırabileceğin gerçekçi süre." : "A realistic amount of speaking time per day."
+    },
+    currentLevel: {
+      label: tr ? "Mevcut seviye" : "Current level",
+      help: tr ? "Örn: Band 5.5 civarı, B1, başlangıç üstü." : "Example: Around Band 5.5, B1, upper beginner."
+    },
+    focusSkill: {
+      label: tr ? "Ana gelişim odağı" : "Main focus skill",
+      help: tr ? "Şu an en çok geliştirmek istediğin alan." : "The skill you want to improve most right now."
+    },
+    examDate: {
+      label: tr ? "Sınav tarihi" : "Exam date",
+      help: tr ? "Net bir tarihin varsa yaz; yoksa boş bırakabilirsin." : "Add it if you have one; otherwise leave it blank."
+    },
+    targetReason: {
+      label: tr ? "Bu skoru neden istiyorsun?" : "Why this score matters",
+      help: tr ? "Üniversite, iş, burs, vize veya kişisel hedef." : "University, work, scholarship, visa, or personal goal."
+    },
+    discoverySource: {
+      label: tr ? "SpeakAce'i nereden buldun?" : "How you found SpeakAce",
+      help: tr ? "Google, sosyal medya, arkadaş, öğretmen gibi." : "Google, social media, a friend, or a teacher."
+    },
+    bio: {
+      label: tr ? "Kısa çalışma notu" : "Short study note",
+      help: tr ? "Şu an seni en çok zorlayan speaking problemi." : "The speaking issue that feels hardest right now."
+    }
+  } as const;
+
   useEffect(() => {
     fetch("/api/profile")
       .then((response) => response.json())
@@ -131,18 +174,54 @@ export function StudentProfile() {
       <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
           <strong>{tr ? "Hedeflerin ve tercihlerin" : "Goals and preferences"}</strong>
-          <select value={profile.preferredExamType} onChange={(event) => setProfile((current) => current ? { ...current, preferredExamType: event.target.value as "IELTS" | "TOEFL" } : current)} className="practice-select">
-            <option value="IELTS">IELTS</option>
-            <option value="TOEFL">TOEFL</option>
-          </select>
-          <input value={profile.targetScore ?? ""} type="number" min="1" max={profile.preferredExamType === "IELTS" ? "9" : "30"} step="0.1" onChange={(event) => setProfile((current) => current ? { ...current, targetScore: event.target.value ? Number(event.target.value) : null } : current)} placeholder={tr ? "Hedef skorun" : "Target score"} style={inputStyle} />
-          <input value={profile.weeklyGoal} type="number" min="1" max="14" onChange={(event) => setProfile((current) => current ? { ...current, weeklyGoal: Number(event.target.value) || 4 } : current)} placeholder={tr ? "Haftalık hedef" : "Weekly goal"} style={inputStyle} />
-          <input value={profile.dailyMinutesGoal ?? 15} type="number" min="5" max="60" onChange={(event) => setProfile((current) => current ? { ...current, dailyMinutesGoal: Number(event.target.value) || 15 } : current)} placeholder={tr ? "Gunluk speaking dakikasi" : "Daily speaking minutes"} style={inputStyle} />
-          <input value={profile.currentLevel} onChange={(event) => setProfile((current) => current ? { ...current, currentLevel: event.target.value } : current)} placeholder={tr ? "Mevcut seviyen" : "Current level"} style={inputStyle} />
-          <input value={profile.focusSkill} onChange={(event) => setProfile((current) => current ? { ...current, focusSkill: event.target.value } : current)} placeholder={tr ? "Ana çalışma odağın" : "Main focus skill"} style={inputStyle} />
-          <input value={profile.examDate ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, examDate: event.target.value } : current)} placeholder={tr ? "Sinav tarihi" : "Exam date"} style={inputStyle} />
-          <input value={profile.targetReason ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, targetReason: event.target.value } : current)} placeholder={tr ? "Skor hedefinin nedeni" : "Reason for target score"} style={inputStyle} />
-          <input value={profile.discoverySource ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, discoverySource: event.target.value } : current)} placeholder={tr ? "SpeakAce'i nereden buldun?" : "How did you find SpeakAce?"} style={inputStyle} />
+          <label style={fieldBlockStyle}>
+            <span style={fieldLabelStyle}>{fieldText.preferredExamType.label}</span>
+            <span style={fieldHelpStyle}>{fieldText.preferredExamType.help}</span>
+            <select value={profile.preferredExamType} onChange={(event) => setProfile((current) => current ? { ...current, preferredExamType: event.target.value as "IELTS" | "TOEFL" } : current)} className="practice-select" style={selectStyle}>
+              <option value="IELTS">IELTS</option>
+              <option value="TOEFL">TOEFL</option>
+            </select>
+          </label>
+          <label style={fieldBlockStyle}>
+            <span style={fieldLabelStyle}>{fieldText.targetScore.label}</span>
+            <span style={fieldHelpStyle}>{fieldText.targetScore.help}</span>
+            <input value={profile.targetScore ?? ""} type="number" min="1" max={profile.preferredExamType === "IELTS" ? "9" : "30"} step="0.1" onChange={(event) => setProfile((current) => current ? { ...current, targetScore: event.target.value ? Number(event.target.value) : null } : current)} placeholder={tr ? "Örn: 6.5" : "Example: 6.5"} style={inputStyle} />
+          </label>
+          <label style={fieldBlockStyle}>
+            <span style={fieldLabelStyle}>{fieldText.weeklyGoal.label}</span>
+            <span style={fieldHelpStyle}>{fieldText.weeklyGoal.help}</span>
+            <input value={profile.weeklyGoal} type="number" min="1" max="14" onChange={(event) => setProfile((current) => current ? { ...current, weeklyGoal: Number(event.target.value) || 4 } : current)} placeholder={tr ? "Örn: 4" : "Example: 4"} style={inputStyle} />
+          </label>
+          <label style={fieldBlockStyle}>
+            <span style={fieldLabelStyle}>{fieldText.dailyMinutesGoal.label}</span>
+            <span style={fieldHelpStyle}>{fieldText.dailyMinutesGoal.help}</span>
+            <input value={profile.dailyMinutesGoal ?? 15} type="number" min="5" max="60" onChange={(event) => setProfile((current) => current ? { ...current, dailyMinutesGoal: Number(event.target.value) || 15 } : current)} placeholder={tr ? "Örn: 15" : "Example: 15"} style={inputStyle} />
+          </label>
+          <label style={fieldBlockStyle}>
+            <span style={fieldLabelStyle}>{fieldText.currentLevel.label}</span>
+            <span style={fieldHelpStyle}>{fieldText.currentLevel.help}</span>
+            <input value={profile.currentLevel} onChange={(event) => setProfile((current) => current ? { ...current, currentLevel: event.target.value } : current)} placeholder={tr ? "Örn: Band 5.5 / B1" : "Example: Band 5.5 / B1"} style={inputStyle} />
+          </label>
+          <label style={fieldBlockStyle}>
+            <span style={fieldLabelStyle}>{fieldText.focusSkill.label}</span>
+            <span style={fieldHelpStyle}>{fieldText.focusSkill.help}</span>
+            <input value={profile.focusSkill} onChange={(event) => setProfile((current) => current ? { ...current, focusSkill: event.target.value } : current)} placeholder={tr ? "Akıcılık, telaffuz, yapı..." : "Fluency, pronunciation, structure..."} style={inputStyle} />
+          </label>
+          <label style={fieldBlockStyle}>
+            <span style={fieldLabelStyle}>{fieldText.examDate.label}</span>
+            <span style={fieldHelpStyle}>{fieldText.examDate.help}</span>
+            <input value={profile.examDate ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, examDate: event.target.value } : current)} placeholder={tr ? "Örn: 2026-06-15" : "Example: 2026-06-15"} style={inputStyle} />
+          </label>
+          <label style={fieldBlockStyle}>
+            <span style={fieldLabelStyle}>{fieldText.targetReason.label}</span>
+            <span style={fieldHelpStyle}>{fieldText.targetReason.help}</span>
+            <input value={profile.targetReason ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, targetReason: event.target.value } : current)} placeholder={tr ? "Üniversite başvurusu, iş, vize..." : "University, job, visa..."} style={inputStyle} />
+          </label>
+          <label style={fieldBlockStyle}>
+            <span style={fieldLabelStyle}>{fieldText.discoverySource.label}</span>
+            <span style={fieldHelpStyle}>{fieldText.discoverySource.help}</span>
+            <input value={profile.discoverySource ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, discoverySource: event.target.value } : current)} placeholder={tr ? "Google, Instagram, arkadaş..." : "Google, Instagram, a friend..."} style={inputStyle} />
+          </label>
           <div style={{ display: "grid", gap: "0.55rem" }}>
             <span className="practice-meta">{tr ? "Profil fotoğrafı" : "Profile photo"}</span>
             <div style={{ display: "flex", gap: "0.8rem", alignItems: "center", flexWrap: "wrap" }}>
@@ -169,6 +248,7 @@ export function StudentProfile() {
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
+                style={{ color: "var(--foreground)" }}
                 onChange={(event) => {
                   const file = event.target.files?.[0];
                   if (!file) return;
@@ -187,7 +267,11 @@ export function StudentProfile() {
               ) : null}
             </div>
           </div>
-          <textarea value={profile.bio ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, bio: event.target.value } : current)} rows={4} placeholder={tr ? "Kısa bir çalışma notu ekle..." : "Short study note..."} style={{ ...inputStyle, resize: "vertical" }} />
+          <label style={fieldBlockStyle}>
+            <span style={fieldLabelStyle}>{fieldText.bio.label}</span>
+            <span style={fieldHelpStyle}>{fieldText.bio.help}</span>
+            <textarea value={profile.bio ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, bio: event.target.value } : current)} rows={4} placeholder={tr ? "Örn: Part 2'de fikirleri uzatırken takılıyorum..." : "Example: I get stuck when I try to extend ideas in Part 2..."} style={{ ...inputStyle, resize: "vertical", minHeight: 120 }} />
+          </label>
           <div style={{ display: "grid", gap: "0.45rem" }}>
             <span className="practice-meta">{tr ? "Çalışma günleri" : "Study days"}</span>
             <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
@@ -256,7 +340,38 @@ function ProfileStat({ label, value }: { label: string; value: string }) {
 }
 
 const inputStyle = {
+  width: "100%",
   padding: "0.9rem",
+  background: "var(--surface-strong)",
+  color: "var(--foreground)",
   borderRadius: 14,
-  border: "1px solid var(--line)"
+  border: "1px solid color-mix(in srgb, var(--line) 78%, transparent)",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)"
+} as const;
+
+const selectStyle = {
+  width: "100%",
+  minHeight: 52,
+  background: "var(--surface-strong)",
+  color: "var(--foreground)",
+  borderRadius: 14,
+  border: "1px solid color-mix(in srgb, var(--line) 78%, transparent)",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)"
+} as const;
+
+const fieldBlockStyle = {
+  display: "grid",
+  gap: "0.38rem"
+} as const;
+
+const fieldLabelStyle = {
+  fontSize: "0.9rem",
+  fontWeight: 700,
+  color: "var(--foreground)"
+} as const;
+
+const fieldHelpStyle = {
+  fontSize: "0.8rem",
+  lineHeight: 1.55,
+  color: "var(--muted)"
 } as const;
