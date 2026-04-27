@@ -13,9 +13,6 @@ import {
   Bell,
   TrendingUp,
   TrendingDown,
-  UserCheck,
-  Clock,
-  Target,
   ChevronLeft,
   ArrowUpRight,
   Tag,
@@ -480,32 +477,32 @@ export function AdminPanel(props: {
                 <AdmStatCard
                   label="Total Users"
                   value={props.overview.totalUsers}
-                  trend="+12.5%"
-                  trendUp={true}
+                  trend={`${props.overview.paidMembers} paid · ${props.overview.trialMembers} trial`}
+                  trendUp={props.overview.paidMembers > 0}
                   iconBg="rgba(96,165,250,0.15)"
                   icon={<Users size={20} color="#60a5fa" />}
                 />
                 <AdmStatCard
                   label="Total Sessions"
                   value={props.overview.activeSessions}
-                  trend="+8.2%"
-                  trendUp={true}
+                  trend={`${props.overview.recentSignIns24h} sign-ins in last 24h`}
+                  trendUp={props.overview.recentSignIns24h > 0}
                   iconBg="rgba(52,211,153,0.15)"
                   icon={<Mic2 size={20} color="#34d399" />}
                 />
                 <AdmStatCard
-                  label="Blog Posts"
-                  value={props.customPosts.length}
-                  trend="+4.1%"
-                  trendUp={true}
+                  label="Published Posts"
+                  value={props.customPosts.filter((p) => p.status === "published").length}
+                  trend={`${props.customPosts.length} total · ${props.customPosts.filter((p) => p.status === "draft").length} drafts`}
+                  trendUp={props.customPosts.filter((p) => p.status === "published").length > 0}
                   iconBg="rgba(129,140,248,0.15)"
                   icon={<FileText size={20} color="#818cf8" />}
                 />
                 <AdmStatCard
-                  label="Monthly Revenue"
+                  label="Monthly Revenue Est."
                   value={formatMoney(props.overview.monthlyRevenueEstimate)}
-                  trend="+5.3%"
-                  trendUp={true}
+                  trend={`${props.overview.paidMembers} paying subscribers`}
+                  trendUp={props.overview.paidMembers > 0}
                   iconBg="rgba(52,211,153,0.15)"
                   icon={<TrendingUp size={20} color="#34d399" />}
                 />
@@ -602,37 +599,6 @@ export function AdminPanel(props: {
                 </div>
               </div>
 
-              {/* Metric Cards */}
-              <div className="adm-metrics-row">
-                <div className="adm-metric-card">
-                  <div className="adm-metric-icon" style={{ background: "rgba(52,211,153,0.12)" }}>
-                    <UserCheck size={22} color="#34d399" />
-                  </div>
-                  <div>
-                    <div className="adm-metric-value">89%</div>
-                    <div className="adm-metric-label">User satisfaction</div>
-                  </div>
-                </div>
-                <div className="adm-metric-card">
-                  <div className="adm-metric-icon" style={{ background: "rgba(251,191,36,0.12)" }}>
-                    <Clock size={22} color="#fbbf24" />
-                  </div>
-                  <div>
-                    <div className="adm-metric-value">12m</div>
-                    <div className="adm-metric-label">Avg. session time</div>
-                  </div>
-                </div>
-                <div className="adm-metric-card">
-                  <div className="adm-metric-icon" style={{ background: "rgba(167,139,250,0.12)" }}>
-                    <Target size={22} color="#a78bfa" />
-                  </div>
-                  <div>
-                    <div className="adm-metric-value">7.2</div>
-                    <div className="adm-metric-label">Avg. band score</div>
-                  </div>
-                </div>
-              </div>
-
               {/* Activity + Revenue */}
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
@@ -690,7 +656,7 @@ export function AdminPanel(props: {
                     )}
                   </div>
                   <div className="adm-revenue-total">
-                    <span className="adm-muted">Weekly estimate</span>
+                    <span className="adm-muted">Monthly revenue estimate</span>
                     <strong>{formatMoney(props.overview.monthlyRevenueEstimate)}</strong>
                   </div>
                 </div>
@@ -775,164 +741,56 @@ export function AdminPanel(props: {
                 </div>
               </div>
 
-              <div className="adm-grid-2">
-                <div className="adm-panel-card">
-                  <div className="adm-panel-card-head">
-                    <h3>CTA Performance</h3>
-                    <p>Homepage and pricing clicks, signups, and paid conversions across the last 7 and 30 days.</p>
-                  </div>
-                  <div className="adm-overview-list">
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.ctaClicks7d}</strong>
-                      <span>All CTA clicks in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.ctaClicks30d}</strong>
-                      <span>All CTA clicks in the last 30 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.checkoutClicks7d}</strong>
-                      <span>Checkout CTA clicks in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.checkoutClicks30d}</strong>
-                      <span>Checkout CTA clicks in the last 30 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.funnel7d.signupCount}</strong>
-                      <span>New signups in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.funnel30d.signupCount}</strong>
-                      <span>New signups in the last 30 days</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="adm-panel-card">
-                  <div className="adm-panel-card-head">
-                    <h3>Practice Feature Usage</h3>
-                    <p>Tracks whether the new interview flow and PDF export are actually being used after release.</p>
-                  </div>
-                  <div className="adm-overview-list">
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.interviewStarts7d}</strong>
-                      <span>Interview mode starts in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.interviewStarts30d}</strong>
-                      <span>Interview mode starts in the last 30 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.interviewFollowUps7d}</strong>
-                      <span>Interview follow-up selections in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.interviewFollowUps30d}</strong>
-                      <span>Interview follow-up selections in the last 30 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.pdfExports7d}</strong>
-                      <span>PDF report exports in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.pdfExports30d}</strong>
-                      <span>PDF report exports in the last 30 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.resultCardDownloads7d}</strong>
-                      <span>Speaking result card PNG downloads in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.resultShares7d}</strong>
-                      <span>Speaking result shares in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.resultCardDownloads30d}</strong>
-                      <span>Speaking result card PNG downloads in the last 30 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.resultShares30d}</strong>
-                      <span>Speaking result shares in the last 30 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.writingStarts7d}</strong>
-                      <span>Writing starts in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.writingEvaluations7d}</strong>
-                      <span>Writing evaluations in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.writingStarts30d}</strong>
-                      <span>Writing starts in the last 30 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.writingEvaluations30d}</strong>
-                      <span>Writing evaluations in the last 30 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.writingRetries7d}</strong>
-                      <span>Writing retries in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.writingRetries30d}</strong>
-                      <span>Writing retries in the last 30 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.writingPdfExports7d}</strong>
-                      <span>Writing PDF exports in the last 7 days</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.writingPdfExports30d}</strong>
-                      <span>Writing PDF exports in the last 30 days</span>
-                    </div>
-                  </div>
-                </div>
+              {/* ── SECTION: CTA & CONVERSION ─────────────────────────────── */}
+              <div style={{ padding: "0.25rem 0 0.1rem", borderBottom: "1px solid var(--line)", marginBottom: "0.5rem" }}>
+                <span className="adm-muted" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
+                  CTA &amp; Conversion Funnel
+                </span>
               </div>
 
+              {/* CTA raw counts quick-stats */}
+              <div className="adm-stats-row adm-stats-sm" style={{ marginBottom: "0.25rem" }}>
+                {[
+                  { label: "CTA clicks (7d)", value: props.overview.ctaClicks7d },
+                  { label: "CTA clicks (30d)", value: props.overview.ctaClicks30d },
+                  { label: "Checkout clicks (7d)", value: props.overview.checkoutClicks7d },
+                  { label: "Checkout clicks (30d)", value: props.overview.checkoutClicks30d },
+                  { label: "Signups (7d)", value: props.overview.funnel7d.signupCount },
+                  { label: "Signups (30d)", value: props.overview.funnel30d.signupCount }
+                ].map(({ label, value }) => (
+                  <div key={label} className="adm-mini-stat">
+                    <strong>{value}</strong>
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Conversion Funnel + CTA Trend side-by-side */}
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
                     <h3>Conversion Funnel</h3>
-                    <p>Uses CTA clicks, account creation, checkout taps, and successful paid billing events.</p>
+                    <p>CTA clicks → signups → checkout → paid. 7-day rate compared against 30-day baseline.</p>
                   </div>
                   <div className="adm-overview-list">
                     {[
-                      {
-                        label: "Click → signup",
-                        sevenDayValue: props.overview.funnel7d.clickToSignupRate,
-                        thirtyDayValue: props.overview.funnel30d.clickToSignupRate,
-                        delta: funnelLift.signupDelta
-                      },
-                      {
-                        label: "Signup → checkout",
-                        sevenDayValue: props.overview.funnel7d.signupToCheckoutRate,
-                        thirtyDayValue: props.overview.funnel30d.signupToCheckoutRate,
-                        delta: funnelLift.checkoutDelta
-                      },
-                      {
-                        label: "Checkout → paid",
-                        sevenDayValue: props.overview.funnel7d.checkoutToPaidRate,
-                        thirtyDayValue: props.overview.funnel30d.checkoutToPaidRate,
-                        delta: props.overview.funnel7d.checkoutToPaidRate - props.overview.funnel30d.checkoutToPaidRate
-                      },
-                      {
-                        label: "Click → paid",
-                        sevenDayValue: props.overview.funnel7d.clickToPaidRate,
-                        thirtyDayValue: props.overview.funnel30d.clickToPaidRate,
-                        delta: funnelLift.clickDelta
-                      }
+                      { label: "Click → signup", v7: props.overview.funnel7d.clickToSignupRate, v30: props.overview.funnel30d.clickToSignupRate, delta: funnelLift.signupDelta },
+                      { label: "Signup → checkout", v7: props.overview.funnel7d.signupToCheckoutRate, v30: props.overview.funnel30d.signupToCheckoutRate, delta: funnelLift.checkoutDelta },
+                      { label: "Checkout → paid", v7: props.overview.funnel7d.checkoutToPaidRate, v30: props.overview.funnel30d.checkoutToPaidRate, delta: props.overview.funnel7d.checkoutToPaidRate - props.overview.funnel30d.checkoutToPaidRate },
+                      { label: "Click → paid (overall)", v7: props.overview.funnel7d.clickToPaidRate, v30: props.overview.funnel30d.clickToPaidRate, delta: funnelLift.clickDelta }
                     ].map((item) => (
                       <div key={item.label} className="adm-overview-item">
-                        <strong>{formatPercent(item.sevenDayValue)}</strong>
-                        <span>
-                          {item.label} in the last 7 days. 30-day baseline: {formatPercent(item.thirtyDayValue)}.
-                        </span>
-                        <span className={`adm-stat-trend ${item.delta >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
-                          {item.delta >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-                          {formatPercent(Math.abs(item.delta))} vs 30-day average
-                        </span>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
+                          <span>{item.label}</span>
+                          <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30d: {formatPercent(item.v30)}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
+                          <strong style={{ fontSize: "1.1rem" }}>{formatPercent(item.v7)}</strong>
+                          <span className={`adm-stat-trend ${item.delta >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
+                            {item.delta >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                            {formatPercent(Math.abs(item.delta))} vs 30d avg
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -940,114 +798,8 @@ export function AdminPanel(props: {
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Writing Conversion Funnel</h3>
-                    <p>Shows whether learners finish evaluation, retry, and export after entering the writing flow.</p>
-                  </div>
-                  <div className="adm-overview-list">
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.writingStarts7d}</strong>
-                      <span>Writing starts in the last 7 days. 30-day baseline: {props.overview.writingStarts30d}.</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{formatPercent(writingFunnel.startToEval7d)}</strong>
-                      <span>Start → evaluated in the last 7 days. 30-day baseline: {formatPercent(writingFunnel.startToEval30d)}.</span>
-                      <span className={`adm-stat-trend ${writingFunnel.startToEval7d - writingFunnel.startToEval30d >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
-                        {writingFunnel.startToEval7d - writingFunnel.startToEval30d >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-                        {formatPercent(Math.abs(writingFunnel.startToEval7d - writingFunnel.startToEval30d))} vs 30-day average
-                      </span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{formatPercent(writingFunnel.evalToRetry7d)}</strong>
-                      <span>Evaluated → retry in the last 7 days. 30-day baseline: {formatPercent(writingFunnel.evalToRetry30d)}.</span>
-                      <span className={`adm-stat-trend ${writingFunnel.evalToRetry7d - writingFunnel.evalToRetry30d >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
-                        {writingFunnel.evalToRetry7d - writingFunnel.evalToRetry30d >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-                        {formatPercent(Math.abs(writingFunnel.evalToRetry7d - writingFunnel.evalToRetry30d))} vs 30-day average
-                      </span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{formatPercent(writingFunnel.evalToPdf7d)}</strong>
-                      <span>Evaluated → PDF export in the last 7 days. 30-day baseline: {formatPercent(writingFunnel.evalToPdf30d)}.</span>
-                      <span className={`adm-stat-trend ${writingFunnel.evalToPdf7d - writingFunnel.evalToPdf30d >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
-                        {writingFunnel.evalToPdf7d - writingFunnel.evalToPdf30d >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-                        {formatPercent(Math.abs(writingFunnel.evalToPdf7d - writingFunnel.evalToPdf30d))} vs 30-day average
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="adm-grid-2">
-                <div className="adm-panel-card">
-                  <div className="adm-panel-card-head">
-                    <h3>Speaking Share Funnel</h3>
-                    <p>Shows whether the new premium result card actually gets downloaded and shared after users see their score.</p>
-                  </div>
-                  <div className="adm-overview-list">
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.resultCardDownloads7d}</strong>
-                      <span>Result card PNG downloads in the last 7 days. 30-day baseline: {props.overview.resultCardDownloads30d}.</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.resultShares7d}</strong>
-                      <span>Total speaking result shares in the last 7 days. 30-day baseline: {props.overview.resultShares30d}.</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{formatPercent(speakingShareFunnel.cardToShare7d)}</strong>
-                      <span>Download → any share in the last 7 days. 30-day baseline: {formatPercent(speakingShareFunnel.cardToShare30d)}.</span>
-                      <span className={`adm-stat-trend ${speakingShareFunnel.cardToShare7d - speakingShareFunnel.cardToShare30d >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
-                        {speakingShareFunnel.cardToShare7d - speakingShareFunnel.cardToShare30d >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-                        {formatPercent(Math.abs(speakingShareFunnel.cardToShare7d - speakingShareFunnel.cardToShare30d))} vs 30-day average
-                      </span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.resultShareX7d}</strong>
-                      <span>X shares in the last 7 days. 30-day baseline: {props.overview.resultShareX30d}.</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.resultShareWhatsApp7d}</strong>
-                      <span>WhatsApp shares in the last 7 days. 30-day baseline: {props.overview.resultShareWhatsApp30d}.</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.resultShareLinkedIn7d}</strong>
-                      <span>LinkedIn shares in the last 7 days. 30-day baseline: {props.overview.resultShareLinkedIn30d}.</span>
-                    </div>
-                    <div className="adm-overview-item">
-                      <strong>{props.overview.shareAttributedSignups7d}</strong>
-                      <span>Signups attributed to shared result pages in the last 7 days. 30-day baseline: {props.overview.shareAttributedSignups30d}.</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="adm-grid-2">
-                <div className="adm-panel-card">
-                  <div className="adm-panel-card-head">
-                    <h3>Top Share Signup Sources</h3>
-                    <p>Shows which public result pages are turning social sharing into actual account creation in the last 30 days.</p>
-                  </div>
-                  <div className="adm-stack-list">
-                    {props.overview.topShareSignupSources.length === 0 ? (
-                      <p className="adm-muted">No signup attribution from shared result pages yet.</p>
-                    ) : (
-                      props.overview.topShareSignupSources.map((item) => (
-                        <div key={item.sharePath} className="adm-list-row" style={{ alignItems: "stretch" }}>
-                          <div style={{ display: "grid", gap: "0.3rem", flex: 1 }}>
-                            <strong>{item.promptTitle}</strong>
-                            <span className="adm-muted">{item.learnerName} · {item.sharePath}</span>
-                          </div>
-                          <StatusBadge label={`${item.signups} signups`} tone="success" />
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="adm-grid-2">
-                <div className="adm-panel-card">
-                  <div className="adm-panel-card-head">
-                    <h3>CTA Trend</h3>
-                    <p>14-day view of click volume, signups, checkout intent, and paid conversions.</p>
+                    <h3>CTA Trend (14 days)</h3>
+                    <p>Daily clicks, signups, checkout intent, and paid conversions.</p>
                   </div>
                   <div style={{ display: "grid", gap: "0.85rem" }}>
                     {props.overview.ctaTrend14d.map((item) => (
@@ -1055,7 +807,7 @@ export function AdminPanel(props: {
                         <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", fontSize: "0.82rem" }}>
                           <strong>{item.date.slice(5)}</strong>
                           <span className="adm-muted">
-                            {item.ctaClicks} clicks · {item.signupCount} signups · {item.checkoutClicks} checkout · {item.paidCount} paid
+                            {item.ctaClicks}cl · {item.signupCount}su · {item.checkoutClicks}ch · {item.paidCount}pd
                           </span>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.45rem" }}>
@@ -1065,20 +817,11 @@ export function AdminPanel(props: {
                             { label: "Checkout", value: item.checkoutClicks, color: "#f59e0b" },
                             { label: "Paid", value: item.paidCount, color: "#22c55e" }
                           ].map((series) => (
-                            <div key={series.label} style={{ display: "grid", gap: "0.35rem" }}>
+                            <div key={series.label} style={{ display: "grid", gap: "0.3rem" }}>
                               <div style={{ height: 8, borderRadius: 999, background: "var(--surface-strong)", overflow: "hidden" }}>
-                                <div
-                                  style={{
-                                    width: `${Math.max((series.value / trendMax) * 100, series.value > 0 ? 8 : 0)}%`,
-                                    height: "100%",
-                                    borderRadius: 999,
-                                    background: series.color
-                                  }}
-                                />
+                                <div style={{ width: `${Math.max((series.value / trendMax) * 100, series.value > 0 ? 6 : 0)}%`, height: "100%", borderRadius: 999, background: series.color }} />
                               </div>
-                              <span className="adm-muted" style={{ fontSize: "0.75rem" }}>
-                                {series.label}: {series.value}
-                              </span>
+                              <span className="adm-muted" style={{ fontSize: "0.72rem" }}>{series.label}: {series.value}</span>
                             </div>
                           ))}
                         </div>
@@ -1086,11 +829,45 @@ export function AdminPanel(props: {
                     ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Best Converting CTAs + Top CTA Pages */}
+              <div className="adm-grid-2">
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Best Converting CTAs</h3>
+                    <p>Ranked by paid conversions attributed in the last 30 days.</p>
+                  </div>
+                  <div className="adm-stack-list">
+                    {props.overview.bestPerformingCtas.length === 0 ? (
+                      <p className="adm-muted">Attribution data will appear as new signups and checkouts come in.</p>
+                    ) : (
+                      props.overview.bestPerformingCtas.map((item) => (
+                        <div key={item.path} className="adm-list-row" style={{ alignItems: "stretch" }}>
+                          <div style={{ flex: 1, display: "grid", gap: "0.3rem" }}>
+                            <div className="adm-table-name">{formatCtaLabel(item.path)}</div>
+                            <div className="adm-table-email">{item.path}</div>
+                            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                              <StatusBadge label={`${item.clicks} clicks`} />
+                              <StatusBadge label={`${item.signups} signups`} tone="success" />
+                              <StatusBadge label={`${item.paidCount} paid`} tone="accent" />
+                            </div>
+                          </div>
+                          <div className="adm-list-side" style={{ alignItems: "flex-end" }}>
+                            <strong>{formatPercent(item.clickToPaidRate)}</strong>
+                            <span className="adm-table-muted" style={{ fontSize: "0.75rem" }}>click→paid</span>
+                            <span className="adm-table-muted" style={{ fontSize: "0.75rem" }}>{formatPercent(item.clickToSignupRate)} click→signup</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
                     <h3>Top CTA Pages</h3>
-                    <p>Which page groups create the most CTA pressure and checkout intent in the last 30 days.</p>
+                    <p>Page groups by CTA pressure and checkout intent in the last 30 days.</p>
                   </div>
                   <div className="adm-stack-list">
                     {props.overview.topCtaPages.length === 0 ? (
@@ -1098,22 +875,15 @@ export function AdminPanel(props: {
                     ) : (
                       props.overview.topCtaPages.map((item) => (
                         <div key={item.page} className="adm-list-row" style={{ alignItems: "stretch" }}>
-                          <div style={{ flex: 1, display: "grid", gap: "0.45rem" }}>
+                          <div style={{ flex: 1, display: "grid", gap: "0.4rem" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem" }}>
                               <div className="adm-table-name">{item.page}</div>
                               <strong>{item.clicks}</strong>
                             </div>
                             <div style={{ height: 8, borderRadius: 999, background: "var(--surface-strong)", overflow: "hidden" }}>
-                              <div
-                                style={{
-                                  width: `${Math.max((item.clicks / topPageMax) * 100, item.clicks > 0 ? 8 : 0)}%`,
-                                  height: "100%",
-                                  borderRadius: 999,
-                                  background: "linear-gradient(90deg, var(--primary), var(--accent))"
-                                }}
-                              />
+                              <div style={{ width: `${Math.max((item.clicks / topPageMax) * 100, item.clicks > 0 ? 6 : 0)}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg, var(--primary), var(--accent))" }} />
                             </div>
-                            <div className="adm-table-email">{item.checkoutClicks} checkout clicks from this page group</div>
+                            <div className="adm-table-email">{item.checkoutClicks} checkout clicks</div>
                           </div>
                         </div>
                       ))
@@ -1122,29 +892,31 @@ export function AdminPanel(props: {
                 </div>
               </div>
 
+              {/* Winner CTA + Top CTAs */}
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
                     <h3>Winner CTA This Week</h3>
-                    <p>The CTA currently creating the strongest paid conversion outcome over the last 7 days.</p>
+                    <p>Strongest paid conversion outcome over the last 7 days.</p>
                   </div>
                   {props.overview.winnerCta7d ? (
                     <div className="adm-overview-list">
                       <div className="adm-overview-item">
                         <strong>{formatCtaLabel(props.overview.winnerCta7d.path)}</strong>
-                        <span>{props.overview.winnerCta7d.path}</span>
+                        <span className="adm-table-email">{props.overview.winnerCta7d.path}</span>
                       </div>
-                      <div className="adm-overview-item">
-                        <strong>{props.overview.winnerCta7d.paidCount}</strong>
-                        <span>Paid conversions this week</span>
-                      </div>
-                      <div className="adm-overview-item">
-                        <strong>{formatPercent(props.overview.winnerCta7d.clickToPaidRate)}</strong>
-                        <span>Click → paid conversion rate</span>
-                      </div>
-                      <div className="adm-overview-item">
-                        <strong>{props.overview.winnerCta7d.signups}</strong>
-                        <span>Attributed signups this week</span>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginTop: "0.5rem" }}>
+                        {[
+                          { label: "Paid conversions", value: String(props.overview.winnerCta7d.paidCount) },
+                          { label: "Attributed signups", value: String(props.overview.winnerCta7d.signups) },
+                          { label: "Click → paid", value: formatPercent(props.overview.winnerCta7d.clickToPaidRate) },
+                          { label: "Click → signup", value: formatPercent(props.overview.winnerCta7d.clickToSignupRate) }
+                        ].map(({ label, value }) => (
+                          <div key={label} className="adm-mini-stat">
+                            <strong>{value}</strong>
+                            <span>{label}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ) : (
@@ -1154,38 +926,7 @@ export function AdminPanel(props: {
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Best Converting CTAs</h3>
-                    <p>CTA paths ranked by actual signups and paid conversions attributed over the last 30 days.</p>
-                  </div>
-                  <div className="adm-stack-list">
-                    {props.overview.bestPerformingCtas.length === 0 ? (
-                      <p className="adm-muted">Attribution data will appear as new signups and checkouts come in.</p>
-                    ) : (
-                      props.overview.bestPerformingCtas.map((item) => (
-                        <div key={item.path} className="adm-list-row" style={{ alignItems: "stretch" }}>
-                          <div style={{ flex: 1, display: "grid", gap: "0.35rem" }}>
-                            <div className="adm-table-name">{formatCtaLabel(item.path)}</div>
-                            <div className="adm-table-email">{item.path}</div>
-                            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                              <StatusBadge label={`${item.clicks} clicks`} />
-                              <StatusBadge label={`${item.signups} signups`} tone="success" />
-                              <StatusBadge label={`${item.paidCount} paid`} tone="accent" />
-                            </div>
-                          </div>
-                          <div className="adm-list-side" style={{ alignItems: "flex-end" }}>
-                            <strong>{formatPercent(item.clickToPaidRate)}</strong>
-                            <span className="adm-table-muted">click → paid</span>
-                            <span className="adm-table-muted">{formatPercent(item.clickToSignupRate)} click → signup</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                <div className="adm-panel-card">
-                  <div className="adm-panel-card-head">
-                    <h3>Top CTAs</h3>
+                    <h3>Top CTAs by Click Volume</h3>
                     <p>Most-clicked CTA paths from homepage and pricing in the last 30 days.</p>
                   </div>
                   <div className="adm-stack-list">
@@ -1199,12 +940,181 @@ export function AdminPanel(props: {
                             <div className="adm-table-email">{item.path}</div>
                           </div>
                           <div className="adm-list-side">
-                            <StatusBadge
-                              label={item.event.replaceAll("_", " ")}
-                              tone={item.event === "checkout_cta_click" ? "accent" : "neutral"}
-                            />
+                            <StatusBadge label={item.event.replaceAll("_", " ")} tone={item.event === "checkout_cta_click" ? "accent" : "neutral"} />
                             <strong>{item.count}</strong>
                           </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── SECTION: FEATURE USAGE ─────────────────────────────────── */}
+              <div style={{ padding: "0.25rem 0 0.1rem", borderBottom: "1px solid var(--line)", marginBottom: "0.5rem" }}>
+                <span className="adm-muted" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
+                  Feature Usage &amp; Writing Funnel
+                </span>
+              </div>
+
+              <div className="adm-grid-2">
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Feature Usage</h3>
+                    <p>Speaking and writing feature engagement, 7-day vs 30-day.</p>
+                  </div>
+                  <table className="adm-table">
+                    <thead>
+                      <tr>
+                        <th>FEATURE</th>
+                        <th style={{ textAlign: "right" }}>7 DAYS</th>
+                        <th style={{ textAlign: "right" }}>30 DAYS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { label: "Interview starts", v7: props.overview.interviewStarts7d, v30: props.overview.interviewStarts30d },
+                        { label: "Interview follow-ups", v7: props.overview.interviewFollowUps7d, v30: props.overview.interviewFollowUps30d },
+                        { label: "Speaking PDF exports", v7: props.overview.pdfExports7d, v30: props.overview.pdfExports30d },
+                        { label: "Result card downloads", v7: props.overview.resultCardDownloads7d, v30: props.overview.resultCardDownloads30d },
+                        { label: "Result shares", v7: props.overview.resultShares7d, v30: props.overview.resultShares30d },
+                        { label: "Writing starts", v7: props.overview.writingStarts7d, v30: props.overview.writingStarts30d },
+                        { label: "Writing evaluations", v7: props.overview.writingEvaluations7d, v30: props.overview.writingEvaluations30d },
+                        { label: "Writing retries", v7: props.overview.writingRetries7d, v30: props.overview.writingRetries30d },
+                        { label: "Writing PDF exports", v7: props.overview.writingPdfExports7d, v30: props.overview.writingPdfExports30d }
+                      ].map(({ label, v7, v30 }) => (
+                        <tr key={label}>
+                          <td>{label}</td>
+                          <td style={{ textAlign: "right", fontWeight: 600 }}>{v7}</td>
+                          <td style={{ textAlign: "right" }} className="adm-table-muted">{v30}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Writing Conversion Funnel</h3>
+                    <p>Whether learners finish evaluation, retry, and export. 7-day rate vs 30-day baseline.</p>
+                  </div>
+                  <div className="adm-overview-list">
+                    <div className="adm-overview-item">
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
+                        <span>Writing starts</span>
+                        <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30d: {props.overview.writingStarts30d}</span>
+                      </div>
+                      <strong style={{ fontSize: "1.1rem" }}>{props.overview.writingStarts7d}</strong>
+                    </div>
+                    {[
+                      { label: "Start → evaluated", v7: writingFunnel.startToEval7d, v30: writingFunnel.startToEval30d },
+                      { label: "Evaluated → retry", v7: writingFunnel.evalToRetry7d, v30: writingFunnel.evalToRetry30d },
+                      { label: "Evaluated → PDF export", v7: writingFunnel.evalToPdf7d, v30: writingFunnel.evalToPdf30d }
+                    ].map((item) => {
+                      const delta = item.v7 - item.v30;
+                      return (
+                        <div key={item.label} className="adm-overview-item">
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
+                            <span>{item.label}</span>
+                            <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30d: {formatPercent(item.v30)}</span>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
+                            <strong style={{ fontSize: "1.1rem" }}>{formatPercent(item.v7)}</strong>
+                            <span className={`adm-stat-trend ${delta >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
+                              {delta >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                              {formatPercent(Math.abs(delta))} vs 30d avg
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── SECTION: SHARING ──────────────────────────────────────── */}
+              <div style={{ padding: "0.25rem 0 0.1rem", borderBottom: "1px solid var(--line)", marginBottom: "0.5rem" }}>
+                <span className="adm-muted" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
+                  Speaking Share Funnel &amp; Virality
+                </span>
+              </div>
+
+              {/* Speaking Share Funnel + Top Share Signup Sources */}
+              <div className="adm-grid-2">
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Speaking Share Funnel</h3>
+                    <p>Result card downloads → shares across channels. 7-day vs 30-day.</p>
+                  </div>
+                  <table className="adm-table">
+                    <thead>
+                      <tr>
+                        <th>METRIC</th>
+                        <th style={{ textAlign: "right" }}>7 DAYS</th>
+                        <th style={{ textAlign: "right" }}>30 DAYS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Card downloads</td>
+                        <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.resultCardDownloads7d}</td>
+                        <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.resultCardDownloads30d}</td>
+                      </tr>
+                      <tr>
+                        <td>Total shares</td>
+                        <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.resultShares7d}</td>
+                        <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.resultShares30d}</td>
+                      </tr>
+                      <tr>
+                        <td>Download → share rate</td>
+                        <td style={{ textAlign: "right", fontWeight: 600 }}>
+                          <span style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.3rem" }}>
+                            {formatPercent(speakingShareFunnel.cardToShare7d)}
+                            {(() => { const d = speakingShareFunnel.cardToShare7d - speakingShareFunnel.cardToShare30d; return <span className={`adm-stat-trend ${d >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content", fontSize: "0.72rem" }}>{d >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}{formatPercent(Math.abs(d))}</span>; })()}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "right" }} className="adm-table-muted">{formatPercent(speakingShareFunnel.cardToShare30d)}</td>
+                      </tr>
+                      <tr>
+                        <td>X (Twitter) shares</td>
+                        <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.resultShareX7d}</td>
+                        <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.resultShareX30d}</td>
+                      </tr>
+                      <tr>
+                        <td>WhatsApp shares</td>
+                        <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.resultShareWhatsApp7d}</td>
+                        <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.resultShareWhatsApp30d}</td>
+                      </tr>
+                      <tr>
+                        <td>LinkedIn shares</td>
+                        <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.resultShareLinkedIn7d}</td>
+                        <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.resultShareLinkedIn30d}</td>
+                      </tr>
+                      <tr>
+                        <td>Share-attributed signups</td>
+                        <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.shareAttributedSignups7d}</td>
+                        <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.shareAttributedSignups30d}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Top Share Signup Sources</h3>
+                    <p>Public result pages turning social sharing into account creation (last 30 days).</p>
+                  </div>
+                  <div className="adm-stack-list">
+                    {props.overview.topShareSignupSources.length === 0 ? (
+                      <p className="adm-muted">No signup attribution from shared result pages yet.</p>
+                    ) : (
+                      props.overview.topShareSignupSources.map((item) => (
+                        <div key={item.sharePath} className="adm-list-row" style={{ alignItems: "stretch" }}>
+                          <div style={{ display: "grid", gap: "0.3rem", flex: 1 }}>
+                            <strong>{item.promptTitle}</strong>
+                            <span className="adm-muted">{item.learnerName} · {item.sharePath}</span>
+                          </div>
+                          <StatusBadge label={`${item.signups} signups`} tone="success" />
                         </div>
                       ))
                     )}
@@ -1292,7 +1202,7 @@ export function AdminPanel(props: {
 
                         <div className="adm-member-metrics">
                           {[
-                            { label: "Weekly value", value: formatMoney(member.monthlyValue) },
+                            { label: "Monthly value", value: formatMoney(member.monthlyValue) },
                             { label: "Sessions", value: member.totalPracticeSessions },
                             { label: "Avg score", value: member.averageScore ?? "—" },
                             { label: "Teacher notes", value: member.teacherNoteCount },
