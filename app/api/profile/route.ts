@@ -41,7 +41,11 @@ export async function POST(request: Request) {
       discoverySource: body.discoverySource ? String(body.discoverySource) : "",
       bio: body.bio ? String(body.bio) : "",
       avatarDataUrl: body.avatarDataUrl ? String(body.avatarDataUrl) : "",
-      onboardingComplete: Boolean(body.onboardingComplete)
+      onboardingComplete: Boolean(body.onboardingComplete),
+      englishBackground: body.englishBackground ? String(body.englishBackground) : "",
+      biggestChallenge: body.biggestChallenge ? String(body.biggestChallenge) : "",
+      estimatedLevel: body.estimatedLevel ? String(body.estimatedLevel) : "",
+      learningStyle: body.learningStyle ? String(body.learningStyle) : ""
     });
     return NextResponse.json({ profile: studentProfile });
   } catch (error) {

@@ -365,6 +365,10 @@ export interface StudentProfile {
   avatarDataUrl?: string;
   onboardingComplete?: boolean;
   updatedAt: string;
+  englishBackground?: string;
+  biggestChallenge?: string;
+  estimatedLevel?: string;
+  learningStyle?: string;
 }
 
 export interface SharedResultCard {

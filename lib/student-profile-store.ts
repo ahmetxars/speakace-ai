@@ -31,6 +31,10 @@ function defaultProfile(userId: string): StudentProfile {
     bio: "",
     avatarDataUrl: "",
     onboardingComplete: false,
+    englishBackground: "",
+    biggestChallenge: "",
+    estimatedLevel: "",
+    learningStyle: "",
     updatedAt: new Date().toISOString()
   };
 }
@@ -82,17 +86,25 @@ function normalizeStudentProfile(userId: string, input?: Partial<StudentProfile>
     bio: typeof input?.bio === "string" ? input.bio : fallback.bio,
     avatarDataUrl: typeof input?.avatarDataUrl === "string" ? input.avatarDataUrl : fallback.avatarDataUrl,
     onboardingComplete: Boolean(input?.onboardingComplete),
+    englishBackground: typeof input?.englishBackground === "string" ? input.englishBackground : fallback.englishBackground,
+    biggestChallenge: typeof input?.biggestChallenge === "string" ? input.biggestChallenge : fallback.biggestChallenge,
+    estimatedLevel: typeof input?.estimatedLevel === "string" ? input.estimatedLevel : fallback.estimatedLevel,
+    learningStyle: typeof input?.learningStyle === "string" ? input.learningStyle : fallback.learningStyle,
     updatedAt: typeof input?.updatedAt === "string" && input.updatedAt ? input.updatedAt : fallback.updatedAt
   };
 }
 
-let ensuredAvatarColumn = false;
+let ensuredColumns = false;
 
 async function ensureStudentProfileColumns() {
-  if (!hasDatabaseUrl() || ensuredAvatarColumn) return;
+  if (!hasDatabaseUrl() || ensuredColumns) return;
   const sql = getSql();
   await sql`alter table student_profiles add column if not exists avatar_data_url text`;
-  ensuredAvatarColumn = true;
+  await sql`alter table student_profiles add column if not exists english_background text`;
+  await sql`alter table student_profiles add column if not exists biggest_challenge text`;
+  await sql`alter table student_profiles add column if not exists estimated_level text`;
+  await sql`alter table student_profiles add column if not exists learning_style text`;
+  ensuredColumns = true;
 }
 
 export async function getStudentProfile(userId: string) {
@@ -115,6 +127,10 @@ export async function getStudentProfile(userId: string) {
         bio,
         avatar_data_url as "avatarDataUrl",
         onboarding_complete as "onboardingComplete",
+        english_background as "englishBackground",
+        biggest_challenge as "biggestChallenge",
+        estimated_level as "estimatedLevel",
+        learning_style as "learningStyle",
         updated_at as "updatedAt"
       from student_profiles
       where user_id = ${userId}
@@ -141,6 +157,10 @@ export async function upsertStudentProfile(input: {
   bio?: string;
   avatarDataUrl?: string;
   onboardingComplete?: boolean;
+  englishBackground?: string;
+  biggestChallenge?: string;
+  estimatedLevel?: string;
+  learningStyle?: string;
 }) {
   const next: StudentProfile = {
     userId: input.userId,
@@ -157,6 +177,10 @@ export async function upsertStudentProfile(input: {
     bio: input.bio?.trim() ?? "",
     avatarDataUrl: input.avatarDataUrl?.trim() ?? "",
     onboardingComplete: Boolean(input.onboardingComplete),
+    englishBackground: input.englishBackground?.trim() ?? "",
+    biggestChallenge: input.biggestChallenge?.trim() ?? "",
+    estimatedLevel: input.estimatedLevel?.trim() ?? "",
+    learningStyle: input.learningStyle?.trim() ?? "",
     updatedAt: new Date().toISOString()
   };
 
@@ -169,16 +193,24 @@ export async function upsertStudentProfile(input: {
     const examDate = next.examDate ?? null;
     const targetReason = next.targetReason ?? "Improve speaking score";
     const discoverySource = next.discoverySource ?? "Google search";
+    const englishBackground = next.englishBackground ?? "";
+    const biggestChallenge = next.biggestChallenge ?? "";
+    const estimatedLevel = next.estimatedLevel ?? "";
+    const learningStyle = next.learningStyle ?? "";
     const rows = (await sql`
       insert into student_profiles (
         user_id, preferred_exam_type, target_score, weekly_goal, study_days_json,
         daily_minutes_goal, current_level, focus_skill, exam_date, target_reason,
-        discovery_source, bio, avatar_data_url, onboarding_complete, updated_at
+        discovery_source, bio, avatar_data_url, onboarding_complete,
+        english_background, biggest_challenge, estimated_level, learning_style,
+        updated_at
       ) values (
         ${next.userId}, ${next.preferredExamType}, ${next.targetScore}, ${next.weeklyGoal},
         ${JSON.stringify(next.studyDays)}::jsonb, ${dailyMinutesGoal}, ${next.currentLevel},
         ${next.focusSkill}, ${examDate}, ${targetReason}, ${discoverySource},
-        ${bio}, ${avatarDataUrl}, ${next.onboardingComplete ?? false}, ${next.updatedAt}
+        ${bio}, ${avatarDataUrl}, ${next.onboardingComplete ?? false},
+        ${englishBackground}, ${biggestChallenge}, ${estimatedLevel}, ${learningStyle},
+        ${next.updatedAt}
       )
       on conflict (user_id)
       do update set
@@ -195,6 +227,10 @@ export async function upsertStudentProfile(input: {
         bio = excluded.bio,
         avatar_data_url = excluded.avatar_data_url,
         onboarding_complete = excluded.onboarding_complete,
+        english_background = excluded.english_background,
+        biggest_challenge = excluded.biggest_challenge,
+        estimated_level = excluded.estimated_level,
+        learning_style = excluded.learning_style,
         updated_at = excluded.updated_at
       returning
         user_id as "userId",
@@ -211,6 +247,10 @@ export async function upsertStudentProfile(input: {
         bio,
         avatar_data_url as "avatarDataUrl",
         onboarding_complete as "onboardingComplete",
+        english_background as "englishBackground",
+        biggest_challenge as "biggestChallenge",
+        estimated_level as "estimatedLevel",
+        learning_style as "learningStyle",
         updated_at as "updatedAt"
     `) as unknown as StudentProfile[];
     return normalizeStudentProfile(next.userId, rows[0]);

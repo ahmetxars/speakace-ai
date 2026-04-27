@@ -5,38 +5,202 @@ import { useRouter } from "next/navigation";
 import { useAppState } from "@/components/providers";
 import type { StudentProfile as StudentProfileType } from "@/lib/types";
 
+const TOTAL_STEPS = 5;
+
+type FormState = StudentProfileType & {
+  englishBackground: string;
+  biggestChallenge: string;
+  estimatedLevel: string;
+  learningStyle: string;
+};
+
+interface OptionCardProps {
+  value: string;
+  label: string;
+  desc?: string;
+  selected: boolean;
+  onSelect: (value: string) => void;
+  microcopy?: string;
+}
+
+function OptionCard({ value, label, desc, selected, onSelect, microcopy }: OptionCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(value)}
+      style={{
+        padding: "0.95rem 1.1rem",
+        borderRadius: 14,
+        border: selected ? "1.5px solid var(--sa-accent)" : "1px solid var(--line)",
+        background: selected ? "rgba(29, 111, 117, 0.1)" : "var(--surface-strong)",
+        cursor: "pointer",
+        textAlign: "left",
+        display: "grid",
+        gap: "0.25rem",
+        transition: "all 0.15s ease"
+      }}
+    >
+      <strong style={{ fontSize: "0.9rem", color: selected ? "var(--sa-accent)" : "var(--text)" }}>{label}</strong>
+      {desc ? <span style={{ color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.45 }}>{desc}</span> : null}
+      {selected && microcopy ? (
+        <span style={{ color: "var(--sa-accent)", fontSize: "0.8rem", marginTop: "0.2rem", fontStyle: "italic" }}>
+          {microcopy}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
 export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
   const router = useRouter();
   const { language } = useAppState();
   const tr = language === "tr";
-  const [form, setForm] = useState<StudentProfileType>({
+
+  const [form, setForm] = useState<FormState>({
     ...profile,
-    studyDays: Array.isArray(profile.studyDays) ? profile.studyDays.map(String) : []
+    studyDays: Array.isArray(profile.studyDays) ? profile.studyDays.map(String) : [],
+    englishBackground: profile.englishBackground ?? "",
+    biggestChallenge: profile.biggestChallenge ?? "",
+    estimatedLevel: profile.estimatedLevel ?? "",
+    learningStyle: profile.learningStyle ?? ""
   });
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [step, setStep] = useState(1);
 
-  const stepContent = {
-    1: {
-      title: tr ? "Sinav hedefini belirle" : "Define your exam goal",
-      prompt: tr
-        ? "Hangi sinava hazirlaniyorsun, hangi skoru istiyorsun ve bu hedef senin icin neden onemli?"
-        : "Which exam are you preparing for, what score do you want, and why does that goal matter to you?"
+  const steps = [
+    { title: tr ? "Hedef belirleme" : "Exam goal" },
+    { title: tr ? "Geçmiş ve deneyim" : "Background" },
+    { title: tr ? "Zorluklar" : "Challenges" },
+    { title: tr ? "Seviye tespiti" : "Your level" },
+    { title: tr ? "Çalışma ritmi" : "Study rhythm" }
+  ];
+
+  const englishBackgroundOptions = [
+    {
+      value: "abroad",
+      label: tr ? "Yurtdışında yaşadım / okudum" : "I lived or studied abroad",
+      desc: tr ? "Yabancı dil ortamında bulundum" : "I've been immersed in an English environment",
+      microcopy: tr ? "Harika! Bu altyapı sana çok avantaj sağlayacak." : "Excellent! That immersion gives you a real head start."
     },
-    2: {
-      title: tr ? "Calisma ritmini kur" : "Set your study rhythm",
-      prompt: tr
-        ? "Haftada kac oturum yapacaksin, gunde kac dakika ayiracaksin ve su anda en cok hangi skill'e odaklanmak istiyorsun?"
-        : "How many sessions will you do each week, how many minutes can you give per day, and which skill needs the most attention right now?"
+    {
+      value: "work",
+      label: tr ? "İş hayatımda her gün İngilizce kullanıyorum" : "I use English daily at work",
+      desc: tr ? "Profesyonel bağlamda aktif kullanıcıyım" : "Active professional English user",
+      microcopy: tr ? "Profesyonel deneyim sınav için mükemmel bir temel." : "Professional experience is a fantastic base for exam prep."
     },
-    3: {
-      title: tr ? "Kisisel baglamini ekle" : "Add your personal context",
-      prompt: tr
-        ? "SpeakAce'i nereden buldun ve speaking tarafinda en cok neyi gelistirmek istiyorsun? Bu cevaplar dashboard onerilerini daha isabetli yapar."
-        : "How did you find SpeakAce and what do you most want to improve in speaking? These answers help the dashboard personalize your recommendations."
+    {
+      value: "school",
+      label: tr ? "Ağırlıklı olarak okulda öğrendim" : "I learned mainly at school",
+      desc: tr ? "Resmi eğitim yoluyla edindim" : "Formal education background",
+      microcopy: tr ? "Sağlam bir temelimiz var. Şimdi konuşma pratiğine odaklanacağız." : "Solid foundation. We'll focus on turning theory into speaking."
+    },
+    {
+      value: "self",
+      label: tr ? "Kendi kendime / online öğrendim" : "I'm self-taught or learned online",
+      desc: tr ? "Dizi, uygulama, video gibi kaynaklarla" : "Through apps, shows, videos, and online resources",
+      microcopy: tr ? "Öz disiplin çok değerli. Sistematik pratik ekleyeceğiz." : "Self-motivation is powerful. We'll add structured practice on top."
+    },
+    {
+      value: "mixed",
+      label: tr ? "Karma bir geçmişim var" : "I have a mixed background",
+      desc: tr ? "Birden fazla kaynaktan öğrendim" : "Combination of school, work, and self-study",
+      microcopy: tr ? "Çeşitli deneyim avantajlı. Eksik yönleri birlikte kapatacağız." : "Diverse experience is an advantage. We'll target the gaps."
     }
-  } as const;
+  ];
+
+  const biggestChallengeOptions = [
+    {
+      value: "vocabulary",
+      label: tr ? "Kelime bulamıyorum" : "I run out of words",
+      desc: tr ? "Cümle ortasında kelime aklıma gelmiyor" : "Words escape me mid-sentence",
+      microcopy: tr ? "Bu çok yaygın! Kelime zenginliğine özel egzersizler önereceğiz." : "Very common! We'll target vocabulary expansion exercises for you."
+    },
+    {
+      value: "anxiety",
+      label: tr ? "Heyecanlanıp donuyorum" : "I freeze up under pressure",
+      desc: tr ? "Sinir baskısıyla düşüncelerimi toplayamıyorum" : "Nerves take over and I lose my train of thought",
+      microcopy: tr ? "Güvenli, kolay konularla başlayıp güven inşa edeceğiz." : "We'll start with comfortable topics to build confidence gradually."
+    },
+    {
+      value: "grammar",
+      label: tr ? "Gramer hataları yapıyorum" : "I make grammar mistakes",
+      desc: tr ? "Zaman kiplerini ve yapıları karıştırıyorum" : "Tenses and structures trip me up",
+      microcopy: tr ? "Yapı odaklı pratiklerle hataları kalıcı olarak azaltacağız." : "Targeted structure drills will make these errors rare over time."
+    },
+    {
+      value: "pronunciation",
+      label: tr ? "Aksanım anlaşılmıyor" : "My pronunciation is unclear",
+      desc: tr ? "Telaffuz ve vurgu konusunda zorlanıyorum" : "Stress, rhythm, and clarity are challenging",
+      microcopy: tr ? "Telaffuza özel geri bildirimler sana en çok yardımcı olacak." : "Pronunciation-focused feedback will be your biggest lever."
+    },
+    {
+      value: "fluency",
+      label: tr ? "Çok yavaş / çok duraklıyorum" : "I speak too slowly or pause too much",
+      desc: tr ? "Akıcılığım yok, düşünürken sessiz kalıyorum" : "Fluency and filler-free speech are struggles",
+      microcopy: tr ? "Akıcılık drilleri ve zamanlı pratiklerle bunu çözeceğiz." : "Fluency drills and timed practice will break this pattern."
+    },
+    {
+      value: "structure",
+      label: tr ? "Cevaplarımı organize edemiyorum" : "I can't organize my answers",
+      desc: tr ? "Ne söyleyeceğimi bilirim ama nasıl yapılandıracağımı bilemem" : "I have ideas but don't know how to structure them",
+      microcopy: tr ? "Cevap çerçeveleme teknikleri tam sana göre!" : "Answer-framing techniques are exactly what you need."
+    }
+  ];
+
+  const estimatedLevelOptions = [
+    {
+      value: "A2",
+      label: tr ? "A2 – Başlangıç" : "A2 – Beginner",
+      desc: tr ? "Temel İngilizce biliyorum ama konuşmak çok zor" : "I know basic English but speaking is very hard",
+      microcopy: tr ? "Her şeyin bir başlangıcı var! Sana uygun tempoda ilerliyoruz." : "Everyone starts somewhere. We'll pace this perfectly for you."
+    },
+    {
+      value: "B1",
+      label: tr ? "B1 – Orta" : "B1 – Intermediate",
+      desc: tr ? "Basit konuşmalar yapabiliyorum ama çok hata yapıyorum" : "I can hold simple conversations but make many mistakes",
+      microcopy: tr ? "B1'den hedefe giden yolu birlikte çizeceğiz." : "B1 is a great launchpad. We'll map the path to your target."
+    },
+    {
+      value: "B2",
+      label: tr ? "B2 – Orta-İleri" : "B2 – Upper-Intermediate",
+      desc: tr ? "Kendimi ifade edebiliyorum ama tam akıcı değilim" : "I can express myself but I'm not fully fluent yet",
+      microcopy: tr ? "B2'desin — hedefe birkaç adım kaldı!" : "You're at B2 — just a few focused steps to your target."
+    },
+    {
+      value: "C1",
+      label: tr ? "C1 – İleri" : "C1 – Advanced",
+      desc: tr ? "Oldukça akıcıyım, sınav taktiklerine odaklanacağım" : "I'm quite fluent, focusing on exam strategies",
+      microcopy: tr ? "C1'de ince ayar ve sınav formatı odağımız olacak." : "At C1, fine-tuning and exam format will be our focus."
+    },
+    {
+      value: "C1+",
+      label: tr ? "C1+ – Neredeyse Akıcı" : "C1+ – Near-Fluent",
+      desc: tr ? "Neredeyse anadil gibi konuşuyorum, sınav formatı öğreneceğim" : "Near-native level, here mainly to learn exam format",
+      microcopy: tr ? "Mükemmel seviye! Sadece sınav stratejisi ve format çalışacağız." : "Excellent! Pure exam strategy and format polish from here."
+    }
+  ];
+
+  const learningStyleOptions = [
+    {
+      value: "practice-first",
+      label: tr ? "Bol pratik yaparak" : "Learning by doing",
+      desc: tr ? "Önce dene, sonra hatalardan öğren" : "Jump in and learn from the feedback",
+      microcopy: tr ? "Harika! Sana bol pratik fırsatı sunacağız." : "Perfect! We'll keep your sessions action-packed."
+    },
+    {
+      value: "theory-first",
+      label: tr ? "Önce teori, sonra pratik" : "Theory first, then practice",
+      desc: tr ? "Yapıyı anla, sonra uygula" : "Understand the structure before applying it",
+      microcopy: tr ? "Anlaşıldı! Her modülden önce konsepti açıklayacağız." : "Got it! We'll explain the concept before each practice module."
+    },
+    {
+      value: "feedback-driven",
+      label: tr ? "Geri bildirimleri analiz ederek" : "Analyzing feedback deeply",
+      desc: tr ? "Raporlardan öğren, eksikleri hedefle" : "Study your reports and target specific weaknesses",
+      microcopy: tr ? "Detaylı analiz seni hızlı geliştirir. Harika seçim!" : "Deep analysis accelerates progress. Great choice!"
+    }
+  ];
 
   const save = async () => {
     setError("");
@@ -51,174 +215,334 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
       setError(data.error ?? (tr ? "Onboarding kaydedilemedi." : "Could not save onboarding."));
       return;
     }
-    setNotice(tr ? "Onboarding tamamlandi." : "Onboarding completed.");
-    setTimeout(() => router.push("/app"), 500);
+    setNotice(tr ? "Profilin hazır! Dashboard'una yönlendiriliyorsun…" : "Your profile is ready! Taking you to your dashboard…");
+    setTimeout(() => router.push("/app"), 700);
   };
 
   const studyDays = Array.isArray(form.studyDays) ? form.studyDays : [];
-  const studyDaysLabel = studyDays.length ? studyDays.join(", ") : tr ? "Henuz secilmedi" : "Not selected yet";
-  const focusSkillLabel = form.focusSkill || (tr ? "Henuz secilmedi" : "Not selected yet");
-  const currentLevelLabel = form.currentLevel || (tr ? "Henuz yazilmadi" : "Not added yet");
-  const discoverySourceLabel = form.discoverySource || (tr ? "Henuz yazilmadi" : "Not added yet");
-  const bioLabel = form.bio || (tr ? "Henuz yazilmadi" : "Not added yet");
 
   return (
     <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
+
+      {/* HEADER */}
       <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.8rem" }}>
-        <span className="eyebrow">{tr ? "Ilk kurulum" : "First-time setup"}</span>
-        <h1 style={{ margin: 0 }}>{tr ? "Calisma profilini hazirla" : "Set up your study profile"}</h1>
+        <span className="eyebrow">{tr ? "İlk kurulum" : "First-time setup"}</span>
+        <h1 style={{ margin: 0 }}>{tr ? "Sana özel programını oluşturalım" : "Let's build your personalized plan"}</h1>
         <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
-          {tr ? "Hedef skoru, sinav tipini ve haftalik ritmini belirle. Sistem buna gore practice ve dashboard onerilerini netlestirecek." : "Set your exam, target score, and weekly rhythm. The app will use this to personalize practice and dashboards."}
+          {tr
+            ? "Sadece 2 dakikanı ayır. Verdiğin cevaplar dashboard önerilerini ve yol haritanı kişiselleştirir."
+            : "Just 2 minutes. Your answers personalize your dashboard, recommendations, and roadmap."}
         </p>
       </section>
 
-      <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-        <div className="grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "0.5rem" }}>
-          {[1, 2, 3].map((item) => (
-            <div key={item} className="card" style={{ padding: "0.7rem", background: item === step ? "rgba(29, 111, 117, 0.12)" : "var(--surface-strong)" }}>
-              <strong>{tr ? `Adim ${item}` : `Step ${item}`}</strong>
-              <div style={{ marginTop: "0.25rem", color: "var(--muted)", fontSize: "0.92rem", lineHeight: 1.45 }}>
-                {stepContent[item as 1 | 2 | 3].title}
+      {/* PROGRESS BAR */}
+      <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem" }}>
+        <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+          {steps.map((s, i) => {
+            const num = i + 1;
+            const done = num < step;
+            const active = num === step;
+            return (
+              <div key={num} style={{ display: "flex", alignItems: "center", flex: active ? 2 : 1, gap: "0.3rem" }}>
+                <div
+                  style={{
+                    width: active ? "auto" : 28,
+                    height: 28,
+                    minWidth: 28,
+                    borderRadius: 99,
+                    background: done ? "var(--sa-accent)" : active ? "rgba(29,111,117,0.15)" : "var(--surface-strong)",
+                    border: active ? "1.5px solid var(--sa-accent)" : done ? "none" : "1px solid var(--line)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.4rem",
+                    padding: active ? "0 0.75rem" : undefined,
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    color: done ? "#fff" : active ? "var(--sa-accent)" : "var(--muted)",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  {done ? "✓" : null}
+                  {!done && <span>{num}</span>}
+                  {active ? <span style={{ fontSize: "0.78rem", fontWeight: 600 }}>{s.title}</span> : null}
+                </div>
+                {num < TOTAL_STEPS ? (
+                  <div style={{ height: 2, flex: 1, background: done ? "var(--sa-accent)" : "var(--line)", borderRadius: 2 }} />
+                ) : null}
               </div>
-              {item === 2 ? (
-                <div style={{ marginTop: "0.45rem", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.55 }}>
-                  {tr
-                    ? `Haftalik ${form.weeklyGoal} oturum • Gunluk ${form.dailyMinutesGoal ?? 15} dk • Odak: ${focusSkillLabel}`
-                    : `${form.weeklyGoal} sessions/week • ${form.dailyMinutesGoal ?? 15} mins/day • Focus: ${focusSkillLabel}`}
-                </div>
-              ) : null}
-              {item === 3 ? (
-                <div style={{ marginTop: "0.45rem", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.55 }}>
-                  {tr
-                    ? `Kaynak: ${discoverySourceLabel} • Not: ${bioLabel.slice(0, 48)}${bioLabel.length > 48 ? "..." : ""}`
-                    : `Source: ${discoverySourceLabel} • Note: ${bioLabel.slice(0, 48)}${bioLabel.length > 48 ? "..." : ""}`}
-                </div>
-              ) : null}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)", display: "grid", gap: "0.45rem" }}>
-          <strong>{stepContent[step as 1 | 2 | 3].title}</strong>
-          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>{stepContent[step as 1 | 2 | 3].prompt}</p>
+        {/* STEP CONTENT */}
+        <div style={{ display: "grid", gap: "0.9rem" }}>
+
+          {/* STEP 1 – EXAM GOAL */}
+          {step === 1 ? (
+            <>
+              <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)", display: "grid", gap: "0.35rem" }}>
+                <strong>{tr ? "Hangi sınava hazırlanıyorsun?" : "What's your exam goal?"}</strong>
+                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
+                  {tr
+                    ? "Sınav tipi ve hedef skorun, sana özel sorular ve zorluk seviyeleri seçmemizi sağlar."
+                    : "Your exam type and target score let us pick the right questions and difficulty for you."}
+                </p>
+              </div>
+              <label style={{ display: "grid", gap: "0.35rem" }}>
+                <span>{tr ? "Sınav tipi" : "Exam type"}</span>
+                <select
+                  value={form.preferredExamType}
+                  onChange={(e) => setForm((c) => ({ ...c, preferredExamType: e.target.value as "IELTS" | "TOEFL" }))}
+                  className="practice-select"
+                >
+                  <option value="IELTS">IELTS</option>
+                  <option value="TOEFL">TOEFL</option>
+                </select>
+              </label>
+              <label style={{ display: "grid", gap: "0.35rem" }}>
+                <span>{tr ? "Hedef skor" : "Target score"}</span>
+                <input
+                  value={form.targetScore ?? ""}
+                  onChange={(e) => setForm((c) => ({ ...c, targetScore: e.target.value ? Number(e.target.value) : null }))}
+                  type="number"
+                  min="1"
+                  max={form.preferredExamType === "IELTS" ? "9" : "30"}
+                  step="0.1"
+                  placeholder={form.preferredExamType === "IELTS" ? "Örn: 7.0" : "Örn: 24"}
+                  style={inputStyle}
+                />
+              </label>
+              <label style={{ display: "grid", gap: "0.35rem" }}>
+                <span>{tr ? "Sınav tarihi (isteğe bağlı)" : "Exam date (optional)"}</span>
+                <input
+                  value={form.examDate ?? ""}
+                  onChange={(e) => setForm((c) => ({ ...c, examDate: e.target.value }))}
+                  placeholder={tr ? "Örn: Haziran 2025" : "Ex: June 2025"}
+                  style={inputStyle}
+                />
+              </label>
+              <label style={{ display: "grid", gap: "0.35rem" }}>
+                <span>{tr ? "Bu skoru neden istiyorsun?" : "Why do you need this score?"}</span>
+                <input
+                  value={form.targetReason ?? ""}
+                  onChange={(e) => setForm((c) => ({ ...c, targetReason: e.target.value }))}
+                  placeholder={tr ? "Üniversite, iş, vize, kişisel hedef…" : "University, job, visa, personal goal…"}
+                  style={inputStyle}
+                />
+              </label>
+            </>
+          ) : null}
+
+          {/* STEP 2 – ENGLISH BACKGROUND */}
+          {step === 2 ? (
+            <>
+              <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)", display: "grid", gap: "0.35rem" }}>
+                <strong>{tr ? "İngilizce geçmişin nasıl?" : "What's your English background?"}</strong>
+                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
+                  {tr
+                    ? "Bu bilgi, sana en uygun egzersiz türlerini ve başlangıç noktasını belirler."
+                    : "This helps us match you with the right exercise types and starting point."}
+                </p>
+              </div>
+              <div style={{ display: "grid", gap: "0.55rem" }}>
+                {englishBackgroundOptions.map((opt) => (
+                  <OptionCard
+                    key={opt.value}
+                    value={opt.value}
+                    label={opt.label}
+                    desc={opt.desc}
+                    microcopy={opt.microcopy}
+                    selected={form.englishBackground === opt.value}
+                    onSelect={(v) => setForm((c) => ({ ...c, englishBackground: v }))}
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {/* STEP 3 – BIGGEST CHALLENGE */}
+          {step === 3 ? (
+            <>
+              <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)", display: "grid", gap: "0.35rem" }}>
+                <strong>{tr ? "Konuşurken seni en çok ne zorluyor?" : "What's your biggest speaking challenge?"}</strong>
+                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
+                  {tr
+                    ? "Dürüst cevap en iyi. Bu seçim, dashboard'un ilk görev önerisini ve odak alanını belirler."
+                    : "Be honest — this shapes your first task recommendation and focus area on the dashboard."}
+                </p>
+              </div>
+              <div style={{ display: "grid", gap: "0.55rem" }}>
+                {biggestChallengeOptions.map((opt) => (
+                  <OptionCard
+                    key={opt.value}
+                    value={opt.value}
+                    label={opt.label}
+                    desc={opt.desc}
+                    microcopy={opt.microcopy}
+                    selected={form.biggestChallenge === opt.value}
+                    onSelect={(v) => setForm((c) => ({ ...c, biggestChallenge: v }))}
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {/* STEP 4 – LEVEL ESTIMATION */}
+          {step === 4 ? (
+            <>
+              <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)", display: "grid", gap: "0.35rem" }}>
+                <strong>{tr ? "Mevcut İngilizce seviyeni kendin nasıl değerlendirirsin?" : "How would you rate your current English level?"}</strong>
+                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
+                  {tr
+                    ? "Bu tahmini seviye, yol haritanı hedefine göre kalibre eder. İlk deneme sonrasında otomatik güncellenir."
+                    : "This calibrates your roadmap gap to your target. It will auto-update after your first session."}
+                </p>
+              </div>
+              <div style={{ display: "grid", gap: "0.55rem" }}>
+                {estimatedLevelOptions.map((opt) => (
+                  <OptionCard
+                    key={opt.value}
+                    value={opt.value}
+                    label={opt.label}
+                    desc={opt.desc}
+                    microcopy={opt.microcopy}
+                    selected={form.estimatedLevel === opt.value}
+                    onSelect={(v) => setForm((c) => ({ ...c, estimatedLevel: v }))}
+                  />
+                ))}
+              </div>
+            </>
+          ) : null}
+
+          {/* STEP 5 – STUDY RHYTHM */}
+          {step === 5 ? (
+            <>
+              <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)", display: "grid", gap: "0.35rem" }}>
+                <strong>{tr ? "Çalışma ritmin nasıl olacak?" : "How will you study?"}</strong>
+                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
+                  {tr
+                    ? "Gerçekçi bir plan belirle. Az ama düzenli, çok ama dağınıktan her zaman daha iyidir."
+                    : "Set a realistic plan. Consistent and small always beats big and scattered."}
+                </p>
+              </div>
+              <label style={{ display: "grid", gap: "0.35rem" }}>
+                <span>{tr ? "Haftada kaç speaking oturumu?" : "Speaking sessions per week"}</span>
+                <input
+                  value={form.weeklyGoal}
+                  onChange={(e) => setForm((c) => ({ ...c, weeklyGoal: Number(e.target.value) || 4 }))}
+                  type="number" min="1" max="14"
+                  placeholder={tr ? "Haftalık hedef" : "Weekly goal"}
+                  style={inputStyle}
+                />
+              </label>
+              <label style={{ display: "grid", gap: "0.35rem" }}>
+                <span>{tr ? "Günde kaç dakika ayırabilirsin?" : "Minutes of study per day"}</span>
+                <input
+                  value={form.dailyMinutesGoal ?? 15}
+                  onChange={(e) => setForm((c) => ({ ...c, dailyMinutesGoal: Number(e.target.value) || 15 }))}
+                  type="number" min="5" max="60"
+                  placeholder={tr ? "Günlük dakika" : "Daily minutes"}
+                  style={inputStyle}
+                />
+              </label>
+              <div style={{ display: "grid", gap: "0.45rem" }}>
+                <span style={{ fontSize: "0.9rem" }}>{tr ? "Hangi günler çalışacaksın?" : "Which days will you study?"}</span>
+                <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => {
+                    const active = studyDays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        className="button button-secondary"
+                        style={{ background: active ? "rgba(29, 111, 117, 0.12)" : undefined, border: active ? "1px solid var(--sa-accent)" : undefined }}
+                        onClick={() =>
+                          setForm((c) => ({
+                            ...c,
+                            studyDays: active ? studyDays.filter((d) => d !== day) : [...studyDays, day]
+                          }))
+                        }
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ display: "grid", gap: "0.45rem" }}>
+                <span style={{ fontSize: "0.9rem" }}>{tr ? "Nasıl öğrenmeyi tercih edersin?" : "How do you prefer to learn?"}</span>
+                <div style={{ display: "grid", gap: "0.5rem" }}>
+                  {learningStyleOptions.map((opt) => (
+                    <OptionCard
+                      key={opt.value}
+                      value={opt.value}
+                      label={opt.label}
+                      desc={opt.desc}
+                      microcopy={opt.microcopy}
+                      selected={form.learningStyle === opt.value}
+                      onSelect={(v) => setForm((c) => ({ ...c, learningStyle: v }))}
+                    />
+                  ))}
+                </div>
+              </div>
+              <label style={{ display: "grid", gap: "0.35rem" }}>
+                <span>{tr ? "En çok odaklanmak istediğin skill" : "Skill you want to focus on most"}</span>
+                <input
+                  value={form.focusSkill}
+                  onChange={(e) => setForm((c) => ({ ...c, focusSkill: e.target.value }))}
+                  placeholder={tr ? "Akıcılık, telaffuz, kelime hazinesi, yapı…" : "Fluency, pronunciation, vocabulary, structure…"}
+                  style={inputStyle}
+                />
+              </label>
+
+              {/* SUMMARY */}
+              <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.5rem" }}>
+                <strong>{tr ? "Planın özeti" : "Your plan summary"}</strong>
+                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7, fontSize: "0.88rem" }}>
+                  {tr
+                    ? `${form.preferredExamType} · Hedef: ${form.targetScore ?? "—"} · Haftada ${form.weeklyGoal} oturum · Günde ${form.dailyMinutesGoal ?? 15} dk`
+                    : `${form.preferredExamType} · Target: ${form.targetScore ?? "—"} · ${form.weeklyGoal} sessions/week · ${form.dailyMinutesGoal ?? 15} min/day`}
+                </p>
+                {form.estimatedLevel ? (
+                  <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.6, fontSize: "0.85rem" }}>
+                    {tr
+                      ? `Tahmini seviye: ${form.estimatedLevel} · Öğrenme tercihi: ${form.learningStyle || "—"}`
+                      : `Estimated level: ${form.estimatedLevel} · Learning style: ${form.learningStyle || "—"}`}
+                  </p>
+                ) : null}
+              </div>
+            </>
+          ) : null}
+
         </div>
 
-        {step === 1 ? (
-          <>
-            <label style={{ display: "grid", gap: "0.35rem" }}>
-              <span>{tr ? "Hangi sinava hazirlaniyorsun?" : "Which exam are you preparing for?"}</span>
-              <select value={form.preferredExamType} onChange={(event) => setForm((current) => ({ ...current, preferredExamType: event.target.value as "IELTS" | "TOEFL" }))} className="practice-select">
-                <option value="IELTS">IELTS</option>
-                <option value="TOEFL">TOEFL</option>
-              </select>
-            </label>
-            <label style={{ display: "grid", gap: "0.35rem" }}>
-              <span>{tr ? "Hedef skorun ne?" : "What is your target score?"}</span>
-              <input value={form.targetScore ?? ""} onChange={(event) => setForm((current) => ({ ...current, targetScore: event.target.value ? Number(event.target.value) : null }))} type="number" min="1" max={form.preferredExamType === "IELTS" ? "9" : "30"} step="0.1" placeholder={tr ? "Hedef skor" : "Target score"} style={inputStyle} />
-            </label>
-            <label style={{ display: "grid", gap: "0.35rem" }}>
-              <span>{tr ? "Sinav tarihi var mi?" : "Do you already have an exam date?"}</span>
-              <input value={form.examDate ?? ""} onChange={(event) => setForm((current) => ({ ...current, examDate: event.target.value }))} placeholder={tr ? "Sinav tarihi (istege bagli)" : "Exam date (optional)"} style={inputStyle} />
-            </label>
-            <label style={{ display: "grid", gap: "0.35rem" }}>
-              <span>{tr ? "Bu skoru neden istiyorsun?" : "Why do you want this score?"}</span>
-              <input value={form.targetReason ?? ""} onChange={(event) => setForm((current) => ({ ...current, targetReason: event.target.value }))} placeholder={tr ? "Universite, is, vize veya kisisel hedef" : "University, job, visa, or personal goal"} style={inputStyle} />
-            </label>
-          </>
-        ) : null}
-
-        {step === 2 ? (
-          <>
-            <label style={{ display: "grid", gap: "0.35rem" }}>
-              <span>{tr ? "Haftada kac speaking oturumu hedefliyorsun?" : "How many speaking sessions do you want each week?"}</span>
-              <input value={form.weeklyGoal} onChange={(event) => setForm((current) => ({ ...current, weeklyGoal: Number(event.target.value) || 4 }))} type="number" min="1" max="14" placeholder={tr ? "Haftalik hedef" : "Weekly goal"} style={inputStyle} />
-            </label>
-            <label style={{ display: "grid", gap: "0.35rem" }}>
-              <span>{tr ? "Gunde kac dakika ayirabilirsin?" : "How many minutes can you study per day?"}</span>
-              <input value={form.dailyMinutesGoal ?? 15} onChange={(event) => setForm((current) => ({ ...current, dailyMinutesGoal: Number(event.target.value) || 15 }))} type="number" min="5" max="60" placeholder={tr ? "Gunluk speaking dakikasi" : "Daily speaking minutes"} style={inputStyle} />
-            </label>
-            <label style={{ display: "grid", gap: "0.35rem" }}>
-              <span>{tr ? "Mevcut seviyeni nasil tarif edersin?" : "How would you describe your current level?"}</span>
-              <input value={form.currentLevel} onChange={(event) => setForm((current) => ({ ...current, currentLevel: event.target.value }))} placeholder={tr ? "Orn. Band 5.5 civari / B1" : "Ex: Around Band 5.5 / B1"} style={inputStyle} />
-            </label>
-            <label style={{ display: "grid", gap: "0.35rem" }}>
-              <span>{tr ? "Su an en cok hangi skill'i gelistirmek istiyorsun?" : "Which skill do you want to improve the most right now?"}</span>
-              <input value={form.focusSkill} onChange={(event) => setForm((current) => ({ ...current, focusSkill: event.target.value }))} placeholder={tr ? "Akicilik, telaffuz, kelime, yapi..." : "Fluency, pronunciation, vocabulary, structure..."} style={inputStyle} />
-            </label>
-            <div style={{ display: "grid", gap: "0.45rem" }}>
-              <span className="practice-meta">{tr ? "Hangi gunler calismayi planliyorsun?" : "Which days do you plan to study?"}</span>
-              <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
-                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => {
-                  const active = studyDays.includes(day);
-                  return (
-                    <button
-                      key={day}
-                      type="button"
-                      className="button button-secondary"
-                      style={{ background: active ? "rgba(29, 111, 117, 0.12)" : undefined }}
-                      onClick={() =>
-                        setForm((current) => ({
-                          ...current,
-                          studyDays: active ? studyDays.filter((item) => item !== day) : [...studyDays, day]
-                        }))
-                      }
-                    >
-                      {day}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)" }}>
-              <strong>{tr ? "Su an secilen plan" : "Current study plan"}</strong>
-              <p style={{ margin: "0.45rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>
-                {tr
-                  ? `Haftada ${form.weeklyGoal} speaking oturumu, gunde ${form.dailyMinutesGoal ?? 15} dakika, seviye: ${currentLevelLabel}, odak skill: ${focusSkillLabel}, calisma gunleri: ${studyDaysLabel}.`
-                  : `${form.weeklyGoal} speaking sessions per week, ${form.dailyMinutesGoal ?? 15} minutes per day, current level: ${currentLevelLabel}, focus skill: ${focusSkillLabel}, study days: ${studyDaysLabel}.`}
-              </p>
-            </div>
-          </>
-        ) : null}
-
-        {step === 3 ? (
-          <>
-            <label style={{ display: "grid", gap: "0.35rem" }}>
-              <span>{tr ? "SpeakAce'i nereden buldun?" : "How did you find SpeakAce?"}</span>
-              <input value={form.discoverySource ?? ""} onChange={(event) => setForm((current) => ({ ...current, discoverySource: event.target.value }))} placeholder={tr ? "Google, arkadas, sosyal medya, ogretmen..." : "Google, friend, social media, teacher..."} style={inputStyle} />
-            </label>
-            <label style={{ display: "grid", gap: "0.35rem" }}>
-              <span>{tr ? "Speaking tarafinda en cok neyi gelistirmek istiyorsun?" : "What do you want to improve most in your speaking?"}</span>
-              <textarea value={form.bio ?? ""} onChange={(event) => setForm((current) => ({ ...current, bio: event.target.value }))} rows={4} placeholder={tr ? "Kisa not: akicilik, telaffuz, dogal cevap verme, sinav ozguveni..." : "Short note: fluency, pronunciation, natural answers, exam confidence..."} style={{ ...inputStyle, resize: "vertical" }} />
-            </label>
-            <div className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)" }}>
-              <strong>{tr ? "Ozet" : "Summary"}</strong>
-              <p style={{ margin: "0.45rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>
-                {tr
-                  ? `${form.preferredExamType} icin ${form.targetScore ?? "-"} hedefi, haftalik ${form.weeklyGoal} oturum ve gunluk ${form.dailyMinutesGoal ?? 15} dakika speaking ritmi belirledin.`
-                  : `You set a ${form.preferredExamType} goal of ${form.targetScore ?? "-"}, a ${form.weeklyGoal}-session week, and ${form.dailyMinutesGoal ?? 15} daily speaking minutes.`}
-              </p>
-              <p style={{ margin: "0.55rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>
-                {tr
-                  ? `Bizi bulma kaynagin: ${discoverySourceLabel}. Gelistirmek istedigin alan: ${bioLabel}`
-                  : `You found SpeakAce via: ${discoverySourceLabel}. Your main improvement note: ${bioLabel}`}
-              </p>
-            </div>
-          </>
-        ) : null}
-
-        <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+        {/* NAVIGATION */}
+        <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", marginTop: "0.2rem" }}>
           {step > 1 ? (
-            <button type="button" className="button button-secondary" onClick={() => setStep((current) => current - 1)}>
+            <button type="button" className="button button-secondary" onClick={() => setStep((s) => s - 1)}>
               {tr ? "Geri" : "Back"}
             </button>
           ) : null}
-          {step < 3 ? (
-            <button type="button" className="button button-primary" onClick={() => setStep((current) => current + 1)}>
-              {tr ? "Devam et" : "Continue"}
+          {step < TOTAL_STEPS ? (
+            <button type="button" className="button button-primary" onClick={() => setStep((s) => s + 1)}>
+              {tr ? "Devam et →" : "Continue →"}
             </button>
           ) : (
-            <button type="button" className="button button-primary" onClick={save}>{tr ? "Onboardingi tamamla" : "Complete onboarding"}</button>
+            <button type="button" className="button button-primary" onClick={save}>
+              {tr ? "Programımı oluştur" : "Create my plan"}
+            </button>
           )}
+          {step < TOTAL_STEPS ? (
+            <button
+              type="button"
+              style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: "0.85rem" }}
+              onClick={() => setStep((s) => s + 1)}
+            >
+              {tr ? "Bu adımı atla" : "Skip this step"}
+            </button>
+          ) : null}
         </div>
         {notice ? <p style={{ margin: 0, color: "var(--success)" }}>{notice}</p> : null}
         {error ? <p style={{ margin: 0, color: "var(--accent-deep)" }}>{error}</p> : null}

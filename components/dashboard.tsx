@@ -221,30 +221,50 @@ export function Dashboard() {
   }, [hasBalancedSkillProfile, tr, weakestSkill]);
 
   const roadmap = useMemo(() => {
+    const estimatedNumeric = profile?.estimatedLevel
+      ? getLevelNumeric(profile.estimatedLevel, latestExamType)
+      : null;
+
     if (!summary.averageScore) {
+      if (estimatedNumeric && numericTarget) {
+        const estimatedGap = Number((numericTarget - estimatedNumeric).toFixed(1));
+        if (estimatedGap <= 0) {
+          return tr
+            ? `Tahmini seviyene göre hedefine zaten yakınsın. Birkaç deneme sonrası sistem gerçek skorunla yolu netleştirecek.`
+            : `Based on your self-assessment, you're already close to your target. A few sessions will let the system refine this with real scores.`;
+        }
+        if (estimatedGap >= (latestExamType === "IELTS" ? 2.0 : 1.0)) {
+          return tr
+            ? `Tahmini seviyenle hedefin arasında ciddi bir mesafe var — bu bir maraton. İlk 2 hafta sadece akıcılığa ve cevap yapısına odaklan, skoru sonra kur.`
+            : `Your self-assessed level suggests a significant gap to your target — this is a marathon. First 2 weeks: fluency and answer structure only. Score-chasing comes after.`;
+        }
+        return tr
+          ? `Tahmini seviyene göre hedefine birkaç adım kaldı. İlk denemelerini tamamla, sistem ortalamana göre daha isabetli bir plan çıkaracak.`
+          : `Your self-assessed level puts you a few steps from your target. Complete your first sessions and the system will map a precise plan.`;
+      }
       return tr
-        ? "Henuz yeterli speaking denemesi yok. Once 3-4 farkli task coz, sonra sistem ortalamana gore daha isabetli bir yol plani cikarir."
+        ? "Henüz yeterli speaking denemesi yok. Önce 3-4 farklı task çöz, sonra sistem ortalamana göre daha isabetli bir yol planı çıkarır."
         : "You do not have enough scored attempts yet. Complete 3-4 different tasks first, then the roadmap becomes much more reliable.";
     }
     if (!numericTarget) {
       return tr
-        ? "Istege bagli bir hedef band belirledikten sonra sistem ortalama skorun ile hedef arasindaki farka gore daha net bir yol cizecek."
+        ? "İsteğe bağlı bir hedef band belirledikten sonra sistem ortalama skorun ile hedef arasındaki farka göre daha net bir yol çizecek."
         : "Once you set an optional target score, the dashboard will map your current average against that goal more clearly.";
     }
     if ((scoreGap ?? 0) <= 0) {
       return tr
-        ? `Ortalaman su an ${targetLabel} seviyene cok yakin ya da ustunde. Bundan sonraki asama istikrarli kaliteyi surdurmek: daha net acilis, daha temiz baglanti ve daha dogal bir ritim.`
+        ? `Ortalaman şu an ${targetLabel} seviyene çok yakın ya da üstünde. Bundan sonraki aşama istikrarlı kaliteyi sürdürmek: daha net açılış, daha temiz bağlantı ve daha doğal bir ritim.`
         : `Your average is already close to or above your ${targetLabel}. The next phase is consistency: cleaner openings, smoother linking, and a more natural rhythm.`;
     }
     if ((scoreGap ?? 0) >= (latestExamType === "IELTS" ? 1.2 : 0.8)) {
       return tr
-        ? `Hedefin ile ortalaman arasinda belirgin bir fark var. En hizli ilerleme icin once cevap iskeletini sabitle, sonra her cevapta reason + example kullan, en son zayif skill'ini ayri drill ile guclendir.`
+        ? `Hedefin ile ortalaman arasında belirgin bir fark var. En hızlı ilerleme için önce cevap iskeletini sabitle, sonra her cevapta reason + example kullan, en son zayıf skill'ini ayrı drill ile güçlendir.`
         : `There is still a meaningful gap between your average and your target. Stabilize your answer structure first, then add a clear reason and example, and finally train your weakest skill separately.`;
     }
     return tr
-      ? `Hedefine yaklasiyorsun. Bu seviyede skoru yukari tasiyan sey daha olgun ornekler, daha dogal baglanti kelimeleri ve gereksiz tekrarlarin azalmasidir.`
+      ? `Hedefine yaklaşıyorsun. Bu seviyede skoru yukarı taşıyan şey daha olgun örnekler, daha doğal bağlantı kelimeleri ve gereksiz tekrarların azalmasıdır.`
       : `You are getting close to your target. Stronger examples, more natural linking, and fewer repeated phrases will move the score higher.`;
-  }, [latestExamType, numericTarget, scoreGap, summary.averageScore, targetLabel, tr]);
+  }, [latestExamType, numericTarget, profile?.estimatedLevel, scoreGap, summary.averageScore, targetLabel, tr]);
 
   const streakCalendar = useMemo(
     () => buildRecentStreakCalendar(summary.recentSessions),
@@ -320,17 +340,22 @@ export function Dashboard() {
 
       {/* ONBOARDING BANNER */}
       {needsOnboarding ? (
-        <section className="db-banner card">
+        <section className="db-banner card" style={{ background: "rgba(29,111,117,0.07)", border: "1.5px solid rgba(29,111,117,0.2)" }}>
           <div className="db-banner-body">
             <Sparkles size={15} />
-            <p>
-              {tr
-                ? "Hedef skorunu ve tercihlerini tamamla; dashboard onerileri daha isabetli hale gelsin."
-                : "Complete your target score and preferences so the dashboard can guide you more precisely."}
-            </p>
+            <div>
+              <strong style={{ display: "block", marginBottom: "0.2rem" }}>
+                {tr ? "Sana özel programını oluştur — 2 dakika yeter" : "Create your personalized plan — takes just 2 minutes"}
+              </strong>
+              <p style={{ margin: 0, fontSize: "0.87rem", color: "var(--muted)" }}>
+                {tr
+                  ? "Seviyeni, zorluklarını ve öğrenme stilini öğrenelim. Dashboard önerileri ve yol haritası sana göre şekillensin."
+                  : "Tell us your level, challenges, and learning style. Your dashboard recommendations and roadmap will be tailored just for you."}
+              </p>
+            </div>
           </div>
-          <Link className="button button-secondary" href="/app/onboarding">
-            {tr ? "Kurulumu tamamla" : "Complete setup"}
+          <Link className="button button-primary" href="/app/onboarding">
+            {tr ? "Programımı oluştur →" : "Build my plan →"}
           </Link>
         </section>
       ) : null}
@@ -380,6 +405,29 @@ export function Dashboard() {
           </div>
         </div>
       </section>
+
+      {/* PERSONALIZED INSIGHT */}
+      {profile?.onboardingComplete && (profile?.englishBackground || profile?.biggestChallenge) ? (
+        <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.7rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Sparkles size={14} style={{ color: "var(--sa-accent)" }} />
+            <span className="eyebrow">{tr ? "Sana özel analiz" : "Your personalized insight"}</span>
+          </div>
+          <p style={{ margin: 0, lineHeight: 1.75, color: "var(--text)" }}>
+            {buildPersonalizedMessage(profile, tr)}
+          </p>
+          {profile?.biggestChallenge ? (
+            <div style={{ padding: "0.8rem 1rem", borderRadius: 12, background: "rgba(29,111,117,0.07)", border: "1px solid rgba(29,111,117,0.15)" }}>
+              <strong style={{ fontSize: "0.87rem", color: "var(--sa-accent)" }}>
+                {tr ? "Önerilen ilk pratik:" : "Recommended first practice:"}
+              </strong>
+              <p style={{ margin: "0.3rem 0 0", fontSize: "0.87rem", color: "var(--muted)", lineHeight: 1.6 }}>
+                {buildFirstTaskRecommendation(profile.biggestChallenge, profile.preferredExamType, tr)}
+              </p>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* PROGRESS & HISTORY */}
       <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "1rem" }}>
@@ -735,6 +783,82 @@ function translateCategoryLabel(label: string) {
     "Topic Development": "Icerik gelisimi"
   };
   return labels[label] ?? label;
+}
+
+function getLevelNumeric(estimatedLevel: string, examType: "IELTS" | "TOEFL"): number | null {
+  const map: Record<string, { ielts: number; toefl: number }> = {
+    "A2":  { ielts: 4.0, toefl: 1.5 },
+    "B1":  { ielts: 5.0, toefl: 2.0 },
+    "B2":  { ielts: 6.0, toefl: 2.5 },
+    "C1":  { ielts: 7.0, toefl: 3.0 },
+    "C1+": { ielts: 8.0, toefl: 3.5 }
+  };
+  const entry = map[estimatedLevel];
+  if (!entry) return null;
+  return examType === "IELTS" ? entry.ielts : entry.toefl;
+}
+
+function buildPersonalizedMessage(profile: StudentProfile, tr: boolean): string {
+  const backgroundMap: Record<string, { tr: string; en: string }> = {
+    abroad:  { tr: "Yurtdışı deneyimin harika bir temel sağlıyor.", en: "Your time abroad gives you a strong foundation." },
+    work:    { tr: "Günlük profesyonel İngilizce kullanımın büyük avantaj.", en: "Your daily professional English use is a big advantage." },
+    school:  { tr: "Okul İngilizcen sağlam bir altyapı oluşturmuş.", en: "Your school English has built a solid base." },
+    self:    { tr: "Kendi kendine öğrenme disiplinin bu yolculukta çok işe yarayacak.", en: "Your self-taught discipline will serve you well on this journey." },
+    mixed:   { tr: "Farklı kaynaklardan gelen karma deneyimin çok değerli.", en: "Your diverse learning background is a real asset." }
+  };
+  const challengeMap: Record<string, { tr: string; en: string }> = {
+    vocabulary:    { tr: "Kelime bulmakta zorlandığını biliyoruz — ilk egzersizler kelime zenginliğine odaklanacak.", en: "We know vocabulary is your sticking point — your first exercises will target word range." },
+    anxiety:       { tr: "Heyecanı yenmek için kolay, tanıdık konulardan başlayacağız ve güveni adım adım inşa edeceğiz.", en: "To beat the nerves, we'll start with easy familiar topics and build your confidence step by step." },
+    grammar:       { tr: "Gramer hataları üzerine yapı odaklı pratikler ve hedefli geri bildirimler sunacağız.", en: "We'll give you structure-focused drills and targeted grammar feedback to eliminate recurring errors." },
+    pronunciation: { tr: "Telaffuz için her denemede netlik ve vurgu üzerine özel geri bildirim alacaksın.", en: "For pronunciation, you'll get dedicated clarity and stress feedback on every attempt." },
+    fluency:       { tr: "Duraklamaları azaltmak için zamanlı pratikler ve akıcılık egzersizleri sunacağız.", en: "We'll give you timed drills and fluency exercises to reduce pauses and hesitations." },
+    structure:     { tr: "Cevap çerçeveleme tekniklerini öğreneceğiz — her cevap net bir ana fikir, neden ve örnekle.", en: "We'll teach you answer-framing techniques — every response with a clear main idea, reason, and example." }
+  };
+  const bgEntry = backgroundMap[profile.englishBackground ?? ""] ?? null;
+  const chEntry = challengeMap[profile.biggestChallenge ?? ""] ?? null;
+
+  if (bgEntry && chEntry) {
+    return tr
+      ? `${bgEntry.tr} ${chEntry.tr}`
+      : `${bgEntry.en} ${chEntry.en}`;
+  }
+  if (bgEntry) return tr ? bgEntry.tr : bgEntry.en;
+  if (chEntry) return tr ? chEntry.tr : chEntry.en;
+  return tr
+    ? "Dashboard önerilerin profiline göre kişiselleştirildi."
+    : "Your dashboard recommendations have been personalized based on your profile.";
+}
+
+function buildFirstTaskRecommendation(biggestChallenge: string, examType: "IELTS" | "TOEFL", tr: boolean): string {
+  const taskMap: Record<string, { tr: string; en: string }> = {
+    anxiety:    {
+      tr: `${examType === "IELTS" ? "IELTS Part 1" : "TOEFL Task 1"} — Kişisel konular (hobiler, rutinler). Kolay, tanıdık, baskı az. Güven inşa etmek için mükemmel başlangıç.`,
+      en: `${examType === "IELTS" ? "IELTS Part 1" : "TOEFL Task 1"} — Personal topics (hobbies, routines). Easy, familiar, low pressure. Perfect starting point to build confidence.`
+    },
+    vocabulary: {
+      tr: `${examType === "IELTS" ? "IELTS Part 2 (Cue Card)" : "TOEFL Independent Task"} — Zengin kelime gerektiren tanımlama soruları. Vocabulary range'i genişletmek için ideal.`,
+      en: `${examType === "IELTS" ? "IELTS Part 2 (Cue Card)" : "TOEFL Independent Task"} — Descriptive questions that demand rich vocabulary. Ideal for expanding your word range.`
+    },
+    grammar:    {
+      tr: `${examType === "IELTS" ? "IELTS Part 1" : "TOEFL Task 1"} — Kısa, kontrollü cevaplar. Yapıyı dikkatli kurman için ideal format.`,
+      en: `${examType === "IELTS" ? "IELTS Part 1" : "TOEFL Task 1"} — Short, controlled responses. Ideal format for building careful, accurate sentence structures.`
+    },
+    pronunciation: {
+      tr: `${examType === "IELTS" ? "IELTS Part 1" : "TOEFL Task 1"} — Kısa cevaplarda netlik ve vurgu pratiği yap. Telaffuz için en iyi başlangıç formatı.`,
+      en: `${examType === "IELTS" ? "IELTS Part 1" : "TOEFL Task 1"} — Practice clarity and stress on short answers. Best starting format for pronunciation work.`
+    },
+    fluency:    {
+      tr: `${examType === "IELTS" ? "IELTS Part 2 (Cue Card)" : "TOEFL Independent Task"} — 1-2 dakika kesintisiz konuşma pratiği. Akıcılığı zorlamak için en etkili format.`,
+      en: `${examType === "IELTS" ? "IELTS Part 2 (Cue Card)" : "TOEFL Independent Task"} — 1-2 minutes of uninterrupted speaking. The most effective format for pushing fluency.`
+    },
+    structure:  {
+      tr: `${examType === "IELTS" ? "IELTS Part 2 (Cue Card)" : "TOEFL Independent Task"} — Cevap iskeletini (ana fikir → neden → örnek) pratiğe dökmek için ideal.`,
+      en: `${examType === "IELTS" ? "IELTS Part 2 (Cue Card)" : "TOEFL Independent Task"} — Ideal for practising the answer framework (main idea → reason → example).`
+    }
+  };
+  const entry = taskMap[biggestChallenge] ?? null;
+  if (!entry) return tr ? "Pratik bölümünden bir görev seç ve başla." : "Pick a task from the practice section and start.";
+  return tr ? entry.tr : entry.en;
 }
 
 function buildRecentStreakCalendar(sessions: SpeakingSession[]) {
