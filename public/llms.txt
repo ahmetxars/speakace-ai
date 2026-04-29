@@ -1,0 +1,55 @@
+# SpeakAce AI
+
+> AI-powered IELTS and TOEFL English speaking practice platform
+
+SpeakAce is a web application that helps learners prepare for IELTS and TOEFL speaking exams using AI. Users record speaking answers, receive an estimated band score, view a full transcript, and get specific feedback on fluency, pronunciation, grammar, and vocabulary. The platform supports self-study learners, English teachers, and language institutions.
+
+## Key features
+
+- AI band score estimation aligned with IELTS and TOEFL rubrics
+- Full transcript review for every speaking attempt
+- Retry-based improvement loop: speak → see feedback → retry
+- IELTS Part 1, Part 2, and Part 3 topic libraries
+- TOEFL integrated speaking task support
+- Teacher dashboard with class-wide speaking analytics
+- School/institution seat management
+- Multilingual interface (EN, TR, DE, FR, ES, NL, and more)
+- Free tier available, no credit card required
+
+## Who uses SpeakAce
+
+- Self-study candidates preparing for IELTS or TOEFL independently
+- English teachers who assign speaking homework and track progress
+- Language schools and test-preparation centres scaling speaking practice
+
+## Core pages
+
+- [Home](https://speakace.org/): Start a free speaking practice session
+- [Free IELTS Speaking Test](https://speakace.org/free-ielts-speaking-test): Free test with AI band score, transcript, and feedback
+- [IELTS Speaking AI](https://speakace.org/ielts-speaking-ai): AI-powered IELTS speaking practice and feedback
+- [TOEFL Speaking Practice](https://speakace.org/toefl-speaking-practice): TOEFL integrated speaking with timed tasks and AI feedback
+- [Pricing](https://speakace.org/pricing): Free, Plus, Pro, and Lifetime plans
+- [About](https://speakace.org/about): What SpeakAce is and how it works
+- [Blog](https://speakace.org/blog): IELTS and TOEFL speaking study guides and tips
+
+## Tools
+
+- [Tools Hub](https://speakace.org/tools): All free IELTS speaking tools
+- [IELTS Band Score Estimator](https://speakace.org/ielts-band-estimator): Self-assess IELTS band across four criteria
+- [Speaking Practice Timer](https://speakace.org/speaking-timer): Timed IELTS Part 1/2/3 speaking practice
+- [IELTS Phrase Bank](https://speakace.org/speaking-phrase-bank): High-scoring IELTS speaking phrases by category
+- [IELTS Cue Card Generator](https://speakace.org/tools/ielts-cue-card-generator): Generate realistic Part 2 cue card prompts
+
+## Topic pages
+
+- [IELTS Speaking Topics](https://speakace.org/ielts-speaking-topics): Full IELTS speaking topic library
+- [IELTS Part 1 Questions](https://speakace.org/ielts-speaking-part-1-questions): Common Part 1 questions with practice links
+- [IELTS Part 2 Topics](https://speakace.org/ielts-speaking-part-2-topics): Cue card topics with model answer guidance
+- [IELTS Part 3 Questions](https://speakace.org/ielts-speaking-part-3-questions): Discussion questions with structure tips
+
+## Contact and support
+
+- Website: https://speakace.org
+- Email: info@speakace.org
+- Category: Education / Language Learning / Exam Preparation
+- Primary exams supported: IELTS Academic, IELTS General Training, TOEFL iBT

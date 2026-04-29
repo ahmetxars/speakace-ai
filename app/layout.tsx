@@ -85,6 +85,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang={language} dir={direction}>
       <head>
         <link rel="canonical" href={canonicalUrl} />
+        <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM site index" />
         {maintenanceMode ? <meta name="robots" content="noindex,nofollow" /> : null}
         {!hideGlobalChrome ? (
           <>
@@ -138,10 +139,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             dangerouslySetInnerHTML={{
               __html: JSON.stringify({
                 "@context": "https://schema.org",
-                "@type": "Organization",
+                "@type": ["Organization", "EducationalOrganization"],
+                "@id": `${siteConfig.domain}/#organization`,
                 name: siteConfig.name,
+                alternateName: "SpeakAce",
                 url: siteConfig.domain,
-                logo: `${siteConfig.domain}/logo.png`,
+                logo: {
+                  "@type": "ImageObject",
+                  url: `${siteConfig.domain}/logo.png`,
+                  width: 512,
+                  height: 512
+                },
                 sameAs: [
                   "https://twitter.com/speakace",
                   "https://linkedin.com/company/speakace",
@@ -150,9 +158,25 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 contactPoint: {
                   "@type": "ContactPoint",
                   email: siteConfig.contactEmail,
-                  contactType: "customer support"
+                  contactType: "customer support",
+                  availableLanguage: ["English", "Turkish"]
                 },
-                description: siteConfig.description
+                description: siteConfig.description,
+                knowsAbout: [
+                  "IELTS speaking exam preparation",
+                  "TOEFL speaking practice",
+                  "AI-powered language learning",
+                  "English pronunciation coaching",
+                  "Speaking band score estimation",
+                  "English fluency development"
+                ],
+                areaServed: "Worldwide",
+                audience: {
+                  "@type": "Audience",
+                  audienceType: "English language learners preparing for IELTS and TOEFL exams"
+                },
+                foundingDate: "2023",
+                numberOfEmployees: { "@type": "QuantitativeValue", value: "1-10" }
               })
             }}
           />
@@ -162,9 +186,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               __html: JSON.stringify({
                 "@context": "https://schema.org",
                 "@type": "WebSite",
+                "@id": `${siteConfig.domain}/#website`,
                 name: siteConfig.name,
                 url: siteConfig.domain,
                 description: siteConfig.description,
+                inLanguage: "en",
+                publisher: { "@id": `${siteConfig.domain}/#organization` },
                 potentialAction: {
                   "@type": "SearchAction",
                   target: {
@@ -184,15 +211,41 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 "@type": "SoftwareApplication",
                 name: siteConfig.name,
                 applicationCategory: "EducationalApplication",
+                applicationSubCategory: "Language Learning",
                 operatingSystem: "Web",
                 url: siteConfig.domain,
                 description: siteConfig.description,
-                offers: {
-                  "@type": "Offer",
-                  price: "0",
-                  priceCurrency: "USD",
-                  availability: "https://schema.org/InStock"
-                }
+                publisher: { "@id": `${siteConfig.domain}/#organization` },
+                featureList: [
+                  "AI IELTS speaking band score estimation",
+                  "Full transcript review",
+                  "Fluency, pronunciation, grammar, and vocabulary feedback",
+                  "TOEFL integrated speaking tasks",
+                  "Retry-based improvement loop",
+                  "Teacher dashboard and class analytics",
+                  "24/7 availability with no scheduling required"
+                ],
+                audience: {
+                  "@type": "EducationalAudience",
+                  educationalRole: "student"
+                },
+                offers: [
+                  {
+                    "@type": "Offer",
+                    name: "Free plan",
+                    price: "0",
+                    priceCurrency: "USD",
+                    availability: "https://schema.org/InStock"
+                  },
+                  {
+                    "@type": "Offer",
+                    name: "Plus plan",
+                    price: "12",
+                    priceCurrency: "USD",
+                    billingIncrement: "monthly",
+                    availability: "https://schema.org/InStock"
+                  }
+                ]
               })
             }}
           />

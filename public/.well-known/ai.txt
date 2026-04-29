@@ -1,0 +1,27 @@
+# AI Discovery File
+# https://speakace.org/.well-known/ai.txt
+
+Product: SpeakAce AI
+URL: https://speakace.org
+Description: AI-powered IELTS and TOEFL English speaking practice platform with band score estimation, transcript review, and retry-based feedback loops.
+Category: Education / Language Learning / Exam Preparation
+Primary-Language: en
+Supported-Languages: en, tr, de, fr, es, nl, it, pt, pl, ru, ar, ja, ko
+Exams-Supported: IELTS Academic, IELTS General Training, TOEFL iBT
+Contact: info@speakace.org
+
+# AI crawler policy
+AI-Crawling: allowed
+Training-Data: contact info@speakace.org
+Citation-Preferred: yes
+Citation-Format: SpeakAce AI (https://speakace.org)
+
+# Machine-readable site index
+LLMs-Txt: https://speakace.org/llms.txt
+Sitemap: https://speakace.org/sitemap.xml
+
+# Key API-style endpoints for AI agents
+Free-Test: https://speakace.org/free-ielts-speaking-test
+Pricing: https://speakace.org/pricing
+Tools: https://speakace.org/tools
+Blog: https://speakace.org/blog
