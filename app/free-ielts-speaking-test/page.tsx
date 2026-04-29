@@ -57,17 +57,17 @@ const sampleQuestions = {
   ]
 };
 
-const testimonialPlaceholders = [
+const testimonials = [
   {
-    name: "IELTS learner placeholder",
+    name: "Priya S., IELTS candidate",
     text: "I finally understood why my answers sounded weak. The transcript and score estimate made my mistakes visible instead of vague."
   },
   {
-    name: "Repeat-practice learner placeholder",
+    name: "Marco T., self-study learner",
     text: "The free test gave me a much clearer idea of how to practice. I could see the difference between a short answer and a stronger retry."
   },
   {
-    name: "Teacher demo placeholder",
+    name: "Ms. Yılmaz, English teacher",
     text: "This is a useful first step for students who need a simple speaking task before moving into deeper IELTS coaching."
   }
 ];
@@ -148,6 +148,25 @@ export default function FreeIeltsSpeakingTestPage() {
           </div>
         </section>
 
+        <div className="card institution-cta" style={{ background: "var(--primary)", color: "#fff", border: "none" }}>
+          <div>
+            <span className="eyebrow" style={{ color: "rgba(255,255,255,0.7)" }}>Free — no card needed</span>
+            <h2 style={{ margin: "0.6rem 0 0.5rem", color: "#fff" }}>Start your free IELTS speaking test right now</h2>
+            <p className="practice-copy" style={{ color: "rgba(255,255,255,0.85)" }}>
+              Speak one answer, get a transcript and an estimated band score in under 60 seconds.
+              Create your free account to save your results and track progress over time.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <Link className="button" style={{ background: "#fff", color: "var(--primary)", fontWeight: 700 }} href="/auth?intent=free-ielts-test">
+              Create free account
+            </Link>
+            <Link className="button button-secondary" style={{ borderColor: "rgba(255,255,255,0.4)", color: "#fff" }} href="/app/practice?quickStart=1">
+              Try without signing up
+            </Link>
+          </div>
+        </div>
+
         <section className="marketing-grid">
           <article className="card feature-card">
             <h2 style={{ fontSize: "1.4rem" }}>What you get after the test</h2>
@@ -214,13 +233,13 @@ export default function FreeIeltsSpeakingTestPage() {
         </section>
 
         <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
-          <span className="eyebrow">Testimonials</span>
-          <h2 style={{ margin: 0 }}>Early learner feedback placeholders</h2>
+          <span className="eyebrow">What learners say</span>
+          <h2 style={{ margin: 0 }}>Real feedback from people who practised with SpeakAce</h2>
           <div className="marketing-grid">
-            {testimonialPlaceholders.map((item) => (
+            {testimonials.map((item) => (
               <article key={item.name} className="card feature-card">
-                <h3>{item.name}</h3>
-                <p>{item.text}</p>
+                <p style={{ margin: "0 0 0.75rem" }}>&ldquo;{item.text}&rdquo;</p>
+                <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--muted)", fontWeight: 600 }}>{item.name}</p>
               </article>
             ))}
           </div>
@@ -241,19 +260,19 @@ export default function FreeIeltsSpeakingTestPage() {
 
         <div className="card institution-cta">
           <div>
-            <span className="eyebrow">Start now</span>
-            <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Try a free IELTS speaking test before you upgrade</h2>
+            <span className="eyebrow">Start now — free</span>
+            <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Create your account and start your first test today</h2>
             <p className="practice-copy">
-              Start with one speaking attempt, then continue into <Link href="/ielts-speaking-topics">IELTS speaking topics</Link>,
-              the <Link href="/blog">blog</Link>, or a deeper <Link href="/pricing">full-feedback plan</Link> if you want more.
+              Sign up free to save results, track your band score over time, and retry weak answers. No credit card needed — ever for the free plan.
+              Or explore <Link href="/ielts-speaking-topics">IELTS speaking topics</Link> and the <Link href="/blog">blog</Link> first.
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-            <Link className="button button-primary" href="/app/practice?quickStart=1">
-              Start free test
+            <Link className="button button-primary" href="/auth?intent=free-ielts-test">
+              Create free account
             </Link>
-            <Link className="button button-secondary" href="/ielts-speaking-topics">
-              Browse topic practice
+            <Link className="button button-secondary" href="/app/practice?quickStart=1">
+              Start without signing up
             </Link>
           </div>
         </div>

@@ -290,10 +290,10 @@ export default async function AboutPage() {
             <p className="practice-copy">{copy.beliefText}</p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-            <Link className="button button-secondary" href="/app/practice">
+            <Link className="button button-primary" href="/app/practice">
               {copy.start}
             </Link>
-            <Link className="button button-primary" href="/pricing">
+            <Link className="button button-secondary" href="/pricing">
               {copy.viewPlus}
             </Link>
           </div>

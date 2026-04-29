@@ -89,16 +89,15 @@ export default async function ToolDetailPage({
         </div>
         <ToolWorkbench slug={page.slug} title={page.title} />
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <span className="eyebrow">Intent match</span>
-          <h2 style={{ margin: 0 }}>This page should turn search intent into one clear next step</h2>
+          <span className="eyebrow">Ready to practise?</span>
+          <h2 style={{ margin: 0 }}>Turn your answer into a score — no account needed to start</h2>
           <p className="practice-copy" style={{ margin: 0 }}>
-            Visitors landing on &quot;{page.title}&quot; usually want something quick and useful first. The
-            best conversion path is simple: give the tool signal immediately, then move the user
-            into one real speaking action while their motivation is still high.
+            Use the tool above to get started, then take one real speaking attempt in SpeakAce. You&apos;ll
+            see a transcript, an estimated band score, and a clear next step — all in under a minute.
           </p>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             <Link className="button button-primary" href="/app/practice">
-              {page.actionLabel ?? "Use tool"}
+              {page.actionLabel ?? "Start free practice"}
             </Link>
             {relatedLinks.map((item) => (
               <Link key={item.href} className="button button-secondary" href={item.href as Route}>
@@ -110,8 +109,7 @@ export default async function ToolDetailPage({
         <div className="marketing-grid">
           {page.bullets.map((bullet) => (
             <article key={bullet} className="card feature-card">
-              <h2 style={{ fontSize: "1.25rem" }}>Practical note</h2>
-              <p>{bullet}</p>
+              <p style={{ margin: 0 }}>{bullet}</p>
             </article>
           ))}
         </div>
@@ -120,8 +118,7 @@ export default async function ToolDetailPage({
             <span className="eyebrow">Next step</span>
             <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{page.cta}</h2>
             <p className="practice-copy">
-              Use the tool as a simple entry point, then move into one real speaking attempt while
-              the idea is still fresh.
+              Get a real band estimate on your next answer — free, instant, and no credit card required.
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>

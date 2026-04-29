@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Free IELTS Speaking Tools | SpeakAce",
     description:
-      "A hub of free IELTS speaking tools and top-of-funnel pages designed to pull learners into practice.",
+      "Explore free IELTS speaking tools, topic generators, score estimators, and study helpers built for exam-ready practice.",
     url: `${siteConfig.domain}/tools`,
     siteName: siteConfig.name,
     type: "website"
@@ -33,6 +33,24 @@ export default function ToolsHubPage() {
             way to move into speaking practice.
           </p>
         </div>
+        <div className="card institution-cta" style={{ marginBottom: 0 }}>
+          <div>
+            <span className="eyebrow">Free account</span>
+            <h2 style={{ margin: "0.6rem 0 0.5rem" }}>Use any tool, then practise with real AI feedback</h2>
+            <p className="practice-copy">
+              Every tool below is free. Create a free SpeakAce account to take a full speaking test, get an estimated band score, and track your improvement over time.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <Link className="button button-primary" href="/auth">
+              Create free account
+            </Link>
+            <Link className="button button-secondary" href="/app/practice">
+              Try without signing up
+            </Link>
+          </div>
+        </div>
+
         <div className="marketing-grid">
           {/* Standalone interactive tools — always shown at top */}
           <article className="card feature-card interactive-link-card">

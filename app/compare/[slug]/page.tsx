@@ -71,19 +71,21 @@ export default async function ComparisonDetailPage({
         <div className="marketing-grid">
           {page.bullets.map((bullet) => (
             <article key={bullet} className="card feature-card">
-              <h2 style={{ fontSize: "1.25rem" }}>Why it matters</h2>
-              <p>{bullet}</p>
+              <p style={{ margin: 0 }}>{bullet}</p>
             </article>
           ))}
         </div>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <span className="eyebrow">Decision helper</span>
-          <h2 style={{ margin: 0 }}>Comparison traffic converts when the visitor can test the difference fast</h2>
+          <span className="eyebrow">Try it yourself</span>
+          <h2 style={{ margin: 0 }}>The fastest way to compare is one real attempt — free and instant</h2>
           <p className="practice-copy" style={{ margin: 0 }}>
-            People searching comparison queries are already evaluating options. The strongest next
-            step is a direct hands-on action that lets them feel the workflow instead of reading one more paragraph.
+            Start a free speaking session, see your transcript and estimated band score, and decide
+            whether SpeakAce fits your prep. No credit card, no commitment.
           </p>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <Link className="button button-primary" href="/app/practice">
+              Start free practice
+            </Link>
             {relatedLinks.map((item) => (
               <Link key={item.href} className="button button-secondary" href={item.href as Route}>
                 {item.label}
@@ -93,11 +95,11 @@ export default async function ComparisonDetailPage({
         </div>
         <div className="card institution-cta">
           <div>
-            <span className="eyebrow">Try it yourself</span>
+            <span className="eyebrow">Get started free</span>
             <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{page.cta}</h2>
             <p className="practice-copy">
-              Comparison content converts best when it quickly moves the visitor into a real product
-              action instead of stopping at theory.
+              Create a free account and get your first band estimate in under a minute. No tutor booking,
+              no waiting — just speak, review, and improve.
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>

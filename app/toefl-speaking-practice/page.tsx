@@ -25,7 +25,7 @@ export default function TOEFLPage() {
         eyebrow="TOEFL speaking AI"
         title="TOEFL speaking AI practice with timed tasks, transcript review, and faster retries."
         description="Prepare for TOEFL speaking with AI feedback that helps you organize integrated answers, control timing, and retry weak responses with a clearer structure."
-        focus="This landing page now targets TOEFL speaking AI intent more directly, with integrated-task language, timer relevance, and score-improvement positioning designed to convert search visitors into practice users."
+        focus="TOEFL integrated speaking task"
         ctaHref="/app/practice"
       />
     </>
