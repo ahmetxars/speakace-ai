@@ -153,6 +153,78 @@ export async function signUpWithPassword(input: {
   return { ...profile, emailVerified: autoVerified };
 }
 
+export async function signUpWithGoogle(input: {
+  email: string;
+  name?: string;
+  memberType?: MemberProfile["memberType"];
+  organizationName?: string | null;
+  referralCode?: string | null;
+  inviteReferrerId?: string | null;
+}) {
+  const normalizedEmail = input.email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    throw new Error("Email is required.");
+  }
+
+  const requestedMemberType =
+    input.memberType === "teacher" || input.memberType === "school" ? input.memberType : "student";
+  const purchasedPlan = await getActiveBillingPlanForEmail(normalizedEmail);
+  const referral = await validateReferralCode(input.referralCode);
+  const inviteReferrer =
+    referral || !input.inviteReferrerId ? null : await getInviteReferrer(input.inviteReferrerId);
+  const inviteTrialDays = inviteReferrer ? 7 : 0;
+  const trialEndsAt = referral
+    ? new Date(Date.now() + referral.trialDays * 24 * 60 * 60 * 1000).toISOString()
+    : inviteReferrer
+      ? new Date(Date.now() + inviteTrialDays * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+  const autoAdmin = isAdminEmail(normalizedEmail);
+  const profile = withAdminPrivileges({
+    ...createMemberProfile(normalizedEmail, input.name, {
+      memberType: requestedMemberType,
+      organizationName: input.organizationName?.trim() || null
+    }),
+    teacherAccess: requestedMemberType === "teacher" || requestedMemberType === "school",
+    adminAccess: requestedMemberType === "school" || autoAdmin,
+    plan: purchasedPlan ?? (referral || inviteReferrer ? "plus" : "free"),
+    billingStatus: referral || inviteReferrer ? "on_trial" : purchasedPlan ? "active" : "free",
+    trialEndsAt,
+    referralCodeUsed: referral?.code ?? (inviteReferrer ? buildInviteReferralCode(inviteReferrer.id) : null),
+    emailVerified: true
+  });
+
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const existing = await sql<{ id: string }[]>`
+      select id from users where email = ${normalizedEmail} limit 1
+    `;
+    if (existing[0]) {
+      throw new Error("An account with this email already exists.");
+    }
+
+    const rows = await sql<MemberProfile[]>`
+      insert into users (
+        id, email, name, role, member_type, organization_name, plan, password_hash, email_verified,
+        admin_access, teacher_access, billing_status, trial_ends_at, referral_code_used, created_at
+      )
+      values (
+        ${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.memberType}, ${profile.organizationName ?? null},
+        ${profile.plan}, null, true, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false},
+        ${profile.billingStatus ?? "free"}, ${profile.trialEndsAt ?? null}, ${profile.referralCodeUsed ?? null}, ${profile.createdAt}
+      )
+      returning
+        id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan,
+        billing_status as "billingStatus", trial_ends_at as "trialEndsAt", referral_code_used as "referralCodeUsed",
+        email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+    `;
+
+    return withAdminPrivileges(rows[0]);
+  }
+
+  await upsertMember(profile);
+  return profile;
+}
+
 export async function signInWithPassword(input: { email: string; password: string }) {
   const normalizedEmail = input.email.trim().toLowerCase();
 

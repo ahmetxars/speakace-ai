@@ -30,9 +30,24 @@ export async function GET(request: Request) {
   const cta = searchParams.get("cta");
   const ctaEvent = searchParams.get("cta_event");
   const invite = searchParams.get("invite");
+  const mode = searchParams.get("mode");
+  const memberType = searchParams.get("memberType");
+  const classCode = searchParams.get("classCode");
+  const organizationName = searchParams.get("organizationName");
+  const referralCode = searchParams.get("referralCode");
   const nonce = randomBytes(24).toString("base64url");
   const payload = Buffer.from(
-    JSON.stringify({ nonce, cta: cta ?? null, ctaEvent: ctaEvent ?? null, invite: invite ?? null }),
+    JSON.stringify({
+      nonce,
+      cta: cta ?? null,
+      ctaEvent: ctaEvent ?? null,
+      invite: invite ?? null,
+      mode: mode === "signin" || mode === "signup" ? mode : null,
+      memberType: memberType === "teacher" || memberType === "school" ? memberType : "student",
+      classCode: classCode?.trim() || null,
+      organizationName: organizationName?.trim() || null,
+      referralCode: referralCode?.trim().toUpperCase() || null
+    }),
     "utf8"
   ).toString("base64url");
   const state = `${payload}.${signGoogleState(payload, clientSecret)}`;

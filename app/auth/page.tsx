@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import posthog from "posthog-js";
 import { useAppState } from "@/components/providers";
 import { clearShareAttribution, getShareAttributionFromStorage } from "@/lib/share-growth";
 
@@ -19,6 +20,7 @@ function AuthPageInner() {
   const searchParams = useSearchParams();
   const { refreshSession, language } = useAppState();
   const tr = language === "tr";
+  const authError = searchParams.get("error");
   const [mode, setMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -90,6 +92,12 @@ function AuthPageInner() {
 
     if (mode === "signup" && data.verificationRequired) {
       clearShareAttribution();
+      posthog.capture("user_signed_up", {
+        member_type: memberType,
+        email,
+        has_referral_code: Boolean(referralCode),
+        has_class_code: Boolean(classCode)
+      });
       setSuccessToast(
         data.emailSent
           ? tr ? "Hesabın oluşturuldu. Doğrulama maili gönderildi." : "Your account was created. Verification email sent."
@@ -103,6 +111,16 @@ function AuthPageInner() {
 
     if (mode === "signup") {
       clearShareAttribution();
+      posthog.identify(email, { email, member_type: memberType });
+      posthog.capture("user_signed_up", {
+        member_type: memberType,
+        email,
+        has_referral_code: Boolean(referralCode),
+        has_class_code: Boolean(classCode)
+      });
+    } else {
+      posthog.identify(email, { email });
+      posthog.capture("user_signed_in", { email });
     }
     await refreshSession();
     router.push(mode === "signup" && memberType === "student" ? "/app/onboarding" : "/app");
@@ -153,7 +171,11 @@ function AuthPageInner() {
 
   const cta = searchParams.get("cta") ?? storedAttributionPath;
   const ctaEvent = searchParams.get("cta_event");
+  const resetToken = searchParams.get("reset");
+  const isResetMode = Boolean(resetToken);
+  const isSignup = !isResetMode && mode === "signup";
   const googleParams = new URLSearchParams();
+  googleParams.set("mode", mode);
   if (cta) {
     googleParams.set("cta", cta);
   }
@@ -163,10 +185,46 @@ function AuthPageInner() {
   if (inviteReferrerId) {
     googleParams.set("invite", inviteReferrerId);
   }
+  if (isSignup) {
+    googleParams.set("memberType", memberType);
+    if (classCode.trim()) {
+      googleParams.set("classCode", classCode.trim());
+    }
+    if (organizationName.trim()) {
+      googleParams.set("organizationName", organizationName.trim());
+    }
+    if (referralCode.trim()) {
+      googleParams.set("referralCode", referralCode.trim().toUpperCase());
+    }
+  }
 
-  const resetToken = searchParams.get("reset");
-  const isResetMode = Boolean(resetToken);
-  const isSignup = !isResetMode && mode === "signup";
+  const googleErrorMessage =
+    authError === "google_not_configured"
+      ? tr
+        ? "Google ile giriş henüz yapılandırılmamış. Yönetici önce Google OAuth ayarlarını tamamlamalı."
+        : "Google sign-in is not configured yet. An admin needs to finish the Google OAuth setup first."
+      : authError === "google_denied"
+        ? tr
+          ? "Google giriş isteği iptal edildi."
+          : "The Google sign-in request was cancelled."
+        : authError === "google_state_invalid"
+          ? tr
+            ? "Google giriş oturumu doğrulanamadı. Lütfen tekrar dene."
+            : "We could not validate the Google sign-in session. Please try again."
+          : authError === "google_token_failed"
+            ? tr
+              ? "Google erişim belirteci alınamadı. Lütfen tekrar dene."
+              : "We could not retrieve the Google access token. Please try again."
+            : authError === "google_no_email"
+              ? tr
+                ? "Google hesabından e-posta bilgisi alınamadı."
+                : "We could not read an email address from your Google account."
+              : authError === "google_failed"
+                ? tr
+                  ? "Google ile giriş sırasında beklenmeyen bir hata oluştu."
+                  : "An unexpected error occurred during Google sign-in."
+                : "";
+
   const featureItems = tr
     ? [
         "2 dakikada hesap oluştur, hemen konuşma pratiğine başla",
@@ -479,6 +537,7 @@ function AuthPageInner() {
             </label>
 
             {error ? <p className="auth-inline-message auth-inline-error">{error}</p> : null}
+            {googleErrorMessage ? <p className="auth-inline-message auth-inline-error">{googleErrorMessage}</p> : null}
             {notice ? <p className="auth-inline-message auth-inline-notice">{notice}</p> : null}
 
             <div className="auth-actions">

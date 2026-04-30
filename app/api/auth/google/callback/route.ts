@@ -1,11 +1,13 @@
 import { createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { isAdminEmail, withAdminPrivileges } from "@/lib/admin";
+import { withAdminPrivileges } from "@/lib/admin";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
-import { createMemberProfile } from "@/lib/membership";
+import { joinTeacherClassByCode } from "@/lib/classroom-store";
+import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
-import { applyInviteReferralToUser, createAuthSession, getSessionCookieName, getSessionCookieOptions } from "@/lib/server/auth";
+import { createAuthSession, getSessionCookieName, getSessionCookieOptions, signUpWithGoogle } from "@/lib/server/auth";
+import { recordAuthActivity } from "@/lib/server/admin-panel";
 import { upsertMember } from "@/lib/store";
 import { MemberProfile } from "@/lib/types";
 
@@ -76,9 +78,15 @@ async function getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
   return response.json() as Promise<GoogleUserInfo>;
 }
 
-async function findOrCreateGoogleUser(googleUser: GoogleUserInfo): Promise<{ profile: MemberProfile; isNewUser: boolean }> {
-  const normalizedEmail = googleUser.email.trim().toLowerCase();
-  const displayName = googleUser.name ?? googleUser.given_name ?? normalizedEmail.split("@")[0];
+async function findOrCreateGoogleUser(input: {
+  googleUser: GoogleUserInfo;
+  memberType?: MemberProfile["memberType"];
+  organizationName?: string | null;
+  referralCode?: string | null;
+  inviteReferrerId?: string | null;
+}): Promise<{ profile: MemberProfile; isNewUser: boolean }> {
+  const normalizedEmail = input.googleUser.email.trim().toLowerCase();
+  const displayName = input.googleUser.name ?? input.googleUser.given_name ?? normalizedEmail.split("@")[0];
 
   if (hasDatabaseUrl()) {
     const sql = getSql();
@@ -112,30 +120,16 @@ async function findOrCreateGoogleUser(googleUser: GoogleUserInfo): Promise<{ pro
       return { profile: withAdminPrivileges(existing[0]), isNewUser: false };
     }
 
-    // Create new user — Google already verified the email
-    const profile = withAdminPrivileges({
-      ...createMemberProfile(normalizedEmail, displayName),
-      emailVerified: true
+    const profile = await signUpWithGoogle({
+      email: normalizedEmail,
+      name: displayName,
+      memberType: input.memberType,
+      organizationName: input.organizationName,
+      referralCode: input.referralCode,
+      inviteReferrerId: input.inviteReferrerId
     });
-    const autoAdmin = isAdminEmail(normalizedEmail);
 
-    const rows = await sql<MemberProfile[]>`
-      insert into users (
-        id, email, name, role, member_type, organization_name, plan, password_hash, email_verified,
-        admin_access, teacher_access, billing_status, created_at
-      )
-      values (
-        ${profile.id}, ${normalizedEmail}, ${profile.name}, ${profile.role}, ${profile.memberType},
-        ${profile.organizationName ?? null}, ${profile.plan}, null, true,
-        ${autoAdmin}, false, 'free', ${profile.createdAt}
-      )
-      returning
-        id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan,
-        billing_status as "billingStatus", trial_ends_at as "trialEndsAt", referral_code_used as "referralCodeUsed",
-        email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
-    `;
-
-    return { profile: withAdminPrivileges(rows[0]), isNewUser: true };
+    return { profile, isNewUser: true };
   }
 
   // Memory store fallback
@@ -156,12 +150,14 @@ async function findOrCreateGoogleUser(googleUser: GoogleUserInfo): Promise<{ pro
     }
   }
 
-  // Create new user in memory store
-  const newProfile = withAdminPrivileges({
-    ...createMemberProfile(normalizedEmail, displayName),
-    emailVerified: true
+  const newProfile = await signUpWithGoogle({
+    email: normalizedEmail,
+    name: displayName,
+    memberType: input.memberType,
+    organizationName: input.organizationName,
+    referralCode: input.referralCode,
+    inviteReferrerId: input.inviteReferrerId
   });
-  await upsertMember(newProfile);
   return { profile: newProfile, isNewUser: true };
 }
 
@@ -200,7 +196,13 @@ export async function GET(request: Request) {
     const parsedState = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
       nonce?: string | null;
       cta?: string | null;
+      ctaEvent?: string | null;
       invite?: string | null;
+      mode?: "signin" | "signup" | null;
+      memberType?: MemberProfile["memberType"] | null;
+      classCode?: string | null;
+      organizationName?: string | null;
+      referralCode?: string | null;
     };
 
     if (parsedState.nonce !== expectedNonce) {
@@ -220,19 +222,50 @@ export async function GET(request: Request) {
     }
 
     const attributionPath = typeof parsedState.cta === "string" ? parsedState.cta : null;
+    const attributionEvent = typeof parsedState.ctaEvent === "string" ? parsedState.ctaEvent : null;
     const inviteReferrerId = typeof parsedState.invite === "string" ? parsedState.invite : null;
+    const memberType =
+      parsedState.memberType === "teacher" || parsedState.memberType === "school" ? parsedState.memberType : "student";
+    const classCode = typeof parsedState.classCode === "string" ? parsedState.classCode.trim() : "";
+    const organizationName =
+      typeof parsedState.organizationName === "string" ? parsedState.organizationName.trim() : null;
+    const referralCode = typeof parsedState.referralCode === "string" ? parsedState.referralCode.trim() : null;
 
-    const { profile, isNewUser } = await findOrCreateGoogleUser(googleUser);
-    if (isNewUser && inviteReferrerId) {
-      await applyInviteReferralToUser({ userId: profile.id, inviteReferrerId });
-    }
+    const { profile, isNewUser } = await findOrCreateGoogleUser({
+      googleUser,
+      memberType,
+      organizationName,
+      referralCode,
+      inviteReferrerId
+    });
     if (isNewUser && attributionPath) {
       await trackAnalyticsEvent({
         userId: profile.id,
-        event: "signup_completed",
+        event: attributionEvent || "signup_completed",
         path: attributionPath
       });
     }
+    if (isNewUser && classCode && profile.memberType === "student") {
+      try {
+        await joinTeacherClassByCode({
+          studentId: profile.id,
+          joinCode: classCode
+        });
+      } catch {
+        // Non-blocking: the user can still join a class later from the app.
+      }
+    }
+    if (isNewUser) {
+      try {
+        const result = await sendOnboardingEmail(profile.id, 1);
+        if (result.ok) {
+          await markOnboardingEmailSent(profile.id, 1);
+        }
+      } catch {
+        // Non-blocking
+      }
+    }
+    await recordAuthActivity({ userId: profile.id, eventType: "signin", meta: { source: "google" } });
     const session = await createAuthSession(profile.id);
 
     const response = NextResponse.redirect(`${siteUrl}/app`);
