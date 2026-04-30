@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 import { useAppState } from "@/components/providers";
 import type { StudentProfile as StudentProfileType } from "@/lib/types";
 
@@ -217,6 +218,13 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
       setError(data.error ?? (tr ? "Onboarding kaydedilemedi." : "Could not save onboarding."));
       return;
     }
+    posthog.capture("onboarding_completed", {
+      exam_type: data.profile.preferredExamType,
+      target_score: data.profile.targetScore,
+      weekly_goal: data.profile.weeklyGoal,
+      focus_skill: data.profile.focusSkill,
+      discovery_source: data.profile.discoverySource
+    });
     setSavedProfile(data.profile);
     setPlanReady(true);
   };
