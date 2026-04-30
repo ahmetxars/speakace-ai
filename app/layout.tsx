@@ -99,7 +99,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <script
               async
               fetchPriority="low"
-              src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3403105676925789"
+              src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5993485576421978"
               crossOrigin="anonymous"
             />
             <Script src="https://www.googletagmanager.com/gtag/js?id=G-806S0CWRWX" strategy="afterInteractive" />
