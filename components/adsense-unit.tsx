@@ -29,7 +29,7 @@ export function AdSenseUnit({ className }: AdSenseUnitProps) {
         className="adsbygoogle adsense-unit"
         style={{ display: "block" }}
         data-ad-client="ca-pub-5993485576421978"
-        data-ad-slot="1334676312"
+        data-ad-slot="3315150391"
         data-ad-format="auto"
         data-full-width-responsive="true"
       />
