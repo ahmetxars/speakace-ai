@@ -10,7 +10,7 @@ let emailSequenceSchemaEnsured = false;
 export const ONBOARDING_EMAIL_SCHEDULE: Array<{ dayOffset: number; emailNumber: number }> = [
   { dayOffset: 0, emailNumber: 1 },
   { dayOffset: 2, emailNumber: 2 },
-  { dayOffset: 4, emailNumber: 3 },
+  { dayOffset: 5, emailNumber: 3 },
   { dayOffset: 7, emailNumber: 4 },
   { dayOffset: 10, emailNumber: 5 },
   { dayOffset: 14, emailNumber: 6 },
@@ -601,4 +601,205 @@ export async function markOnboardingEmailSent(userId: string, emailNumber: numbe
     where id = ${userId}
       and coalesce(onboarding_emails_sent, 0) < ${emailNumber}
   `;
+}
+
+// ─── Daily Speaking Tips ───────────────────────────────────────────────────────
+
+interface DailyTip {
+  subject: string;
+  headline: string;
+  body: string;
+  example: string;
+}
+
+const DAILY_TIPS: DailyTip[] = [
+  {
+    subject: "Speaking tip: Answer in 3 parts for a higher band score",
+    headline: "Use the answer–reason–example formula",
+    body: "Every strong IELTS Part 1 answer follows this pattern: give a direct answer, explain your reason, then add a specific example. It signals fluency and coherence to the examiner.",
+    example: "\"I enjoy cooking (answer) because it helps me unwind after work (reason). Last weekend I made a Thai curry from scratch (example).\""
+  },
+  {
+    subject: "Speaking tip: Discourse markers that impress IELTS examiners",
+    headline: "Structure your answers with discourse markers",
+    body: "Words like \"firstly\", \"on the other hand\", \"having said that\" and \"what I mean is\" signal organised thinking. They score well under Coherence & Cohesion — one of the four IELTS speaking criteria.",
+    example: "\"I prefer cities, firstly because of the career opportunities, and also because there's so much more to do in the evenings.\""
+  },
+  {
+    subject: "Speaking tip: Vary your sentence openers today",
+    headline: "Stop starting every sentence with \"I think\"",
+    body: "Over-relying on one opener is a fluency trap. Native speakers constantly vary how they begin sentences. Try openers like \"From my point of view\", \"What I've noticed is\", \"Personally speaking\" or \"It seems to me that\".",
+    example: "Instead of: \"I think cities are better.\" → \"Personally speaking, I've always preferred city life.\""
+  },
+  {
+    subject: "Speaking tip: How to buy thinking time without fillers",
+    headline: "Pause naturally — don't fill silence with \"um\"",
+    body: "Filler words like \"um\", \"uh\" and \"you know\" hurt your fluency score. Instead, use thinking phrases that sound natural: \"That's an interesting question\", \"Let me think about that for a moment\" or simply a short pause.",
+    example: "\"That's an interesting question. I'd say the biggest change I've seen is...\""
+  },
+  {
+    subject: "Speaking tip: Upgrade your vocabulary — avoid \"good\" and \"nice\"",
+    headline: "Replace weak adjectives with specific, vivid ones",
+    body: "Words like \"good\", \"nice\" and \"bad\" are overused and score poorly for Lexical Resource. Challenge yourself today to replace them. \"Good\" → beneficial, rewarding, worthwhile. \"Bad\" → detrimental, challenging, concerning.",
+    example: "Instead of: \"It was a good experience.\" → \"It was an incredibly rewarding experience.\""
+  },
+  {
+    subject: "Speaking tip: Part 2 tip — don't stop early",
+    headline: "Fill the full 2 minutes in Part 2",
+    body: "Most candidates stop at 60–70 seconds in Part 2. The examiner wants 2 full minutes of continuous speech. If you finish your points early, add a reflection: how you felt about it, what you learned, or how it compared to a similar experience.",
+    example: "\"…and looking back, it was one of the most memorable experiences I've had, mainly because it changed the way I think about [topic].\""
+  },
+  {
+    subject: "Speaking tip: Listen to your own recording today",
+    headline: "Catch the one filler word you overuse",
+    body: "After your practice session, replay your recording with one goal: spot the filler word you say most — \"basically\", \"like\", \"right\", \"actually\". Eliminating just one overused word can raise your fluency score by 0.5 bands.",
+    example: "If you hear \"basically\" five times in two minutes, replace it with silence or a short thinking phrase in your next attempt."
+  },
+  {
+    subject: "Speaking tip: Use conditionals in Part 3 to sound academic",
+    headline: "Conditionals signal high grammatical range",
+    body: "Part 3 asks for opinions and hypotheticals — perfect for conditional structures. Using them naturally shows grammatical range, which is directly scored by the examiner.",
+    example: "\"If governments invested more in public transport, traffic congestion would decrease significantly. Were that to happen, air quality in cities would improve dramatically.\""
+  },
+  {
+    subject: "Speaking tip: Paraphrase the question before you answer",
+    headline: "Rephrase the question — it buys time and impresses examiners",
+    body: "Paraphrasing shows comprehension and gives you a second to organise your thoughts. It also demonstrates Lexical Resource because you use different words to express the same idea. Aim for one natural paraphrase at the start of your answer.",
+    example: "Q: \"Do you think people read enough these days?\" → A: \"Whether people engage with books and written content as often as they used to is an interesting point...\""
+  },
+  {
+    subject: "Speaking tip: Add specific numbers to sound more fluent",
+    headline: "Use numbers and statistics — real or approximate",
+    body: "Fluent speakers naturally use rough figures to support their points. You don't need exact data — approximate numbers work perfectly and make your answer feel grounded and confident.",
+    example: "Instead of: \"Many people use social media.\" → \"I'd say roughly 70–80% of people I know check social media at least once a day.\""
+  },
+  {
+    subject: "Speaking tip: Never memorise your IELTS answers",
+    headline: "Memorised answers are a band score killer",
+    body: "Examiners are trained to spot scripted responses — they'll cut you off and redirect. Instead, memorise useful phrases, vocabulary chunks and structures. Then apply them flexibly. Spontaneity is what separates Band 6 from Band 7.",
+    example: "Memorise the structure: [Paraphrase question] + [Main point] + [Reason] + [Example] + [Reflection]. Apply it to any topic."
+  },
+  {
+    subject: "Speaking tip: Land your answers with a clear final sentence",
+    headline: "End strongly — don't trail off",
+    body: "Many candidates lose marks by fading out at the end of their answers. A strong closing sentence signals that you've completed your thought. It also gives the examiner a natural handoff moment.",
+    example: "\"…so all things considered, I think technology has had an overwhelmingly positive impact on how we learn new skills.\""
+  },
+  {
+    subject: "Speaking tip: How to describe trends fluently",
+    headline: "Practice trend language for Part 3 discussions",
+    body: "IELTS Part 3 frequently asks about changes in society. Having trend vocabulary ready — for rises, falls, and shifts — lets you respond instantly and fluently without pausing to search for words.",
+    example: "\"There's been a dramatic rise in remote work over the past five years.\" / \"Interest in traditional crafts has declined steadily.\" / \"It's shifted from something niche to a mainstream activity.\""
+  },
+  {
+    subject: "Speaking tip: Mix active and passive voice for grammatical range",
+    headline: "Use passive voice to vary your grammar",
+    body: "One of the four IELTS speaking criteria is Grammatical Range & Accuracy. Using only active sentences limits your range. Passive structures sound natural in discussions about society, trends and general facts.",
+    example: "Active: \"People widely believe that education is the key to success.\" → Passive: \"It is widely believed that education is the key to success.\" Both are correct — vary between them."
+  }
+];
+
+export function getTodaysTip(): DailyTip {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86_400_000);
+  return DAILY_TIPS[dayOfYear % DAILY_TIPS.length];
+}
+
+function buildDailyTipEmail(name: string, tip: DailyTip) {
+  const greeting = name.trim() ? name.trim() : "there";
+  return {
+    subject: tip.subject,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
+        <p style="color:#888;font-size:0.85em;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em">Daily IELTS Speaking Tip</p>
+        <h2 style="margin:0 0 16px;font-size:1.3em">${tip.headline}</h2>
+        <p>Hi ${greeting},</p>
+        <p>${tip.body}</p>
+        <div style="background:#fff8f2;border-left:4px solid #d95d39;padding:12px 16px;margin:20px 0;border-radius:0 6px 6px 0">
+          <p style="margin:0;font-style:italic;color:#555">${tip.example}</p>
+        </div>
+        <p>Try this in your next practice session and see how it affects your score.</p>
+        <p style="margin:28px 0">
+          <a href="${PRACTICE_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:13px 22px;border-radius:999px;font-weight:700;display:inline-block;font-size:0.95em">Let's try &rarr;</a>
+        </p>
+        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
+        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this because you have a SpeakAce account. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
+      </div>
+    `,
+    text: `Hi ${greeting}, today's IELTS speaking tip — ${tip.headline}.\n\n${tip.body}\n\nExample: ${tip.example}\n\nLet's try it: ${PRACTICE_URL}`
+  };
+}
+
+export async function getUsersForDailyTip(limit = 200): Promise<Array<{ id: string; email: string; name: string }>> {
+  if (!hasDatabaseUrl()) return [];
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+
+  // Exclude users who already received today's tip
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+
+  const rows = await sql<Array<{ id: string; email: string; name: string }>>`
+    select u.id, u.email, u.name
+    from users u
+    where u.email_opt_out = false
+      and u.role != 'guest'
+      and not exists (
+        select 1 from email_log el
+        where el.user_id = u.id
+          and el.template = 'daily_tip'
+          and el.sent_at >= ${todayStart.toISOString()}
+      )
+    order by u.created_at asc
+    limit ${limit}
+  `;
+
+  return rows;
+}
+
+export async function sendDailyTipEmail(userId: string): Promise<{ ok: boolean; skipped?: boolean }> {
+  if (!hasDatabaseUrl()) return { ok: false, skipped: true };
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  const rows = await sql<Array<{ email: string; name: string; email_opt_out: boolean }>>`
+    select email, name, email_opt_out from users where id = ${userId} limit 1
+  `;
+  const user = rows[0];
+  if (!user) return { ok: false };
+  if (user.email_opt_out) return { ok: false, skipped: true };
+
+  const tip = getTodaysTip();
+  let emailContent = buildDailyTipEmail(user.name, tip);
+
+  const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`;
+  emailContent = {
+    ...emailContent,
+    html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${unsubscribeUrl}"`)
+  };
+
+  try {
+    const result = await sendEmail({ to: user.email, ...emailContent });
+    await logEmail({
+      userId,
+      userEmail: user.email,
+      template: "daily_tip",
+      subject: emailContent.subject,
+      status: result.ok ? "sent" : "failed",
+      errorMessage: result.ok ? undefined : "send skipped (no transport)"
+    });
+    return result;
+  } catch (err) {
+    await logEmail({
+      userId,
+      userEmail: user.email,
+      template: "daily_tip",
+      subject: emailContent.subject,
+      status: "failed",
+      errorMessage: err instanceof Error ? err.message : "unknown error"
+    });
+    return { ok: false };
+  }
 }

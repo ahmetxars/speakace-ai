@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import {
   markOnboardingEmailSent,
   getUsersDueForNextOnboardingEmail,
-  sendOnboardingEmail
+  sendOnboardingEmail,
+  getUsersForDailyTip,
+  sendDailyTipEmail
 } from "@/lib/server/email-sequences";
 
 function isAuthorized(request: Request) {
@@ -25,46 +27,81 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const limitParam = Number(url.searchParams.get("limit") ?? "100");
   const dryRun = url.searchParams.get("dryRun") === "1";
+  const skipTips = url.searchParams.get("skipTips") === "1";
   const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 250) : 100;
 
-  let totalSent = 0;
-  let totalSkipped = 0;
-  let totalFailed = 0;
-  const users = await getUsersDueForNextOnboardingEmail(limit);
+  // ── Onboarding emails ──────────────────────────────────────────────────────
+  let onboardingSent = 0;
+  let onboardingSkipped = 0;
+  let onboardingFailed = 0;
+  const onboardingUsers = await getUsersDueForNextOnboardingEmail(limit);
 
-  for (const user of users) {
+  for (const user of onboardingUsers) {
     try {
       if (dryRun) {
-        totalSkipped++;
+        onboardingSkipped++;
         continue;
       }
 
       const result = await sendOnboardingEmail(user.id, user.nextEmailNumber);
       if (result.ok) {
         await markOnboardingEmailSent(user.id, user.nextEmailNumber);
-        totalSent++;
+        onboardingSent++;
       } else if (result.skipped) {
-        totalSkipped++;
+        onboardingSkipped++;
       } else {
-        totalFailed++;
+        onboardingFailed++;
       }
     } catch {
-      totalFailed++;
+      onboardingFailed++;
+    }
+  }
+
+  // ── Daily tip emails ───────────────────────────────────────────────────────
+  let tipSent = 0;
+  let tipSkipped = 0;
+  let tipFailed = 0;
+
+  if (!skipTips) {
+    const tipUsers = await getUsersForDailyTip(200);
+
+    for (const user of tipUsers) {
+      try {
+        if (dryRun) {
+          tipSkipped++;
+          continue;
+        }
+
+        const result = await sendDailyTipEmail(user.id);
+        if (result.ok) {
+          tipSent++;
+        } else if (result.skipped) {
+          tipSkipped++;
+        } else {
+          tipFailed++;
+        }
+      } catch {
+        tipFailed++;
+      }
     }
   }
 
   return NextResponse.json({
     ok: true,
     dryRun,
-    queuedUsers: users.length,
-    sent: totalSent,
-    skipped: totalSkipped,
-    failed: totalFailed,
-    sample: users.slice(0, 10).map((user) => ({
-      id: user.id,
-      email: user.email,
-      nextEmailNumber: user.nextEmailNumber,
-      onboardingEmailsSent: user.onboardingEmailsSent
-    }))
+    onboarding: {
+      queued: onboardingUsers.length,
+      sent: onboardingSent,
+      skipped: onboardingSkipped,
+      failed: onboardingFailed,
+      sample: onboardingUsers.slice(0, 5).map((u) => ({
+        id: u.id,
+        email: u.email,
+        nextEmailNumber: u.nextEmailNumber
+      }))
+    },
+    dailyTip: skipTips
+      ? { skipped: true }
+      : { sent: tipSent, skipped: tipSkipped, failed: tipFailed }
   });
 }
