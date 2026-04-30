@@ -853,68 +853,164 @@ export function PracticeConsole() {
           </p>
         </div>
 
-        <div style={{ display: "grid", gap: "0.7rem" }}>
-          <strong style={{ fontSize: "0.95rem" }}>{tr ? "Çalışma modu" : "Practice mode"}</strong>
-          <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-            {[
-              {
-                value: "drill",
-                label: tr ? "Hızlı drill" : "Quick drill",
-                description: tr ? "Tek cevap, hızlı skor ve retry yönü." : "One answer, quick score, and retry direction."
-              },
-              {
-                value: "interview",
-                label: tr ? "Interview mode" : "Interview mode",
-                description: tr ? "İlk cevaptan sonra follow-up sorularla derine iner." : "Adds deeper follow-up questions after your first answer."
-              },
-              {
-                value: "pronunciation",
-                label: tr ? "Telaffuz odağı" : "Pronunciation focus",
-                description: tr ? "Ritim, vurgu ve kelime sonları için kontrollü çalışma." : "Controlled practice for stress, rhythm, and word endings."
-              },
-              {
-                value: "simulation",
-                label: tr ? "Mock exam" : "Mock exam",
-                description: tr ? "Tam sınav akışıyla arka arkaya görevler." : "Full exam flow with back-to-back tasks."
-              }
-            ].map((option) => {
-              const active = runMode === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    if (mode !== "idle") return;
-                    setRunMode(option.value as RunMode);
-                    setInterviewState(null);
-                    if (option.value !== "simulation") {
+        {/* PRACTICE MODES — 3 cards (drill, interview, pronunciation) */}
+        {runMode !== "simulation" ? (
+          <div style={{ display: "grid", gap: "0.7rem" }}>
+            <strong style={{ fontSize: "0.95rem" }}>{tr ? "Çalışma modu" : "Practice mode"}</strong>
+            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+              {[
+                {
+                  value: "drill",
+                  label: tr ? "Hızlı drill" : "Quick drill",
+                  description: tr ? "Tek cevap, hızlı skor ve retry yönü." : "One answer, quick score, and retry direction."
+                },
+                {
+                  value: "interview",
+                  label: tr ? "Interview mode" : "Interview mode",
+                  description: tr ? "İlk cevaptan sonra follow-up sorularla derine iner." : "Adds deeper follow-up questions after your first answer."
+                },
+                {
+                  value: "pronunciation",
+                  label: tr ? "Telaffuz odağı" : "Pronunciation focus",
+                  description: tr ? "Ritim, vurgu ve kelime sonları için kontrollü çalışma." : "Controlled practice for stress, rhythm, and word endings."
+                }
+              ].map((option) => {
+                const active = runMode === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      if (mode !== "idle") return;
+                      setRunMode(option.value as RunMode);
+                      setInterviewState(null);
                       setSimulationState(null);
-                    }
-                    if (option.value === "interview" && currentUser?.id) {
-                      void trackClientEvent({ userId: currentUser.id, event: "interview_mode_start", path: "/app/practice" });
-                    }
-                  }}
-                  disabled={mode !== "idle"}
-                  style={{
-                    flex: "1 1 220px",
-                    textAlign: "left",
-                    padding: "0.95rem 1rem",
-                    borderRadius: 14,
-                    border: active ? "1.5px solid var(--primary)" : "1px solid var(--border)",
-                    background: active ? "color-mix(in oklch, var(--primary) 10%, var(--card) 90%)" : "var(--card)",
-                    color: "var(--foreground)",
-                    cursor: mode === "idle" ? "pointer" : "not-allowed"
-                  }}
-                >
-                  <div style={{ fontWeight: 700, marginBottom: "0.35rem", color: active ? "var(--primary)" : "var(--foreground)" }}>{option.label}</div>
-                  <div style={{ fontSize: "0.82rem", lineHeight: 1.55, color: "var(--muted-foreground)" }}>{option.description}</div>
-                </button>
-              );
-            })}
+                      if (option.value === "interview" && currentUser?.id) {
+                        void trackClientEvent({ userId: currentUser.id, event: "interview_mode_start", path: "/app/practice" });
+                      }
+                    }}
+                    disabled={mode !== "idle"}
+                    style={{
+                      flex: "1 1 180px",
+                      textAlign: "left",
+                      padding: "0.95rem 1rem",
+                      borderRadius: 14,
+                      border: active ? "1.5px solid var(--primary)" : "1px solid var(--border)",
+                      background: active ? "color-mix(in oklch, var(--primary) 10%, var(--card) 90%)" : "var(--card)",
+                      color: "var(--foreground)",
+                      cursor: mode === "idle" ? "pointer" : "not-allowed"
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, marginBottom: "0.35rem", color: active ? "var(--primary)" : "var(--foreground)" }}>{option.label}</div>
+                    <div style={{ fontSize: "0.82rem", lineHeight: 1.55, color: "var(--muted-foreground)" }}>{option.description}</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+        ) : null}
+
+        {/* MOCK EXAM — separate prominent block */}
+        <div style={{
+          borderRadius: 16,
+          border: runMode === "simulation" ? "2px solid var(--primary)" : "1.5px solid var(--border)",
+          background: runMode === "simulation" ? "color-mix(in oklch, var(--primary) 6%, var(--card) 94%)" : "var(--card)",
+          overflow: "hidden",
+          transition: "border-color 0.2s, background 0.2s"
+        }}>
+          <div style={{ padding: "1.1rem 1.25rem", display: "grid", gap: "0.75rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.35rem" }}>
+                  <span style={{ fontSize: "1.1rem" }}>🧪</span>
+                  <strong style={{ fontSize: "1rem", color: runMode === "simulation" ? "var(--primary)" : "var(--foreground)" }}>
+                    {tr ? "Mock Exam" : "Mock Exam"}
+                  </strong>
+                  <span style={{ fontSize: "0.72rem", fontWeight: 700, padding: "0.15rem 0.55rem", borderRadius: 999, background: "color-mix(in oklch, var(--primary) 15%, var(--card) 85%)", color: "var(--primary)", letterSpacing: "0.04em" }}>
+                    {tr ? "TAM SINAV" : "FULL EXAM"}
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: "0.88rem", color: "var(--muted-foreground)", lineHeight: 1.6 }}>
+                  {tr
+                    ? "Gerçek sınav sırası ve süreleriyle tüm partları arka arkaya çöz. Sonunda toplam skor ve hazırlık analizi alırsın."
+                    : "Complete all parts back-to-back with real exam timing. Get a total score and readiness analysis at the end."}
+                </p>
+              </div>
+              {runMode === "simulation" ? (
+                <button
+                  type="button"
+                  onClick={() => { if (mode === "idle") { setRunMode("drill"); setSimulationState(null); } }}
+                  disabled={mode !== "idle"}
+                  style={{ flexShrink: 0, fontSize: "0.8rem", color: "var(--muted-foreground)", background: "none", border: "none", cursor: "pointer", padding: "0.2rem" }}
+                >
+                  {tr ? "İptal" : "Cancel"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { if (mode === "idle") { setRunMode("simulation"); setInterviewState(null); } }}
+                  disabled={mode !== "idle"}
+                  className="button button-secondary"
+                  style={{ flexShrink: 0, fontSize: "0.85rem", padding: "0.5rem 1.1rem" }}
+                >
+                  {tr ? "Seç" : "Select"}
+                </button>
+              )}
+            </div>
+
+            {runMode === "simulation" ? (
+              <div style={{ display: "grid", gap: "0.6rem" }}>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  {(["IELTS", "TOEFL"] as ExamType[]).map(exam => (
+                    <button
+                      key={exam}
+                      type="button"
+                      onClick={() => handleExamChange(exam)}
+                      disabled={mode !== "idle"}
+                      style={{
+                        padding: "0.45rem 1.3rem",
+                        borderRadius: 999,
+                        border: "2px solid",
+                        borderColor: examType === exam ? "var(--primary)" : "var(--border)",
+                        background: examType === exam ? "var(--primary)" : "transparent",
+                        color: examType === exam ? "#fff" : "var(--foreground)",
+                        fontWeight: 700,
+                        fontSize: "0.88rem",
+                        cursor: "pointer",
+                        transition: "all 0.15s"
+                      }}
+                    >{exam}</button>
+                  ))}
+                </div>
+                <div style={{ padding: "0.65rem 0.9rem", borderRadius: 10, background: "var(--secondary)", border: "1px solid var(--border)", fontSize: "0.83rem", color: "var(--muted-foreground)", lineHeight: 1.6 }}>
+                  {examType === "IELTS"
+                    ? (tr ? "Part 1 (Giriş) → Part 2 (Cue Card) → Part 3 (Tartışma)" : "Part 1 (Introduction) → Part 2 (Cue Card) → Part 3 (Discussion)")
+                    : (tr ? "Task 1 (Bağımsız) → Task 2 (Kampüs) → Task 3 (Akademik) → Task 4 (Ders Özeti)" : "Task 1 (Independent) → Task 2 (Campus) → Task 3 (Academic) → Task 4 (Lecture)")}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {runMode === "simulation" ? (
+            <div style={{ borderTop: "1px solid var(--border)", padding: "0.85rem 1.25rem" }}>
+              <button
+                className="button button-primary"
+                type="button"
+                onClick={() => void startSession()}
+                disabled={!canPractice || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
+                style={{ width: "100%", padding: "0.85rem", fontSize: "1rem", fontWeight: 700, borderRadius: 12 }}
+              >
+                {mode === "saving"
+                  ? (tr ? "Kaydediliyor..." : "Saving...")
+                  : (tr ? "🧪 Mock Exam'i Başlat" : "🧪 Start Mock Exam")}
+              </button>
+            </div>
+          ) : null}
         </div>
 
-        {/* EXAM + TASK SELECTOR */}
+        {/* EXAM + TASK SELECTOR — only for non-mock modes */}
+        {runMode !== "simulation" ? (
+        <>
         <div style={{ display: "grid", gap: "1rem" }}>
           <div style={{ display: "flex", gap: "0.5rem" }}>
             {(["IELTS", "TOEFL"] as ExamType[]).map(exam => (
@@ -968,6 +1064,7 @@ export function PracticeConsole() {
 
         {/* TOPIC SELECTION */}
         <div style={{ display: "grid", gap: "1rem" }}>
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
             <strong style={{ fontSize: "0.95rem" }}>
               {tr ? "Konu seç" : "Choose a topic"}
@@ -1046,6 +1143,8 @@ export function PracticeConsole() {
             </div>
           ) : null}
         </div>
+        </>
+        ) : null}
 
         {/* STATS ROW */}
         {summary.totalSessions > 0 ? (
@@ -1063,8 +1162,8 @@ export function PracticeConsole() {
           </div>
         ) : null}
 
-        {/* ADVANCED OPTIONS */}
-        <details style={{ borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden" }}>
+        {/* ADVANCED OPTIONS — hidden in mock exam mode */}
+        {runMode !== "simulation" ? <details style={{ borderRadius: 12, border: "1px solid var(--border)", overflow: "hidden" }}>
           <summary style={{ padding: "0.8rem 1.1rem", cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--card)" }}>
             <span>{tr ? "⚙ Gelişmiş ayarlar" : "⚙ Advanced options"}</span>
             <span style={{ fontSize: "0.75rem", color: "var(--muted-foreground)" }}>{tr ? "Drill hedefi, cevap modu" : "Drill goal, answer mode"}</span>
@@ -1080,7 +1179,7 @@ export function PracticeConsole() {
                 { value: "pronunciation", label: tr ? "Telaffuz" : "Pronunciation" },
                 { value: "topicDevelopment", label: tr ? "İçerik" : "Topic dev" }
               ]}
-              disabled={runMode === "simulation"}
+              disabled={false}
             />
             <SelectField
               label={tr ? "Cevap modu" : "Answer mode"}
@@ -1091,10 +1190,10 @@ export function PracticeConsole() {
                 { value: "natural", label: tr ? "Doğal" : "Natural" },
                 { value: "bold", label: tr ? "Cesur" : "Bold" }
               ]}
-              disabled={runMode === "simulation"}
+              disabled={false}
             />
           </div>
-        </details>
+        </details> : null}
 
         {/* PREVIOUS RESULT PREVIEW */}
         {mode === "done" && session?.report ? (
@@ -1176,24 +1275,24 @@ export function PracticeConsole() {
           </div>
         ) : null}
 
-        {/* MAIN ACTION BUTTON */}
-        <button
-          className="button button-primary"
-          type="button"
-          onClick={() => void startSession()}
-          disabled={!canPractice || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
-          style={{ width: "100%", padding: "1rem", fontSize: "1rem", fontWeight: 700, borderRadius: 14 }}
-        >
-          {mode === "saving"
-            ? (tr ? "Kaydediliyor..." : "Saving...")
-            : runMode === "simulation"
-              ? (tr ? "🧪 Mock Exam'i Başlat" : "🧪 Start Mock Exam")
+        {/* MAIN ACTION BUTTON — hidden in simulation mode (button lives inside mock exam card) */}
+        {runMode !== "simulation" ? (
+          <button
+            className="button button-primary"
+            type="button"
+            onClick={() => void startSession()}
+            disabled={!canPractice || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
+            style={{ width: "100%", padding: "1rem", fontSize: "1rem", fontWeight: 700, borderRadius: 14 }}
+          >
+            {mode === "saving"
+              ? (tr ? "Kaydediliyor..." : "Saving...")
               : runMode === "interview"
                 ? (tr ? "🗣 Interview Modunu Başlat" : "🗣 Start Interview Mode")
                 : runMode === "pronunciation"
                   ? (tr ? "🔊 Telaffuz Drillini Başlat" : "🔊 Start Pronunciation Drill")
                   : (tr ? "🎙 Konuşmaya Başla" : "🎙 Start Speaking")}
-        </button>
+          </button>
+        ) : null}
 
       </div>
 
