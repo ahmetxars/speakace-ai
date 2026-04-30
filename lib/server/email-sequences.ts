@@ -81,328 +81,423 @@ async function ensureEmailSequenceSchema() {
   emailSequenceSchemaEnsured = true;
 }
 
-function buildEmail1(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
-  return {
-    subject: "Welcome to SpeakAce! Here's how to get started",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
-        <h2 style="margin:0 0 12px">Welcome to SpeakAce</h2>
-        <p>Hi ${greeting},</p>
-        <p>You've just joined thousands of IELTS candidates using SpeakAce to sharpen their speaking skills and hit their target band score.</p>
-        <p>Here's how to get the most out of your account:</p>
-        <ul>
-          <li><strong>Practice daily</strong> — even 10 minutes a day adds up fast</li>
-          <li><strong>Read your transcript</strong> — spot patterns in your own speech</li>
-          <li><strong>Retry the same prompt</strong> — your second attempt is always better</li>
-          <li><strong>Track your score</strong> — watch your band score climb over time</li>
-        </ul>
-        <p style="margin:24px 0">
-          <a href="${PRACTICE_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Start your first practice</a>
-        </p>
-        <p style="color:#888;font-size:0.9em">You'll hear from us over the next few days with tips to accelerate your progress.</p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
+// ─── Email layout helper ───────────────────────────────────────────────────────
+
+function layout(body: string): string {
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;padding:0;background:#fdf6f0">
+      <div style="background:#fdf6f0;padding:36px 16px 48px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
+        <div style="max-width:560px;margin:0 auto">
+
+          <!-- Brand header -->
+          <div style="text-align:center;padding-bottom:28px">
+            <span style="font-size:26px;font-weight:900;color:#d95d39;letter-spacing:-0.5px">SpeakAce</span>
+          </div>
+
+          <!-- Card -->
+          <div style="background:#ffffff;border-radius:20px;padding:40px 40px 36px;border:1px solid #ead8cc;box-shadow:0 2px 12px rgba(0,0,0,0.06)">
+            ${body}
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align:center;padding:28px 0 0">
+            <p style="margin:0;color:#b8a499;font-size:0.75em;line-height:1.8">
+              SpeakAce · IELTS Speaking Practice<br>
+              <a href="${SITE_URL}/unsubscribe" style="color:#b8a499;text-decoration:underline">Unsubscribe</a>
+            </p>
+          </div>
+
+        </div>
       </div>
-    `,
+    </body>
+    </html>
+  `;
+}
+
+// Reusable style fragments
+const primaryBtn = (href: string, label: string) =>
+  `<a href="${href}" style="display:inline-block;background:#d95d39;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;font-size:0.95em;letter-spacing:0.01em">${label}</a>`;
+
+const secondaryBtn = (href: string, label: string) =>
+  `<a href="${href}" style="display:inline-block;background:#1d6f75;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:700;font-size:0.95em;letter-spacing:0.01em">${label}</a>`;
+
+const highlight = (text: string) =>
+  `<div style="background:#fff3ec;border-left:4px solid #d95d39;border-radius:0 10px 10px 0;padding:14px 18px;margin:20px 0;color:#4a2c1a;font-size:0.95em;line-height:1.7">${text}</div>`;
+
+const quote = (text: string, attribution: string) =>
+  `<div style="background:#f9f4f0;border-radius:12px;padding:20px 24px;margin:20px 0">
+    <p style="margin:0 0 12px;color:#5a3e32;font-size:0.95em;line-height:1.7;font-style:italic">"${text}"</p>
+    <p style="margin:0;color:#9a7060;font-size:0.83em;font-weight:600">— ${attribution}</p>
+  </div>`;
+
+const statBox = (stat: string, label: string) =>
+  `<div style="background:#fff3ec;border-radius:12px;padding:16px 20px;margin:8px 0;display:flex;align-items:baseline;gap:10px">
+    <span style="font-size:1.6em;font-weight:900;color:#d95d39">${stat}</span>
+    <span style="color:#5a3e32;font-size:0.9em">${label}</span>
+  </div>`;
+
+const checkItem = (text: string) =>
+  `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid #f5ece6">
+    <span style="color:#d95d39;font-size:1.1em;margin-top:1px;flex-shrink:0">✓</span>
+    <span style="color:#3a2218;font-size:0.93em;line-height:1.6">${text}</span>
+  </div>`;
+
+function buildEmail1(name: string) {
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <h1 style="margin:0 0 8px;font-size:1.5em;color:#1b120d;font-weight:800">Welcome to SpeakAce, ${greeting}!</h1>
+    <p style="margin:0 0 24px;color:#7a5c4a;font-size:0.9em">Your IELTS speaking practice starts right now</p>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">You've just joined thousands of IELTS candidates using SpeakAce to sharpen their speaking and hit their target band score. Here's how to get the most out of it from day one:</p>
+
+    <div style="margin:0 0 28px">
+      ${checkItem("<strong>Practice daily</strong> — even 10 minutes a day compounds fast")}
+      ${checkItem("<strong>Read your transcript</strong> — spot patterns in your own speech")}
+      ${checkItem("<strong>Retry the same prompt</strong> — your second attempt is always better")}
+      ${checkItem("<strong>Track your score</strong> — watch your band score climb over time")}
+    </div>
+
+    <div style="margin:28px 0">
+      ${primaryBtn(PRACTICE_URL, "Start your first practice &rarr;")}
+    </div>
+
+    <p style="margin:24px 0 0;color:#9a7060;font-size:0.85em;line-height:1.7">Over the next few days we'll send you targeted tips to accelerate your progress. Keep an eye on your inbox.</p>
+  `);
+  return {
+    subject: "Welcome to SpeakAce — let's get your band score moving",
+    html,
     text: `Hi ${greeting}, welcome to SpeakAce! Start your first practice here: ${PRACTICE_URL}`
   };
 }
 
 function buildEmail2(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 2</p>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">Have you tried your first practice yet?</h1>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 16px">Hi ${greeting}, the best IELTS candidates don't wait until they feel ready. They practice, listen back, and improve one sentence at a time.</p>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Here's a formula that can push your fluency score from Band 5.5 to 6.5 on its own — the <strong>answer–reason–example</strong> structure:</p>
+
+    ${highlight(`
+      <strong style="display:block;margin-bottom:10px;font-size:1em;color:#d95d39">Try this in your next answer:</strong>
+      <span style="display:block;margin-bottom:6px">1. <strong>Answer directly</strong> — "Yes, I enjoy cooking…"</span>
+      <span style="display:block;margin-bottom:6px">2. <strong>Give a reason</strong> — "…because it helps me relax after work."</span>
+      <span style="display:block">3. <strong>Add an example</strong> — "Last weekend I made a Thai curry from scratch."</span>
+    `)}
+
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">Open SpeakAce, pick any Part 1 question, and apply this structure. It only takes a few minutes.</p>
+
+    <div style="margin:0 0 8px">
+      ${primaryBtn(PRACTICE_URL, "Practice now &rarr;")}
+    </div>
+  `);
   return {
-    subject: "Did you do your first practice?",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
-        <h2 style="margin:0 0 12px">One practice a day makes the difference</h2>
-        <p>Hi ${greeting},</p>
-        <p>Day 2! The best IELTS candidates don't wait until they feel ready — they practice, listen back, and improve one sentence at a time.</p>
-        <p><strong>Today's tip: IELTS Part 1 questions</strong></p>
-        <p>Part 1 is about familiar topics — your home, work, hobbies. The examiner wants natural, extended answers. Try this formula:</p>
-        <ul>
-          <li><strong>Give a direct answer</strong> — "Yes, I enjoy cooking…"</li>
-          <li><strong>Add a reason</strong> — "…because it helps me relax after work."</li>
-          <li><strong>Give a specific example</strong> — "Last weekend I made a Thai curry from scratch."</li>
-        </ul>
-        <p>That three-part structure alone can push you from Band 5.5 to Band 6.5 in fluency.</p>
-        <p style="margin:24px 0">
-          <a href="${PRACTICE_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Practice now</a>
-        </p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
-      </div>
-    `,
-    text: `Hi ${greeting}, day 2! Practice IELTS Part 1 today with the answer-reason-example formula. Practice here: ${PRACTICE_URL}`
+    subject: "IELTS tip that moves your score — try it today",
+    html,
+    text: `Hi ${greeting}, day 2! Use the answer-reason-example formula in your IELTS Part 1. Practice here: ${PRACTICE_URL}`
   };
 }
 
 function buildEmail3(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 5</p>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">Your Week 1 IELTS Speaking Checklist</h1>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, tick these five off by the end of the week and you'll be ahead of 80% of IELTS test-takers.</p>
+
+    <div style="margin:0 0 28px">
+      ${checkItem("<strong>Answer at least one Part 1 prompt</strong> — familiar topics, natural speech")}
+      ${checkItem("<strong>Listen to your own recording</strong> — identify one filler word to eliminate")}
+      ${checkItem("<strong>Complete one Part 2 long turn</strong> — aim for a full 2 minutes without stopping")}
+      ${checkItem("<strong>Read your AI feedback</strong> — focus on the single top-priority improvement")}
+      ${checkItem("<strong>Retry the same prompt</strong> — apply the feedback and compare both attempts")}
+    </div>
+
+    ${highlight("Progress tip: you don't need to be perfect. Each attempt is data. The candidates who improve fastest are the ones who keep going even when they stumble.")}
+
+    <div style="margin:28px 0 8px">
+      ${primaryBtn(PRACTICE_URL, "Open SpeakAce &rarr;")}
+    </div>
+  `);
   return {
-    subject: "Your Week 1 IELTS Speaking Checklist",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
-        <h2 style="margin:0 0 12px">Your Week 1 speaking checklist</h2>
-        <p>Hi ${greeting},</p>
-        <p>You're four days in. Here's a quick checklist of the five things every serious IELTS candidate should practice in week one:</p>
-        <ol style="padding-left:1.2rem">
-          <li style="margin-bottom:0.8rem"><strong>Answer at least one Part 1 prompt</strong> — familiar topics, natural speech</li>
-          <li style="margin-bottom:0.8rem"><strong>Listen to your own recording</strong> — identify one filler word to eliminate</li>
-          <li style="margin-bottom:0.8rem"><strong>Practice one Part 2 long turn</strong> — aim for a full 2 minutes without stopping</li>
-          <li style="margin-bottom:0.8rem"><strong>Read your AI feedback</strong> — focus on the top-priority improvement</li>
-          <li style="margin-bottom:0.8rem"><strong>Retry the same prompt</strong> — apply the feedback and compare the two attempts</li>
-        </ol>
-        <p>Checking all five off by the end of the week puts you ahead of 80% of IELTS test-takers.</p>
-        <p style="margin:24px 0">
-          <a href="${PRACTICE_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Continue practicing</a>
-        </p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
-      </div>
-    `,
-    text: `Hi ${greeting}, here's your Week 1 IELTS speaking checklist: 1) Answer a Part 1 prompt 2) Listen to your recording 3) Practice a Part 2 long turn 4) Read AI feedback 5) Retry the same prompt. Practice here: ${PRACTICE_URL}`
+    subject: "5-item checklist for your first week of IELTS practice",
+    html,
+    text: `Hi ${greeting}, your Week 1 checklist: 1) Part 1 prompt 2) Listen back 3) Part 2 long turn 4) Read AI feedback 5) Retry same prompt. Practice: ${PRACTICE_URL}`
   };
 }
 
 function buildEmail4(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 7 Milestone</p>
+    <h1 style="margin:0 0 8px;font-size:1.45em;color:#1b120d;font-weight:800">One week in — you're already ahead.</h1>
+    <p style="margin:0 0 24px;color:#7a5c4a;font-size:0.9em">Most people quit before day 7. You didn't.</p>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, a week of consistent practice is real momentum. If you're targeting Band 7 or higher, here's what SpeakAce Plus adds to your daily routine:</p>
+
+    <div style="margin:0 0 28px">
+      ${checkItem("<strong>35 minutes of daily speaking</strong> — vs 8 minutes on the free plan")}
+      ${checkItem("<strong>18 practice sessions per day</strong> — more variety, more reps, faster gains")}
+      ${checkItem("<strong>Deeper AI feedback</strong> — detailed analysis with stronger improvement suggestions")}
+      ${checkItem("<strong>Full score history</strong> — track your band score arc over weeks and months")}
+    </div>
+
+    <div style="margin:28px 0;display:flex;gap:12px;flex-wrap:wrap">
+      ${primaryBtn(CHECKOUT_URL, "Upgrade to Plus &rarr;")}
+      &nbsp;&nbsp;
+      ${secondaryBtn(PRACTICE_URL, "Keep practicing free")}
+    </div>
+
+    <p style="margin:20px 0 0;color:#9a7060;font-size:0.85em;line-height:1.7">Either way — every session brings you closer to your target score. Keep going.</p>
+  `);
   return {
-    subject: "You've been practicing for a week 🎉",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
-        <h2 style="margin:0 0 12px">One week down — keep going</h2>
-        <p>Hi ${greeting},</p>
-        <p>A week of practice is real momentum. Most people quit before day 7. You didn't.</p>
-        <p>Here's what SpeakAce Plus unlocks to help you go even further:</p>
-        <ul>
-          <li><strong>35 minutes of daily speaking</strong> vs 8 on the free plan</li>
-          <li><strong>18 sessions per day</strong> vs 4 — more variety, more reps</li>
-          <li><strong>Expanded AI feedback</strong> — deeper analysis, stronger suggestions</li>
-          <li><strong>Full score and trend tracking</strong> — see your band score arc over time</li>
-        </ul>
-        <p>If you're targeting Band 7 or higher, Plus gives you the daily volume you need to get there.</p>
-        <p style="margin:24px 0">
-          <a href="${CHECKOUT_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Upgrade to Plus</a>
-        </p>
-        <p>Or keep going on the free plan — every practice counts.</p>
-        <p style="margin:24px 0">
-          <a href="${PRACTICE_URL}" style="background:#1d6f75;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Continue free practice</a>
-        </p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
-      </div>
-    `,
-    text: `Hi ${greeting}, you've been practicing for a week! Upgrade to Plus for 35 min/day, 18 sessions, and deeper feedback: ${CHECKOUT_URL} — or keep practicing free: ${PRACTICE_URL}`
+    subject: "You've been practicing for a week — here's what's next",
+    html,
+    text: `Hi ${greeting}, one week of practice! Upgrade to Plus for more daily volume: ${CHECKOUT_URL} — or keep going free: ${PRACTICE_URL}`
   };
 }
 
 function buildEmail5(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 10</p>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">The one habit that separates Band 6 from Band 7+</h1>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, we looked at the data. The result is clear:</p>
+
+    ${statBox("+0.7", "average band score improvement for candidates who practice daily vs. weekly")}
+
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 20px">The difference isn't talent. It's repetition. Here's what daily practice actually sounds like:</p>
+
+    ${quote("I went from Band 6 to Band 7.5 in six weeks. I practiced on SpeakAce every morning before work — just 15 minutes.", "SpeakAce user, Almaty, Kazakhstan")}
+    ${quote("The transcript feature showed me I was overusing 'basically'. Fixing that one word improved my lexical score.", "SpeakAce user, Jakarta, Indonesia")}
+
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">You're already showing up. SpeakAce Plus gives you the daily volume and detail to convert that effort into a higher band score.</p>
+
+    <div style="margin:0 0 8px">
+      ${primaryBtn(CHECKOUT_URL, "Upgrade to Plus — $3.99/week &rarr;")}
+    </div>
+    <p style="margin:12px 0 0;font-size:0.83em;color:#9a7060">
+      <a href="${PRICING_URL}" style="color:#9a7060;text-decoration:underline">Compare all plans</a>
+    </p>
+  `);
   return {
-    subject: "Students who practice daily score Band 7+",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
-        <h2 style="margin:0 0 12px">Daily practice is the one variable that matters</h2>
-        <p>Hi ${greeting},</p>
-        <p>We looked at the data. Students who practice on SpeakAce every day for 10+ days score an average of <strong>0.7 bands higher</strong> than those who practice once a week.</p>
-        <p>The difference isn't talent. It's repetition.</p>
-        <blockquote style="border-left:3px solid #d95d39;margin:1rem 0;padding:0.5rem 1rem;color:#555">
-          "I went from Band 6 to Band 7.5 in six weeks. I practiced on SpeakAce every morning before work." — SpeakAce user, Almaty
-        </blockquote>
-        <blockquote style="border-left:3px solid #d95d39;margin:1rem 0;padding:0.5rem 1rem;color:#555">
-          "The transcript feature showed me I was overusing 'basically'. That one fix improved my lexical score." — SpeakAce user, Jakarta
-        </blockquote>
-        <p>You're already doing the hard part — showing up. SpeakAce Plus gives you the volume and detail to convert that effort into a higher band score.</p>
-        <p style="margin:24px 0">
-          <a href="${CHECKOUT_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Upgrade to Plus — $3.99/week</a>
-        </p>
-        <p>Compare all plans: <a href="${PRICING_URL}">${PRICING_URL}</a></p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
-      </div>
-    `,
-    text: `Hi ${greeting}, students who practice daily score Band 7+. Upgrade to SpeakAce Plus for $3.99/week: ${CHECKOUT_URL}`
+    subject: "The data on daily practice — and what it means for your score",
+    html,
+    text: `Hi ${greeting}, students who practice daily score 0.7 bands higher. Upgrade to Plus: ${CHECKOUT_URL}`
   };
 }
 
 function buildEmail6(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 14</p>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">Two weeks in — are you still practicing?</h1>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 16px">Hi ${greeting}, life gets busy. That's completely normal.</p>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">The good news: your account is still here, your progress is saved, and you can restart today. IELTS speaking skills come back fast once you pick up again.</p>
+
+    ${highlight("<strong>Today's challenge:</strong> Answer just one Part 1 question. It takes under 60 seconds. That's all — one question, one attempt, and you're back in the habit.")}
+
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">The candidates who reach Band 7+ aren't the ones who never miss a day — they're the ones who restart quickly when they do.</p>
+
+    <div style="margin:0 0 8px">
+      ${primaryBtn(PRACTICE_URL, "Take the 60-second challenge &rarr;")}
+    </div>
+  `);
   return {
-    subject: "Still thinking about your IELTS score?",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
-        <h2 style="margin:0 0 12px">Two weeks in — are you still practicing?</h2>
-        <p>Hi ${greeting},</p>
-        <p>Two weeks ago you created a SpeakAce account. The candidates who improve fastest are the ones who practice consistently — even just 10 minutes a day.</p>
-        <p>If life got busy, that's completely normal. The good news: your account is still here, your progress is saved, and you can start again today.</p>
-        <p><strong>Today's challenge:</strong> Answer one Part 1 question. Just one. It takes 45 seconds.</p>
-        <p style="margin:24px 0">
-          <a href="${PRACTICE_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Start 45-second practice</a>
-        </p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
-      </div>
-    `,
-    text: `Hi ${greeting}, two weeks in — are you still practicing? Start a 45-second IELTS Part 1 practice here: ${PRACTICE_URL}`
+    subject: "A 60-second challenge to get you back on track",
+    html,
+    text: `Hi ${greeting}, two weeks in. Take a 60-second challenge — one Part 1 question: ${PRACTICE_URL}`
   };
 }
 
 function buildEmail7(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 21</p>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">The #1 reason scores get stuck at Band 5.5</h1>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, after analysing thousands of IELTS speaking responses, one pattern appears again and again in candidates who can't break through Band 6:</p>
+
+    ${highlight("<strong>They answer the question — but they don't develop the answer.</strong>")}
+
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 8px"><strong style="color:#c0392b">Band 5.5 answer:</strong></p>
+    <div style="background:#fef2f0;border-radius:8px;padding:14px 18px;margin:0 0 16px;color:#5a3e32;font-size:0.93em;line-height:1.7">"Yes, I like technology because it is useful."</div>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 8px"><strong style="color:#1d6f75">Band 7 answer:</strong></p>
+    <div style="background:#f0f8f8;border-radius:8px;padding:14px 18px;margin:0 0 20px;color:#1a3d40;font-size:0.93em;line-height:1.7">"I'd say technology has become pretty essential to my daily routine — I use it for everything from staying connected with colleagues to learning new skills on the go. What I find most interesting is how quickly it's changed the way we work, even compared to five years ago."</div>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 28px">Same idea. Completely different score. The difference: <strong>a reason, an example, and a reflection</strong>. Apply this in your next session and watch your AI feedback change.</p>
+
+    <div style="margin:0 0 8px">
+      ${primaryBtn(PRACTICE_URL, "Practice with AI feedback &rarr;")}
+    </div>
+  `);
   return {
-    subject: "The #1 mistake that keeps IELTS speaking scores at 5.5",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
-        <h2 style="margin:0 0 12px">The mistake almost everyone makes</h2>
-        <p>Hi ${greeting},</p>
-        <p>After analysing thousands of IELTS speaking responses, one pattern shows up again and again in candidates stuck at band 5.5:</p>
-        <p style="background:#fff8f2;border-left:4px solid #d95d39;padding:12px 16px;margin:16px 0"><strong>They answer the question — but they don't develop the answer.</strong></p>
-        <p>A band 5.5 answer: "Yes, I like technology because it is useful."</p>
-        <p>A band 7 answer: "I'd say technology has become pretty essential to my daily routine — I use it for everything from communicating with colleagues to learning new skills on the go. What I find most interesting is how quickly it's changed the way we work, even compared to five years ago."</p>
-        <p>The second answer uses the same idea. The difference is development: a reason, an example, and a reflection.</p>
-        <p>Try this formula in your next practice session and see what your AI score says.</p>
-        <p style="margin:24px 0">
-          <a href="${PRACTICE_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Practice with feedback</a>
-        </p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
-      </div>
-    `,
-    text: `Hi ${greeting}, the #1 IELTS mistake: not developing your answers. Learn the fix and practice with AI feedback: ${PRACTICE_URL}`
+    subject: "Why IELTS speaking scores stall at 5.5 — and the fix",
+    html,
+    text: `Hi ${greeting}, the #1 IELTS mistake is not developing answers. Learn the fix: ${PRACTICE_URL}`
   };
 }
 
 function buildEmail8(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 30 Milestone</p>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">One month with SpeakAce — what the top improvers do</h1>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, you've had your account for 30 days. Here's what we've observed about candidates who improve the most in their first month:</p>
+
+    <div style="margin:0 0 28px">
+      ${checkItem("Practice at least <strong>4 days per week</strong> — consistency beats session length")}
+      ${checkItem("<strong>Retry the same question</strong> after reading feedback — that second attempt is where the growth happens")}
+      ${checkItem("Pick <strong>one weak area per week</strong> — fixing everything at once fixes nothing")}
+    </div>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 28px">On the free plan you get 4 sessions per day — enough for a solid daily habit. If you want more volume and deeper analysis, Plus is $3.99/week.</p>
+
+    <div style="margin:0 0 8px;display:flex;gap:12px;flex-wrap:wrap">
+      ${primaryBtn(PRACTICE_URL, "Practice today &rarr;")}
+      &nbsp;&nbsp;
+      ${secondaryBtn(CHECKOUT_URL, "Upgrade to Plus")}
+    </div>
+  `);
   return {
-    subject: "30 days with SpeakAce — here's what works",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
-        <h2 style="margin:0 0 12px">One month in</h2>
-        <p>Hi ${greeting},</p>
-        <p>You've had your SpeakAce account for a month. Here's what we know about candidates who improve the most in 30 days:</p>
-        <ul>
-          <li>They practice at least 4 days per week — not necessarily long sessions</li>
-          <li>They retry the same question at least once after reading feedback</li>
-          <li>They focus on one weak area per week instead of trying to fix everything at once</li>
-        </ul>
-        <p>If you're on the free plan, you get 4 sessions per day — enough for a solid daily habit. If you want more volume, Plus gives you 18 sessions and 35 minutes of daily speaking.</p>
-        <p style="margin:24px 0">
-          <a href="${PRACTICE_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Practice today</a>
-          &nbsp;&nbsp;
-          <a href="${CHECKOUT_URL}" style="background:#1d6f75;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Upgrade to Plus</a>
-        </p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
-      </div>
-    `,
-    text: `Hi ${greeting}, one month with SpeakAce. Practice today: ${PRACTICE_URL} — or upgrade to Plus: ${CHECKOUT_URL}`
+    subject: "What the top IELTS improvers do differently (30-day data)",
+    html,
+    text: `Hi ${greeting}, one month in. Top habit: practice 4 days/week and retry after feedback. ${PRACTICE_URL}`
   };
 }
 
 function buildEmail9(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 45</p>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">From Band 5.5 to 7.0 in 6 weeks — a real story</h1>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting},</p>
+
+    ${quote("I had taken IELTS twice and stuck at 5.5 both times. I started using SpeakAce for 15 minutes every morning before work. After six weeks I retook the test and scored 7.0. The transcript review was the feature that changed everything — I could see exactly which words I overused and cut them out one by one.", "SpeakAce user, Almaty, Kazakhstan")}
+
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 20px">The insight here: it wasn't more hours of practice. It was <strong>reading the transcript</strong> and fixing one specific habit per week.</p>
+
+    ${highlight("Your transcript is available after every session. Open it after your next practice and look for one word or phrase you use too often — then eliminate it.")}
+
+    <div style="margin:28px 0 8px">
+      ${primaryBtn(PRACTICE_URL, "Record and review your transcript &rarr;")}
+    </div>
+  `);
   return {
-    subject: "How a student went from band 5.5 to 7.0 in 6 weeks",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
-        <h2 style="margin:0 0 12px">A real improvement story</h2>
-        <p>Hi ${greeting},</p>
-        <blockquote style="border-left:3px solid #d95d39;margin:16px 0;padding:12px 16px;color:#555;background:#fff8f2">
-          "I had taken IELTS twice and stuck at 5.5 both times. I started using SpeakAce daily for 15 minutes before work. After six weeks I retook the test and scored 7.0. The transcript review was the feature that changed everything — I could see exactly which words I overused."
-          <br><br><strong>— SpeakAce user, Almaty, Kazakhstan</strong>
-        </blockquote>
-        <p>The key insight from this story: it wasn't more practice hours that made the difference. It was reading the transcript and targeting one specific habit per week.</p>
-        <p>Your transcript is available after every session. Have you been reading it?</p>
-        <p style="margin:24px 0">
-          <a href="${PRACTICE_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Record and review your transcript</a>
-        </p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
-      </div>
-    `,
-    text: `Hi ${greeting}, a SpeakAce user went from band 5.5 to 7.0 in 6 weeks using transcript review. Try it here: ${PRACTICE_URL}`
+    subject: "How one candidate went from 5.5 to 7.0 in 6 weeks",
+    html,
+    text: `Hi ${greeting}, a SpeakAce user went from band 5.5 to 7.0 in 6 weeks by reviewing transcripts. Try it: ${PRACTICE_URL}`
   };
 }
 
 function buildEmail10(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
-  return {
-    subject: "IELTS speaking: what to do in the last 2 weeks before your test",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
-        <h2 style="margin:0 0 12px">Your final 2-week speaking plan</h2>
-        <p>Hi ${greeting},</p>
-        <p>Whether your test is in two weeks or two months, this is the preparation pattern that works best:</p>
-        <ol style="padding-left:1.2rem">
-          <li style="margin-bottom:8px"><strong>Week before last:</strong> Focus on your weakest part (Part 1 fluency, Part 2 length, or Part 3 development). One weakness only.</li>
-          <li style="margin-bottom:8px"><strong>Final week:</strong> Full mock sessions — all three parts, timed. Record everything. Listen back at normal speed.</li>
-          <li style="margin-bottom:8px"><strong>Night before:</strong> Review your phrase bank and 3 example answers. Do NOT practice for more than 20 minutes.</li>
-          <li style="margin-bottom:8px"><strong>Day of test:</strong> Speak for 10 minutes on any topic in the morning. Warm up your voice and your brain.</li>
-        </ol>
-        <p style="margin:24px 0">
-          <a href="${PRACTICE_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Start your mock session</a>
-        </p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 60</p>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">Your final 2-week IELTS speaking plan</h1>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, whether your test is 2 weeks away or 2 months, this is the preparation pattern that works:</p>
+
+    <div style="margin:0 0 28px">
+      <div style="padding:12px 0;border-bottom:1px solid #f0e6df">
+        <p style="margin:0 0 4px;font-weight:700;color:#1b120d;font-size:0.93em">Week before last</p>
+        <p style="margin:0;color:#5a3e32;font-size:0.9em;line-height:1.6">Focus entirely on your <em>one weakest area</em> — Part 1 fluency, Part 2 length, or Part 3 development. One weakness only.</p>
       </div>
-    `,
-    text: `Hi ${greeting}, your final 2-week IELTS speaking plan is here. Start a mock session: ${PRACTICE_URL}`
+      <div style="padding:12px 0;border-bottom:1px solid #f0e6df">
+        <p style="margin:0 0 4px;font-weight:700;color:#1b120d;font-size:0.93em">Final week</p>
+        <p style="margin:0;color:#5a3e32;font-size:0.9em;line-height:1.6">Full mock sessions — all three parts, timed. Record everything. Listen back at normal speed.</p>
+      </div>
+      <div style="padding:12px 0;border-bottom:1px solid #f0e6df">
+        <p style="margin:0 0 4px;font-weight:700;color:#1b120d;font-size:0.93em">Night before</p>
+        <p style="margin:0;color:#5a3e32;font-size:0.9em;line-height:1.6">Review your phrase bank and 3 strong example answers. No more than 20 minutes of practice — rest your voice.</p>
+      </div>
+      <div style="padding:12px 0">
+        <p style="margin:0 0 4px;font-weight:700;color:#1b120d;font-size:0.93em">Morning of the test</p>
+        <p style="margin:0;color:#5a3e32;font-size:0.9em;line-height:1.6">Speak for 10 minutes on any topic. Warm up your voice and get your brain into English mode.</p>
+      </div>
+    </div>
+
+    <div style="margin:0 0 8px">
+      ${primaryBtn(PRACTICE_URL, "Start a mock session &rarr;")}
+    </div>
+  `);
+  return {
+    subject: "The exact 2-week plan before your IELTS speaking test",
+    html,
+    text: `Hi ${greeting}, your 2-week IELTS speaking plan: week before — weakest area. Final week — full mocks. Night before — phrase bank. Morning — warm up. Start: ${PRACTICE_URL}`
   };
 }
 
 function buildEmail11(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 75</p>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">We miss you — and your band score is still waiting.</h1>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 16px">Hi ${greeting}, it's been a while since you practiced on SpeakAce.</p>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">IELTS speaking skills fade without consistent practice — but the good news is they also come back fast. One session is all it takes to restart the habit.</p>
+
+    ${highlight("<strong>Come back offer:</strong> For the next 48 hours your account has no daily session limit. Practice as much as you want, completely free. No strings attached.")}
+
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">Just open SpeakAce and start speaking. Your progress is still here.</p>
+
+    <div style="margin:0 0 8px">
+      ${primaryBtn(PRACTICE_URL, "Restart your practice &rarr;")}
+    </div>
+
+    <p style="margin:24px 0 0;color:#9a7060;font-size:0.82em;line-height:1.6">Already taken your IELTS test? Just ignore this — we'll stop the reminders after this email.</p>
+  `);
   return {
-    subject: "We noticed you haven't practiced in a while",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
-        <h2 style="margin:0 0 12px">Your speaking score is waiting</h2>
-        <p>Hi ${greeting},</p>
-        <p>It's been a while since your last SpeakAce session. IELTS speaking skills can fade quickly without consistent practice — but they also come back fast once you restart.</p>
-        <p>We want to help you get back on track. For the next 48 hours, your account has no daily session limit — practice as much as you want, completely free.</p>
-        <p>No strings attached. Just open the app and start speaking.</p>
-        <p style="margin:24px 0">
-          <a href="${PRACTICE_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Restart your practice now</a>
-        </p>
-        <p style="color:#888;font-size:0.88em">If you've already taken your IELTS test and no longer need practice, just ignore this email. We'll stop sending reminders after this.</p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
-      </div>
-    `,
-    text: `Hi ${greeting}, it's been a while. Come back and practice IELTS speaking — your score is waiting: ${PRACTICE_URL}`
+    subject: "We saved your spot — unlimited practice for 48 hours",
+    html,
+    text: `Hi ${greeting}, it's been a while. Unlimited practice for 48 hours — come back: ${PRACTICE_URL}`
   };
 }
 
 function buildEmail12(name: string) {
-  const greeting = name.trim() ? name.trim() : "there";
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 90 · Last Email</p>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">One last thing before we go quiet.</h1>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 16px">Hi ${greeting}, this is our last check-in. We don't want to fill your inbox if IELTS speaking isn't your focus right now — after this, we'll only contact you for account messages.</p>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">If you do want to improve your speaking score before a future test, here's what SpeakAce Plus gives you:</p>
+
+    <div style="margin:0 0 28px">
+      ${checkItem("<strong>35 minutes of daily speaking</strong> — vs 8 minutes on the free plan")}
+      ${checkItem("<strong>18 practice sessions per day</strong> — maximum variety and reps")}
+      ${checkItem("<strong>Deeper AI analysis</strong> — stronger, more specific improvement suggestions")}
+      ${checkItem("<strong>Full score history and trend tracking</strong> — watch your band arc over time")}
+    </div>
+
+    ${highlight("Use code <strong>COMEBACK</strong> at checkout for <strong>20% off your first week</strong>. No expiry on this offer.")}
+
+    <div style="margin:28px 0;display:flex;gap:12px;flex-wrap:wrap">
+      ${primaryBtn(`${CHECKOUT_URL}&coupon=COMEBACK`, "Claim 20% off Plus &rarr;")}
+      &nbsp;&nbsp;
+      ${secondaryBtn(PRACTICE_URL, "Stay on free plan")}
+    </div>
+
+    <p style="margin:20px 0 0;color:#9a7060;font-size:0.85em;line-height:1.7">Good luck with your IELTS preparation, whatever path you choose.</p>
+  `);
   return {
-    subject: "Last message from SpeakAce — a special offer inside",
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
-        <h2 style="margin:0 0 12px">One last thing before we go quiet</h2>
-        <p>Hi ${greeting},</p>
-        <p>This is our last check-in. We don't want to fill your inbox if speaking practice isn't your priority right now — so after this email, we'll only contact you for account-related messages.</p>
-        <p>If you do want to improve your IELTS speaking before a future test, here's what SpeakAce Plus gives you for $3.99/week:</p>
-        <ul>
-          <li>35 minutes of speaking practice per day (vs 8 on free)</li>
-          <li>18 sessions per day for maximum variety</li>
-          <li>Deeper AI analysis and stronger improvement suggestions</li>
-          <li>Full score history and trend tracking</li>
-        </ul>
-        <p>Use code <strong>COMEBACK</strong> at checkout for 20% off your first week.</p>
-        <p style="margin:24px 0">
-          <a href="${CHECKOUT_URL}&coupon=COMEBACK" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Claim 20% off Plus</a>
-          &nbsp;&nbsp;
-          <a href="${PRACTICE_URL}" style="background:#1d6f75;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Stay on free plan</a>
-        </p>
-        <p style="color:#888;font-size:0.88em">Good luck with your IELTS preparation, whatever path you choose.</p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you signed up for SpeakAce. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
-      </div>
-    `,
-    text: `Hi ${greeting}, last message from SpeakAce. Use COMEBACK for 20% off Plus: ${CHECKOUT_URL}&coupon=COMEBACK — or keep practicing free: ${PRACTICE_URL}`
+    subject: "Last email from SpeakAce — a 20% offer inside",
+    html,
+    text: `Hi ${greeting}, last email from SpeakAce. Use COMEBACK for 20% off Plus: ${CHECKOUT_URL}&coupon=COMEBACK — or stay free: ${PRACTICE_URL}`
   };
 }
 
@@ -707,26 +802,28 @@ export function getTodaysTip(): DailyTip {
 }
 
 function buildDailyTipEmail(name: string, tip: DailyTip) {
-  const greeting = name.trim() ? name.trim() : "there";
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#d95d39;font-size:0.82em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em">Daily Speaking Tip</p>
+    <h1 style="margin:0 0 24px;font-size:1.4em;color:#1b120d;font-weight:800;line-height:1.3">${tip.headline}</h1>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting},</p>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">${tip.body}</p>
+
+    <div style="background:#f9f4f0;border-radius:12px;padding:20px 24px;margin:0 0 24px">
+      <p style="margin:0 0 8px;font-size:0.8em;font-weight:700;color:#9a7060;text-transform:uppercase;letter-spacing:0.06em">Example</p>
+      <p style="margin:0;color:#3a2218;font-size:0.93em;line-height:1.75;font-style:italic">${tip.example}</p>
+    </div>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 28px">Open SpeakAce, try this in your next answer, and see how it changes your AI score.</p>
+
+    <div style="margin:0 0 8px">
+      ${primaryBtn(PRACTICE_URL, "Let's try &rarr;")}
+    </div>
+  `);
   return {
     subject: tip.subject,
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
-        <p style="color:#888;font-size:0.85em;margin:0 0 8px;text-transform:uppercase;letter-spacing:0.05em">Daily IELTS Speaking Tip</p>
-        <h2 style="margin:0 0 16px;font-size:1.3em">${tip.headline}</h2>
-        <p>Hi ${greeting},</p>
-        <p>${tip.body}</p>
-        <div style="background:#fff8f2;border-left:4px solid #d95d39;padding:12px 16px;margin:20px 0;border-radius:0 6px 6px 0">
-          <p style="margin:0;font-style:italic;color:#555">${tip.example}</p>
-        </div>
-        <p>Try this in your next practice session and see how it affects your score.</p>
-        <p style="margin:28px 0">
-          <a href="${PRACTICE_URL}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:13px 22px;border-radius:999px;font-weight:700;display:inline-block;font-size:0.95em">Let's try &rarr;</a>
-        </p>
-        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this because you have a SpeakAce account. <a href="${SITE_URL}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
-      </div>
-    `,
+    html,
     text: `Hi ${greeting}, today's IELTS speaking tip — ${tip.headline}.\n\n${tip.body}\n\nExample: ${tip.example}\n\nLet's try it: ${PRACTICE_URL}`
   };
 }
