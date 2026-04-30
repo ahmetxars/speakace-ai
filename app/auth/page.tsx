@@ -105,7 +105,7 @@ function AuthPageInner() {
       clearShareAttribution();
     }
     await refreshSession();
-    router.push("/app");
+    router.push(mode === "signup" && memberType === "student" ? "/app/onboarding" : "/app");
   };
 
   useEffect(() => {

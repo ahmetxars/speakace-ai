@@ -67,6 +67,8 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [step, setStep] = useState(1);
+  const [planReady, setPlanReady] = useState(false);
+  const [savedProfile, setSavedProfile] = useState<StudentProfileType | null>(null);
 
   const steps = [
     { title: tr ? "Hedef belirleme" : "Exam goal" },
@@ -215,11 +217,183 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
       setError(data.error ?? (tr ? "Onboarding kaydedilemedi." : "Could not save onboarding."));
       return;
     }
-    setNotice(tr ? "Profilin hazır! Dashboard'una yönlendiriliyorsun…" : "Your profile is ready! Taking you to your dashboard…");
-    setTimeout(() => router.push("/app"), 700);
+    setSavedProfile(data.profile);
+    setPlanReady(true);
   };
 
+  const levelToIeltsScore: Record<string, number> = {
+    A2: 4.0, B1: 5.0, B2: 6.5, C1: 7.5, "C1+": 8.5
+  };
+  const levelToToeflScore: Record<string, number> = {
+    A2: 10, B1: 15, B2: 20, C1: 26, "C1+": 29
+  };
+  const challengeToFocus: Record<string, { en: string; tr: string; taskHint: string }> = {
+    vocabulary: { en: "Lexical Resource", tr: "Kelime Zenginliği", taskHint: tr ? "Part 2 kart sorularıyla başla — bol açıklama pratiği yapar." : "Start with Part 2 cue cards — they push you to describe and expand vocabulary." },
+    anxiety: { en: "Confidence Building", tr: "Özgüven İnşası", taskHint: tr ? "Part 1 günlük konularla başla — tanıdık sorular korkuyu azaltır." : "Start with Part 1 familiar topics — known subjects lower speaking anxiety quickly." },
+    grammar: { en: "Grammar Accuracy", tr: "Dilbilgisi Doğruluğu", taskHint: tr ? "Part 3 tartışma soruları seni karmaşık yapı kurmaya zorlar." : "Try Part 3 discussion questions — they require complex structures you can drill." },
+    pronunciation: { en: "Delivery & Clarity", tr: "Telaffuz ve Netlik", taskHint: tr ? "Her partta geri bildirim telaffuz puanını içerir — hepsinde çalış." : "Feedback scores your delivery every session — practice any part consistently." },
+    fluency: { en: "Fluency & Flow", tr: "Akıcılık", taskHint: tr ? "Zamanlı Part 1 sorularıyla akıcılık drill'i yap — hız ve ritm gelişir." : "Timed Part 1 drills build rhythm and reduce hesitation fast." },
+    structure: { en: "Coherence & Structure", tr: "Yapı ve Tutarlılık", taskHint: tr ? "Part 2 cue card hazırlık süresini yapı planlamak için kullan." : "Use Part 2 prep time to practice structuring your answer before speaking." }
+  };
+
+  function calcGap(level: string, target: number | null, examType: "IELTS" | "TOEFL") {
+    if (!target || !level) return null;
+    const current = examType === "IELTS" ? levelToIeltsScore[level] : levelToToeflScore[level];
+    if (!current) return null;
+    return { current, gap: Math.max(0, target - current) };
+  }
+
+  function weeksToTarget(gap: number, sessionsPerWeek: number, examType: "IELTS" | "TOEFL") {
+    if (gap <= 0) return 0;
+    const bandValue = examType === "IELTS" ? gap : gap / 3;
+    const sessionsPerBand = 40;
+    const totalSessions = bandValue * sessionsPerBand;
+    return Math.ceil(totalSessions / Math.max(1, sessionsPerWeek));
+  }
+
+  function recommendedTask(examType: "IELTS" | "TOEFL", level: string) {
+    const easy = ["A2", "B1"].includes(level);
+    if (examType === "IELTS") return easy ? "IELTS Part 1 – Starter" : "IELTS Part 2 – Target";
+    return easy ? "TOEFL Task 1 – Starter" : "TOEFL Task 2 – Target";
+  }
+
   const studyDays = Array.isArray(form.studyDays) ? form.studyDays : [];
+
+  if (planReady && savedProfile) {
+    const p = savedProfile;
+    const examType = p.preferredExamType;
+    const gapData = calcGap(p.estimatedLevel ?? "", p.targetScore, examType);
+    const weeks = gapData ? weeksToTarget(gapData.gap, p.weeklyGoal, examType) : null;
+    const challengeFocus = p.biggestChallenge ? challengeToFocus[p.biggestChallenge] : null;
+    const firstTask = recommendedTask(examType, p.estimatedLevel ?? "B1");
+    const months = weeks ? (weeks >= 4 ? Math.round(weeks / 4.3) : null) : null;
+    const timeStr = weeks === 0
+      ? (tr ? "Hedefine çok yakınsın!" : "You're very close to your target!")
+      : months
+        ? (tr ? `~${months} ay` : `~${months} months`)
+        : weeks
+          ? (tr ? `~${weeks} hafta` : `~${weeks} weeks`)
+          : "—";
+
+    return (
+      <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
+        <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.8rem" }}>
+          <span className="eyebrow">{tr ? "Planın hazır" : "Your plan is ready"}</span>
+          <h1 style={{ margin: 0 }}>{tr ? "İşte kişisel yol haritanız" : "Here's your personalized roadmap"}</h1>
+          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
+            {tr
+              ? "Verdiğin cevaplara göre sana özel bir plan oluşturduk. Şimdi ilk oturumuna başlayarak bu planı hayata geçir."
+              : "Based on your answers, we've built a plan tailored to you. Start your first session to put it into action."}
+          </p>
+        </section>
+
+        {gapData && (
+          <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+            <strong style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)" }}>
+              {tr ? "Skor Analizi" : "Score Analysis"}
+            </strong>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem" }}>
+              <div className="card" style={{ padding: "1rem", textAlign: "center", background: "var(--surface-strong)" }}>
+                <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--muted)" }}>{gapData.current}</div>
+                <div style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.2rem" }}>{tr ? "Tahmini Mevcut" : "Est. Current"}</div>
+              </div>
+              <div className="card" style={{ padding: "1rem", textAlign: "center", background: "rgba(29,111,117,0.08)", border: "1px solid var(--sa-accent)" }}>
+                <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--sa-accent)" }}>{gapData.gap > 0 ? `+${examType === "IELTS" ? gapData.gap.toFixed(1) : Math.round(gapData.gap)}` : "✓"}</div>
+                <div style={{ fontSize: "0.78rem", color: "var(--sa-accent)", marginTop: "0.2rem" }}>{tr ? "Kapatılacak Fark" : "Gap to Close"}</div>
+              </div>
+              <div className="card" style={{ padding: "1rem", textAlign: "center", background: "var(--surface-strong)" }}>
+                <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text)" }}>{p.targetScore ?? "—"}</div>
+                <div style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.2rem" }}>{tr ? "Hedef Skor" : "Target Score"}</div>
+              </div>
+            </div>
+            {weeks !== null && (
+              <div style={{ padding: "0.75rem 1rem", background: "rgba(29,111,117,0.06)", borderRadius: 10, border: "1px solid rgba(29,111,117,0.15)" }}>
+                <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.65 }}>
+                  {tr
+                    ? `Haftada ${p.weeklyGoal} oturum ile tahmini süre: `
+                    : `At ${p.weeklyGoal} sessions/week, estimated time to target: `}
+                  <strong style={{ color: "var(--sa-accent)" }}>{timeStr}</strong>
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+
+        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <strong style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)" }}>
+            {tr ? "Öncelikli Odak Alanın" : "Your Priority Focus Area"}
+          </strong>
+          {challengeFocus ? (
+            <div style={{ display: "grid", gap: "0.5rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <span style={{ fontSize: "1.3rem" }}>🎯</span>
+                <strong style={{ color: "var(--sa-accent)" }}>{tr ? challengeFocus.tr : challengeFocus.en}</strong>
+              </div>
+              <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.88rem", lineHeight: 1.65 }}>{challengeFocus.taskHint}</p>
+            </div>
+          ) : (
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.88rem" }}>
+              {tr ? "Dengeli gelişim için tüm partlarda pratik yapmanı öneririz." : "We recommend practicing across all parts for balanced improvement."}
+            </p>
+          )}
+        </section>
+
+        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <strong style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)" }}>
+            {tr ? "Önerilen Başlangıç" : "Recommended First Session"}
+          </strong>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+            <span style={{ fontSize: "1.5rem" }}>🎤</span>
+            <div>
+              <strong style={{ fontSize: "0.95rem" }}>{firstTask}</strong>
+              <p style={{ margin: "0.2rem 0 0", color: "var(--muted)", fontSize: "0.83rem" }}>
+                {tr
+                  ? "Seviyene uygun, güven inşa eden bir başlangıç noktası."
+                  : "A confidence-building starting point matched to your level."}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.7rem" }}>
+          <strong style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)" }}>
+            {tr ? "Haftalık Programın" : "Your Weekly Schedule"}
+          </strong>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+            {[
+              { label: tr ? "Oturum / hafta" : "Sessions / week", value: p.weeklyGoal },
+              { label: tr ? "Günlük dakika" : "Daily minutes", value: p.dailyMinutesGoal ?? 15 },
+              { label: tr ? "Sınav tipi" : "Exam type", value: examType },
+              { label: tr ? "Öğrenme tercihi" : "Learning style", value: p.learningStyle || "—" }
+            ].map((item) => (
+              <div key={item.label} style={{ padding: "0.65rem 0.9rem", background: "var(--surface-strong)", borderRadius: 10 }}>
+                <div style={{ fontSize: "0.78rem", color: "var(--muted)" }}>{item.label}</div>
+                <div style={{ fontWeight: 700, fontSize: "0.95rem", marginTop: "0.15rem" }}>{item.value}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="button button-primary"
+            onClick={() => router.push("/app/practice")}
+            style={{ flex: 1 }}
+          >
+            {tr ? "İlk oturumu başlat →" : "Start first session →"}
+          </button>
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() => router.push("/app")}
+          >
+            {tr ? "Dashboard'a git" : "Go to dashboard"}
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, BookOpenCheck, CheckCircle2, Flame, LayoutGrid, Mic, PenSquare, Sparkles, Target } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { InstitutionAdminPanel } from "@/components/institution-admin-panel";
 import { useAppState } from "@/components/providers";
 import { TeacherHub } from "@/components/teacher-hub";
@@ -21,6 +22,7 @@ const emptySummary: ProgressSummary = {
 };
 
 export function Dashboard() {
+  const router = useRouter();
   const { signedIn, currentUser, language, signOut } = useAppState();
   const tr = language === "tr";
   const [summary, setSummary] = useState<ProgressSummary>(emptySummary);
@@ -94,9 +96,15 @@ export function Dashboard() {
       .catch(() => setAnnouncements([]));
     fetch("/api/profile")
       .then((r) => r.json())
-      .then((data: { profile?: StudentProfile }) => setProfile(data.profile ?? null))
+      .then((data: { profile?: StudentProfile }) => {
+        const p = data.profile ?? null;
+        setProfile(p);
+        if (p && !p.onboardingComplete && currentUser?.memberType === "student") {
+          router.replace("/app/onboarding");
+        }
+      })
       .catch(() => setProfile(null));
-  }, [currentUser, signedIn]);
+  }, [currentUser, signedIn, router]);
 
   const scoredSessions = useMemo(
     () => summary.recentSessions.filter((s) => s.report),

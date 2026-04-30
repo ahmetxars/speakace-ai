@@ -1,7 +1,7 @@
 import { buildRetryRequiredReport, buildSessionTranscript, cleanTranscriptText, detectTranscriptIssue, evaluateSession, getTranscriptQuality } from "@/lib/evaluator";
 import { withAdminPrivileges } from "@/lib/admin";
 import { PLAN_LIMITS } from "@/lib/membership";
-import { getPromptTemplate } from "@/lib/prompts";
+import { getPromptTemplate, getUnseenPromptTemplate } from "@/lib/prompts";
 import { hasDatabaseUrl, getSql } from "@/lib/server/db";
 import { generateFeedbackReport } from "@/lib/server/openai";
 import {
@@ -155,6 +155,16 @@ export async function createSession(input: {
       seconds: usage?.speaking_seconds ?? 0
     };
 
+    let seenPromptIds: string[] = [];
+    if (!input.promptId && !input.customPrompt) {
+      const seenRows = await sql<{ prompt_id: string }[]>`
+        select distinct prompt_id from speaking_sessions
+        where user_id = ${input.userId}
+          and prompt_id not like 'custom-%'
+          and created_at > now() - interval '90 days'
+      `;
+      seenPromptIds = seenRows.map((r) => r.prompt_id);
+    }
     const prompt = input.customPrompt
       ? {
           id: input.customPrompt.id ?? `custom-${crypto.randomUUID()}`,
@@ -166,7 +176,7 @@ export async function createSession(input: {
           speakingSeconds: input.customPrompt.speakingSeconds ?? 45,
           difficulty: input.difficulty
         }
-      : getPromptTemplate(input.examType, input.taskType, input.difficulty, input.promptId);
+      : getUnseenPromptTemplate(input.examType, input.taskType, input.difficulty, seenPromptIds, input.promptId);
     const nextSeconds = currentUsage.seconds + prompt.speakingSeconds;
 
     if (!member.isAdmin && currentUsage.sessions >= limits.sessionsPerDay) {

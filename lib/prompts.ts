@@ -50,7 +50,65 @@ const IELTS_PART_1 = [
   "How important is it for you to be on time?",
   "What do you usually talk about with your friends?",
   "Do you enjoy gardening or taking care of plants?",
-  "What was the last trip or journey you took?"
+  "What was the last trip or journey you took?",
+  "Do you have any pets, or would you like to have one? Why?",
+  "What do you think is the best way to learn a new skill?",
+  "How important is colour to you when choosing clothes or decorating your home?",
+  "Do you prefer hot drinks or cold drinks? When do you drink each?",
+  "What do you usually do on public holidays?",
+  "How often do you use social media, and what platforms do you use most?",
+  "Do you prefer living in an apartment or a house? Why?",
+  "What local food from your country would you recommend to a visitor?",
+  "Do you enjoy being in large crowds? Why or why not?",
+  "What kind of music did you listen to when you were younger?",
+  "Is there a particular festival or holiday you enjoy celebrating? Tell me about it.",
+  "How do you usually keep in touch with people you don't see very often?",
+  "Would you say you are an organised person? Why or why not?",
+  "Do you prefer spending time at home or going out? Why?",
+  "What changes have you noticed in your city or neighbourhood recently?",
+  "How important is it for you to have a quiet workspace?",
+  "Do you enjoy watching the news? Why or why not?",
+  "What do you think is a fair price to pay for a meal at a restaurant?",
+  "Do you like handwriting or do you prefer typing? Why?",
+  "Have you ever tried any extreme sports or activities?",
+  "What kind of art do you find most interesting, and why?",
+  "Do you think people in your country are generally friendly to tourists?",
+  "How do you usually prepare for an important meeting or event?",
+  "Do you think it is important to have hobbies outside of work or study?",
+  "What do you usually do when you have a day off with no plans?",
+  "Would you prefer to work early in the morning or late at night? Why?",
+  "How has the way people communicate changed during your lifetime?",
+  "What kind of environment do you find most inspiring for creative work?",
+  "Do you think people read enough books nowadays?",
+  "What do you think is the most important invention of the last fifty years?",
+  "Do you enjoy doing things by yourself, or do you prefer company?",
+  "How important is punctuality to you in your daily life?",
+  "Have you ever lived or spent time in a different city? What was it like?",
+  "What do you think makes a good teacher?",
+  "Do you prefer visiting the countryside or the coast when you travel?",
+  "What do you like most about the place where you grew up?",
+  "How often do you try new restaurants or types of food?",
+  "Do you enjoy competitive activities? Why or why not?",
+  "What is something you do now that you didn't do five years ago?",
+  "How do you usually deal with stress or pressure?",
+  "Do you think online learning is as effective as classroom learning?",
+  "What is one habit you would like to develop or improve?",
+  "Do you enjoy giving gifts to people? What kinds of gifts do you usually choose?",
+  "How important is it to you to keep up with new technology?",
+  "What do you think is the best age to start learning a musical instrument?",
+  "Do you enjoy working on creative projects? What kind?",
+  "How do you decide what to watch when you have free time?",
+  "Do you think it is better to know a lot about one topic or a little about many?",
+  "What do you think makes a city a great place to live?",
+  "How have your interests changed since you were a child?",
+  "Do you enjoy making plans, or do you prefer being spontaneous?",
+  "What do you consider to be your best personal quality?",
+  "How important is sleep to you, and what do you do to ensure you get enough?",
+  "Do you think it is important to eat together as a family?",
+  "Have you ever learned something unexpected from a stranger?",
+  "What is one thing about your culture that you are proud of?",
+  "Do you prefer to receive feedback in writing or in person? Why?",
+  "What kind of physical activity do you enjoy most?"
 ];
 
 const IELTS_PART_2 = [
@@ -93,7 +151,36 @@ const IELTS_PART_2 = [
   "Describe someone who has always supported and encouraged you. You should say who they are, how long you have known them, what they have done for you, and explain why their support matters.",
   "Describe a time when you felt very proud of yourself. You should say what you did, when it happened, who else was involved, and explain why it made you feel proud.",
   "Describe an experience in nature that you found memorable. You should say where it was, when you went, what you did there, and explain what made it special.",
-  "Describe a time when you changed your opinion about something important. You should say what the topic was, why you changed your mind, what influenced you, and explain how you feel about it now."
+  "Describe a time when you changed your opinion about something important. You should say what the topic was, why you changed your mind, what influenced you, and explain how you feel about it now.",
+  "Describe a city or country you would like to visit in the future. You should say where it is, why you want to go there, what you would do there, and explain what makes it appealing to you.",
+  "Describe a time when you taught someone a skill. You should say who the person was, what you taught them, how you did it, and explain how you felt about the experience.",
+  "Describe a piece of clothing or an item you own that has special meaning to you. You should say what it is, how you got it, how often you use it, and explain why it is important.",
+  "Describe a time when you visited a place in nature that impressed you. You should say where it was, when you went, what you saw there, and explain why it made such an impression.",
+  "Describe a project or piece of work you completed that you are proud of. You should say what it was, how long it took, who else was involved, and explain why you are proud of it.",
+  "Describe a time you heard some exciting news. You should say what the news was, when and how you heard it, how you felt when you heard it, and explain why it was exciting.",
+  "Describe a rule or law in your country that you think is particularly fair or useful. You should say what the rule is, who it applies to, why it exists, and explain why you support it.",
+  "Describe a person you know who has a very positive attitude to life. You should say who this person is, how you know them, what they are like, and explain how their attitude affects the people around them.",
+  "Describe something you own that you would not want to lose. You should say what it is, how you got it, how you use it, and explain why it would be difficult to replace.",
+  "Describe a time when you felt very nervous. You should say what the situation was, what caused your nerves, what happened in the end, and explain how you managed your feelings.",
+  "Describe a park or public space you enjoy visiting. You should say where it is, what facilities or features it has, how often you go, and explain what makes it a good place to spend time.",
+  "Describe a time when you changed a plan at the last minute. You should say what the original plan was, what made you change it, what you did instead, and explain how it worked out.",
+  "Describe a book or story you read as a child. You should say what the story was about, when you read it, who introduced you to it, and explain why it stands out in your memory.",
+  "Describe a time when you helped to organise an event. You should say what the event was, what your role was, what challenges you faced, and explain whether the event was successful.",
+  "Describe an animal you find interesting. You should say what the animal is, where it lives, what it looks like, and explain what makes it interesting to you.",
+  "Describe a memorable birthday celebration. You should say whose birthday it was, where it was held, who was there, and explain what made it special.",
+  "Describe a time when you visited a museum or art gallery. You should say where it was, when you went, what you saw, and explain what you found most interesting about the experience.",
+  "Describe a type of weather you particularly enjoy. You should say what it is, when this weather occurs where you live, what you like to do in this weather, and explain why you enjoy it.",
+  "Describe a time when you received unexpectedly good service. You should say where it was, what happened, who helped you, and explain why the service was so impressive.",
+  "Describe something you do to look after your health. You should say what it is, when you started doing it, how often you do it, and explain why you think it is important.",
+  "Describe a social occasion that you enjoyed. You should say what the occasion was, where it was held, who was there, and explain what made it enjoyable.",
+  "Describe a time when you had to make a difficult choice. You should say what the situation was, what the options were, what you decided, and explain how you feel about that decision now.",
+  "Describe a building in your city or town that you find architecturally interesting. You should say what type of building it is, where it is located, why it stands out, and explain why you find it interesting.",
+  "Describe a time when technology helped you solve a problem. You should say what the problem was, what technology you used, how you used it, and explain why it was effective.",
+  "Describe a person who made a positive difference in your education. You should say who the person was, how they helped you, when this happened, and explain what you learned from them.",
+  "Describe a time when you tried food from another culture for the first time. You should say what the food was, how you came to try it, what you thought of it, and explain whether you would eat it again.",
+  "Describe a time when you overcame a fear. You should say what the fear was, when you decided to face it, what you did, and explain how you felt after overcoming it.",
+  "Describe a time when someone apologised to you. You should say who it was, why they apologised, how you reacted, and explain whether their apology changed how you felt.",
+  "Describe a person in your family who has influenced you the most. You should say who the person is, what they are like, how they have influenced you, and explain why their influence has been significant."
 ];
 
 const IELTS_PART_3 = [
@@ -136,7 +223,36 @@ const IELTS_PART_3 = [
   "How has globalisation changed the way people think about national identity?",
   "What are the potential risks of relying too heavily on artificial intelligence?",
   "Why do you think some countries are more successful at sports than others?",
-  "How important is it for businesses to be socially responsible? Why?"
+  "How important is it for businesses to be socially responsible? Why?",
+  "Do you think people today are more or less patient than they were in the past?",
+  "How has the role of the family changed in modern society compared to previous generations?",
+  "Should governments invest more in renewable energy even if it raises the cost of electricity? Why?",
+  "Do you think it is important to preserve traditional crafts and skills, even if there is little commercial demand for them?",
+  "How has increased access to information affected the way people form opinions?",
+  "Do you think wearing school uniforms is beneficial for students? Why or why not?",
+  "In what ways can communities be made safer without increasing police presence?",
+  "Do you think scientists should be more involved in making public policy decisions? Why?",
+  "How do you think rising levels of automation will affect the job market over the next decade?",
+  "Should students be taught how to manage their personal finances at school? Why?",
+  "How do you think international tourism can be made more sustainable?",
+  "Do you think it is fair that some professions earn much more than others?",
+  "In what ways can people be encouraged to adopt healthier eating habits?",
+  "Do you think people today have a stronger or weaker sense of community than in the past?",
+  "How important is it for children to experience failure when they are young?",
+  "Do you think social media companies have a responsibility to prevent the spread of misinformation?",
+  "In your opinion, what is the most effective way for governments to combat obesity?",
+  "How has the concept of privacy changed in the era of digital technology?",
+  "Do you think it is important for famous people to set a good example to the public?",
+  "How can museums and cultural institutions attract younger visitors?",
+  "Do you think it is better for children to grow up in large families or small ones?",
+  "What responsibilities do employers have towards the mental health of their employees?",
+  "Do you think people who live alone are happier or less happy than those who live with others?",
+  "How can governments encourage more people to use public transport?",
+  "Do you think volunteering should be a compulsory part of secondary school education?",
+  "In what ways can the arts benefit a society beyond entertainment value?",
+  "Do you think technological development always leads to progress? Why or why not?",
+  "How important is it for companies to offer flexible working arrangements to employees?",
+  "Should wealthy individuals be required to contribute more to solving social problems?"
 ];
 
 const TOEFL_TASK_1 = [
@@ -169,7 +285,36 @@ const TOEFL_TASK_1 = [
   "Do you think animals should be used in scientific research? Explain your view with reasons and examples.",
   "Is it better for children to grow up in the city or in the countryside? Use specific reasons to support your answer.",
   "Some people think the most important quality in a leader is confidence. Others believe it is empathy. Which do you think matters more?",
-  "Do you agree or disagree that technology has made modern life more stressful than it was in the past?"
+  "Do you agree or disagree that technology has made modern life more stressful than it was in the past?",
+  "Some people think university education should be free for everyone. Others believe students should pay tuition fees. Which view do you agree with?",
+  "Do you agree or disagree that it is better to spend money on public transportation than on building new roads? Give reasons and examples.",
+  "Some people believe that working from home is more productive than working in an office. Do you agree or disagree?",
+  "Is it more important for a leader to be liked or to be respected? Explain your opinion with reasons and examples.",
+  "Do you agree or disagree that people should be required to volunteer in their communities? Give specific reasons.",
+  "Some people think that children spend too much time using digital devices. Do you agree or disagree?",
+  "Do you agree or disagree that it is better to rent a home than to own one? Support your answer with reasons.",
+  "Some people prefer to cook at home rather than eat at restaurants. Which do you prefer and why?",
+  "Do you agree or disagree that news media should focus more on positive stories rather than negative events?",
+  "Some students prefer to take a gap year before university. Do you think this is a good idea?",
+  "Is it better for employees to stay at one company for a long time or to change jobs frequently?",
+  "Do you agree or disagree that people should be allowed to keep exotic animals as pets?",
+  "Some people believe that zoos should be abolished. Do you agree or disagree? Give reasons.",
+  "Is it better for children to play competitive sports or non-competitive sports? Explain your view.",
+  "Do you agree or disagree that cities should invest more in green spaces and parks?",
+  "Some people think that famous athletes and entertainers are paid too much. Do you agree?",
+  "Do you prefer studying with background music or in complete silence? Why?",
+  "Is it better to apologize immediately when you are wrong or to wait until you fully understand the situation?",
+  "Do you agree or disagree that people learn more from their failures than from their successes?",
+  "Some people believe that handwriting skills are no longer important. Do you agree or disagree?",
+  "Is it better to set big, ambitious goals or smaller, more achievable goals? Explain why.",
+  "Do you agree or disagree that social networking sites do more harm than good for society?",
+  "Some people think it is better to learn cooking skills rather than eating out. Which do you prefer?",
+  "Do you agree or disagree that young people today have less respect for older people than in the past?",
+  "Is it better for companies to hire experienced workers or fresh graduates? Give your opinion.",
+  "Some people prefer to read the book before watching the film adaptation. Do you agree this is the better approach?",
+  "Do you agree or disagree that museums should charge admission fees to be financially sustainable?",
+  "Is it better for students to live on campus or off campus during university? Explain your choice.",
+  "Do you agree or disagree that mandatory physical education in school benefits all students equally?"
 ];
 
 const TOEFL_TASK_2 = [
@@ -247,6 +392,81 @@ const TOEFL_TASK_2 = [
     title: "TOEFL Task 2 Campus Announcement 15",
     prompt: "Campus notice: All first-year students will be assigned a peer mentor from senior years as part of a new mentoring programme. Conversation: The woman supports this as it helps new students adjust, but the man thinks senior students are too busy and may not take it seriously. Summarize the announcement and explain the speakers' positions.",
     difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 16",
+    prompt: "Campus notice: The university will introduce a shuttle service between the main campus and the new satellite building, running every 20 minutes. Conversation: The man is pleased because commuting between buildings has been difficult, but the woman worries the 20-minute gap will make her late for back-to-back classes. Summarize the announcement and the students' reactions.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 17",
+    prompt: "Campus notice: The university is considering replacing all vending machines with healthy food options only. Conversation: The woman supports the change for health reasons, but the man argues that students should have freedom to choose what they eat and that the change is paternalistic. Summarize the announcement and explain the speakers' views.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 18",
+    prompt: "Campus notice: Students will no longer be allowed to use laptops or tablets in introductory lecture courses following research showing it reduces engagement. Conversation: The man agrees with the policy because students tend to get distracted, but the woman says she takes all her notes digitally and the ban will hurt her grades. Summarize the announcement and explain both opinions.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 19",
+    prompt: "Campus notice: The university plans to require all students to take a public speaking course before graduation. Conversation: The woman fully supports this because speaking skills are essential for careers, but the man says it adds unnecessary pressure for students who are already overwhelmed with core coursework. Summarize the announcement and explain the students' reactions.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 20",
+    prompt: "Campus notice: The college has decided to install solar panels on the roofs of all campus buildings to reduce energy costs. Conversation: Both students generally support the idea for environmental reasons, but the man questions whether the upfront cost is worth it when the university is already cutting program budgets. Summarize the announcement and the students' views.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 21",
+    prompt: "Campus notice: The university will begin grading all writing assignments with AI-assisted software to provide faster feedback. Conversation: The woman likes the idea of getting quicker feedback, but the man is concerned that AI may not understand creative writing or cultural context as well as a human professor. Summarize the announcement and explain the speakers' positions.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 22",
+    prompt: "Campus notice: The student union has proposed creating a dedicated meditation room in the student centre open 24 hours a day. Conversation: The man supports the initiative because mental wellness resources are lacking on campus, but the woman believes the space could be used more productively for group study or club activities. Summarize the announcement and explain both views.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 23",
+    prompt: "Campus notice: The registration system will be updated so that senior students get to pick their courses one week earlier than juniors and sophomores. Conversation: The woman thinks this is fair because seniors have fewer chances to retake missed courses, but the man believes it creates inequality and limits course access for younger students. Summarize the announcement and the speakers' reactions.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 24",
+    prompt: "Campus notice: The university is planning to reduce the number of large lecture classes and replace them with smaller discussion-based seminars. Conversation: The man prefers smaller classes because they allow more interaction with professors, but the woman worries that fewer lecture sections means harder course scheduling and more conflicts. Summarize the announcement and explain the students' opinions.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 25",
+    prompt: "Campus notice: The university plans to build a new international student center to provide dedicated support services. Conversation: The woman is enthusiastic because international students currently lack focused support, but the man questions why the same funds couldn't improve services for all students instead of a separate facility. Summarize the announcement and explain the speakers' positions.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 26",
+    prompt: "Campus notice: Students who do not pick up their campus mail within two weeks will have it discarded. Conversation: The man is frustrated because he travels frequently and cannot always collect mail on time, but the woman thinks the rule is reasonable given how limited the mailroom space is. Summarize the announcement and the students' views.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 27",
+    prompt: "Campus notice: The university is launching a new 'no single-use plastic' campaign and will ban plastic water bottles in all campus buildings. Conversation: The woman fully supports the environmental initiative, but the man argues that water fountains on campus are too far apart and often out of service, making refillable bottles impractical. Summarize the announcement and explain both perspectives.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 28",
+    prompt: "Campus notice: The athletics department will cut funding to three minor sports teams to redirect money to facility upgrades for all students. Conversation: The man is disappointed because the cut teams have strong traditions, but the woman thinks upgraded facilities benefit far more students than three small teams. Summarize the announcement and the students' reactions.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 29",
+    prompt: "Campus notice: The university will trial a four-day academic week where classes are condensed to allow Fridays off. Conversation: The woman loves the idea because it provides a longer weekend for rest and internships, but the man worries that squeezing classes into four days will leave students with less time to absorb difficult material. Summarize the announcement and explain the speakers' views.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 2 Campus Announcement 30",
+    prompt: "Campus notice: All student clubs will be required to submit a detailed budget proposal to the student union before receiving any funding this year. Conversation: The man supports the proposal because it ensures accountability, but the woman says the process is too bureaucratic and discourages students from starting new clubs. Summarize the announcement and the students' reactions.",
+    difficulty: "Starter" as Difficulty
   }
 ];
 
@@ -325,6 +545,81 @@ const TOEFL_TASK_3 = [
     title: "TOEFL Task 3 Academic Concept 15",
     prompt: "Reading: Greenwashing is the practice of making misleading claims about the environmental benefits of a product or company in order to attract consumers who prefer sustainable options. Lecture: The professor gives the example of a company that marketed its plastic bottles as eco-friendly because they used slightly less plastic than before, while the bottles were still not recyclable in most areas. Explain greenwashing and how the example illustrates it.",
     difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 16",
+    prompt: "Reading: Reciprocity is a social norm in which people feel compelled to return a favour after receiving one, even when the original favour was unsolicited. Lecture: The professor describes a charity that sent small free gifts with donation requests. Recipients felt obligated to give money even though they hadn't asked for the gift. Explain reciprocity and how the lecture example illustrates it.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 17",
+    prompt: "Reading: Keystone species are organisms that have a disproportionately large effect on their ecosystem relative to their abundance. Removing them causes dramatic changes that affect many other species. Lecture: The professor explains how sea otters control sea urchin populations. Without otters, urchins multiply and destroy kelp forests, collapsing the entire marine ecosystem. Explain the concept of keystone species using this example.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 18",
+    prompt: "Reading: Anchoring bias is a cognitive tendency where people rely too heavily on the first piece of information they encounter when making decisions. Lecture: The professor describes an experiment in which participants estimated a jar's worth after being shown either a high or low number first. Those shown higher numbers consistently gave higher estimates. Explain anchoring bias and how the experiment illustrates it.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 19",
+    prompt: "Reading: Carrying capacity refers to the maximum population size of a species that an environment can sustain indefinitely given available resources. Lecture: The professor describes deer introduced to an island with no predators. Their population grew rapidly, then crashed sharply when vegetation was overgrazed, demonstrating how exceeding carrying capacity leads to population collapse. Explain carrying capacity using the example.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 20",
+    prompt: "Reading: The bystander effect describes the tendency for individuals to be less likely to offer help in an emergency when other people are present, because responsibility is diffused among the group. Lecture: The professor recounts a study where participants alone in a room quickly reported smoke under a door, but when others (who were actors ignoring the smoke) were present, most participants did nothing. Explain the bystander effect using this example.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 21",
+    prompt: "Reading: Convergent evolution occurs when unrelated species independently develop similar traits because they face similar environmental pressures or occupy similar ecological roles. Lecture: The professor compares dolphins and sharks: though one is a mammal and the other a fish, both evolved streamlined bodies and fins to navigate water efficiently. Explain convergent evolution using this example.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 22",
+    prompt: "Reading: The sunk cost fallacy is the tendency to continue investing time, money, or effort into something simply because you have already invested resources in it, rather than based on future returns. Lecture: The professor describes a company that kept funding a failing software project because millions had already been spent, even when it became clear the product would never be profitable. Explain the sunk cost fallacy and how this example demonstrates it.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 23",
+    prompt: "Reading: Commensalism is a type of relationship between two species in which one species benefits while the other is neither helped nor harmed. Lecture: The professor explains how cattle egrets follow large grazing animals. The birds eat insects stirred up by the cattle's movements. The cattle gain nothing and lose nothing from the arrangement. Explain commensalism and how the example illustrates it.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 24",
+    prompt: "Reading: Nudge theory is an approach in behavioural economics that uses small, indirect suggestions to influence people's decisions without restricting their freedom of choice. Lecture: The professor explains how placing fruit at eye level in school cafeterias increased student consumption of healthy food, without removing any unhealthy options. Explain nudge theory and how the cafeteria example illustrates it.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 25",
+    prompt: "Reading: Competitive exclusion is an ecological principle stating that two species competing for exactly the same limited resources cannot coexist indefinitely in the same habitat. Lecture: The professor describes two species of paramecia grown in the same container. One species consistently outcompeted the other for food, eventually causing the weaker competitor to die out. Explain competitive exclusion using this example.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 26",
+    prompt: "Reading: Code switching is the practice of alternating between two or more languages or dialects in a single conversation, often in response to the social context or audience. Lecture: The professor describes a bilingual employee who speaks formal English in business meetings but switches to Spanish when talking with colleagues from the same cultural background. Explain code switching and how the example illustrates it.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 27",
+    prompt: "Reading: Operant conditioning is a learning method in which behaviour is shaped through the use of rewards and punishments. Desirable behaviours are reinforced and undesirable ones are discouraged. Lecture: The professor describes training a dog to sit on command by giving it a treat each time it sits correctly, and withholding treats when it does not comply. Over time the dog reliably performs the behaviour on cue. Explain operant conditioning using this example.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 28",
+    prompt: "Reading: Resource partitioning is a process by which competing species avoid direct competition by using different parts of a shared habitat or consuming different types of food. Lecture: The professor describes multiple species of warblers nesting in the same spruce tree. Each species feeds at a different height and part of the tree, reducing competition and allowing all species to coexist. Explain resource partitioning using this example.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 29",
+    prompt: "Reading: Defensive architecture refers to design choices in urban spaces that intentionally prevent certain uses, often discouraging homeless people from resting or sleeping in public areas. Lecture: The professor describes benches with armrests placed in the middle to prevent lying down and sloped seats in bus shelters. He notes that while these designs address property owner concerns, critics argue they remove public space from vulnerable people. Explain defensive architecture using the examples.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 3 Academic Concept 30",
+    prompt: "Reading: Foreshadowing is a literary technique in which an author provides early hints or clues about events that will occur later in the story, creating suspense and preparing the reader for what is to come. Lecture: The professor discusses a novel in which a character mentions a gun hanging on the wall in chapter one. Later, the gun becomes central to the climax of the story. Explain foreshadowing and how the example illustrates the technique.",
+    difficulty: "Starter" as Difficulty
   }
 ];
 
@@ -403,6 +698,81 @@ const TOEFL_TASK_4 = [
     title: "TOEFL Task 4 Lecture Summary 15",
     prompt: "Lecture summary: The professor explains two strategies companies use to build customer loyalty. The first is a rewards programme that gives customers points for each purchase, which can be exchanged for discounts or free items. The second is personalisation, where companies use data to recommend products tailored to individual preferences, making customers feel valued. Summarize the lecture.",
     difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 16",
+    prompt: "Lecture summary: The professor explains two ways in which coral reefs are damaged by human activity. First, agricultural runoff introduces excess nutrients into the water, promoting algae growth that smothers coral. Second, physical damage from boat anchors and irresponsible diving breaks fragile coral structures that take decades to recover. Summarize the lecture.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 17",
+    prompt: "Lecture summary: The professor discusses two techniques that novelists use to develop character. The first is direct characterization, in which the narrator explicitly describes a character's traits. The second is indirect characterization, in which traits are revealed through the character's actions, speech, and reactions to events. Summarize the lecture.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 18",
+    prompt: "Lecture summary: The professor explains two reasons why the price of goods can rise even without increased consumer demand. The first is cost-push inflation, where rising production costs such as wages or raw materials force companies to charge more. The second is supply chain disruption, where shortages in key materials reduce output and push prices up. Summarize the lecture.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 19",
+    prompt: "Lecture summary: The professor describes two challenges that space exploration agencies face when planning long-duration missions to Mars. The first is the physical effect of prolonged weightlessness on astronauts' bones and muscles. The second is the psychological toll of extended isolation and the impossibility of real-time communication with Earth. Summarize the lecture.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 20",
+    prompt: "Lecture summary: The professor explains two ways that cities are adapting to the increasing threat of flooding. One strategy involves constructing raised flood barriers along rivers and coastlines. Another approach is the creation of green infrastructure, such as urban wetlands and permeable pavements, that absorb and slow water runoff naturally. Summarize the lecture.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 21",
+    prompt: "Lecture summary: The professor discusses two reasons why some languages are disappearing at an accelerating rate. The first is urbanisation, which draws young speakers away from rural communities into cities where dominant languages are used. The second is the absence of written literature or formal education in minority languages, making intergenerational transmission difficult. Summarize the lecture.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 22",
+    prompt: "Lecture summary: The professor explains two ways that packaging influences consumer purchasing decisions. First, colour psychology plays a strong role, with warm colours like red and orange creating urgency and cool colours suggesting trustworthiness. Second, packaging shape affects perceived value, with taller containers often appearing to hold more than shorter ones of equal volume. Summarize the lecture.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 23",
+    prompt: "Lecture summary: The professor describes two methods historians use to verify the authenticity of ancient documents. The first is chemical analysis of the ink and parchment to establish the materials' age. The second is cross-referencing the document's content with other known historical records to check for consistency in names, events, and dates. Summarize the lecture.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 24",
+    prompt: "Lecture summary: The professor explains two reasons why childhood exposure to multiple languages produces cognitive advantages. First, bilingual children develop stronger executive function because managing two language systems exercises attention control. Second, early multilingual exposure creates flexible mental frameworks for learning additional languages later in life. Summarize the lecture.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 25",
+    prompt: "Lecture summary: The professor discusses two ways that architects can design buildings to reduce their environmental impact. The first involves incorporating passive solar design, orienting and shading windows to reduce heating and cooling needs. The second is the use of recycled or low-carbon building materials that require less energy to produce. Summarize the lecture.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 26",
+    prompt: "Lecture summary: The professor explains two reasons why migratory animals sometimes get disoriented and travel in the wrong direction. One cause is light pollution from cities, which interferes with animals' ability to navigate by stars at night. Another is magnetic field anomalies near large concentrations of iron ore or industrial equipment, which disrupt animals' internal magnetic compass. Summarize the lecture.",
+    difficulty: "Starter" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 27",
+    prompt: "Lecture summary: The professor describes two disadvantages of remote work for organisations. The first is reduced spontaneous collaboration, since chance conversations in offices often spark creative ideas that structured video calls do not replicate. The second is difficulty in monitoring productivity, as managers have less visibility into how work time is being used. Summarize the lecture.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 28",
+    prompt: "Lecture summary: The professor explains two ways that social insects such as ants organise their colonies without any central leadership. The first is the use of chemical signals called pheromones that direct workers toward food sources or threats. The second is stigmergy, in which each worker responds to changes in the environment left by previous workers, producing coordinated group behaviour without direct communication. Summarize the lecture.",
+    difficulty: "Stretch" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 29",
+    prompt: "Lecture summary: The professor discusses two ways that advertisers use narrative storytelling to make their messages more persuasive. First, stories create emotional engagement that makes brand messages more memorable than factual claims. Second, audiences who identify with a story's characters are more likely to adopt the values or behaviours those characters model. Summarize the lecture.",
+    difficulty: "Target" as Difficulty
+  },
+  {
+    title: "TOEFL Task 4 Lecture Summary 30",
+    prompt: "Lecture summary: The professor explains two types of symbiotic relationships that help plants survive in nutrient-poor soils. The first is a partnership with mycorrhizal fungi, which extend the plant's root system and improve mineral absorption. The second is nitrogen fixation, in which bacteria living in the roots of legume plants convert atmospheric nitrogen into a form the plant can use as fertiliser. Summarize the lecture.",
+    difficulty: "Starter" as Difficulty
   }
 ];
 
@@ -487,6 +857,34 @@ export function getPromptTemplate(examType: ExamType, taskType: TaskType, diffic
 
   const sameExam = templates.filter((template) => template.examType === examType);
   return sameExam.length ? pickRandom(sameExam) : pickRandom(templates);
+}
+
+export function getUnseenPromptTemplate(
+  examType: ExamType,
+  taskType: TaskType,
+  difficulty: Difficulty,
+  seenIds: string[],
+  promptId?: string
+): PromptTemplate {
+  if (promptId) {
+    const exact = templates.find((t) => t.id === promptId);
+    if (exact) return exact;
+  }
+
+  const seenSet = new Set(seenIds);
+
+  const exactUnseen = templates.filter(
+    (t) => t.examType === examType && t.taskType === taskType && t.difficulty === difficulty && !seenSet.has(t.id)
+  );
+  if (exactUnseen.length) return pickRandom(exactUnseen);
+
+  const taskUnseen = templates.filter(
+    (t) => t.examType === examType && t.taskType === taskType && !seenSet.has(t.id)
+  );
+  if (taskUnseen.length) return pickRandom(taskUnseen);
+
+  // All seen — fall back to random (cycle through)
+  return getPromptTemplate(examType, taskType, difficulty, promptId);
 }
 
 export function listPromptsByExam(examType: ExamType): PromptTemplate[] {
