@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 import { useAppState } from "@/components/providers";
 import { listPromptsForTask } from "@/lib/prompts";
 import { ExamType, HomeworkAutoAssignRule, SharedClassStudyItem, TaskType, TeacherClassAnalytics, TeacherEnrollmentRequest, TeacherStudentOverview } from "@/lib/types";
+import { AlertTriangle, Clock } from "lucide-react";
 
 type TeacherClassSummary = {
   id: string;
@@ -62,6 +63,9 @@ export function TeacherHub() {
   const [classSettings, setClassSettings] = useState({ approvalRequired: true, joinMessage: "" });
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementBody, setAnnouncementBody] = useState("");
+  const [officeHoursStart, setOfficeHoursStart] = useState("09:00");
+  const [officeHoursEnd, setOfficeHoursEnd] = useState("17:00");
+  const [officeHoursDays, setOfficeHoursDays] = useState<string[]>(["Mon", "Tue", "Wed", "Thu", "Fri"]);
 
   // ── derived ─────────────────────────────────────────────────────────────────
   const selectedClass = useMemo(() => classes.find((c) => c.id === selectedClassId) ?? null, [classes, selectedClassId]);
@@ -98,6 +102,10 @@ export function TeacherHub() {
     () => filteredStudents.filter((s) => (s.riskFlags?.length ?? 0) > 0).slice(0, 6),
     [filteredStudents]
   );
+
+  const completionRate = homeworkSummary.total > 0
+    ? Math.round((homeworkSummary.completed / homeworkSummary.total) * 100)
+    : 0;
 
   // ── sync effects ─────────────────────────────────────────────────────────────
   useEffect(() => { setShareTaskType(shareExamType === "IELTS" ? "ielts-part-1" : "toefl-task-1"); }, [shareExamType]);
@@ -305,6 +313,26 @@ export function TeacherHub() {
     setSharedItems((cur) => cur.filter((i) => i.id !== itemId));
   };
 
+  const sendOverdueReminders = async () => {
+    if (!selectedClassId || homeworkSummary.overdue === 0) return;
+    setError(""); setNotice("");
+    const r = await fetch("/api/announcements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        audienceType: "class",
+        classId: selectedClassId,
+        title: tr ? "Gecikmiş ödeviniz var" : "You have overdue homework",
+        body: tr
+          ? "Lütfen gecikmiş ödevinizi en kısa sürede tamamlayın. Sorularınız için öğretmeninizle iletişime geçin."
+          : "You have overdue assignments. Please complete them as soon as possible or contact your teacher.",
+      }),
+    });
+    const data = (await r.json()) as { error?: string };
+    if (!r.ok) { setError(data.error ?? (tr ? "Hatırlatma gönderilemedi." : "Could not send reminder.")); return; }
+    setNotice(tr ? "Hatırlatma mesajı sınıfa gönderildi." : "Reminder sent to the class.");
+  };
+
   // ── access guard ─────────────────────────────────────────────────────────────
   if (!currentUser?.isTeacher && !currentUser?.isAdmin) {
     return (
@@ -501,15 +529,31 @@ export function TeacherHub() {
           {/* At-risk */}
           {atRiskStudents.length > 0 && (
             <section className="card teacher-highlight teacher-highlight-danger" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-              <span className="eyebrow">{tr ? "Risk sinyali" : "At-risk students"}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                <AlertTriangle size={16} style={{ color: "var(--destructive)" }} />
+                <span className="eyebrow">{tr ? "Risk sinyali" : "At-risk students"}</span>
+              </div>
               <h2 style={{ fontSize: "1.5rem", margin: 0 }}>
                 {tr ? `${atRiskStudents.length} öğrencide uyarı` : `${atRiskStudents.length} students flagged`}
               </h2>
               <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "0.6rem" }}>
                 {atRiskStudents.map((s) => (
-                  <Link key={s.student.id} href={`/app/teacher/student/${s.student.id}`} className="card teacher-soft-card" style={{ padding: "0.9rem", display: "grid", gap: "0.3rem" }}>
+                  <Link key={s.student.id} href={`/app/teacher/student/${s.student.id}`} className="card teacher-soft-card" style={{ padding: "0.9rem", display: "grid", gap: "0.5rem" }}>
                     <strong>{s.student.name}</strong>
-                    <div className="practice-meta">{(s.riskFlags ?? []).join(" · ")}</div>
+                    <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+                      {(s.riskFlags ?? []).map((flag, i) => (
+                        <span key={i} style={{
+                          padding: "0.18rem 0.55rem",
+                          borderRadius: 99,
+                          fontSize: "0.74rem",
+                          fontWeight: 600,
+                          background: "rgba(217, 93, 57, 0.13)",
+                          color: "var(--destructive)",
+                        }}>
+                          {flag}
+                        </span>
+                      ))}
+                    </div>
                   </Link>
                 ))}
               </div>
@@ -555,6 +599,33 @@ export function TeacherHub() {
                   ? (tr ? `${students.length} öğrenci` : `${students.length} students`)
                   : (tr ? `${filteredStudents.length} / ${students.length}` : `${filteredStudents.length} of ${students.length}`)}
               </h2>
+              {/* Quick group by weakness buttons */}
+              {filterSkillOptions.length > 0 && (
+                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
+                  <span style={{ fontSize: "0.78rem", color: "var(--muted)", alignSelf: "center" }}>
+                    {tr ? "Hızlı grup:" : "Quick group:"}
+                  </span>
+                  <button
+                    type="button"
+                    className={`button button-secondary${filters.skill === "all" ? " is-active" : ""}`}
+                    style={{ fontSize: "0.78rem", padding: "0.3rem 0.65rem" }}
+                    onClick={() => setFilters((f) => ({ ...f, skill: "all" }))}
+                  >
+                    {tr ? "Tümü" : "All"}
+                  </button>
+                  {filterSkillOptions.map((sk) => (
+                    <button
+                      key={sk}
+                      type="button"
+                      className={`button button-secondary${filters.skill === sk ? " is-active" : ""}`}
+                      style={{ fontSize: "0.78rem", padding: "0.3rem 0.65rem" }}
+                      onClick={() => setFilters((f) => ({ ...f, skill: f.skill === sk ? "all" : sk }))}
+                    >
+                      {translateCategoryLabel(sk, tr)}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
               <input
@@ -619,6 +690,79 @@ export function TeacherHub() {
               <TeacherStat label={tr ? "Bekleyen" : "Pending"} value={String(homeworkSummary.pending)} />
               <TeacherStat label={tr ? "Geciken" : "Overdue"} value={String(homeworkSummary.overdue)} />
             </div>
+
+            {/* Visual progress bar */}
+            {homeworkSummary.total > 0 && (
+              <div style={{ display: "grid", gap: "0.45rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "var(--muted)" }}>
+                  <span>{tr ? "Tamamlama oranı" : "Completion rate"}</span>
+                  <strong style={{
+                    color: completionRate >= 70 ? "var(--success)" : completionRate >= 40 ? "var(--accent)" : "var(--destructive)"
+                  }}>
+                    {completionRate}%
+                  </strong>
+                </div>
+                <div style={{ height: 10, borderRadius: 99, background: "var(--line)", overflow: "hidden", display: "flex" }}>
+                  <div style={{
+                    width: `${(homeworkSummary.completed / homeworkSummary.total) * 100}%`,
+                    background: "var(--success)",
+                    transition: "width 0.5s ease",
+                  }} />
+                  {homeworkSummary.overdue > 0 && (
+                    <div style={{
+                      width: `${(homeworkSummary.overdue / homeworkSummary.total) * 100}%`,
+                      background: "var(--destructive)",
+                      transition: "width 0.5s ease",
+                    }} />
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: "1rem", fontSize: "0.77rem", color: "var(--muted)" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                    <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--success)", display: "inline-block" }} />
+                    {tr ? "Tamamlandı" : "Completed"}
+                  </span>
+                  {homeworkSummary.overdue > 0 && (
+                    <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                      <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--destructive)", display: "inline-block" }} />
+                      {tr ? "Gecikmiş" : "Overdue"}
+                    </span>
+                  )}
+                  <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                    <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--line)", display: "inline-block" }} />
+                    {tr ? "Bekliyor" : "Pending"}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Overdue reminder banner */}
+            {homeworkSummary.overdue > 0 && (
+              <div style={{
+                padding: "0.8rem 1rem",
+                borderRadius: 12,
+                background: "rgba(217, 93, 57, 0.08)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "0.8rem",
+                flexWrap: "wrap",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <AlertTriangle size={15} style={{ color: "var(--destructive)", flexShrink: 0 }} />
+                  <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--destructive)" }}>
+                    {homeworkSummary.overdue} {tr ? "ödev gecikmiş" : "assignments overdue"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  style={{ fontSize: "0.82rem", padding: "0.45rem 0.85rem" }}
+                  onClick={sendOverdueReminders}
+                >
+                  {tr ? "Gecikenlere hatırlatma gönder" : "Send reminders to late students"}
+                </button>
+              </div>
+            )}
           </section>
 
           <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem", alignItems: "start" }}>
@@ -816,6 +960,75 @@ export function TeacherHub() {
             <button type="button" className="button button-primary" onClick={sendClassAnnouncement}>
               {tr ? "Duyuruyu gönder" : "Send announcement"}
             </button>
+          </div>
+
+          {/* Office hours */}
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <Clock size={16} style={{ color: "var(--accent)" }} />
+              <span className="eyebrow">{tr ? "Ofis saatleri" : "Office hours"}</span>
+            </div>
+            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Müsaitlik saatleri" : "Availability schedule"}</h2>
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.88rem", lineHeight: 1.6 }}>
+              {tr
+                ? "Kurum admini ofis saatlerinizi görebilir. Öğrenciler soru sorabilecekleri zaman aralığını bilir."
+                : "Institution admin can see your office hours. Students know when to reach you."}
+            </p>
+            <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
+              <label style={{ display: "grid", gap: "0.3rem" }}>
+                <span className="practice-meta">{tr ? "Başlangıç" : "Start time"}</span>
+                <input
+                  type="time"
+                  value={officeHoursStart}
+                  onChange={(e) => setOfficeHoursStart(e.target.value)}
+                  style={compactFieldStyle}
+                />
+              </label>
+              <label style={{ display: "grid", gap: "0.3rem" }}>
+                <span className="practice-meta">{tr ? "Bitiş" : "End time"}</span>
+                <input
+                  type="time"
+                  value={officeHoursEnd}
+                  onChange={(e) => setOfficeHoursEnd(e.target.value)}
+                  style={compactFieldStyle}
+                />
+              </label>
+            </div>
+            <div style={{ display: "grid", gap: "0.4rem" }}>
+              <span className="practice-meta">{tr ? "Günler" : "Days"}</span>
+              <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                {(tr
+                  ? ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
+                  : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                ).map((day, i) => {
+                  const key = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i];
+                  const active = officeHoursDays.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setOfficeHoursDays((d) => active ? d.filter((x) => x !== key) : [...d, key])}
+                      style={{
+                        padding: "0.35rem 0.65rem",
+                        borderRadius: 10,
+                        border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`,
+                        background: active ? "color-mix(in srgb, var(--accent) 15%, var(--surface) 85%)" : "var(--surface)",
+                        color: active ? "var(--accent)" : "var(--muted)",
+                        fontWeight: active ? 700 : 400,
+                        fontSize: "0.82rem",
+                        cursor: "pointer",
+                        font: "inherit",
+                      }}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{ padding: "0.7rem", borderRadius: 12, background: "var(--surface-strong)", fontSize: "0.85rem", color: "var(--muted)" }}>
+              {tr ? "Kaydedilen:" : "Currently set:"} {officeHoursDays.join(", ")} · {officeHoursStart} – {officeHoursEnd}
+            </div>
           </div>
         </section>
       )}
