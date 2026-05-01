@@ -6,7 +6,7 @@ import type { CSSProperties } from "react";
 import { useAppState } from "@/components/providers";
 import { listPromptsForTask } from "@/lib/prompts";
 import { ExamType, HomeworkAutoAssignRule, SharedClassStudyItem, TaskType, TeacherClassAnalytics, TeacherEnrollmentRequest, TeacherStudentOverview } from "@/lib/types";
-import { AlertTriangle, Clock } from "lucide-react";
+import { AlertTriangle, BookOpen, CheckCircle, Clock, ShieldAlert, TrendingDown, TrendingUp } from "lucide-react";
 
 type TeacherClassSummary = {
   id: string;
@@ -66,6 +66,9 @@ export function TeacherHub() {
   const [officeHoursStart, setOfficeHoursStart] = useState("09:00");
   const [officeHoursEnd, setOfficeHoursEnd] = useState("17:00");
   const [officeHoursDays, setOfficeHoursDays] = useState<string[]>(["Mon", "Tue", "Wed", "Thu", "Fri"]);
+  const [atRiskOnly, setAtRiskOnly] = useState(false);
+  const [inactiveOnly, setInactiveOnly] = useState(false);
+  const [scoreDropOnly, setScoreDropOnly] = useState(false);
 
   // ── derived ─────────────────────────────────────────────────────────────────
   const selectedClass = useMemo(() => classes.find((c) => c.id === selectedClassId) ?? null, [classes, selectedClassId]);
@@ -78,9 +81,12 @@ export function TeacherHub() {
       if (filters.task !== "all" && s.lastTaskType !== filters.task) return false;
       if (filters.skill !== "all" && s.weakestSkill !== filters.skill) return false;
       if (studentSearch && !`${s.student.name} ${s.student.email}`.toLowerCase().includes(studentSearch.toLowerCase())) return false;
+      if (atRiskOnly && (s.riskFlags?.length ?? 0) === 0) return false;
+      if (inactiveOnly && !s.riskFlags?.includes("Inactive 7d")) return false;
+      if (scoreDropOnly && !(typeof s.scoreDelta === "number" && s.scoreDelta < 0)) return false;
       return true;
     }),
-    [filters, studentSearch, students]
+    [atRiskOnly, filters, inactiveOnly, scoreDropOnly, studentSearch, students]
   );
 
   const leaderboard = useMemo(
@@ -503,6 +509,57 @@ export function TeacherHub() {
             </section>
           )}
 
+          {/* Priority Focus Panel */}
+          {(atRiskStudents.length > 0 || homeworkSummary.overdue > 0 || pendingRequests.length > 0) && (
+            <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+              <div className="section-header-row">
+                <ShieldAlert size={16} style={{ color: "var(--destructive)" }} />
+                <strong>{tr ? "Öncelikli aksiyon listesi" : "Priority action list"}</strong>
+              </div>
+              <div style={{ display: "grid", gap: "0.45rem" }}>
+                {atRiskStudents.length > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", padding: "0.6rem 0.8rem", borderRadius: 10, background: "color-mix(in srgb, var(--destructive) 6%, var(--surface) 94%)", borderLeft: "3px solid var(--destructive)" }}>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                      <AlertTriangle size={13} style={{ color: "var(--destructive)", flexShrink: 0 }} />
+                      <span style={{ fontSize: "0.88rem" }}>
+                        <strong>{atRiskStudents.length}</strong> {tr ? "öğrenci risk altında" : "students at-risk — review needed"}
+                      </span>
+                    </div>
+                    <button type="button" className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", whiteSpace: "nowrap" }} onClick={() => { setActiveTab("students"); setAtRiskOnly(true); }}>
+                      {tr ? "Gör →" : "View →"}
+                    </button>
+                  </div>
+                )}
+                {homeworkSummary.overdue > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", padding: "0.6rem 0.8rem", borderRadius: 10, background: "color-mix(in srgb, var(--destructive) 6%, var(--surface) 94%)", borderLeft: "3px solid var(--destructive)" }}>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                      <BookOpen size={13} style={{ color: "var(--destructive)", flexShrink: 0 }} />
+                      <span style={{ fontSize: "0.88rem" }}>
+                        <strong>{homeworkSummary.overdue}</strong> {tr ? "gecikmiş ödev — hatırlatma gönder" : "overdue assignments — send reminders"}
+                      </span>
+                    </div>
+                    <button type="button" className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", whiteSpace: "nowrap" }} onClick={() => setActiveTab("homework")}>
+                      {tr ? "Ödevler →" : "Homework →"}
+                    </button>
+                  </div>
+                )}
+                {pendingRequests.length > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", padding: "0.6rem 0.8rem", borderRadius: 10, background: "color-mix(in srgb, var(--accent) 6%, var(--surface) 94%)", borderLeft: "3px solid var(--accent)" }}>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                      <CheckCircle size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
+                      <span style={{ fontSize: "0.88rem" }}>
+                        <strong>{pendingRequests.length}</strong> {tr ? "öğrenci onay bekliyor" : "students awaiting approval"}
+                      </span>
+                    </div>
+                    <button type="button" className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", whiteSpace: "nowrap" }} onClick={() => setActiveTab("settings")}>
+                      {tr ? "Onayla →" : "Approve →"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
           {/* Pending approvals */}
           {pendingRequests.length > 0 && (
             <section className="card teacher-highlight teacher-highlight-warm" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
@@ -542,16 +599,7 @@ export function TeacherHub() {
                     <strong>{s.student.name}</strong>
                     <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
                       {(s.riskFlags ?? []).map((flag, i) => (
-                        <span key={i} style={{
-                          padding: "0.18rem 0.55rem",
-                          borderRadius: 99,
-                          fontSize: "0.74rem",
-                          fontWeight: 600,
-                          background: "rgba(217, 93, 57, 0.13)",
-                          color: "var(--destructive)",
-                        }}>
-                          {flag}
-                        </span>
+                        <span key={i} className="risk-pill">{flag}</span>
                       ))}
                     </div>
                   </Link>
@@ -627,6 +675,35 @@ export function TeacherHub() {
                 </div>
               )}
             </div>
+            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.1rem" }}>
+              <button
+                type="button"
+                className="button button-secondary"
+                style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", ...(atRiskOnly ? { borderColor: "var(--destructive)", color: "var(--destructive)", background: "color-mix(in srgb, var(--destructive) 8%, var(--surface) 92%)" } : {}) }}
+                onClick={() => setAtRiskOnly((v) => !v)}
+              >
+                <AlertTriangle size={11} style={{ display: "inline", marginRight: 4 }} />
+                {tr ? "Sadece riskli" : "At-risk only"}
+              </button>
+              <button
+                type="button"
+                className="button button-secondary"
+                style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", ...(inactiveOnly ? { borderColor: "var(--accent)", color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, var(--surface) 92%)" } : {}) }}
+                onClick={() => setInactiveOnly((v) => !v)}
+              >
+                <Clock size={11} style={{ display: "inline", marginRight: 4 }} />
+                {tr ? "Sadece pasif" : "Inactive only"}
+              </button>
+              <button
+                type="button"
+                className="button button-secondary"
+                style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", ...(scoreDropOnly ? { borderColor: "var(--destructive)", color: "var(--destructive)", background: "color-mix(in srgb, var(--destructive) 8%, var(--surface) 92%)" } : {}) }}
+                onClick={() => setScoreDropOnly((v) => !v)}
+              >
+                <TrendingDown size={11} style={{ display: "inline", marginRight: 4 }} />
+                {tr ? "Skor düşüşü" : "Score drop"}
+              </button>
+            </div>
             <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
               <input
                 value={studentSearch}
@@ -653,14 +730,17 @@ export function TeacherHub() {
           </div>
           <div style={{ display: "grid", gap: "0.55rem" }}>
             {filteredStudents.length ? filteredStudents.map((s) => (
-              <Link key={s.student.id} href={`/app/teacher/student/${s.student.id}`} className="card"
-                style={{ padding: "1rem", display: "grid", gap: "0.5rem", background: "var(--surface-strong)" }}>
+              <div key={s.student.id} className="card" style={{ padding: "1rem", display: "grid", gap: "0.55rem", background: "var(--surface-strong)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "flex-start", flexWrap: "wrap" }}>
                   <div>
                     <strong>{s.student.name}</strong>
                     <div className="practice-meta" style={{ marginTop: "0.2rem" }}>{s.student.email}</div>
                   </div>
-                  <span className="pill">{s.averageScore?.toFixed(1) ?? "-"}</span>
+                  <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                    {typeof s.scoreDelta === "number" && s.scoreDelta > 0 && <TrendingUp size={13} style={{ color: "var(--success)" }} />}
+                    {typeof s.scoreDelta === "number" && s.scoreDelta < 0 && <TrendingDown size={13} style={{ color: "var(--destructive)" }} />}
+                    <span className="pill">{s.averageScore?.toFixed(1) ?? "-"}</span>
+                  </div>
                 </div>
                 <div className="grid" style={{ gridTemplateColumns: "repeat(4, minmax(0,1fr))", gap: "0.5rem" }}>
                   <TeacherStat label={tr ? "Deneme" : "Attempts"} value={String(s.totalSessions)} />
@@ -668,7 +748,20 @@ export function TeacherHub() {
                   <TeacherStat label={tr ? "Zayıf" : "Weak"} value={s.weakestSkill ? translateCategoryLabel(s.weakestSkill, tr) : "-"} />
                   <TeacherStat label={tr ? "Artış" : "Delta"} value={formatDelta(s.scoreDelta)} />
                 </div>
-              </Link>
+                {(s.riskFlags?.length ?? 0) > 0 && (
+                  <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
+                    {s.riskFlags!.map((flag, i) => <span key={i} className="risk-pill">{flag}</span>)}
+                  </div>
+                )}
+                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                  <Link href={`/app/teacher/student/${s.student.id}`} className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem" }}>
+                    {tr ? "Detay →" : "Detail →"}
+                  </Link>
+                  <Link href={`/app/teacher/compare?student=${s.student.id}`} className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem" }}>
+                    {tr ? "Karşılaştır" : "Compare"}
+                  </Link>
+                </div>
+              </div>
             )) : (
               <div className="card" style={{ padding: "1rem", color: "var(--muted)" }}>
                 {tr ? "Bu filtrelerle eşleşen öğrenci yok." : "No students match the current filters."}
@@ -740,7 +833,7 @@ export function TeacherHub() {
               <div style={{
                 padding: "0.8rem 1rem",
                 borderRadius: 12,
-                background: "rgba(217, 93, 57, 0.08)",
+                background: "color-mix(in srgb, var(--destructive) 8%, var(--surface) 92%)",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",

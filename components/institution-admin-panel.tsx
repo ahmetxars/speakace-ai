@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useAppState } from "@/components/providers";
 import { trackClientEvent } from "@/lib/analytics-client";
 import type { InstitutionUserSummary } from "@/lib/types";
-import { Activity, AlertTriangle, Clock, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { Activity, AlertTriangle, BookOpen, CheckCircle, Clock, GraduationCap, NotebookPen, ShieldAlert, TrendingDown, TrendingUp, Users, Zap } from "lucide-react";
 
 type TeacherSummary = {
   teacher: { id: string; name: string; email: string };
@@ -27,6 +27,8 @@ type ActivityLogEntry = {
   action: string;
   detail: string;
   occurredAt: string;
+  actionType?: "homework" | "class" | "approval" | "risk" | "note" | "review";
+  severity?: "success" | "warning" | "neutral";
 };
 
 type MonthlyTrend = {
@@ -51,6 +53,8 @@ type InstitutionAdminSummary = {
   pendingApprovals: number;
   atRiskStudents: number;
   averageScore: number;
+  teacherNoteCoverage?: number;
+  improvementAverage?: number;
   teacherSummaries: TeacherSummary[];
   alerts: string[];
   monthlyTrend?: MonthlyTrend[];
@@ -68,9 +72,11 @@ const DEMO_MONTHLY_TREND: MonthlyTrend[] = [
 ];
 
 const DEMO_ACTIVITY: ActivityLogEntry[] = [
-  { id: "1", teacherName: "Ayşe Kaya", action: "3 ödev tanımladı / Defined 3 assignments", detail: "IELTS Evening Group", occurredAt: new Date(Date.now() - 3600000 * 2).toISOString() },
-  { id: "2", teacherName: "Mehmet Yılmaz", action: "Yeni sınıf açtı / Created new class", detail: "TOEFL Weekend Prep", occurredAt: new Date(Date.now() - 3600000 * 5).toISOString() },
-  { id: "3", teacherName: "Zeynep Arslan", action: "5 öğrenciyi onayladı / Approved 5 students", detail: "Business English B2", occurredAt: new Date(Date.now() - 3600000 * 24).toISOString() },
+  { id: "1", teacherName: "Ayşe Kaya", action: "3 ödev tanımladı / Defined 3 assignments", detail: "IELTS Evening Group", occurredAt: new Date(Date.now() - 3600000 * 2).toISOString(), actionType: "homework", severity: "success" },
+  { id: "2", teacherName: "Mehmet Yılmaz", action: "Yeni sınıf açtı / Created new class", detail: "TOEFL Weekend Prep", occurredAt: new Date(Date.now() - 3600000 * 5).toISOString(), actionType: "class", severity: "neutral" },
+  { id: "3", teacherName: "Zeynep Arslan", action: "5 öğrenciyi onayladı / Approved 5 students", detail: "Business English B2", occurredAt: new Date(Date.now() - 3600000 * 24).toISOString(), actionType: "approval", severity: "success" },
+  { id: "4", teacherName: "System", action: "3 öğrenci risk kategorisine düştü / 3 students flagged at-risk", detail: "Son 24 saat", occurredAt: new Date(Date.now() - 3600000 * 6).toISOString(), actionType: "risk", severity: "warning" },
+  { id: "5", teacherName: "Ayşe Kaya", action: "4 öğrencinin speaking denemesini inceledi / Reviewed 4 speaking attempts", detail: "IELTS Morning Group", occurredAt: new Date(Date.now() - 3600000 * 30).toISOString(), actionType: "review", severity: "success" },
 ];
 
 const emptySummary: InstitutionAdminSummary = {
@@ -145,6 +151,17 @@ export function InstitutionAdminPanel() {
     ? Math.round(rankedTeachers.reduce((sum, t) => sum + (t.homeworkCompletionRate ?? 0), 0) / rankedTeachers.length)
     : 0;
 
+  const riskIntervention = useMemo(() => {
+    if (!rankedTeachers.length) return null;
+    const mostRisk = [...rankedTeachers].sort((a, b) => (b.atRiskStudentCount ?? 0) - (a.atRiskStudentCount ?? 0))[0];
+    const mostPending = [...rankedTeachers].sort((a, b) => (b.pendingApprovalCount ?? 0) - (a.pendingApprovalCount ?? 0))[0];
+    const lowestHw = [...rankedTeachers]
+      .filter((t) => typeof t.homeworkCompletionRate === "number")
+      .sort((a, b) => (a.homeworkCompletionRate ?? 100) - (b.homeworkCompletionRate ?? 100))[0] ?? null;
+    const weakSkill = rankedTeachers.find((t) => t.mostCommonWeakestSkill)?.mostCommonWeakestSkill ?? null;
+    return { mostRisk, mostPending, lowestHw, weakSkill };
+  }, [rankedTeachers]);
+
   const updateAccess = async (userId: string, patch: { teacherAccess?: boolean; adminAccess?: boolean }) => {
     setError("");
     setNotice("");
@@ -195,15 +212,17 @@ export function InstitutionAdminPanel() {
       </section>
 
       {/* KPI Stats */}
-      <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.75rem" }}>
-        <AdminStat icon="👩‍🏫" title={tr ? "Öğretmen" : "Teachers"} value={String(summary.totalTeachers)} />
-        <AdminStat icon="🏫" title={tr ? "Sınıf" : "Classes"} value={String(summary.totalClasses)} />
-        <AdminStat icon="🎓" title={tr ? "Öğrenci" : "Students"} value={String(summary.totalStudents)} />
-        <AdminStat icon="⚡" title={tr ? "Aktif öğrenci" : "Active students"} value={String(summary.activeStudents)} />
-        <AdminStat icon="⏳" title={tr ? "Bekleyen onay" : "Pending approvals"} value={String(summary.pendingApprovals)} highlight={summary.pendingApprovals > 0} />
-        <AdminStat icon="⚠️" title={tr ? "Riskli öğrenci" : "At-risk students"} value={String(summary.atRiskStudents)} highlight={summary.atRiskStudents > 0} />
-        <AdminStat icon="📊" title={tr ? "Ort. skor" : "Avg score"} value={summary.averageScore ? summary.averageScore.toFixed(1) : "-"} />
-        <AdminStat icon="📚" title={tr ? "Ödev tamamlama" : "HW completion"} value={`${overallHwRate}%`} />
+      <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(155px, 1fr))", gap: "0.75rem" }}>
+        <AdminStat icon={<Users size={15} />} title={tr ? "Öğretmen" : "Teachers"} value={String(summary.totalTeachers)} />
+        <AdminStat icon={<GraduationCap size={15} />} title={tr ? "Sınıf" : "Classes"} value={String(summary.totalClasses)} />
+        <AdminStat icon={<Users size={15} />} title={tr ? "Öğrenci" : "Students"} value={String(summary.totalStudents)} />
+        <AdminStat icon={<Zap size={15} />} title={tr ? "Aktif öğrenci" : "Active students"} value={String(summary.activeStudents)} />
+        <AdminStat icon={<Clock size={15} />} title={tr ? "Bekleyen onay" : "Pending approvals"} value={String(summary.pendingApprovals)} highlight={summary.pendingApprovals > 0} />
+        <AdminStat icon={<AlertTriangle size={15} />} title={tr ? "Riskli öğrenci" : "At-risk students"} value={String(summary.atRiskStudents)} highlight={summary.atRiskStudents > 0} />
+        <AdminStat icon={<TrendingUp size={15} />} title={tr ? "Ort. skor" : "Avg score"} value={summary.averageScore ? summary.averageScore.toFixed(1) : "-"} />
+        <AdminStat icon={<BookOpen size={15} />} title={tr ? "Ödev tamamlama" : "HW completion"} value={`${overallHwRate}%`} />
+        <AdminStat icon={<NotebookPen size={15} />} title={tr ? "Yorum kapsamı" : "Note coverage"} value={summary.teacherNoteCoverage != null ? `${summary.teacherNoteCoverage}%` : "-"} />
+        <AdminStat icon={<CheckCircle size={15} />} title={tr ? "Ort. gelişim" : "Avg improvement"} value={summary.improvementAverage != null ? `+${summary.improvementAverage.toFixed(2)}` : "-"} />
       </section>
 
       {/* Monthly trend + Activity log */}
@@ -267,21 +286,106 @@ export function InstitutionAdminPanel() {
             <strong>{tr ? "Kurum aktivite günlüğü" : "Institution activity log"}</strong>
           </div>
           <div style={{ display: "grid", gap: "0.5rem" }}>
-            {activityLog.map((log) => (
-              <div key={log.id} style={{ padding: "0.7rem 0.8rem", borderRadius: 12, background: "var(--surface-strong)", display: "grid", gap: "0.2rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "flex-start" }}>
-                  <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>{log.teacherName}</span>
-                  <span style={{ fontSize: "0.72rem", color: "var(--muted)", whiteSpace: "nowrap", flexShrink: 0 }}>
-                    {relativeTime(log.occurredAt, tr)}
-                  </span>
+            {activityLog.map((log) => {
+              const actIconMap: Record<string, ReactNode> = {
+                homework: <BookOpen size={13} />,
+                class: <GraduationCap size={13} />,
+                approval: <CheckCircle size={13} />,
+                risk: <ShieldAlert size={13} />,
+                note: <NotebookPen size={13} />,
+                review: <Zap size={13} />,
+              };
+              const actIcon = log.actionType ? (actIconMap[log.actionType] ?? <Activity size={13} />) : <Activity size={13} />;
+              const bg = log.severity === "success"
+                ? "color-mix(in srgb, var(--success) 8%, var(--surface-strong) 92%)"
+                : log.severity === "warning"
+                ? "color-mix(in srgb, var(--destructive) 8%, var(--surface-strong) 92%)"
+                : "var(--surface-strong)";
+              const leftBorder = log.severity === "warning" ? "3px solid var(--destructive)"
+                : log.severity === "success" ? "3px solid var(--success)"
+                : undefined;
+              const iconColor = log.severity === "success" ? "var(--success)"
+                : log.severity === "warning" ? "var(--destructive)"
+                : "var(--muted)";
+              return (
+                <div key={log.id} style={{ padding: "0.7rem 0.8rem", borderRadius: 12, background: bg, borderLeft: leftBorder, display: "grid", gap: "0.2rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "flex-start" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                      <span style={{ color: iconColor, display: "flex" }}>{actIcon}</span>
+                      <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>{log.teacherName}</span>
+                    </div>
+                    <span style={{ fontSize: "0.72rem", color: "var(--muted)", whiteSpace: "nowrap", flexShrink: 0 }}>
+                      {relativeTime(log.occurredAt, tr)}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: "0.82rem", color: "var(--muted)", paddingLeft: "1.3rem" }}>{log.action}</span>
+                  {log.detail && <span style={{ fontSize: "0.77rem", color: "var(--muted)", paddingLeft: "1.3rem" }}>→ {log.detail}</span>}
                 </div>
-                <span style={{ fontSize: "0.82rem", color: "var(--muted)" }}>{log.action}</span>
-                {log.detail && <span style={{ fontSize: "0.77rem", color: "var(--muted)" }}>→ {log.detail}</span>}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
+
+      {/* Risk & Intervention Summary */}
+      {riskIntervention && (
+        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+          <div className="section-header-row">
+            <ShieldAlert size={17} style={{ color: "var(--destructive)" }} />
+            <strong>{tr ? "Risk ve müdahale özeti" : "Risk & intervention summary"}</strong>
+          </div>
+          <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "0.7rem" }}>
+            {(riskIntervention.mostRisk.atRiskStudentCount ?? 0) > 0 && (
+              <div className="card" style={{ padding: "0.9rem", background: "color-mix(in srgb, var(--destructive) 6%, var(--surface) 94%)", borderLeft: "3px solid var(--destructive)", display: "grid", gap: "0.3rem" }}>
+                <div style={{ fontSize: "0.73rem", color: "var(--muted)", display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                  <AlertTriangle size={11} />
+                  {tr ? "En fazla riskli öğrenci" : "Most at-risk teacher"}
+                </div>
+                <strong>{riskIntervention.mostRisk.teacher.name}</strong>
+                <span style={{ fontSize: "0.8rem", color: "var(--destructive)", fontWeight: 600 }}>
+                  {riskIntervention.mostRisk.atRiskStudentCount} {tr ? "riskli öğrenci" : "at-risk students"}
+                </span>
+              </div>
+            )}
+            {(riskIntervention.mostPending.pendingApprovalCount ?? 0) > 0 && (
+              <div className="card" style={{ padding: "0.9rem", background: "color-mix(in srgb, var(--accent) 6%, var(--surface) 94%)", borderLeft: "3px solid var(--accent)", display: "grid", gap: "0.3rem" }}>
+                <div style={{ fontSize: "0.73rem", color: "var(--muted)", display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                  <Clock size={11} />
+                  {tr ? "En fazla bekleyen onay" : "Most pending approvals"}
+                </div>
+                <strong>{riskIntervention.mostPending.teacher.name}</strong>
+                <span style={{ fontSize: "0.8rem", color: "var(--accent)", fontWeight: 600 }}>
+                  {riskIntervention.mostPending.pendingApprovalCount} {tr ? "bekleyen" : "pending"}
+                </span>
+              </div>
+            )}
+            {riskIntervention.lowestHw && (
+              <div className="card" style={{ padding: "0.9rem", background: "color-mix(in srgb, var(--destructive) 6%, var(--surface) 94%)", borderLeft: "3px solid var(--destructive)", display: "grid", gap: "0.3rem" }}>
+                <div style={{ fontSize: "0.73rem", color: "var(--muted)", display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                  <BookOpen size={11} />
+                  {tr ? "En düşük ödev tamamlama" : "Lowest HW rate"}
+                </div>
+                <strong>{riskIntervention.lowestHw.teacher.name}</strong>
+                <span style={{ fontSize: "0.8rem", color: "var(--destructive)", fontWeight: 600 }}>
+                  {riskIntervention.lowestHw.homeworkCompletionRate}% {tr ? "tamamlama" : "completion"}
+                </span>
+              </div>
+            )}
+            {riskIntervention.weakSkill && (
+              <div className="card" style={{ padding: "0.9rem", background: "color-mix(in srgb, var(--accent) 6%, var(--surface) 94%)", borderLeft: "3px solid var(--accent)", display: "grid", gap: "0.3rem" }}>
+                <div style={{ fontSize: "0.73rem", color: "var(--muted)", display: "flex", gap: "0.35rem", alignItems: "center" }}>
+                  <Zap size={11} />
+                  {tr ? "Kurumun ortak zayıf alanı" : "Institution-wide weak skill"}
+                </div>
+                <strong>{riskIntervention.weakSkill}</strong>
+                <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+                  {tr ? "Odaklanılması önerilen alan" : "Recommended focus area"}
+                </span>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Teacher performance cards + At-risk details */}
       <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1.1fr) minmax(300px, 0.9fr)", gap: "1rem", alignItems: "start" }}>
@@ -326,32 +430,28 @@ export function InstitutionAdminPanel() {
                 )}
               </div>
 
-              {/* Homework completion progress bar */}
-              {typeof item.homeworkCompletionRate === "number" && (
-                <div style={{ display: "grid", gap: "0.3rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.77rem", color: "var(--muted)" }}>
-                    <span>{tr ? "Ödev tamamlama oranı" : "HW completion rate"}</span>
-                    <strong style={{
-                      color: item.homeworkCompletionRate >= 70 ? "var(--success)"
-                        : item.homeworkCompletionRate >= 40 ? "var(--accent)"
-                        : "var(--destructive)"
-                    }}>
-                      {item.homeworkCompletionRate}%
-                    </strong>
+              {/* Homework completion radial + CTA row */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+                {typeof item.homeworkCompletionRate === "number" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
+                    <RadialProgress
+                      percent={item.homeworkCompletionRate}
+                      color={item.homeworkCompletionRate >= 70 ? "var(--success)" : item.homeworkCompletionRate >= 40 ? "var(--accent)" : "var(--destructive)"}
+                    />
+                    <div style={{ display: "grid", gap: "0.2rem" }}>
+                      <span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>{tr ? "Ödev tamamlama" : "HW completion"}</span>
+                      {(item.pendingApprovalCount ?? 0) > 0 && (
+                        <span style={{ fontSize: "0.73rem", color: "var(--accent)", fontWeight: 600 }}>
+                          {item.pendingApprovalCount} {tr ? "bekleyen onay" : "pending approvals"}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ height: 6, borderRadius: 99, background: "var(--line)", overflow: "hidden" }}>
-                    <div style={{
-                      height: "100%",
-                      width: `${item.homeworkCompletionRate}%`,
-                      borderRadius: 99,
-                      background: item.homeworkCompletionRate >= 70 ? "var(--success)"
-                        : item.homeworkCompletionRate >= 40 ? "var(--accent)"
-                        : "var(--destructive)",
-                      transition: "width 0.5s ease",
-                    }} />
-                  </div>
-                </div>
-              )}
+                )}
+                <a href="/app/teacher" className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.4rem 0.85rem", whiteSpace: "nowrap", marginLeft: "auto" }}>
+                  {tr ? "Sınıfları gör →" : "View classes →"}
+                </a>
+              </div>
 
               {/* Last login + weak area */}
               <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", fontSize: "0.77rem", color: "var(--muted)", flexWrap: "wrap" }}>
@@ -380,7 +480,7 @@ export function InstitutionAdminPanel() {
           {(summary.atRiskDetails?.length ?? 0) > 0 ? (
             <div style={{ display: "grid", gap: "0.55rem" }}>
               {summary.atRiskDetails!.map((detail) => (
-                <div key={detail.studentId} className="card" style={{ padding: "0.85rem", background: "rgba(217, 93, 57, 0.06)", display: "grid", gap: "0.4rem" }}>
+                <div key={detail.studentId} className="card" style={{ padding: "0.85rem", background: "color-mix(in srgb, var(--destructive) 6%, var(--surface) 94%)", display: "grid", gap: "0.4rem" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "flex-start", flexWrap: "wrap" }}>
                     <strong style={{ fontSize: "0.9rem" }}>{detail.studentName}</strong>
                     <span style={{ fontSize: "0.75rem", color: "var(--muted)" }}>{detail.className}</span>
@@ -388,16 +488,7 @@ export function InstitutionAdminPanel() {
                   <div style={{ fontSize: "0.78rem", color: "var(--muted)" }}>{detail.teacherName}</div>
                   <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginTop: "0.15rem" }}>
                     {detail.reasons.map((reason, i) => (
-                      <span key={i} style={{
-                        padding: "0.2rem 0.6rem",
-                        borderRadius: 99,
-                        background: "rgba(217, 93, 57, 0.12)",
-                        fontSize: "0.74rem",
-                        color: "var(--destructive)",
-                        fontWeight: 600,
-                      }}>
-                        {reason}
-                      </span>
+                      <span key={i} className="risk-pill">{reason}</span>
                     ))}
                   </div>
                 </div>
@@ -406,7 +497,7 @@ export function InstitutionAdminPanel() {
           ) : summary.alerts.length ? (
             <div style={{ display: "grid", gap: "0.5rem" }}>
               {summary.alerts.map((alert) => (
-                <div key={alert} className="card" style={{ padding: "0.85rem", background: "rgba(217, 93, 57, 0.08)", fontSize: "0.88rem" }}>
+                <div key={alert} className="card" style={{ padding: "0.85rem", background: "color-mix(in srgb, var(--destructive) 8%, var(--surface) 92%)", fontSize: "0.88rem" }}>
                   {alert}
                 </div>
               ))}
@@ -494,19 +585,43 @@ export function InstitutionAdminPanel() {
   );
 }
 
-function AdminStat({ icon, title, value, highlight }: { icon: string; title: string; value: string; highlight?: boolean }) {
+function AdminStat({ icon, title, value, highlight }: { icon: ReactNode; title: string; value: string; highlight?: boolean }) {
   return (
     <div className="card" style={{
       padding: "1rem",
-      background: highlight ? "rgba(217, 93, 57, 0.06)" : "var(--surface-strong)",
+      background: highlight ? "color-mix(in srgb, var(--destructive) 6%, var(--surface) 94%)" : "var(--surface-strong)",
       borderLeft: highlight ? "3px solid var(--destructive)" : undefined,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--muted)", marginBottom: "0.4rem", fontSize: "0.82rem" }}>
-        <span>{icon}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: highlight ? "var(--destructive)" : "var(--muted)", marginBottom: "0.4rem", fontSize: "0.82rem" }}>
+        {icon}
         <span>{title}</span>
       </div>
       <div style={{ fontSize: "1.75rem", fontWeight: 800, lineHeight: 1 }}>{value}</div>
     </div>
+  );
+}
+
+function RadialProgress({ percent, size = 54, stroke = 5, color }: { percent: number; size?: number; stroke?: number; color?: string }) {
+  const r = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference - (Math.min(percent, 100) / 100) * circumference;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--line)" strokeWidth={stroke} />
+      <circle
+        cx={size / 2} cy={size / 2} r={r} fill="none"
+        stroke={color ?? "var(--accent)"}
+        strokeWidth={stroke}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: "stroke-dashoffset 0.6s ease" }}
+      />
+      <text x="50%" y="54%" textAnchor="middle" dominantBaseline="middle" fill="currentColor" fontSize={size * 0.22} fontWeight="700">
+        {percent}%
+      </text>
+    </svg>
   );
 }
 
