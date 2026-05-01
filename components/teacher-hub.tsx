@@ -47,6 +47,8 @@ export function TeacherHub() {
   const [homeworkSummary, setHomeworkSummary] = useState<HomeworkSummary>({ total: 0, completed: 0, pending: 0, overdue: 0 });
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [loadingClasses, setLoadingClasses] = useState(true);
+  const [loadingStudents, setLoadingStudents] = useState(false);
 
   // ── form state ──────────────────────────────────────────────────────────────
   const [newClassName, setNewClassName] = useState("");
@@ -123,14 +125,16 @@ export function TeacherHub() {
 
   // ── data fetching ────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!currentUser?.isTeacher && !currentUser?.isAdmin) return;
+    if (!currentUser?.isTeacher && !currentUser?.isAdmin) { setLoadingClasses(false); return; }
+    setLoadingClasses(true);
     fetch("/api/teacher/classes")
       .then((r) => r.json())
       .then((data: { classes?: TeacherClassSummary[] }) => {
         const next = data.classes ?? [];
         setClasses(next);
         setSelectedClassId((cur) => cur || next[0]?.id || "");
-      });
+      })
+      .finally(() => setLoadingClasses(false));
   }, [currentUser?.id, currentUser?.isAdmin, currentUser?.isTeacher]);
 
   const refreshHomeworkSummary = useCallback(async () => {
@@ -150,6 +154,7 @@ export function TeacherHub() {
   useEffect(() => { void refreshHomeworkSummary(); }, [currentUser?.id, refreshHomeworkSummary]);
 
   const loadSelectedClass = useCallback(async (classId: string) => {
+    setLoadingStudents(true);
     try {
       const [sr, ar, shr, rr] = await Promise.all([
         fetch(`/api/teacher/classes/${classId}/students`),
@@ -178,6 +183,8 @@ export function TeacherHub() {
       }
     } catch {
       setStudents([]); setAnalytics(null); setSharedItems([]); setRule(null); setPendingRequests([]);
+    } finally {
+      setLoadingStudents(false);
     }
   }, [refreshHomeworkSummary, tr]);
 
@@ -340,13 +347,23 @@ export function TeacherHub() {
   };
 
   // ── access guard ─────────────────────────────────────────────────────────────
+  if (loadingClasses && currentUser) {
+    return (
+      <div className="page-shell section">
+        <HubLoading label={tr ? "Sınıflar yükleniyor…" : "Loading your classes…"} />
+      </div>
+    );
+  }
+
   if (!currentUser?.isTeacher && !currentUser?.isAdmin) {
     return (
       <div className="page-shell section">
-        <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "0.8rem" }}>
-          <span className="eyebrow">Teacher hub</span>
-          <h1 style={{ margin: 0 }}>{tr ? "Öğretmen erişimi gerekli" : "Teacher access required"}</h1>
-          <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
+        <section className="card" style={{ padding: "2rem", display: "grid", gap: "0.7rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "var(--destructive)" }}>
+            <AlertTriangle size={20} />
+            <strong style={{ fontSize: "1.1rem" }}>{tr ? "Öğretmen erişimi gerekli" : "Teacher access required"}</strong>
+          </div>
+          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
             {tr ? "Bu paneli kullanmak için hesabının öğretmen olarak tanımlanmış olması gerekiyor." : "Your account must be marked as a teacher to use this panel."}
           </p>
         </section>
@@ -424,8 +441,12 @@ export function TeacherHub() {
             ))}
           </section>
         ) : (
-          <section className="card" style={{ padding: "1.5rem", color: "var(--muted)" }}>
-            {tr ? "Henüz sınıf yok. Yukarıdan ilk sınıfını oluştur." : "No classes yet. Create your first one above."}
+          <section className="card" style={{ padding: "2.5rem 2rem", textAlign: "center", display: "grid", gap: "0.7rem" }}>
+            <div style={{ fontSize: "2rem" }}>🏫</div>
+            <strong style={{ fontSize: "1.1rem" }}>{tr ? "Henüz sınıf yok" : "No classes yet"}</strong>
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.9rem", lineHeight: 1.7 }}>
+              {tr ? "Yukarıdaki formu kullanarak ilk sınıfını oluştur. Öğrenciler join code ile katılabilir." : "Create your first class using the form above. Students can join with the class code."}
+            </p>
           </section>
         )}
       </div>
@@ -494,7 +515,8 @@ export function TeacherHub() {
       {activeTab === "overview" && (
         <>
           {/* Analytics stats */}
-          {analytics && (
+          {loadingStudents && <HubLoading label={tr ? "Sınıf verileri yükleniyor…" : "Loading class data…"} />}
+          {!loadingStudents && analytics && (
             <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
               <span className="eyebrow">{tr ? "Sınıf istatistikleri" : "Class stats"}</span>
               <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: "0.6rem" }}>
@@ -1206,3 +1228,15 @@ const textareaStyle: CSSProperties = {
   ...fieldStyle,
   resize: "vertical",
 };
+
+function HubLoading({ label }: { label: string }) {
+  return (
+    <div className="card" style={{ padding: "2rem 1.5rem", display: "flex", alignItems: "center", gap: "1rem", color: "var(--muted)" }}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ animation: "spin 1s linear infinite", flexShrink: 0 }}>
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeOpacity="0.2" />
+        <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+      <span style={{ fontSize: "0.92rem" }}>{label}</span>
+    </div>
+  );
+}

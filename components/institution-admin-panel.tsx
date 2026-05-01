@@ -114,12 +114,15 @@ export function InstitutionAdminPanel() {
   const [announcementBody, setAnnouncementBody] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     fetch("/api/institution-admin/summary")
       .then((response) => response.json())
       .then((data: InstitutionAdminSummary) => setSummary(data))
-      .catch(() => setSummary(emptySummary));
+      .catch(() => setSummary(emptySummary))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -196,6 +199,25 @@ export function InstitutionAdminPanel() {
     setAnnouncementBody("");
     setNotice(tr ? "Duyuru gönderildi." : "Announcement sent.");
   };
+
+  if (loading) {
+    return (
+      <div className="page-shell section">
+        <PanelLoading label={tr ? "Kurum verileri yükleniyor…" : "Loading institution data…"} />
+      </div>
+    );
+  }
+
+  if (!currentUser?.isAdmin && !currentUser?.isTeacher && currentUser?.memberType !== "school") {
+    return (
+      <div className="page-shell section">
+        <AccessDenied
+          title={tr ? "Erişim kısıtlı" : "Access restricted"}
+          body={tr ? "Bu paneli görüntülemek için kurum admin yetkisi gerekiyor." : "Institution admin access is required to view this panel."}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
@@ -630,6 +652,30 @@ function MiniStat({ label, value }: { label: string; value: string }) {
     <div className="card" style={{ padding: "0.65rem" }}>
       <div className="practice-meta">{label}</div>
       <strong>{value}</strong>
+    </div>
+  );
+}
+
+function PanelLoading({ label }: { label: string }) {
+  return (
+    <div className="card" style={{ padding: "2.5rem 2rem", display: "flex", alignItems: "center", gap: "1rem", color: "var(--muted)" }}>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ animation: "spin 1s linear infinite", flexShrink: 0 }}>
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeOpacity="0.2" />
+        <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" />
+      </svg>
+      <span style={{ fontSize: "0.95rem" }}>{label}</span>
+    </div>
+  );
+}
+
+function AccessDenied({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="card" style={{ padding: "2rem", display: "grid", gap: "0.6rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "var(--destructive)" }}>
+        <ShieldAlert size={20} />
+        <strong style={{ fontSize: "1.1rem" }}>{title}</strong>
+      </div>
+      <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>{body}</p>
     </div>
   );
 }

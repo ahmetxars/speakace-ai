@@ -17,7 +17,8 @@ export function isTeacherEmail(email: string) {
 }
 
 export function withTeacherPrivileges(profile: MemberProfile): MemberProfile {
-  if (!profile.teacherAccess && !isTeacherEmail(profile.email)) {
+  const grantTeacher = profile.teacherAccess || isTeacherEmail(profile.email) || profile.memberType === "teacher";
+  if (!grantTeacher) {
     return profile;
   }
 

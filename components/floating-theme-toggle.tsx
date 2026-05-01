@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useAppState } from "@/components/providers";
+import { Moon, Sun } from "lucide-react";
 
 export function FloatingThemeToggle() {
   const pathname = usePathname();
@@ -12,39 +13,22 @@ export function FloatingThemeToggle() {
     return null;
   }
 
-  const content =
-    theme === "dark"
-      ? {
-          activeEmoji: "🌙",
-          activeLabel: tr ? "Koyu tema aktif" : "Dark theme active",
-          nextEmoji: "☀️",
-          nextLabel: tr ? "Aydinlik temaya gec" : "Switch to light theme",
-          nextTheme: "light" as const
-        }
-      : {
-          activeEmoji: "☀️",
-          activeLabel: tr ? "Aydinlik tema aktif" : "Light theme active",
-          nextEmoji: "🌙",
-          nextLabel: tr ? "Koyu temaya gec" : "Switch to dark theme",
-          nextTheme: "dark" as const
-        };
+  const isDark = theme === "dark";
+  const label = isDark
+    ? (tr ? "Aydınlık temaya geç" : "Switch to light theme")
+    : (tr ? "Koyu temaya geç" : "Switch to dark theme");
 
   return (
     <div className="theme-fab-shell">
-      <div className="theme-fab-stack">
-        <button
-          type="button"
-          className="theme-fab-button theme-fab-button-next"
-          onClick={() => setTheme(content.nextTheme)}
-          aria-label={content.nextLabel}
-          title={content.nextLabel}
-        >
-          <span aria-hidden="true">{content.nextEmoji}</span>
-        </button>
-        <div className="theme-fab-button theme-fab-button-current" title={content.activeLabel}>
-          <span aria-hidden="true">{content.activeEmoji}</span>
-        </div>
-      </div>
+      <button
+        type="button"
+        className="theme-fab-button"
+        onClick={() => setTheme(isDark ? "light" : "dark")}
+        aria-label={label}
+        title={label}
+      >
+        {isDark ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
+      </button>
     </div>
   );
 }

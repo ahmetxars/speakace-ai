@@ -2838,10 +2838,7 @@ body[data-theme="dark"] .sa-stat-item {
 }
 
 
-body[data-theme="dark"] .theme-fab-button {
-  background: rgba(28, 35, 43, 0.94);
-  border-color: rgba(255, 255, 255, 0.08);
-}
+/* theme-fab inherits var(--surface) which already respects dark/light */
 
 .sr-only {
   position: absolute;
@@ -2914,57 +2911,25 @@ img {
   z-index: 45;
 }
 
-.theme-fab-stack {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 0.55rem;
-}
-
 .theme-fab-button {
-  width: 3.35rem;
-  height: 3.35rem;
+  width: 2.6rem;
+  height: 2.6rem;
   border-radius: 999px;
   border: 1px solid var(--line);
-  background: rgba(255, 251, 246, 0.95);
-  box-shadow: 0 16px 36px rgba(38, 23, 16, 0.12);
+  background: var(--surface);
+  color: var(--muted);
+  box-shadow: 0 4px 16px oklch(0% 0 0 / 0.12);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  backdrop-filter: blur(16px);
-}
-
-.theme-fab-button span {
-  transform: translateY(0.02rem);
-}
-
-.theme-fab-button-current {
-  pointer-events: none;
-}
-
-.theme-fab-button-next {
-  position: absolute;
-  bottom: calc(100% + 0.55rem);
-  transform: translateY(0.4rem) scale(0.92);
-  opacity: 0;
-  visibility: hidden;
-  transition:
-    opacity 0.22s ease,
-    transform 0.22s ease,
-    visibility 0.22s ease;
   cursor: pointer;
+  transition: color 0.15s, background 0.15s, transform 0.15s;
 }
 
-.theme-fab-stack:hover .theme-fab-button-next,
-.theme-fab-stack:focus-within .theme-fab-button-next {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0) scale(1);
-}
-
-.theme-fab-button-next:hover {
-  transform: translateY(-0.06rem) scale(1.03);
+.theme-fab-button:hover {
+  color: var(--text);
+  background: var(--surface-strong);
+  transform: scale(1.07);
 }
 
 .page-shell {
@@ -7202,9 +7167,8 @@ body[data-theme="dark"] .marketing-sticky-copy span {
   }
 
   .theme-fab-button {
-    width: 3rem;
-    height: 3rem;
-    font-size: 1.24rem;
+    width: 2.8rem;
+    height: 2.8rem;
   }
 
   .marketing-sticky-cta {
@@ -9077,3 +9041,81 @@ body[data-theme="dark"] .db-upgrade-card {
 .heatmap-1 { background: color-mix(in srgb, var(--accent) 14%, var(--surface) 86%); }
 .heatmap-2 { background: color-mix(in srgb, var(--accent) 28%, var(--surface) 72%); }
 .heatmap-3 { background: color-mix(in srgb, var(--accent) 46%, var(--surface) 54%); }
+
+/* ── Dashboard primitives ────────────────────────────────────────────── */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Activity feed item */
+.activity-item {
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  background: var(--surface-strong);
+  display: grid;
+  gap: 0.2rem;
+}
+.activity-item-success {
+  background: color-mix(in srgb, var(--success) 8%, var(--surface-strong) 92%);
+  border-left: 3px solid var(--success);
+}
+.activity-item-warning {
+  background: color-mix(in srgb, var(--destructive) 8%, var(--surface-strong) 92%);
+  border-left: 3px solid var(--destructive);
+}
+
+/* Stat card */
+.stat-card {
+  padding: 1rem;
+  background: var(--surface-strong);
+  border-radius: var(--radius);
+}
+.stat-card-alert {
+  background: color-mix(in srgb, var(--destructive) 6%, var(--surface) 94%);
+  border-left: 3px solid var(--destructive);
+}
+
+/* Progress row (label + bar + value) */
+.progress-row {
+  display: grid;
+  gap: 0.3rem;
+}
+.progress-row-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* Intervention card */
+.intervention-card {
+  padding: 0.9rem;
+  border-radius: var(--radius);
+  display: grid;
+  gap: 0.3rem;
+}
+.intervention-card-danger {
+  background: color-mix(in srgb, var(--destructive) 6%, var(--surface) 94%);
+  border-left: 3px solid var(--destructive);
+}
+.intervention-card-accent {
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface) 94%);
+  border-left: 3px solid var(--accent);
+}
+
+/* KPI grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 0.75rem;
+}
+
+/* Empty state */
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.7;
+}

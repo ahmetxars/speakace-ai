@@ -180,9 +180,15 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
   if (!currentUser?.isTeacher && !currentUser?.isAdmin) {
     return (
       <div className="page-shell section">
-        <section className="card" style={{ padding: "1.4rem", color: "var(--muted)" }}>
-          {tr ? "Öğretmen erişimi gerekli." : "Teacher access is required."}
-        </section>
+        <div className="card" style={{ padding: "2rem", display: "grid", gap: "0.6rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "var(--destructive)" }}>
+            <AlertTriangle size={20} />
+            <strong style={{ fontSize: "1.1rem" }}>{tr ? "Erişim kısıtlı" : "Access restricted"}</strong>
+          </div>
+          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
+            {tr ? "Bu sayfayı görüntülemek için öğretmen yetkisi gerekiyor." : "Teacher access is required to view this page."}
+          </p>
+        </div>
       </div>
     );
   }
@@ -190,16 +196,22 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
   if (!detail) {
     return (
       <div className="page-shell section">
-        <section className="card" style={{ padding: "1.4rem" }}>
+        <div className="card" style={{ padding: "2rem 1.5rem", display: "flex", alignItems: "center", gap: "1rem", color: "var(--muted)" }}>
           {error ? (
-            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", color: "var(--destructive)" }}>
-              <AlertTriangle size={16} />
-              {error}
-            </div>
+            <>
+              <AlertTriangle size={18} style={{ color: "var(--destructive)", flexShrink: 0 }} />
+              <span style={{ color: "var(--destructive)" }}>{error}</span>
+            </>
           ) : (
-            <div style={{ color: "var(--muted)" }}>{tr ? "Öğrenci detayı yükleniyor…" : "Loading student detail…"}</div>
+            <>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ animation: "spin 1s linear infinite", flexShrink: 0 }}>
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeOpacity="0.2" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" />
+              </svg>
+              <span style={{ fontSize: "0.92rem" }}>{tr ? "Öğrenci detayı yükleniyor…" : "Loading student profile…"}</span>
+            </>
           )}
-        </section>
+        </div>
       </div>
     );
   }
