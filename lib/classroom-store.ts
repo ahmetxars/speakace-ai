@@ -36,8 +36,11 @@ function getStore(): MemoryClassroomStore {
   return globalStore.__speakAceClassroom;
 }
 
+import { randomBytes as cryptoRandomBytes } from "node:crypto";
+
 function buildJoinCode() {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
+  // Use crypto.randomBytes for a cryptographically secure join code (fixes L-1)
+  return cryptoRandomBytes(3).toString("hex").toUpperCase();
 }
 
 async function findMemberByEmail(email: string) {
@@ -216,6 +219,16 @@ export async function joinTeacherClassByCode(input: { studentId: string; joinCod
   const student = await getMember(input.studentId);
   if (!student || student.role === "guest") {
     throw new Error("Student account was not found.");
+  }
+
+  // Reject teacher/admin accounts at the store level (H-3 defense in depth).
+  // The route handler enforces the same rule; this ensures the store cannot be
+  // called directly to bypass it.
+  if (student.isTeacher || student.teacherAccess || student.isAdmin || student.adminAccess) {
+    throw Object.assign(
+      new Error("Teacher and admin accounts cannot join classes as students."),
+      { statusCode: 403 }
+    );
   }
 
   if (hasDatabaseUrl()) {
@@ -415,7 +428,22 @@ export async function getTeacherStudentDetail(input: { teacherId: string; studen
     throw new Error("Student not found.");
   }
 
-  const summary = await getProgressSummary(input.studentId);
+  // Find the earliest approval date for this student across the teacher's classes
+  // so that getProgressSummary only returns sessions on/after enrollment (Issue 1).
+  let enrolledSince: string | undefined;
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const rows = await sql<Array<{ enrolledAt: string | null }>>`
+      select min(approved_at)::text as "enrolledAt"
+      from teacher_class_enrollments
+      where student_id = ${input.studentId}
+        and class_id = any(${classIds})
+        and status = 'approved'
+    `;
+    enrolledSince = rows[0]?.enrolledAt ?? undefined;
+  }
+
+  const summary = await getProgressSummary(input.studentId, enrolledSince);
   const notes = await listTeacherNotes({ teacherId: input.teacherId, studentId: input.studentId });
 
   return {
@@ -539,28 +567,35 @@ export async function getInstitutionAnalytics(teacherId: string) {
   } satisfies InstitutionAnalyticsSummary;
 }
 
-export async function listInstitutionTeacherSummaries() {
-  const teachers: MemberProfile[] = [];
-
+/**
+ * @deprecated Use listOrgTeacherSummaries(orgId) from lib/server/org-store instead.
+ * This function queried ALL platform teachers and was a C-3 cross-tenant data leak.
+ * It is kept only for in-memory dev mode (no DB) and will throw in production.
+ */
+export async function listInstitutionTeacherSummaries(orgId?: string) {
   if (hasDatabaseUrl()) {
-    const sql = getSql();
-    const rows = await sql<MemberProfile[]>`
-      select id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
-      from users
-      order by created_at asc
-    `;
-    teachers.push(...rows.filter((item) => item.adminAccess || item.teacherAccess || isTeacherEmail(item.email)));
-  } else {
-    for (const profile of (globalThis as typeof globalThis & { __speakAceStore?: { members: Map<string, MemberProfile> } }).__speakAceStore?.members?.values() ?? []) {
-      if (profile.isAdmin || profile.isTeacher || profile.adminAccess || profile.teacherAccess || isTeacherEmail(profile.email)) {
-        teachers.push(profile);
-      }
+    if (!orgId) {
+      throw new Error(
+        "listInstitutionTeacherSummaries requires an orgId when a database is present. " +
+        "Use listOrgTeacherSummaries(orgId) from lib/server/org-store instead."
+      );
+    }
+    // Delegate to the safe, org-scoped version
+    const { listOrgTeacherSummaries } = await import("@/lib/server/org-store");
+    return listOrgTeacherSummaries(orgId);
+  }
+
+  // In-memory fallback (dev / test only — no real tenant isolation needed)
+  const teachers: MemberProfile[] = [];
+  for (const profile of (globalThis as typeof globalThis & { __speakAceStore?: { members: Map<string, MemberProfile> } }).__speakAceStore?.members?.values() ?? []) {
+    if (profile.isAdmin || profile.isTeacher || profile.adminAccess || profile.teacherAccess || isTeacherEmail(profile.email)) {
+      teachers.push(profile);
     }
   }
 
-  const uniqueTeachers = teachers.filter((teacher, index, array) => array.findIndex((item) => item.id === teacher.id) === index);
+  const unique = teachers.filter((t, i, arr) => arr.findIndex((x) => x.id === t.id) === i);
   const summaries = await Promise.all(
-    uniqueTeachers.map(async (teacher) => {
+    unique.map(async (teacher) => {
       const [classes, analytics] = await Promise.all([
         listTeacherClasses(teacher.id),
         getInstitutionAnalytics(teacher.id)
@@ -578,11 +613,25 @@ export async function listInstitutionTeacherSummaries() {
       };
     })
   );
-
-  return summaries.sort((a, b) => (b.studentCount - a.studentCount) || (b.averageScore - a.averageScore));
+  return summaries.sort((a, b) => b.studentCount - a.studentCount || b.averageScore - a.averageScore);
 }
 
-export async function getInstitutionAdminSummary() {
+/**
+ * @deprecated Use getOrgAdminSummary(orgId) from lib/server/org-store instead.
+ * This function used the global listInstitutionTeacherSummaries (C-3 leak).
+ */
+export async function getInstitutionAdminSummary(orgId?: string) {
+  if (hasDatabaseUrl()) {
+    if (!orgId) {
+      throw new Error(
+        "getInstitutionAdminSummary requires an orgId when a database is present. " +
+        "Use getOrgAdminSummary(orgId) from lib/server/org-store instead."
+      );
+    }
+    const { getOrgAdminSummary } = await import("@/lib/server/org-store");
+    return getOrgAdminSummary(orgId);
+  }
+
   const teacherSummaries = await listInstitutionTeacherSummaries();
   const totalTeachers = teacherSummaries.length;
   const totalClasses = teacherSummaries.reduce((sum, item) => sum + item.classCount, 0);
@@ -593,15 +642,8 @@ export async function getInstitutionAdminSummary() {
   const averageScore = totalTeachers
     ? Number((teacherSummaries.reduce((sum, item) => sum + item.averageScore, 0) / totalTeachers).toFixed(1))
     : 0;
-
   return {
-    totalTeachers,
-    totalClasses,
-    totalStudents,
-    activeStudents,
-    pendingApprovals,
-    atRiskStudents,
-    averageScore,
+    totalTeachers, totalClasses, totalStudents, activeStudents, pendingApprovals, atRiskStudents, averageScore,
     teacherSummaries,
     alerts: teacherSummaries.flatMap((item) => {
       const alerts: string[] = [];
@@ -702,31 +744,26 @@ export async function getInstitutionBilling(teacherId: string) {
   return getStore().billing.get(teacherId) ?? buildDefaultInstitutionBilling(teacherId);
 }
 
-export async function listInstitutionUsers(search?: string) {
+/**
+ * Returns users belonging to the given organization.
+ * orgId is now required when a database is configured (fixes C-2).
+ * @deprecated Pass orgId; the zero-argument form is kept only for in-memory dev mode.
+ */
+export async function listInstitutionUsers(orgId?: string, search?: string) {
   const normalized = search?.trim().toLowerCase() ?? "";
+
   if (hasDatabaseUrl()) {
-    const sql = getSql();
-    const rows = await sql<InstitutionUserSummary[]>`
-      select
-        id,
-        email,
-        name,
-        role,
-        member_type as "memberType",
-        organization_name as "organizationName",
-        plan,
-        email_verified as "emailVerified",
-        admin_access as "adminAccess",
-        teacher_access as "teacherAccess",
-        created_at as "createdAt"
-      from users
-      where (${normalized === ""} or lower(email) like ${`%${normalized}%`} or lower(name) like ${`%${normalized}%`})
-      order by created_at desc
-      limit 200
-    `;
-    return rows;
+    if (!orgId) {
+      throw new Error(
+        "listInstitutionUsers requires an orgId when a database is present. " +
+        "Use listOrgUsers(orgId) from lib/server/org-store instead."
+      );
+    }
+    const { listOrgUsers } = await import("@/lib/server/org-store");
+    return listOrgUsers(orgId, search);
   }
 
+  // In-memory fallback (dev / test only)
   const members = [...((globalThis as typeof globalThis & { __speakAceStore?: { members: Map<string, MemberProfile> } }).__speakAceStore?.members?.values() ?? [])];
   return members
     .filter((item) => !normalized || item.email.toLowerCase().includes(normalized) || item.name.toLowerCase().includes(normalized))
@@ -746,93 +783,35 @@ export async function listInstitutionUsers(search?: string) {
     }));
 }
 
+/**
+ * Updates a user's access flags, scoped to the given organization.
+ * actorId and orgId are now required when a database is configured (fixes C-4, L-4).
+ */
 export async function updateInstitutionUserAccess(input: {
   userId: string;
   teacherAccess?: boolean;
   adminAccess?: boolean;
+  actorId?: string;
+  orgId?: string;
 }) {
   if (hasDatabaseUrl()) {
-    const sql = getSql();
-    let rows: InstitutionUserSummary[] = [];
-
-    if (typeof input.teacherAccess === "boolean" && typeof input.adminAccess === "boolean") {
-      rows = (await sql`
-        update users
-        set
-          teacher_access = ${input.teacherAccess},
-          admin_access = ${input.adminAccess}
-        where id = ${input.userId}
-        returning
-          id,
-          email,
-          name,
-          role,
-          member_type as "memberType",
-          organization_name as "organizationName",
-          plan,
-          email_verified as "emailVerified",
-          admin_access as "adminAccess",
-          teacher_access as "teacherAccess",
-          created_at as "createdAt"
-      `) as unknown as InstitutionUserSummary[];
-    } else if (typeof input.teacherAccess === "boolean") {
-      rows = (await sql`
-        update users
-        set teacher_access = ${input.teacherAccess}
-        where id = ${input.userId}
-        returning
-          id,
-          email,
-          name,
-          role,
-          member_type as "memberType",
-          organization_name as "organizationName",
-          plan,
-          email_verified as "emailVerified",
-          admin_access as "adminAccess",
-          teacher_access as "teacherAccess",
-          created_at as "createdAt"
-      `) as unknown as InstitutionUserSummary[];
-    } else if (typeof input.adminAccess === "boolean") {
-      rows = (await sql`
-        update users
-        set admin_access = ${input.adminAccess}
-        where id = ${input.userId}
-        returning
-          id,
-          email,
-          name,
-          role,
-          member_type as "memberType",
-          organization_name as "organizationName",
-          plan,
-          email_verified as "emailVerified",
-          admin_access as "adminAccess",
-          teacher_access as "teacherAccess",
-          created_at as "createdAt"
-      `) as unknown as InstitutionUserSummary[];
-    } else {
-      rows = (await sql`
-        select
-          id,
-          email,
-          name,
-          role,
-          member_type as "memberType",
-          organization_name as "organizationName",
-          plan,
-          email_verified as "emailVerified",
-          admin_access as "adminAccess",
-          teacher_access as "teacherAccess",
-          created_at as "createdAt"
-        from users
-        where id = ${input.userId}
-      `) as unknown as InstitutionUserSummary[];
+    if (!input.orgId || !input.actorId) {
+      throw new Error(
+        "updateInstitutionUserAccess requires actorId and orgId when a database is present. " +
+        "Use updateOrgUserAccess from lib/server/org-store instead."
+      );
     }
-
-    return rows[0] ?? null;
+    const { updateOrgUserAccess } = await import("@/lib/server/org-store");
+    return updateOrgUserAccess({
+      actorId: input.actorId,
+      orgId: input.orgId,
+      targetUserId: input.userId,
+      teacherAccess: input.teacherAccess,
+      adminAccess: input.adminAccess
+    });
   }
 
+  // In-memory fallback
   const store = (globalThis as typeof globalThis & { __speakAceStore?: { members: Map<string, MemberProfile> } }).__speakAceStore;
   const current = store?.members.get(input.userId);
   if (!current) return null;

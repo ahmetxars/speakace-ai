@@ -1,58 +1,53 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { buildAdaptiveHomeworkSuggestions, createHomeworkAssignment, listTeacherHomework } from "@/lib/homework-store";
-import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
+import { permissionErrorResponse, requireTeacher, requireTeacherOwnsStudent } from "@/lib/server/permissions";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 import { TaskType } from "@/lib/types";
 
-async function getTeacherProfile() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(getSessionCookieName())?.value;
-  const profile = await getAuthenticatedUser(token);
-  if (!profile?.isTeacher && !profile?.isAdmin) {
-    return null;
-  }
-  return profile;
-}
-
 export async function GET(request: Request) {
-  const profile = await getTeacherProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
-  }
+  try {
+    const profile = await requireTeacher();
+    const url = new URL(request.url);
+    const studentId = url.searchParams.get("studentId");
 
-  const url = new URL(request.url);
-  const studentId = url.searchParams.get("studentId");
-  if (studentId) {
-    const suggestions = await buildAdaptiveHomeworkSuggestions(studentId);
-    return NextResponse.json({ suggestions });
-  }
+    if (studentId) {
+      // Verify teacher owns the student before generating suggestions (H-4 fix)
+      await requireTeacherOwnsStudent(profile.id, studentId);
+      const suggestions = await buildAdaptiveHomeworkSuggestions(studentId);
+      return NextResponse.json({ suggestions });
+    }
 
-  const assignments = await listTeacherHomework(profile.id);
-  return NextResponse.json({ assignments });
+    const assignments = await listTeacherHomework(profile.id);
+    return NextResponse.json({ assignments });
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 }
 
 export async function POST(request: Request) {
-  const profile = await getTeacherProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
-  }
-
-  const ip = getRequestIp(request);
-  const limit = checkRateLimit({
-    key: `teacher-homework:${ip}:${profile.id}`,
-    windowMs: 1000 * 60 * 15,
-    max: 40
-  });
-  if (!limit.allowed) {
-    return NextResponse.json({ error: "Too many homework actions. Please try again later." }, { status: 429 });
-  }
-
   try {
+    const profile = await requireTeacher();
+
+    const ip = getRequestIp(request);
+    const limit = checkRateLimit({
+      key: `teacher-homework:${ip}:${profile.id}`,
+      windowMs: 1000 * 60 * 15,
+      max: 40
+    });
+    if (!limit.allowed) {
+      return NextResponse.json({ error: "Too many homework actions. Please try again later." }, { status: 429 });
+    }
+
     const body = await request.json();
+    const studentId = String(body.studentId ?? "");
+
+    // Verify the teacher owns this student before assigning homework (H-4 fix).
+    // This prevents teachers from assigning homework to arbitrary student IDs.
+    await requireTeacherOwnsStudent(profile.id, studentId);
+
     const assignment = await createHomeworkAssignment({
       teacherId: profile.id,
-      studentId: String(body.studentId ?? ""),
+      studentId,
       classId: body.classId ? String(body.classId) : undefined,
       title: String(body.title ?? ""),
       instructions: String(body.instructions ?? ""),
@@ -63,6 +58,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ assignment });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not create homework." }, { status: 400 });
+    return permissionErrorResponse(error);
   }
 }

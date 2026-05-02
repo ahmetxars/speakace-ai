@@ -152,6 +152,7 @@ export interface MemberProfile {
   role: UserRole;
   memberType: MemberType;
   organizationName?: string | null;
+  organizationId?: string | null;
   plan: SubscriptionPlan;
   billingStatus?: BillingStatus;
   lemonCustomerId?: string | null;
@@ -397,8 +398,41 @@ export interface AnnouncementItem {
   authorId: string;
   audienceType: "global" | "teacher" | "class";
   classId?: string | null;
+  orgId?: string | null;
   title: string;
   body: string;
+  createdAt: string;
+}
+
+export type OrgMemberRole = "owner" | "admin" | "teacher" | "student";
+
+export interface Organization {
+  id: string;
+  name: string;
+  ownerId: string;
+  joinCode: string;
+  createdAt: string;
+}
+
+export interface OrgMembership {
+  id: string;
+  orgId: string;
+  userId: string;
+  role: OrgMemberRole;
+  invitedBy?: string | null;
+  joinedAt: string;
+}
+
+export interface OrgInvite {
+  id: string;
+  orgId: string;
+  email?: string | null;
+  role: Exclude<OrgMemberRole, "owner">;
+  inviteCode: string;
+  createdBy: string;
+  expiresAt: string;
+  usedAt?: string | null;
+  usedBy?: string | null;
   createdAt: string;
 }
 

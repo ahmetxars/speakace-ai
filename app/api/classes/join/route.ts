@@ -1,46 +1,41 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { joinTeacherClassByCode, listStudentClasses } from "@/lib/classroom-store";
-import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
+import { permissionErrorResponse, requireAuthenticatedUser } from "@/lib/server/permissions";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 
-async function getMemberProfile() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(getSessionCookieName())?.value;
-  const profile = await getAuthenticatedUser(token);
-  if (!profile || profile.role === "guest") {
-    return null;
-  }
-  return profile;
-}
-
 export async function GET() {
-  const profile = await getMemberProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Sign in to view class memberships." }, { status: 401 });
+  try {
+    const profile = await requireAuthenticatedUser();
+    const classes = await listStudentClasses(profile.id);
+    return NextResponse.json({ classes });
+  } catch (error) {
+    return permissionErrorResponse(error);
   }
-
-  const classes = await listStudentClasses(profile.id);
-  return NextResponse.json({ classes });
 }
 
 export async function POST(request: Request) {
-  const profile = await getMemberProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Sign in to join a class." }, { status: 401 });
-  }
-
-  const ip = getRequestIp(request);
-  const limit = checkRateLimit({
-    key: `student-join-class:${ip}:${profile.id}`,
-    windowMs: 1000 * 60 * 10,
-    max: 10
-  });
-  if (!limit.allowed) {
-    return NextResponse.json({ error: "Too many join attempts. Please try again later." }, { status: 429 });
-  }
-
   try {
+    const profile = await requireAuthenticatedUser();
+
+    // Reject teacher/admin accounts from joining as students (H-3 fix).
+    // Teachers and admins manage classes; they must not silently become students.
+    if (profile.isTeacher || profile.isAdmin) {
+      return NextResponse.json(
+        { error: "Teacher and admin accounts cannot join classes as students." },
+        { status: 403 }
+      );
+    }
+
+    const ip = getRequestIp(request);
+    const limit = checkRateLimit({
+      key: `student-join-class:${ip}:${profile.id}`,
+      windowMs: 1000 * 60 * 10,
+      max: 10
+    });
+    if (!limit.allowed) {
+      return NextResponse.json({ error: "Too many join attempts. Please try again later." }, { status: 429 });
+    }
+
     const body = await request.json();
     const result = await joinTeacherClassByCode({
       studentId: profile.id,
@@ -48,6 +43,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not join class." }, { status: 400 });
+    return permissionErrorResponse(error);
   }
 }

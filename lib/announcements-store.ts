@@ -18,6 +18,7 @@ export async function createAnnouncement(input: {
   authorId: string;
   audienceType: AnnouncementItem["audienceType"];
   classId?: string | null;
+  orgId?: string | null;
   title: string;
   body: string;
 }) {
@@ -31,6 +32,7 @@ export async function createAnnouncement(input: {
     authorId: input.authorId,
     audienceType: input.audienceType,
     classId: input.classId ?? null,
+    orgId: input.orgId ?? null,
     title,
     body,
     createdAt: new Date().toISOString()
@@ -39,13 +41,14 @@ export async function createAnnouncement(input: {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<AnnouncementItem[]>`
-      insert into announcements (id, author_id, audience_type, class_id, title, body, created_at)
-      values (${item.id}, ${item.authorId}, ${item.audienceType}, ${item.classId ?? null}, ${item.title}, ${item.body}, ${item.createdAt})
+      insert into announcements (id, author_id, audience_type, class_id, org_id, title, body, created_at)
+      values (${item.id}, ${item.authorId}, ${item.audienceType}, ${item.classId ?? null}, ${item.orgId ?? null}, ${item.title}, ${item.body}, ${item.createdAt})
       returning
         id,
         author_id as "authorId",
         audience_type as "audienceType",
         class_id as "classId",
+        org_id as "orgId",
         title,
         body,
         created_at as "createdAt"
@@ -65,17 +68,28 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
       ? (await listTeacherClasses(profile.id)).map((item) => item.id)
       : (await listStudentClasses(profile.id)).map((item) => item.classId);
 
+    // org_id IS NULL means platform-wide; org_id = profile.organizationId means
+    // scoped to the user's school. Teacher-audience announcements must match one of
+    // these to prevent cross-school data leakage.
+    const orgId = profile.organizationId ?? null;
+
+    const announcementCols = sql`
+      id,
+      author_id as "authorId",
+      audience_type as "audienceType",
+      class_id as "classId",
+      org_id as "orgId",
+      title,
+      body,
+      created_at as "createdAt"
+    `;
+
     if (profile.isAdmin || profile.adminAccess) {
+      // Admins see all announcements scoped to their org plus platform-wide ones.
       const rows = (await sql`
-        select
-          id,
-          author_id as "authorId",
-          audience_type as "audienceType",
-          class_id as "classId",
-          title,
-          body,
-          created_at as "createdAt"
+        select ${announcementCols}
         from announcements
+        where org_id is null or org_id = ${orgId}
         order by created_at desc
         limit 40
       `) as unknown as AnnouncementItem[];
@@ -85,28 +99,15 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
     if (!classIds.length) {
       const rows = canSeeTeacherAnnouncements
         ? ((await sql`
-            select
-              id,
-              author_id as "authorId",
-              audience_type as "audienceType",
-              class_id as "classId",
-              title,
-              body,
-              created_at as "createdAt"
+            select ${announcementCols}
             from announcements
-            where audience_type = 'global' or audience_type = 'teacher'
+            where audience_type = 'global'
+              or (audience_type = 'teacher' and (org_id is null or org_id = ${orgId}))
             order by created_at desc
             limit 20
           `) as unknown as AnnouncementItem[])
         : ((await sql`
-            select
-              id,
-              author_id as "authorId",
-              audience_type as "audienceType",
-              class_id as "classId",
-              title,
-              body,
-              created_at as "createdAt"
+            select ${announcementCols}
             from announcements
             where audience_type = 'global'
             order by created_at desc
@@ -117,28 +118,16 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
 
     const rows = canSeeTeacherAnnouncements
       ? ((await sql`
-          select
-            id,
-            author_id as "authorId",
-            audience_type as "audienceType",
-            class_id as "classId",
-            title,
-            body,
-            created_at as "createdAt"
+          select ${announcementCols}
           from announcements
-          where audience_type = 'global' or audience_type = 'teacher' or class_id = any(${classIds})
+          where audience_type = 'global'
+            or (audience_type = 'teacher' and (org_id is null or org_id = ${orgId}))
+            or class_id = any(${classIds})
           order by created_at desc
           limit 20
         `) as unknown as AnnouncementItem[])
       : ((await sql`
-          select
-            id,
-            author_id as "authorId",
-            audience_type as "audienceType",
-            class_id as "classId",
-            title,
-            body,
-            created_at as "createdAt"
+          select ${announcementCols}
           from announcements
           where audience_type = 'global' or class_id = any(${classIds})
           order by created_at desc
@@ -151,11 +140,17 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
     ? (await listTeacherClasses(profile.id)).map((item) => item.id)
     : (await listStudentClasses(profile.id)).map((item) => item.classId);
 
+  const orgId = profile.organizationId ?? null;
+
   return [...getStore().items.values()]
     .filter((item) => {
-      if (profile.isAdmin || profile.adminAccess) return true;
+      if (profile.isAdmin || profile.adminAccess) {
+        return item.orgId == null || item.orgId === orgId;
+      }
       if (item.audienceType === "global") return true;
-      if ((profile.isTeacher || profile.teacherAccess) && item.audienceType === "teacher") return true;
+      if ((profile.isTeacher || profile.teacherAccess) && item.audienceType === "teacher") {
+        return item.orgId == null || item.orgId === orgId;
+      }
       return Boolean(item.classId && classIds.includes(item.classId));
     })
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))

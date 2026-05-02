@@ -563,3 +563,96 @@ create table if not exists shared_result_cards (
 
 create index if not exists idx_shared_result_cards_session_id
   on shared_result_cards(session_id);
+
+-- ============================================================
+-- MIGRATION: Multi-tenant organization model
+-- Fixes C-1, C-2, C-3, C-4, H-1 from security audit
+-- ============================================================
+
+-- Organizations (schools / institutions)
+create table if not exists organizations (
+  id text primary key,
+  name text not null,
+  owner_id text not null references users(id) on delete restrict,
+  join_code text not null unique,
+  created_at timestamptz not null default now()
+);
+
+-- Organization memberships: binds users to an org with a role
+create table if not exists organization_memberships (
+  id text primary key,
+  org_id text not null references organizations(id) on delete cascade,
+  user_id text not null references users(id) on delete cascade,
+  role text not null check (role in ('owner', 'admin', 'teacher', 'student')),
+  invited_by text references users(id) on delete set null,
+  joined_at timestamptz not null default now(),
+  unique (org_id, user_id)
+);
+
+-- Organization invitations: scoped invite links / codes
+create table if not exists organization_invites (
+  id text primary key,
+  org_id text not null references organizations(id) on delete cascade,
+  email text,
+  role text not null check (role in ('admin', 'teacher', 'student')),
+  invite_code text not null unique,
+  created_by text not null references users(id) on delete cascade,
+  expires_at timestamptz not null,
+  used_at timestamptz,
+  used_by text references users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+-- Audit log for all privilege changes (fixes L-4)
+create table if not exists permission_audit_log (
+  id text primary key default gen_random_uuid()::text,
+  actor_id text not null references users(id) on delete cascade,
+  target_user_id text not null references users(id) on delete cascade,
+  org_id text references organizations(id) on delete set null,
+  action text not null,
+  old_value jsonb not null default '{}'::jsonb,
+  new_value jsonb not null default '{}'::jsonb,
+  occurred_at timestamptz not null default now()
+);
+
+-- Link users to their organization (nullable for legacy users and pure students)
+alter table users add column if not exists organization_id text references organizations(id) on delete set null;
+
+-- Indexes for tenant lookups (performance requirement)
+create index if not exists idx_org_memberships_org_id
+  on organization_memberships(org_id, role, joined_at desc);
+
+create index if not exists idx_org_memberships_user_id
+  on organization_memberships(user_id);
+
+create index if not exists idx_org_invites_org_id
+  on organization_invites(org_id, created_at desc);
+
+create index if not exists idx_org_invites_code
+  on organization_invites(invite_code);
+
+create index if not exists idx_org_invites_email
+  on organization_invites(email);
+
+create index if not exists idx_users_organization_id
+  on users(organization_id);
+
+create index if not exists idx_permission_audit_log_actor
+  on permission_audit_log(actor_id, occurred_at desc);
+
+create index if not exists idx_permission_audit_log_target
+  on permission_audit_log(target_user_id, occurred_at desc);
+
+create index if not exists idx_organizations_owner_id
+  on organizations(owner_id);
+
+create index if not exists idx_teacher_classes_teacher_org
+  on teacher_classes(teacher_id);
+
+
+-- Batch 2: scope announcements to their creating organization.
+-- NULL org_id means platform-wide (visible to all matching audience_type).
+alter table announcements add column if not exists org_id text references organizations(id);
+
+create index if not exists idx_announcements_org_id
+  on announcements(org_id);

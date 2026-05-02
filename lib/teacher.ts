@@ -17,7 +17,10 @@ export function isTeacherEmail(email: string) {
 }
 
 export function withTeacherPrivileges(profile: MemberProfile): MemberProfile {
-  const grantTeacher = profile.teacherAccess || isTeacherEmail(profile.email) || profile.memberType === "teacher";
+  // Grant teacher only from explicit DB flag or platform-level TEACHER_EMAILS config.
+  // memberType === "teacher" is intentionally excluded: it is self-selected at
+  // signup and was a privilege-escalation vector (audit finding C-1).
+  const grantTeacher = profile.teacherAccess || isTeacherEmail(profile.email);
   if (!grantTeacher) {
     return profile;
   }

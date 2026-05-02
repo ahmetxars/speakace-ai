@@ -64,7 +64,11 @@ export function getSessionCookieOptions(expires: Date) {
   return {
     httpOnly: true,
     secure: process.env.APP_ENV === "production",
-    sameSite: "lax" as const,
+    // "strict" prevents the cookie being sent on cross-site navigations (L-2 fix).
+    // If you rely on OAuth redirects back to this site, you may need "lax", but
+    // ensure the OAuth callback sets the cookie server-side rather than relying
+    // on the pre-existing cookie being present.
+    sameSite: "strict" as const,
     path: "/",
     expires
   };
@@ -106,13 +110,17 @@ export async function signUpWithPassword(input: {
     : inviteReferrer
       ? new Date(Date.now() + inviteTrialDays * 24 * 60 * 60 * 1000).toISOString()
       : null;
+  // teacherAccess and adminAccess are NOT granted based on self-selected memberType.
+  // They are only granted via: ADMIN_EMAILS / TEACHER_EMAILS env vars, explicit DB
+  // flag set by a platform admin, or an org invite with the appropriate role.
+  // This prevents the C-1 privilege-escalation where any signup could become admin.
   const profile = withAdminPrivileges({
     ...createMemberProfile(normalizedEmail, input.name, {
       memberType: requestedMemberType,
       organizationName: input.organizationName?.trim() || null
     }),
-    teacherAccess: requestedMemberType === "teacher" || requestedMemberType === "school",
-    adminAccess: requestedMemberType === "school",
+    teacherAccess: false,
+    adminAccess: false,
     plan: purchasedPlan ?? (referral || inviteReferrer ? "plus" : "free"),
     billingStatus: referral || inviteReferrer ? "on_trial" : purchasedPlan ? "active" : "free",
     trialEndsAt,
@@ -184,8 +192,10 @@ export async function signUpWithGoogle(input: {
       memberType: requestedMemberType,
       organizationName: input.organizationName?.trim() || null
     }),
-    teacherAccess: requestedMemberType === "teacher" || requestedMemberType === "school",
-    adminAccess: requestedMemberType === "school" || autoAdmin,
+    // teacherAccess / adminAccess not granted from self-selected memberType (C-1 fix).
+    // autoAdmin is still allowed because it comes from the server-side ADMIN_EMAILS env var.
+    teacherAccess: false,
+    adminAccess: autoAdmin,
     plan: purchasedPlan ?? (referral || inviteReferrer ? "plus" : "free"),
     billingStatus: referral || inviteReferrer ? "on_trial" : purchasedPlan ? "active" : "free",
     trialEndsAt,
@@ -234,7 +244,9 @@ export async function signInWithPassword(input: { email: string; password: strin
       Array<MemberProfile & { password_hash: string | null; emailVerified?: boolean }>
     >`
       select
-        id, email, name, role, member_type as "memberType", organization_name as "organizationName",
+        id, email, name, role, member_type as "memberType",
+        organization_name as "organizationName",
+        organization_id as "organizationId",
         case
           when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'free'
           else plan
@@ -245,7 +257,8 @@ export async function signInWithPassword(input: { email: string; password: strin
         end as "billingStatus",
         lemon_customer_id as "lemonCustomerId", lemon_subscription_id as "lemonSubscriptionId",
         trial_ends_at as "trialEndsAt", referral_code_used as "referralCodeUsed",
-        password_hash, email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
+        password_hash, email_verified as "emailVerified", admin_access as "adminAccess",
+        teacher_access as "teacherAccess", created_at as "createdAt"
       from users
       where email = ${normalizedEmail}
       limit 1
@@ -274,6 +287,7 @@ export async function signInWithPassword(input: { email: string; password: strin
       role: user.role,
       memberType: user.memberType,
       organizationName: user.organizationName,
+      organizationId: user.organizationId,   // propagate org link (Issue 3 fix)
       plan: user.plan,
       billingStatus: user.billingStatus,
       lemonCustomerId: user.lemonCustomerId,
@@ -414,7 +428,9 @@ export async function getAuthenticatedUser(sessionToken: string | undefined) {
     const sql = getSql();
     const rows = await sql<MemberProfile[]>`
       select
-        u.id, u.email, u.name, u.role, u.member_type as "memberType", u.organization_name as "organizationName",
+        u.id, u.email, u.name, u.role, u.member_type as "memberType",
+        u.organization_name as "organizationName",
+        u.organization_id as "organizationId",
         case
           when u.billing_status = 'on_trial' and u.trial_ends_at is not null and u.trial_ends_at <= now() then 'free'
           else u.plan
@@ -425,7 +441,8 @@ export async function getAuthenticatedUser(sessionToken: string | undefined) {
         end as "billingStatus",
         u.lemon_customer_id as "lemonCustomerId", u.lemon_subscription_id as "lemonSubscriptionId",
         u.trial_ends_at as "trialEndsAt", u.referral_code_used as "referralCodeUsed",
-        u.email_verified as "emailVerified", u.admin_access as "adminAccess", u.teacher_access as "teacherAccess", u.created_at as "createdAt"
+        u.email_verified as "emailVerified", u.admin_access as "adminAccess",
+        u.teacher_access as "teacherAccess", u.created_at as "createdAt"
       from auth_sessions s
       inner join users u on u.id = s.user_id
       where s.token_hash = ${tokenHash} and s.expires_at > now()

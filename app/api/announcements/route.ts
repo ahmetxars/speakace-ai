@@ -42,6 +42,7 @@ export async function POST(request: Request) {
         : "class";
     const announcement = await createAnnouncement({
       authorId: profile.id,
+      orgId: profile.organizationId ?? null,
       audienceType: audienceType as "global" | "teacher" | "class",
       classId: body.classId ? String(body.classId) : null,
       title: String(body.title ?? ""),

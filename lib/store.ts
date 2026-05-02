@@ -514,7 +514,7 @@ export async function getSession(sessionId: string) {
   return getStore().sessions.get(sessionId) ?? null;
 }
 
-export async function getProgressSummary(userId: string): Promise<ProgressSummary> {
+export async function getProgressSummary(userId: string, since?: string): Promise<ProgressSummary> {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const member = await getMember(userId);
@@ -527,16 +527,21 @@ export async function getProgressSummary(userId: string): Promise<ProgressSummar
       from usage_daily
       where user_id = ${userId} and usage_date = ${usageDate}
     `;
+    // When `since` is provided (teacher view), scope all aggregates to
+    // post-enrollment sessions so pre-enrollment history never leaks.
+    const sinceFilter = since ? sql`and s.created_at >= ${since}` : sql``;
     const [countRow] = await sql<{ count: string }[]>`
       select count(*)::text as count
-      from speaking_sessions
-      where user_id = ${userId}
+      from speaking_sessions s
+      where s.user_id = ${userId}
+      ${sinceFilter}
     `;
     const [averageRow] = await sql<{ average: number | null }[]>`
       select avg(f.overall_score)::numeric(4,1) as average
       from feedback_reports f
       inner join speaking_sessions s on s.id = f.session_id
       where s.user_id = ${userId}
+      ${sinceFilter}
     `;
     const recentRows = await sql<{
       id: string;
@@ -578,6 +583,7 @@ export async function getProgressSummary(userId: string): Promise<ProgressSummar
       from speaking_sessions s
       left join feedback_reports f on f.session_id = s.id
       where s.user_id = ${userId}
+      ${sinceFilter}
       order by s.created_at desc
     `;
 
@@ -621,7 +627,7 @@ export async function getProgressSummary(userId: string): Promise<ProgressSummar
   const limits = PLAN_LIMITS[plan];
   const usage = store.usageByDay.get(todayKey(userId)) ?? { sessions: 0, seconds: 0 };
   const recentSessions = [...store.sessions.values()]
-    .filter((session) => session.userId === userId)
+    .filter((session) => session.userId === userId && (!since || session.createdAt >= since))
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
   const scoredSessions = recentSessions.filter((session) => session.report);

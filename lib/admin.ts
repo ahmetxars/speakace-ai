@@ -18,7 +18,11 @@ export function isAdminEmail(email: string) {
 }
 
 export function withAdminPrivileges(profile: MemberProfile): MemberProfile {
-  const grantAdmin = profile.adminAccess || isAdminEmail(profile.email) || profile.memberType === "school";
+  // Grant admin only from explicit DB flag or platform-level ADMIN_EMAILS config.
+  // memberType === "school" is intentionally excluded: users select their own
+  // memberType at signup, so treating it as a privilege grant was a critical
+  // privilege-escalation vector (audit finding C-1).
+  const grantAdmin = profile.adminAccess || isAdminEmail(profile.email);
   if (!grantAdmin) {
     return withTeacherPrivileges(profile);
   }

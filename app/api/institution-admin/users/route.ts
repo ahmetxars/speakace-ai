@@ -1,38 +1,60 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { listOrgUsers, updateOrgUserAccess, getOrgForAdmin } from "@/lib/server/org-store";
+import { permissionErrorResponse, requireSchoolAdmin } from "@/lib/server/permissions";
+import { hasDatabaseUrl } from "@/lib/server/db";
 import { listInstitutionUsers, updateInstitutionUserAccess } from "@/lib/classroom-store";
-import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
-
-async function getAdminProfile() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(getSessionCookieName())?.value;
-  const profile = await getAuthenticatedUser(token);
-  if (!profile?.isAdmin) return null;
-  return profile;
-}
 
 export async function GET(request: Request) {
-  const profile = await getAdminProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Admin access required." }, { status: 403 });
-  }
+  try {
+    const profile = await requireSchoolAdmin();
+    const url = new URL(request.url);
+    const search = url.searchParams.get("search") ?? "";
 
-  const url = new URL(request.url);
-  const search = url.searchParams.get("search") ?? "";
-  const users = await listInstitutionUsers(search);
-  return NextResponse.json({ users });
+    if (hasDatabaseUrl()) {
+      const org = await getOrgForAdmin(profile.id);
+      if (!org) {
+        return NextResponse.json({ users: [] });
+      }
+      const users = await listOrgUsers(org.id, search);
+      return NextResponse.json({ users });
+    }
+
+    // In-memory dev fallback
+    const users = await listInstitutionUsers(undefined, search);
+    return NextResponse.json({ users });
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 }
 
 export async function PATCH(request: Request) {
-  const profile = await getAdminProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Admin access required." }, { status: 403 });
-  }
-
   try {
+    const profile = await requireSchoolAdmin();
+
     const body = await request.json();
+    const targetUserId = String(body.userId ?? "");
+    if (!targetUserId) {
+      return NextResponse.json({ error: "userId is required." }, { status: 400 });
+    }
+
+    if (hasDatabaseUrl()) {
+      const org = await getOrgForAdmin(profile.id);
+      if (!org) {
+        return NextResponse.json({ error: "No organization found for your account." }, { status: 404 });
+      }
+      const user = await updateOrgUserAccess({
+        actorId: profile.id,
+        orgId: org.id,
+        targetUserId,
+        adminAccess: typeof body.adminAccess === "boolean" ? body.adminAccess : undefined,
+        teacherAccess: typeof body.teacherAccess === "boolean" ? body.teacherAccess : undefined
+      });
+      return NextResponse.json({ user });
+    }
+
+    // In-memory dev fallback
     const user = await updateInstitutionUserAccess({
-      userId: String(body.userId ?? ""),
+      userId: targetUserId,
       adminAccess: typeof body.adminAccess === "boolean" ? body.adminAccess : undefined,
       teacherAccess: typeof body.teacherAccess === "boolean" ? body.teacherAccess : undefined
     });
@@ -41,6 +63,6 @@ export async function PATCH(request: Request) {
     }
     return NextResponse.json({ user });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not update user access." }, { status: 400 });
+    return permissionErrorResponse(error);
   }
 }
