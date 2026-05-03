@@ -1,9 +1,13 @@
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
-import { getAdminPanelSession, getAdminSessionCookieName } from "@/lib/server/admin-panel";
+import { getAdminPanelSession, getAdminSessionCookieName, verifyCsrfHeader } from "@/lib/server/admin-panel";
 import { cookies } from "next/headers";
 
 export async function DELETE(request: Request) {
   try {
+    if (!verifyCsrfHeader(request)) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const cookieStore = await cookies();
     const session = await getAdminPanelSession(cookieStore.get(getAdminSessionCookieName())?.value);
 

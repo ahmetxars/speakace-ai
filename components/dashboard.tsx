@@ -51,60 +51,71 @@ export function Dashboard() {
     }
   }, [isSchoolMember, isTeacherMember, router]);
 
+  const currentUserId = currentUser?.id;
+
   useEffect(() => {
-    if (!signedIn || !currentUser) return;
-    fetch("/api/progress/summary")
+    if (!signedIn || !currentUserId) return;
+    const ctrl = new AbortController();
+    fetch("/api/progress/summary", { signal: ctrl.signal })
       .then((r) => r.json())
       .then((data: ProgressSummary) => setSummary(data))
       .catch(() => setSummary(emptySummary));
-  }, [currentUser, signedIn]);
+    return () => ctrl.abort();
+  }, [currentUserId, signedIn]);
 
   useEffect(() => {
-    if (!signedIn || !currentUser || isTeacherMember || isSchoolMember) {
+    if (!signedIn || !currentUserId || isTeacherMember || isSchoolMember) {
       setJoinedClasses([]);
       return;
     }
-    fetch("/api/classes/join")
+    const ctrl = new AbortController();
+    fetch("/api/classes/join", { signal: ctrl.signal })
       .then((r) => r.json())
       .then((data: { classes?: StudentClassMembership[] }) => setJoinedClasses(data.classes ?? []))
       .catch(() => setJoinedClasses([]));
-  }, [currentUser, isSchoolMember, isTeacherMember, signedIn]);
+    return () => ctrl.abort();
+  }, [currentUserId, isSchoolMember, isTeacherMember, signedIn]);
 
   useEffect(() => {
-    if (!signedIn || !currentUser || isTeacherMember || isSchoolMember) {
+    if (!signedIn || !currentUserId || isTeacherMember || isSchoolMember) {
       setHomework([]);
       return;
     }
-    fetch("/api/homework")
+    const ctrl = new AbortController();
+    fetch("/api/homework", { signal: ctrl.signal })
       .then((r) => r.json())
       .then((data: { assignments?: HomeworkAssignment[] }) => setHomework(data.assignments ?? []))
       .catch(() => setHomework([]));
-  }, [currentUser, isSchoolMember, isTeacherMember, signedIn]);
+    return () => ctrl.abort();
+  }, [currentUserId, isSchoolMember, isTeacherMember, signedIn]);
 
   useEffect(() => {
-    if (!signedIn || !currentUser || isTeacherMember || isSchoolMember) {
+    if (!signedIn || !currentUserId || isTeacherMember || isSchoolMember) {
       setSharedStudyClasses([]);
       return;
     }
-    fetch("/api/classes/shared-study")
+    const ctrl = new AbortController();
+    fetch("/api/classes/shared-study", { signal: ctrl.signal })
       .then((r) => r.json())
       .then((data: { classes?: Array<{ classId: string; className: string; teacherName: string; items: SharedClassStudyItem[] }> }) =>
         setSharedStudyClasses(data.classes ?? [])
       )
       .catch(() => setSharedStudyClasses([]));
-  }, [currentUser, isSchoolMember, isTeacherMember, signedIn]);
+    return () => ctrl.abort();
+  }, [currentUserId, isSchoolMember, isTeacherMember, signedIn]);
 
   useEffect(() => {
-    if (!signedIn || !currentUser) {
+    if (!signedIn || !currentUserId) {
       setAnnouncements([]);
       setProfile(null);
       return;
     }
-    fetch("/api/announcements")
+    const ctrl = new AbortController();
+    fetch("/api/announcements", { signal: ctrl.signal })
       .then((r) => r.json())
       .then((data: { announcements?: AnnouncementItem[] }) => setAnnouncements(data.announcements ?? []))
       .catch(() => setAnnouncements([]));
-    fetch("/api/profile")
+    fetch("/api/profile", { signal: ctrl.signal })
       .then((r) => r.json())
       .then((data: { profile?: StudentProfile }) => {
         const p = data.profile ?? null;
@@ -114,7 +125,8 @@ export function Dashboard() {
         }
       })
       .catch(() => setProfile(null));
-  }, [currentUser, signedIn, router, dashboardRole]);
+    return () => ctrl.abort();
+  }, [currentUserId, signedIn, router, dashboardRole]);
 
   const scoredSessions = useMemo(
     () => summary.recentSessions.filter((s) => s.report),

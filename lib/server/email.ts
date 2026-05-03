@@ -1,9 +1,20 @@
+import { generateUnsubscribeToken } from "./unsubscribe-token";
+
 type EmailPayload = {
   to: string;
   subject: string;
   html: string;
   text: string;
 };
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
 
 function getResendConfig() {
   return {
@@ -49,7 +60,7 @@ export async function sendEmail(payload: EmailPayload) {
 }
 
 export async function sendVerificationEmail(input: { to: string; name?: string; verificationUrl: string }) {
-  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
   return sendEmail({
     to: input.to,
     subject: "Verify your SpeakAce account",
@@ -70,7 +81,7 @@ export async function sendVerificationEmail(input: { to: string; name?: string; 
 }
 
 export async function sendPasswordResetEmail(input: { to: string; name?: string; resetUrl: string }) {
-  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
   return sendEmail({
     to: input.to,
     subject: "Reset your SpeakAce password",
@@ -91,7 +102,7 @@ export async function sendPasswordResetEmail(input: { to: string; name?: string;
 }
 
 export async function sendLeadMagnetEmail(input: { to: string; name?: string }) {
-  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
   const resourcesUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/resources`;
   const practiceUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app/practice`;
 
@@ -121,7 +132,7 @@ export async function sendLeadMagnetEmail(input: { to: string; name?: string }) 
 }
 
 export async function sendWelcomePracticeEmail(input: { to: string; name?: string }) {
-  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
   const appUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app`;
   const practiceUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app/practice`;
 
@@ -149,7 +160,7 @@ export async function sendWelcomePracticeEmail(input: { to: string; name?: strin
 }
 
 export async function sendLaunchOfferEmail(input: { to: string; name?: string; couponCode: string }) {
-  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
   const pricingUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/pricing`;
   const checkoutUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/api/payments/lemon/checkout?plan=plus&coupon=${encodeURIComponent(input.couponCode)}&campaign=email_coupon`;
 
@@ -184,7 +195,7 @@ export async function sendStudyTaskReminderEmail(input: {
   dueAt?: string;
   milestonePercent: number;
 }) {
-  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
   const appUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app/study-lists`;
   const remainingPercent = Math.max(0, 100 - input.milestonePercent);
   const dueText = input.dueAt
@@ -229,9 +240,10 @@ export async function sendStudyTaskReminderEmail(input: {
 }
 
 export async function sendTeacherWelcomeEmail(input: { to: string; name?: string }) {
-  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
   const teacherUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app/teacher`;
   const demoUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/teacher-demo`;
+  const unsubToken = generateUnsubscribeToken(input.to);
 
   return sendEmail({
     to: input.to,
@@ -255,7 +267,7 @@ export async function sendTeacherWelcomeEmail(input: { to: string; name?: string
         </p>
         <p style="color:#888;font-size:0.9em">If you have questions about class setup, homework, or student tracking, reply to this email — we'll get back to you within one business day.</p>
         <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you activated teacher access on SpeakAce. <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
+        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you activated teacher access on SpeakAce. <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}" style="color:#aaa">Unsubscribe</a></p>
       </div>
     `,
     text: `Hi ${greeting}, your SpeakAce teacher portal is ready. Open it here: ${teacherUrl} — or view a demo class: ${demoUrl}`
@@ -263,8 +275,9 @@ export async function sendTeacherWelcomeEmail(input: { to: string; name?: string
 }
 
 export async function sendInstitutionLeadEmail(input: { to: string; name?: string }) {
-  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
+  const unsubToken = generateUnsubscribeToken(input.to);
   const demoUrl = `${siteUrl}/teacher-demo`;
   const institutionUrl = `${siteUrl}/app/teacher/institution`;
   const pricingUrl = `${siteUrl}/pricing`;
@@ -310,7 +323,7 @@ export async function sendInstitutionLeadEmail(input: { to: string; name?: strin
           <a href="${pricingUrl}" style="background:#1d6f75;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">See pricing</a>
         </p>
         <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you requested school information on SpeakAce. <a href="${siteUrl}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
+        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you requested school information on SpeakAce. <a href="${siteUrl}/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}" style="color:#aaa">Unsubscribe</a></p>
       </div>
     `,
     text: `Hi ${greeting}, thank you for your interest in SpeakAce for schools. View the teacher demo: ${demoUrl} — institution portal: ${institutionUrl} — pricing: ${pricingUrl}`
@@ -318,8 +331,9 @@ export async function sendInstitutionLeadEmail(input: { to: string; name?: strin
 }
 
 export async function sendTeacherLeadEmail(input: { to: string; name?: string }) {
-  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
+  const unsubToken = generateUnsubscribeToken(input.to);
   const teacherUrl = `${siteUrl}/app/teacher`;
   const demoUrl = `${siteUrl}/teacher-demo`;
   const pricingUrl = `${siteUrl}/pricing`;
@@ -351,7 +365,7 @@ export async function sendTeacherLeadEmail(input: { to: string; name?: string })
         </p>
         <p>Compare plans and pricing: <a href="${pricingUrl}" style="color:#d95d39">${pricingUrl}</a></p>
         <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you requested teacher information on SpeakAce. <a href="${siteUrl}/unsubscribe" style="color:#aaa">Unsubscribe</a></p>
+        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you requested teacher information on SpeakAce. <a href="${siteUrl}/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}" style="color:#aaa">Unsubscribe</a></p>
       </div>
     `,
     text: `Hi ${greeting}, here's what's in the SpeakAce teacher portal. View demo: ${demoUrl} — open teacher portal: ${teacherUrl} — pricing: ${pricingUrl}`
@@ -365,7 +379,7 @@ export async function sendGeneratedStudyPlanEmail(input: {
   plan: string;
   dueAt?: string;
 }) {
-  const greeting = input.name?.trim() ? input.name.trim() : "there";
+  const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
   const studyUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app/study-lists`;
   const dueText = input.dueAt
     ? new Date(input.dueAt).toLocaleString("en-US", {

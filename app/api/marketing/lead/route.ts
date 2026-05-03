@@ -1,12 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createMarketingLead } from "@/lib/marketing-leads";
 import { sendInstitutionLeadEmail, sendLaunchOfferEmail, sendLeadMagnetEmail, sendTeacherLeadEmail } from "@/lib/server/email";
+import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const ip = getRequestIp(request);
+  const limit = checkRateLimit({ key: `lead:${ip}`, windowMs: 1000 * 60 * 60, max: 5 });
+  if (!limit.allowed) {
+    return rateLimitResponse(limit.retryAfterSeconds);
+  }
+
   const body = (await request.json().catch(() => null)) as
     | { email?: string; name?: string; source?: string }
     | null;

@@ -1,5 +1,5 @@
 import { compare } from "bcryptjs";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { isAdminEmail } from "@/lib/admin";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import {
@@ -32,10 +32,21 @@ export function getAdminSessionCookieOptions(expires: Date) {
   return {
     httpOnly: true,
     secure: process.env.APP_ENV === "production",
-    sameSite: "lax" as const,
+    sameSite: "strict" as const,
     path: "/",
     expires
   };
+}
+
+export function verifyCsrfHeader(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  if (!origin || !siteUrl) return true;
+  try {
+    return new URL(origin).origin === new URL(siteUrl).origin;
+  } catch {
+    return false;
+  }
 }
 
 export function getConfiguredAdminCredentials() {
@@ -114,12 +125,20 @@ export async function authenticateAdminPanel(input: { identifier: string; passwo
   }
 
   const configured = getConfiguredAdminCredentials();
-  if (configured && identifier === configured.username && password === configured.password) {
-    return {
-      adminUserId: null,
-      adminLabel: configured.username,
-      authMode: "config" as const
-    };
+  if (configured) {
+    const usernameMatch =
+      identifier.length === configured.username.length &&
+      timingSafeEqual(Buffer.from(identifier, "utf8"), Buffer.from(configured.username, "utf8"));
+    const passwordMatch =
+      password.length === configured.password.length &&
+      timingSafeEqual(Buffer.from(password, "utf8"), Buffer.from(configured.password, "utf8"));
+    if (usernameMatch && passwordMatch) {
+      return {
+        adminUserId: null,
+        adminLabel: configured.username,
+        authMode: "config" as const
+      };
+    }
   }
 
   if (!hasDatabaseUrl()) {
@@ -320,29 +339,6 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   }
 
   const sql = getSql();
-  await sql`
-    create table if not exists shared_result_cards (
-      slug text primary key,
-      session_id text not null references speaking_sessions(id) on delete cascade,
-      user_id text not null references users(id) on delete cascade,
-      prompt_title text not null,
-      exam_type text not null,
-      task_type text not null,
-      difficulty text not null,
-      overall_score numeric(4,1) not null,
-      scale_label text not null,
-      delta numeric(4,1),
-      learner_name text not null,
-      avatar_data_url text,
-      locale_flag text not null,
-      streak_label text not null,
-      badge_label text not null,
-      next_exercise text not null,
-      categories_json jsonb not null,
-      created_at timestamptz not null default now()
-    )
-  `;
-  await sql`create index if not exists idx_shared_result_cards_session_id on shared_result_cards(session_id)`;
   const paidEventNames = ["order_created", "subscription_created", "subscription_resumed", "subscription_unpaused"];
   const [row] = await sql<
     Array<{

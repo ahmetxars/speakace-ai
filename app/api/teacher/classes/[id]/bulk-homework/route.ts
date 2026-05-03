@@ -21,10 +21,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const body = await request.json();
     const { id } = await params;
+
+    if (!Array.isArray(body.studentIds) || body.studentIds.length === 0) {
+      return NextResponse.json({ error: "studentIds must be a non-empty array." }, { status: 400 });
+    }
+
     const students = await listClassStudents({ teacherId: profile.id, classId: id });
-    const selected = Array.isArray(body.studentIds) && body.studentIds.length
-      ? students.filter((student) => body.studentIds.includes(student.student.id))
-      : students;
+    const selected = students.filter((student) => body.studentIds.includes(student.student.id));
     const created = await Promise.all(
       selected.map((student) =>
         createHomeworkAssignment({

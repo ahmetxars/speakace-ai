@@ -18,10 +18,18 @@ export async function GET(request: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const stateSigningKey = process.env.OAUTH_STATE_SIGNING_KEY;
 
   if (!clientId || !redirectUri || !clientSecret) {
     return NextResponse.json(
       { error: "Google OAuth is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI." },
+      { status: 503 }
+    );
+  }
+
+  if (!stateSigningKey) {
+    return NextResponse.json(
+      { error: "OAUTH_STATE_SIGNING_KEY is not set. Set it to a strong random value separate from GOOGLE_CLIENT_SECRET." },
       { status: 503 }
     );
   }
@@ -50,7 +58,7 @@ export async function GET(request: Request) {
     }),
     "utf8"
   ).toString("base64url");
-  const state = `${payload}.${signGoogleState(payload, clientSecret)}`;
+  const state = `${payload}.${signGoogleState(payload, stateSigningKey!)}`;
 
   const params = new URLSearchParams({
     client_id: clientId,

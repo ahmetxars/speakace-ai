@@ -3,11 +3,16 @@ import { NextResponse } from "next/server";
 import {
   getAdminPanelSession,
   getAdminSessionCookieName,
-  updateAdminMemberAccess
+  updateAdminMemberAccess,
+  verifyCsrfHeader
 } from "@/lib/server/admin-panel";
 import { BillingStatus, SubscriptionPlan } from "@/lib/types";
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
+  if (!verifyCsrfHeader(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const cookieStore = await cookies();
   const session = await getAdminPanelSession(cookieStore.get(getAdminSessionCookieName())?.value);
 

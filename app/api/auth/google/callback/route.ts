@@ -204,8 +204,13 @@ export async function GET(request: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  const stateSigningKey = process.env.OAUTH_STATE_SIGNING_KEY;
 
   if (!clientId || !clientSecret || !redirectUri) {
+    return NextResponse.redirect(`${siteUrl}/auth?error=google_not_configured`);
+  }
+
+  if (!stateSigningKey) {
     return NextResponse.redirect(`${siteUrl}/auth?error=google_not_configured`);
   }
 
@@ -225,7 +230,7 @@ export async function GET(request: Request) {
     }
 
     const [payload, signature] = rawState.split(".", 2);
-    if (!payload || !signature || signGoogleState(payload, clientSecret) !== signature) {
+    if (!payload || !signature || signGoogleState(payload, stateSigningKey!) !== signature) {
       return clearGoogleOAuthStateCookie(NextResponse.redirect(`${siteUrl}/auth?error=google_state_invalid`));
     }
 

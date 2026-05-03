@@ -78,7 +78,7 @@ export function resolvePlanFromLemonPayload(payload: LemonPayload): Subscription
   if (sourceText.includes("lifetime")) return "lifetime";
   if (sourceText.includes("pro")) return "pro";
   if (sourceText.includes("plus")) return "plus";
-  return "plus";
+  return "free";
 }
 
 export function resolveBillingStatusFromEvent(eventName: string, payload: LemonPayload): BillingStatus {

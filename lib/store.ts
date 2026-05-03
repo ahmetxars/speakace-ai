@@ -39,6 +39,15 @@ function todayKey(userId: string) {
   return `${userId}:${dateKey}`;
 }
 
+function safeJsonParse<T>(value: string | unknown, fallback: T): T {
+  if (typeof value !== "string") return (value as T) ?? fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 function reportFromDb(row: {
   overall_score: number;
   scale_label: string;
@@ -53,18 +62,12 @@ function reportFromDb(row: {
   return {
     overall: Number(row.overall_score),
     scaleLabel: row.scale_label,
-    categories: typeof row.categories_json === "string" ? JSON.parse(row.categories_json) : (row.categories_json as ScoreReport["categories"]),
-    strengths: typeof row.strengths_json === "string" ? JSON.parse(row.strengths_json) : (row.strengths_json as string[]),
-    improvements:
-      typeof row.improvements_json === "string"
-        ? JSON.parse(row.improvements_json)
-        : (row.improvements_json as string[]),
+    categories: safeJsonParse(row.categories_json, []),
+    strengths: safeJsonParse(row.strengths_json, []),
+    improvements: safeJsonParse(row.improvements_json, []),
     nextExercise: row.next_exercise,
     caution: row.caution,
-    fillerWords:
-      typeof row.filler_words_json === "string"
-        ? JSON.parse(row.filler_words_json)
-        : (row.filler_words_json as string[]),
+    fillerWords: safeJsonParse(row.filler_words_json, []),
     improvedAnswer: row.improved_answer ?? ""
   };
 }
@@ -897,6 +900,15 @@ export async function applyBillingPlanByEmail(input: {
     lemonCustomerId: input.providerCustomerId ?? member.lemonCustomerId ?? null,
     lemonSubscriptionId: input.providerSubscriptionId ?? member.lemonSubscriptionId ?? null
   });
+}
+
+export async function getMemberEmailById(userId: string): Promise<string | null> {
+  if (!hasDatabaseUrl()) return null;
+  const sql = getSql();
+  const rows = await sql<Array<{ email: string }>>`
+    select email from users where id = ${userId} limit 1
+  `;
+  return rows[0]?.email ?? null;
 }
 
 export async function applyBillingPlanByUserId(input: {

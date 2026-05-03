@@ -21,6 +21,16 @@ export function getRequestIp(request: Request) {
   return request.headers.get("x-real-ip") ?? "unknown";
 }
 
+export function rateLimitResponse(retryAfterSeconds: number, message = "Too many requests. Please try again later.") {
+  return new Response(JSON.stringify({ error: message }), {
+    status: 429,
+    headers: {
+      "Content-Type": "application/json",
+      "Retry-After": String(retryAfterSeconds)
+    }
+  });
+}
+
 export function checkRateLimit(input: { key: string; windowMs: number; max: number }) {
   const store = getStore();
   const now = Date.now();

@@ -30,7 +30,11 @@ export default function AdminLoginPage() {
 
   return (
     <main className="page-shell section">
-      <div className="card" style={{ maxWidth: 520, margin: "0 auto", padding: "1.5rem", display: "grid", gap: "1rem" }}>
+      <form
+        className="card"
+        style={{ maxWidth: 520, margin: "0 auto", padding: "1.5rem", display: "grid", gap: "1rem" }}
+        onSubmit={(e) => { e.preventDefault(); submit(); }}
+      >
         <span className="eyebrow">Admin access</span>
         <h1 style={{ margin: 0 }}>SpeakAce admin panel</h1>
         <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.6 }}>
@@ -56,10 +60,10 @@ export default function AdminLoginPage() {
           />
         </label>
         {error ? <p style={{ color: "var(--accent-deep)", margin: 0 }}>{error}</p> : null}
-        <button className="button button-primary" type="button" disabled={busy} onClick={submit}>
+        <button className="button button-primary" type="submit" disabled={busy}>
           {busy ? "Signing in..." : "Open admin panel"}
         </button>
-      </div>
+      </form>
     </main>
   );
 }

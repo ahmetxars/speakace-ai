@@ -10,7 +10,7 @@ import { joinTeacherClassByCode } from "@/lib/classroom-store";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { isAdminEmail } from "@/lib/admin";
-import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
 import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(request: Request) {
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         event: "signup_failed",
         properties: { email, member_type: body.memberType ?? "student", reason: "rate_limited" }
       });
-      return NextResponse.json({ error: "Too many sign-up attempts. Please try again later." }, { status: 429 });
+      return rateLimitResponse(limit.retryAfterSeconds, "Too many sign-up attempts. Please try again later.");
     }
 
     const profile = await signUpWithPassword({
@@ -61,10 +61,12 @@ export async function POST(request: Request) {
     }
     const autoVerified = isAdminEmail(profile.email);
     if (typeof body.attributionPath === "string" && body.attributionPath.trim()) {
+      const rawPath = body.attributionPath.trim().slice(0, 500);
+      const safePath = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
       await trackAnalyticsEvent({
         userId: profile.id,
         event: "signup_completed",
-        path: body.attributionPath.trim()
+        path: safePath
       });
     }
     posthog.identify({ distinctId: profile.id, properties: { email: profile.email, name: profile.name, member_type: profile.memberType } });

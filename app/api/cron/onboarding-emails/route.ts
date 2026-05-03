@@ -10,13 +10,17 @@ import {
 function isAuthorized(request: Request) {
   const secret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
-  const vercelCron = request.headers.get("x-vercel-cron");
 
-  if (secret && authHeader === `Bearer ${secret}`) {
-    return true;
+  if (secret) {
+    return authHeader === `Bearer ${secret}`;
   }
 
-  return Boolean(vercelCron);
+  // No CRON_SECRET configured — allow Vercel platform cron header as fallback (dev/staging only)
+  if (process.env.APP_ENV !== "production") {
+    return Boolean(request.headers.get("x-vercel-cron"));
+  }
+
+  return false;
 }
 
 export async function GET(request: Request) {

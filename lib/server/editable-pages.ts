@@ -77,7 +77,7 @@ export async function updateEditablePage(input: {
       await sql`
         insert into editable_pages (id, slug, language, title, content, status, created_at, updated_at)
         values (
-          ${Math.random().toString(36).substring(7)},
+          ${crypto.randomUUID()},
           ${input.slug},
           ${language},
           ${input.title},

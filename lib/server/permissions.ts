@@ -89,8 +89,7 @@ export async function requireTeacher(): Promise<MemberProfile> {
  */
 export async function requireSchoolAdmin(): Promise<MemberProfile> {
   const profile = await requireAuthenticatedUser();
-  // Accept DB-granted admin flag OR memberType=school (for accounts created before invite-flow)
-  if (!profile.isAdmin && profile.memberType !== "school") {
+  if (!profile.isAdmin) {
     deny("School admin access required.");
   }
   return profile;

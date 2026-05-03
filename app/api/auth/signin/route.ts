@@ -6,7 +6,7 @@ import {
   getSessionCookieOptions,
   signInWithPassword
 } from "@/lib/server/auth";
-import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
 import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(request: Request) {
@@ -16,18 +16,16 @@ export async function POST(request: Request) {
 
   try {
     const ip = getRequestIp(request);
-    const limit = checkRateLimit({
-      key: `signin:${ip}:${email}`,
-      windowMs: 1000 * 60 * 15,
-      max: 8
-    });
+    const ipLimit = checkRateLimit({ key: `signin:${ip}`, windowMs: 1000 * 60 * 15, max: 20 });
+    const emailLimit = checkRateLimit({ key: `signin:email:${email}`, windowMs: 1000 * 60 * 15, max: 8 });
+    const limit = { allowed: ipLimit.allowed && emailLimit.allowed, retryAfterSeconds: Math.max(ipLimit.retryAfterSeconds, emailLimit.retryAfterSeconds) };
     if (!limit.allowed) {
       posthog.capture({
         distinctId: email || `anonymous-signin:${ip}`,
         event: "signin_failed",
         properties: { email, reason: "rate_limited" }
       });
-      return NextResponse.json({ error: "Too many sign-in attempts. Please try again later." }, { status: 429 });
+      return rateLimitResponse(limit.retryAfterSeconds, "Too many sign-in attempts. Please try again later.");
     }
 
     const profile = await signInWithPassword({

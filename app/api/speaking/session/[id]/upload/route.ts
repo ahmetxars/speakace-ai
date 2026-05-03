@@ -4,10 +4,19 @@ import { getAudioPayloadStats, hasOpenAiKey, transcribeAudio } from "@/lib/serve
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 import { getSession, uploadSessionAudio } from "@/lib/store";
 
+export const maxDuration = 60;
+
+const MAX_BODY_BYTES = 10 * 1024 * 1024; // 10 MB
+
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const profile = await getAuthenticatedUserFromCookies();
   if (!profile || profile.role === "guest") {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+  }
+
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: "Audio payload too large (max 10 MB)." }, { status: 413 });
   }
 
   const body = await request.json();

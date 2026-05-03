@@ -9,7 +9,7 @@ export async function GET() {
   const profile = await getAuthenticatedUser(token);
 
   if (!profile) {
-    return NextResponse.json({ notifications: [] });
+    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
   return NextResponse.json({

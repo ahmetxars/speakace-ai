@@ -58,13 +58,17 @@ export async function transcribeAudio({
   formData.append("language", "en");
   formData.append("prompt", prompt);
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
   const response = await fetch(`${OPENAI_API_BASE_URL}/audio/transcriptions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
     },
-    body: formData
+    body: formData,
+    signal: controller.signal
   });
+  clearTimeout(timeout);
 
   if (!response.ok) {
     const text = await response.text();
@@ -130,12 +134,15 @@ export async function generateFeedbackReport({
           maxItems: 3
         };
 
+  const feedbackController = new AbortController();
+  const feedbackTimeout = setTimeout(() => feedbackController.abort(), 60_000);
   const response = await fetch(`${OPENAI_API_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       "Content-Type": "application/json"
     },
+    signal: feedbackController.signal,
     body: JSON.stringify({
       model: process.env.OPENAI_FEEDBACK_MODEL || "gpt-4o-mini",
       temperature: 0.2,
@@ -192,6 +199,7 @@ export async function generateFeedbackReport({
     })
   });
 
+  clearTimeout(feedbackTimeout);
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`OpenAI feedback failed: ${text}`);
@@ -241,12 +249,15 @@ export async function generateWritingFeedbackReport({
     return null;
   }
 
+  const writingController = new AbortController();
+  const writingTimeout = setTimeout(() => writingController.abort(), 60_000);
   const response = await fetch(`${OPENAI_API_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       "Content-Type": "application/json"
     },
+    signal: writingController.signal,
     body: JSON.stringify({
       model: process.env.OPENAI_FEEDBACK_MODEL || "gpt-4o-mini",
       temperature: 0.2,
@@ -317,6 +328,7 @@ export async function generateWritingFeedbackReport({
     })
   });
 
+  clearTimeout(writingTimeout);
   if (!response.ok) {
     const text = await response.text();
     throw new Error(`OpenAI writing feedback failed: ${text}`);

@@ -4,6 +4,7 @@ import {
   applyBillingPlanByEmail,
   applyBillingPlanByUserId,
   applyInstitutionBillingByUserId,
+  getMemberEmailById,
   recordBillingEvent
 } from "@/lib/store";
 import {
@@ -76,53 +77,67 @@ export async function POST(request: Request) {
   const posthog = getPostHogClient();
   const distinctId = userId ?? email ?? providerCustomerId ?? providerSubscriptionId ?? `billing:${eventName}`;
 
-  await recordBillingEvent({
-    provider: "lemonsqueezy",
-    eventName,
-    userEmail: email,
-    userId,
-    plan: nextPlan,
-    billingStatus: status,
-    providerCustomerId,
-    providerSubscriptionId,
-    payloadJson: payload
-  });
-
-  if (institutionType === "institution" && userId) {
-    // Institution subscription — update institution_billing table instead of user plan
-    const institutionPlan = getInstitutionPlan(payload);
-    if (institutionPlan) {
-      await applyInstitutionBillingByUserId({
-        userId,
-        plan: institutionPlan,
-        billingStatus: status,
-        providerCustomerId,
-        providerSubscriptionId,
-        seatCount: getInstitutionSeatCount(payload)
-      });
+  // Cross-check: if both userId and email are present, confirm they belong to the same account
+  if (userId && email) {
+    const storedEmail = await getMemberEmailById(userId).catch(() => null);
+    if (storedEmail && storedEmail !== email) {
+      console.error(`Lemon webhook userId/email mismatch: userId=${userId} payload_email=${email} stored_email=${storedEmail}`);
+      return NextResponse.json({ error: "User identity mismatch." }, { status: 400 });
     }
-  } else {
-    // Individual subscription — prefer the authenticated user id captured at checkout,
-    // then fall back to email to support older checkout links.
-    const updatedByUserId = userId
-      ? await applyBillingPlanByUserId({
+  }
+
+  try {
+    await recordBillingEvent({
+      provider: "lemonsqueezy",
+      eventName,
+      userEmail: email,
+      userId,
+      plan: nextPlan,
+      billingStatus: status,
+      providerCustomerId,
+      providerSubscriptionId,
+      payloadJson: payload
+    });
+
+    if (institutionType === "institution" && userId) {
+      // Institution subscription — update institution_billing table instead of user plan
+      const institutionPlan = getInstitutionPlan(payload);
+      if (institutionPlan) {
+        await applyInstitutionBillingByUserId({
           userId,
+          plan: institutionPlan,
+          billingStatus: status,
+          providerCustomerId,
+          providerSubscriptionId,
+          seatCount: getInstitutionSeatCount(payload)
+        });
+      }
+    } else {
+      // Individual subscription — prefer the authenticated user id captured at checkout,
+      // then fall back to email to support older checkout links.
+      const updatedByUserId = userId
+        ? await applyBillingPlanByUserId({
+            userId,
+            plan: nextPlan,
+            billingStatus: status,
+            providerCustomerId,
+            providerSubscriptionId
+          })
+        : null;
+
+      if (!updatedByUserId && email) {
+        await applyBillingPlanByEmail({
+          email,
           plan: nextPlan,
           billingStatus: status,
           providerCustomerId,
           providerSubscriptionId
-        })
-      : null;
-
-    if (!updatedByUserId && email) {
-      await applyBillingPlanByEmail({
-        email,
-        plan: nextPlan,
-        billingStatus: status,
-        providerCustomerId,
-        providerSubscriptionId
-      });
+        });
+      }
     }
+  } catch (err) {
+    console.error("Lemon webhook DB error:", err);
+    return NextResponse.json({ error: "Internal error processing webhook." }, { status: 500 });
   }
 
   posthog.capture({

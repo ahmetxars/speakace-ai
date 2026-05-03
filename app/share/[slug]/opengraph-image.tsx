@@ -111,7 +111,7 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2, marginTop: 28 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              {card.avatarDataUrl ? (
+              {card.avatarDataUrl && card.avatarDataUrl.length < 65536 ? (
                 <img
                   src={card.avatarDataUrl}
                   alt={card.learnerName}
