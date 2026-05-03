@@ -7,7 +7,7 @@ export function resolveDashboardRole(profile: MemberProfile | null | undefined):
     return "guest";
   }
 
-  if (profile.isAdmin || profile.adminAccess || profile.memberType === "school") {
+  if (profile.isAdmin || profile.adminAccess) {
     return "school";
   }
 

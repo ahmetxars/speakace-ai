@@ -1,54 +1,34 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getPromptById } from "@/lib/prompts";
 import { ensureTeacherOwnsClass } from "@/lib/classroom-store";
-import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
+import { permissionErrorResponse, requireTeacher } from "@/lib/server/permissions";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 import { createClassSharedStudyItem, listClassSharedStudyItems, removeClassSharedStudyItem } from "@/lib/shared-study-store";
 
-async function getTeacherProfile() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(getSessionCookieName())?.value;
-  const profile = await getAuthenticatedUser(token);
-  if (!profile?.isTeacher && !profile?.isAdmin) {
-    return null;
-  }
-  return profile;
-}
-
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const profile = await getTeacherProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
-  }
-
   try {
+    const profile = await requireTeacher();
     const { id } = await params;
     await ensureTeacherOwnsClass(profile.id, id);
     const items = await listClassSharedStudyItems(id);
     return NextResponse.json({ items });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not load shared study items." }, { status: 400 });
+    return permissionErrorResponse(error);
   }
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const profile = await getTeacherProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
-  }
-
-  const ip = getRequestIp(request);
-  const limit = checkRateLimit({
-    key: `teacher-share-study:${ip}:${profile.id}`,
-    windowMs: 1000 * 60 * 15,
-    max: 50
-  });
-  if (!limit.allowed) {
-    return NextResponse.json({ error: "Too many share attempts. Please try again later." }, { status: 429 });
-  }
-
   try {
+    const profile = await requireTeacher();
+    const ip = getRequestIp(request);
+    const limit = checkRateLimit({
+      key: `teacher-share-study:${ip}:${profile.id}`,
+      windowMs: 1000 * 60 * 15,
+      max: 50
+    });
+    if (!limit.allowed) {
+      return NextResponse.json({ error: "Too many share attempts. Please try again later." }, { status: 429 });
+    }
     const { id } = await params;
     await ensureTeacherOwnsClass(profile.id, id);
     const body = await request.json();
@@ -68,17 +48,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     return NextResponse.json({ item });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not share study item." }, { status: 400 });
+    return permissionErrorResponse(error);
   }
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const profile = await getTeacherProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
-  }
-
   try {
+    const profile = await requireTeacher();
     const { id } = await params;
     await ensureTeacherOwnsClass(profile.id, id);
     const url = new URL(request.url);
@@ -92,6 +68,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
     return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not remove shared study item." }, { status: 400 });
+    return permissionErrorResponse(error);
   }
 }

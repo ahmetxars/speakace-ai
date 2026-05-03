@@ -1,8 +1,7 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { buildInstitutionCheckoutUrl, commerceConfig } from "@/lib/commerce";
-import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
 import { getPostHogClient } from "@/lib/posthog-server";
+import { requireSchoolAdmin } from "@/lib/server/permissions";
 import { InstitutionBillingSummary } from "@/lib/types";
 
 export async function GET(request: Request) {
@@ -15,18 +14,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Invalid institution plan." }, { status: 400 });
   }
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get(getSessionCookieName())?.value;
-  const profile = await getAuthenticatedUser(token);
-
-  if (!profile) {
+  let profile;
+  try {
+    profile = await requireSchoolAdmin();
+  } catch {
     return NextResponse.redirect(
       new URL("/auth/signin?redirect=/app/teacher/billing", request.url)
     );
-  }
-
-  if (!profile.isTeacher && !profile.isAdmin) {
-    return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
   }
 
   const checkoutUrl = buildInstitutionCheckoutUrl({

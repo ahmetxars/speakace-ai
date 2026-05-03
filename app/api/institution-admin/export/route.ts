@@ -7,8 +7,7 @@ import { listInstitutionTeacherSummaries } from "@/lib/classroom-store";
 export async function GET() {
   try {
     const profile = await requireSchoolAdmin();
-
-    let summaries: Awaited<ReturnType<typeof listOrgTeacherSummaries>>;
+    let summaries;
 
     if (hasDatabaseUrl()) {
       const org = await getOrgForAdmin(profile.id);

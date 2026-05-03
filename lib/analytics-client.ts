@@ -9,7 +9,6 @@ export async function trackClientEvent(input: { userId?: string | null; event: A
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        userId: input.userId,
         event: input.event,
         path: input.path
       })

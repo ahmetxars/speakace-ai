@@ -41,14 +41,14 @@ export async function createAnnouncement(input: {
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const rows = await sql<AnnouncementItem[]>`
-      insert into announcements (id, author_id, audience_type, class_id, org_id, title, body, created_at)
+      insert into announcements (id, author_id, audience_type, class_id, organization_id, title, body, created_at)
       values (${item.id}, ${item.authorId}, ${item.audienceType}, ${item.classId ?? null}, ${item.orgId ?? null}, ${item.title}, ${item.body}, ${item.createdAt})
       returning
         id,
         author_id as "authorId",
         audience_type as "audienceType",
         class_id as "classId",
-        org_id as "orgId",
+        organization_id as "orgId",
         title,
         body,
         created_at as "createdAt"
@@ -68,9 +68,6 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
       ? (await listTeacherClasses(profile.id)).map((item) => item.id)
       : (await listStudentClasses(profile.id)).map((item) => item.classId);
 
-    // org_id IS NULL means platform-wide; org_id = profile.organizationId means
-    // scoped to the user's school. Teacher-audience announcements must match one of
-    // these to prevent cross-school data leakage.
     const orgId = profile.organizationId ?? null;
 
     const announcementCols = sql`
@@ -78,18 +75,17 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
       author_id as "authorId",
       audience_type as "audienceType",
       class_id as "classId",
-      org_id as "orgId",
+      organization_id as "orgId",
       title,
       body,
       created_at as "createdAt"
     `;
 
     if (profile.isAdmin || profile.adminAccess) {
-      // Admins see all announcements scoped to their org plus platform-wide ones.
       const rows = (await sql`
         select ${announcementCols}
         from announcements
-        where org_id is null or org_id = ${orgId}
+        where organization_id = ${orgId}
         order by created_at desc
         limit 40
       `) as unknown as AnnouncementItem[];
@@ -101,15 +97,14 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
         ? ((await sql`
             select ${announcementCols}
             from announcements
-            where audience_type = 'global'
-              or (audience_type = 'teacher' and (org_id is null or org_id = ${orgId}))
+            where audience_type = 'teacher' and organization_id = ${orgId}
             order by created_at desc
             limit 20
           `) as unknown as AnnouncementItem[])
         : ((await sql`
             select ${announcementCols}
             from announcements
-            where audience_type = 'global'
+            where false
             order by created_at desc
             limit 20
           `) as unknown as AnnouncementItem[]);
@@ -120,8 +115,7 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
       ? ((await sql`
           select ${announcementCols}
           from announcements
-          where audience_type = 'global'
-            or (audience_type = 'teacher' and (org_id is null or org_id = ${orgId}))
+          where (audience_type = 'teacher' and organization_id = ${orgId})
             or class_id = any(${classIds})
           order by created_at desc
           limit 20
@@ -129,7 +123,7 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
       : ((await sql`
           select ${announcementCols}
           from announcements
-          where audience_type = 'global' or class_id = any(${classIds})
+          where class_id = any(${classIds})
           order by created_at desc
           limit 20
         `) as unknown as AnnouncementItem[]);
@@ -145,11 +139,10 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
   return [...getStore().items.values()]
     .filter((item) => {
       if (profile.isAdmin || profile.adminAccess) {
-        return item.orgId == null || item.orgId === orgId;
+        return item.orgId === orgId;
       }
-      if (item.audienceType === "global") return true;
       if ((profile.isTeacher || profile.teacherAccess) && item.audienceType === "teacher") {
-        return item.orgId == null || item.orgId === orgId;
+        return item.orgId === orgId;
       }
       return Boolean(item.classId && classIds.includes(item.classId));
     })
