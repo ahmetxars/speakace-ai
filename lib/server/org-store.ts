@@ -1,19 +1,8 @@
-/**
- * Organization management store.
- *
- * Responsibilities:
- *  - Create and look up organizations (schools / institutions)
- *  - Manage organization memberships (owner, admin, teacher, student)
- *  - Create and consume scoped invite codes
- *  - Provide tenant-scoped user/teacher/class queries for institution dashboards
- *
- * All functions that operate on behalf of a specific school admin must
- * receive the admin's organizationId and scope their queries accordingly.
- * Global queries (no org filter) are intentionally absent from this module.
- */
-
 import { randomBytes } from "node:crypto";
-import { getSql, hasDatabaseUrl } from "@/lib/server/db";
+import { getSql } from "@/lib/server/db";
+import { getInstitutionAnalytics, listTeacherClasses } from "@/lib/classroom-store";
+import { listTeacherHomework } from "@/lib/homework-store";
+import { getMember, getProgressSummary } from "@/lib/store";
 import {
   InstitutionUserSummary,
   MemberProfile,
@@ -21,110 +10,339 @@ import {
   OrgMembership,
   OrgMemberRole,
   Organization,
-  TeacherClassAnalytics
+  TeacherClass,
+  TeacherNote,
 } from "@/lib/types";
 
-// ---------------------------------------------------------------------------
-// Organization creation
-// ---------------------------------------------------------------------------
+type SchoolTeacherSummary = {
+  teacher: MemberProfile;
+  classCount: number;
+  studentCount: number;
+  activeStudents: number;
+  averageScore: number;
+  pendingApprovalCount: number;
+  atRiskStudentCount: number;
+  homeworkCompletionRate: number;
+  homeworkAssignedCount: number;
+  overdueHomeworkCount: number;
+  recentActivityAt: string | null;
+  mostCommonWeakestSkill: string | null;
+};
 
-function buildOrgJoinCode(): string {
-  return randomBytes(4).toString("hex").toUpperCase();
+type SchoolStudentSummary = {
+  id: string;
+  name: string;
+  email: string;
+  plan: string;
+  classCount: number;
+  sessionCount: number;
+  averageScore: number | null;
+  lastSessionAt: string | null;
+  teacherNames: string[];
+  homeworkCompletionRate: number;
+  riskFlag: string | null;
+};
+
+type SchoolClassSummary = {
+  id: string;
+  name: string;
+  teacherId: string;
+  teacherName: string;
+  joinCode: string;
+  studentCount: number;
+  activeStudents: number;
+  averageScore: number;
+  pendingApprovals: number;
+  homeworkAssignedCount: number;
+  overdueHomeworkCount: number;
+  lastActivityAt: string | null;
+};
+
+type SchoolTeacherDetail = {
+  teacher: MemberProfile;
+  summary: SchoolTeacherSummary;
+  classes: SchoolClassSummary[];
+  recentAnnouncements: Array<{ id: string; title: string; createdAt: string }>;
+  recentNotes: TeacherNote[];
+};
+
+type SchoolStudentDetail = {
+  student: MemberProfile;
+  summary: Awaited<ReturnType<typeof getProgressSummary>>;
+  overview: {
+    totalSessions: number;
+    averageScore: number;
+    bestScore: number | null;
+    weakestSkill: string | null;
+    lastSessionTitle: string | null;
+    lastExamType?: string | null;
+    lastTaskType?: string | null;
+    scoreDelta?: number | null;
+    lastActiveAt?: string | null;
+    riskFlags?: string[];
+  };
+  classes: Array<{ classId: string; className: string; teacherId: string; teacherName: string; joinedAt: string | null }>;
+  homework: {
+    total: number;
+    completed: number;
+    overdue: number;
+  };
+  notes: TeacherNote[];
+};
+
+type OrgSummary = {
+  totalTeachers: number;
+  totalClasses: number;
+  totalStudents: number;
+  activeStudents: number;
+  pendingApprovals: number;
+  atRiskStudents: number;
+  averageScore: number;
+  teacherSummaries: SchoolTeacherSummary[];
+  classSummaries: SchoolClassSummary[];
+  alerts: string[];
+};
+
+const ROLE_ORDER: Record<OrgMemberRole, number> = {
+  student: 0,
+  teacher: 1,
+  admin: 2,
+  owner: 3,
+};
+
+function buildSlug(name: string) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48) || `org-${randomBytes(3).toString("hex")}`;
 }
 
-export async function createOrganization(input: {
+function buildInviteCode() {
+  return randomBytes(16).toString("hex");
+}
+
+function toOrganization(row: {
+  id: string;
   name: string;
   ownerId: string;
-}): Promise<Organization> {
-  const org: Organization = {
-    id: crypto.randomUUID(),
-    name: input.name.trim(),
-    ownerId: input.ownerId,
-    joinCode: buildOrgJoinCode(),
-    createdAt: new Date().toISOString()
+  slug?: string | null;
+  createdAt: string;
+}): Organization {
+  return {
+    id: row.id,
+    name: row.name,
+    ownerId: row.ownerId,
+    joinCode: row.slug ?? row.id,
+    createdAt: row.createdAt,
   };
+}
 
+function upgradeRole(current: OrgMemberRole, next: OrgMemberRole): OrgMemberRole {
+  return ROLE_ORDER[next] > ROLE_ORDER[current] ? next : current;
+}
+
+function buildRiskFlags(summary: Awaited<ReturnType<typeof getProgressSummary>>) {
+  const flags: string[] = [];
+  const latest = summary.recentSessions[0];
+  if (!latest) return flags;
+  const lastActiveDays = Math.floor((Date.now() - new Date(latest.createdAt).getTime()) / 86400000);
+  if (lastActiveDays >= 7) flags.push("Inactive 7d");
+  const scored = summary.recentSessions.filter((session) => session.report);
+  if (scored.length >= 2) {
+    const delta = (scored[0]?.report?.overall ?? 0) - (scored[scored.length - 1]?.report?.overall ?? 0);
+    if (delta <= -0.8) flags.push("Falling score");
+  }
+  if (summary.averageScore > 0 && summary.averageScore < 5.5) flags.push("Low avg");
+  return flags;
+}
+
+function findWeakestSkill(summary: Awaited<ReturnType<typeof getProgressSummary>>) {
+  const buckets = new Map<string, { total: number; count: number }>();
+  summary.recentSessions.forEach((session) => {
+    session.report?.categories.forEach((category) => {
+      const current = buckets.get(category.label) ?? { total: 0, count: 0 };
+      buckets.set(category.label, { total: current.total + category.score, count: current.count + 1 });
+    });
+  });
+  if (!buckets.size) return null;
+  return [...buckets.entries()]
+    .map(([label, stats]) => ({ label, average: stats.total / stats.count }))
+    .sort((a, b) => a.average - b.average)[0]?.label ?? null;
+}
+
+function buildStudentOverview(student: MemberProfile, summary: Awaited<ReturnType<typeof getProgressSummary>>) {
+  const scoredSessions = summary.recentSessions.filter((session) => session.report);
+  const bestScore = scoredSessions.length ? Math.max(...scoredSessions.map((session) => session.report?.overall ?? 0)) : null;
+  const latestScored = scoredSessions[0];
+  const baselineScored = scoredSessions[scoredSessions.length - 1];
+  const scoreDelta =
+    latestScored?.report && baselineScored?.report && latestScored.id !== baselineScored.id
+      ? Number((latestScored.report.overall - baselineScored.report.overall).toFixed(1))
+      : null;
+
+  return {
+    totalSessions: summary.totalSessions,
+    averageScore: summary.averageScore,
+    bestScore,
+    weakestSkill: findWeakestSkill(summary),
+    lastSessionTitle: summary.recentSessions[0]?.prompt.title ?? null,
+    lastExamType: summary.recentSessions[0]?.examType ?? null,
+    lastTaskType: summary.recentSessions[0]?.taskType ?? null,
+    scoreDelta,
+    lastActiveAt: summary.recentSessions[0]?.createdAt ?? null,
+    riskFlags: buildRiskFlags(summary),
+    student,
+  };
+}
+
+async function getTeacherMember(teacherId: string) {
+  const member = await getMember(teacherId);
+  if (!member) {
+    throw new Error("Teacher not found.");
+  }
+  return member;
+}
+
+async function getTeacherClassMap(teacherId: string) {
+  const classes = await listTeacherClasses(teacherId);
+  return new Map(classes.map((item) => [item.id, item]));
+}
+
+async function buildTeacherSummary(orgId: string, teacher: MemberProfile): Promise<SchoolTeacherSummary> {
+  void orgId;
+  const [classes, analytics, homework] = await Promise.all([
+    listTeacherClasses(teacher.id),
+    getInstitutionAnalytics(teacher.id),
+    listTeacherHomework(teacher.id),
+  ]);
+  const recentActivityCandidates = [
+    ...classes.map((item) => item.createdAt),
+    ...homework.map((item) => item.assignment.createdAt),
+    ...homework.map((item) => item.assignment.completedAt).filter(Boolean) as string[],
+  ].sort().reverse();
+  return {
+    teacher,
+    classCount: classes.length,
+    studentCount: analytics.totalStudents,
+    activeStudents: analytics.activeStudents,
+    averageScore: analytics.averageScore,
+    pendingApprovalCount: analytics.pendingApprovalCount,
+    atRiskStudentCount: analytics.atRiskStudentCount,
+    homeworkCompletionRate: analytics.homeworkCompletionRate,
+    homeworkAssignedCount: homework.length,
+    overdueHomeworkCount: homework.filter((item) => !item.assignment.completedAt && item.assignment.dueAt && new Date(item.assignment.dueAt).getTime() < Date.now()).length,
+    recentActivityAt: recentActivityCandidates[0] ?? null,
+    mostCommonWeakestSkill: analytics.mostCommonWeakestSkill,
+  };
+}
+
+async function buildClassSummary(classroom: TeacherClass, teacherName: string): Promise<SchoolClassSummary> {
   const sql = getSql();
-  const rows = await sql<Organization[]>`
-    insert into organizations (id, name, owner_id, join_code, created_at)
-    values (${org.id}, ${org.name}, ${org.ownerId}, ${org.joinCode}, ${org.createdAt})
-    returning id, name, owner_id as "ownerId", join_code as "joinCode", created_at as "createdAt"
+  const [counts] = await sql<Array<{
+    studentCount: number;
+    pendingApprovals: number;
+    activeStudents: number;
+    averageScore: number | null;
+    lastActivityAt: string | null;
+  }>>`
+    select
+      count(distinct case when e.status = 'approved' then e.student_id end)::int as "studentCount",
+      count(distinct case when e.status = 'pending' then e.student_id end)::int as "pendingApprovals",
+      count(distinct case when s.id is not null then e.student_id end)::int as "activeStudents",
+      round(avg(s.report_overall)::numeric, 1) as "averageScore",
+      max(coalesce(s.created_at, e.joined_at, e.requested_at))::text as "lastActivityAt"
+    from teacher_class_enrollments e
+    left join sessions s on s.user_id = e.student_id and s.report_overall is not null
+    where e.class_id = ${classroom.id}
   `;
-
-  // Add owner as a member with role 'owner'
-  await sql`
-    insert into organization_memberships (id, org_id, user_id, role, joined_at)
-    values (${crypto.randomUUID()}, ${org.id}, ${input.ownerId}, 'owner', now())
-    on conflict (org_id, user_id) do nothing
+  const [homeworkRow] = await sql<Array<{ total: number; overdue: number }>>`
+    select
+      count(*)::int as total,
+      count(*) filter (where completed_at is null and due_at is not null and due_at < now())::int as overdue
+    from homework_assignments
+    where class_id = ${classroom.id}
   `;
+  return {
+    id: classroom.id,
+    name: classroom.name,
+    teacherId: classroom.teacherId,
+    teacherName,
+    joinCode: classroom.joinCode,
+    studentCount: counts?.studentCount ?? 0,
+    activeStudents: counts?.activeStudents ?? 0,
+    averageScore: counts?.averageScore ?? 0,
+    pendingApprovals: counts?.pendingApprovals ?? 0,
+    homeworkAssignedCount: homeworkRow?.total ?? 0,
+    overdueHomeworkCount: homeworkRow?.overdue ?? 0,
+    lastActivityAt: counts?.lastActivityAt ?? null,
+  };
+}
 
-  // Link the owner's user record to this org
-  await sql`
-    update users set organization_id = ${org.id} where id = ${input.ownerId}
+export async function createOrganization(input: { name: string; ownerId: string }): Promise<Organization> {
+  const sql = getSql();
+  const id = crypto.randomUUID();
+  const slug = buildSlug(input.name);
+  const createdAt = new Date().toISOString();
+  const rows = await sql<Array<{ id: string; name: string; slug: string | null; ownerId: string; createdAt: string }>>`
+    insert into organizations (id, name, slug, owner_id, created_at)
+    values (${id}, ${input.name.trim()}, ${slug}, ${input.ownerId}, ${createdAt})
+    returning id, name, slug, owner_id as "ownerId", created_at as "createdAt"
   `;
-
-  return rows[0];
+  await addOrgMember({ orgId: id, userId: input.ownerId, role: "owner", invitedBy: input.ownerId });
+  await sql`update users set organization_id = ${id} where id = ${input.ownerId}`;
+  return toOrganization(rows[0]);
 }
 
 export async function getOrganizationByOwnerId(ownerId: string): Promise<Organization | null> {
   const sql = getSql();
-  const rows = await sql<Organization[]>`
-    select id, name, owner_id as "ownerId", join_code as "joinCode", created_at as "createdAt"
+  const rows = await sql<Array<{ id: string; name: string; slug: string | null; ownerId: string; createdAt: string }>>`
+    select id, name, slug, owner_id as "ownerId", created_at as "createdAt"
     from organizations
     where owner_id = ${ownerId}
     limit 1
   `;
-  return rows[0] ?? null;
+  return rows[0] ? toOrganization(rows[0]) : null;
 }
 
 export async function getOrganizationById(orgId: string): Promise<Organization | null> {
   const sql = getSql();
-  const rows = await sql<Organization[]>`
-    select id, name, owner_id as "ownerId", join_code as "joinCode", created_at as "createdAt"
+  const rows = await sql<Array<{ id: string; name: string; slug: string | null; ownerId: string; createdAt: string }>>`
+    select id, name, slug, owner_id as "ownerId", created_at as "createdAt"
     from organizations
     where id = ${orgId}
     limit 1
   `;
-  return rows[0] ?? null;
+  return rows[0] ? toOrganization(rows[0]) : null;
 }
 
 export async function getOrganizationByJoinCode(joinCode: string): Promise<Organization | null> {
   const sql = getSql();
-  const rows = await sql<Organization[]>`
-    select id, name, owner_id as "ownerId", join_code as "joinCode", created_at as "createdAt"
+  const rows = await sql<Array<{ id: string; name: string; slug: string | null; ownerId: string; createdAt: string }>>`
+    select id, name, slug, owner_id as "ownerId", created_at as "createdAt"
     from organizations
-    where lower(join_code) = lower(${joinCode.trim()})
+    where lower(slug) = lower(${joinCode.trim()})
+       or lower(id) = lower(${joinCode.trim()})
     limit 1
   `;
-  return rows[0] ?? null;
+  return rows[0] ? toOrganization(rows[0]) : null;
 }
 
 /** Returns the organization for which the given user is an owner or admin. */
 export async function getOrgForAdmin(userId: string): Promise<Organization | null> {
   const sql = getSql();
-  const rows = await sql<Organization[]>`
-    select o.id, o.name, o.owner_id as "ownerId", o.join_code as "joinCode", o.created_at as "createdAt"
+  const rows = await sql<Array<{ id: string; name: string; slug: string | null; ownerId: string; createdAt: string }>>`
+    select o.id, o.name, o.slug, o.owner_id as "ownerId", o.created_at as "createdAt"
     from organizations o
-    join organization_memberships m on m.org_id = o.id
+    join organization_memberships m on m.organization_id = o.id
     where m.user_id = ${userId}
       and m.role in ('owner', 'admin')
     order by o.created_at asc
     limit 1
   `;
-  return rows[0] ?? null;
+  return rows[0] ? toOrganization(rows[0]) : null;
 }
-
-// ---------------------------------------------------------------------------
-// Membership management
-// ---------------------------------------------------------------------------
-
-// Role strength order used for additive-only membership updates.
-const ROLE_STRENGTH: Record<OrgMemberRole, number> = {
-  student: 0,
-  teacher: 1,
-  admin: 2,
-  owner: 3
-};
 
 export async function addOrgMember(input: {
   orgId: string;
@@ -133,56 +351,48 @@ export async function addOrgMember(input: {
   invitedBy?: string;
 }): Promise<OrgMembership> {
   const sql = getSql();
-  const id = crypto.randomUUID();
+  const existing = await getOrgMembership(input.orgId, input.userId);
+  const nextRole = existing ? upgradeRole(existing.role, input.role) : input.role;
   const rows = await sql<OrgMembership[]>`
-    insert into organization_memberships (id, org_id, user_id, role, invited_by, joined_at)
-    values (${id}, ${input.orgId}, ${input.userId}, ${input.role}, ${input.invitedBy ?? null}, now())
-    on conflict (org_id, user_id)
+    insert into organization_memberships (id, organization_id, user_id, role, added_by, joined_at)
+    values (${crypto.randomUUID()}, ${input.orgId}, ${input.userId}, ${nextRole}, ${input.invitedBy ?? null}, now())
+    on conflict (organization_id, user_id)
     do update set
-      -- Only upgrade role, never downgrade (additive-only semantics).
-      -- greatest() on text won't work; compare via the strength ordering:
-      -- new role replaces existing only when it is strictly stronger.
-      role = case
-        when organization_memberships.role = 'owner'  then 'owner'
-        when organization_memberships.role = 'admin'  and excluded.role in ('owner', 'admin') then excluded.role
-        when organization_memberships.role = 'teacher' and excluded.role in ('owner', 'admin', 'teacher') then excluded.role
-        else excluded.role
-      end,
-      invited_by = coalesce(excluded.invited_by, organization_memberships.invited_by)
-    returning id, org_id as "orgId", user_id as "userId", role, invited_by as "invitedBy", joined_at as "joinedAt"
+      role = ${nextRole},
+      added_by = coalesce(organization_memberships.added_by, excluded.added_by)
+    returning
+      id,
+      organization_id as "orgId",
+      user_id as "userId",
+      role,
+      added_by as "invitedBy",
+      joined_at as "joinedAt"
   `;
-
-  void ROLE_STRENGTH; // referenced above for documentation; used in updateOrgUserAccess below
-
-  // Keep users.organization_id in sync for teachers/admins (students may belong
-  // to many orgs via class joins so we only set for privileged roles)
-  if (input.role !== "student") {
+  if (nextRole !== "student") {
     await sql`
-      update users set organization_id = ${input.orgId}
+      update users
+      set organization_id = ${input.orgId}
       where id = ${input.userId} and (organization_id is null or organization_id = ${input.orgId})
     `;
   }
-
   return rows[0];
 }
 
 export async function getOrgMembership(orgId: string, userId: string): Promise<OrgMembership | null> {
   const sql = getSql();
   const rows = await sql<OrgMembership[]>`
-    select id, org_id as "orgId", user_id as "userId", role, invited_by as "invitedBy", joined_at as "joinedAt"
+    select
+      id,
+      organization_id as "orgId",
+      user_id as "userId",
+      role,
+      added_by as "invitedBy",
+      joined_at as "joinedAt"
     from organization_memberships
-    where org_id = ${orgId} and user_id = ${userId}
+    where organization_id = ${orgId} and user_id = ${userId}
     limit 1
   `;
   return rows[0] ?? null;
-}
-
-// ---------------------------------------------------------------------------
-// Invite management
-// ---------------------------------------------------------------------------
-
-function buildInviteCode(): string {
-  return randomBytes(16).toString("hex");
 }
 
 export async function createOrgInvite(input: {
@@ -193,21 +403,54 @@ export async function createOrgInvite(input: {
   expiresInDays?: number;
 }): Promise<OrgInvite> {
   const sql = getSql();
-  const id = crypto.randomUUID();
   const inviteCode = buildInviteCode();
-  const expiresAt = new Date(
-    Date.now() + (input.expiresInDays ?? 7) * 24 * 60 * 60 * 1000
-  ).toISOString();
-
   const rows = await sql<OrgInvite[]>`
-    insert into organization_invites (id, org_id, email, role, invite_code, created_by, expires_at, created_at)
-    values (${id}, ${input.orgId}, ${input.email ?? null}, ${input.role}, ${inviteCode}, ${input.createdBy}, ${expiresAt}, now())
+    insert into organization_invites (id, organization_id, invited_by, email, role, token_hash, expires_at, created_at)
+    values (
+      ${crypto.randomUUID()},
+      ${input.orgId},
+      ${input.createdBy},
+      ${input.email?.trim().toLowerCase() ?? null},
+      ${input.role},
+      ${inviteCode},
+      ${new Date(Date.now() + (input.expiresInDays ?? 7) * 86400000).toISOString()},
+      now()
+    )
     returning
-      id, org_id as "orgId", email, role, invite_code as "inviteCode",
-      created_by as "createdBy", expires_at as "expiresAt",
-      used_at as "usedAt", used_by as "usedBy", created_at as "createdAt"
+      id,
+      organization_id as "orgId",
+      email,
+      role,
+      token_hash as "inviteCode",
+      invited_by as "createdBy",
+      expires_at as "expiresAt",
+      accepted_at as "usedAt",
+      null::text as "usedBy",
+      created_at as "createdAt"
   `;
   return rows[0];
+}
+
+export async function listOrgInvites(orgId: string): Promise<OrgInvite[]> {
+  const sql = getSql();
+  return sql<OrgInvite[]>`
+    select
+      id,
+      organization_id as "orgId",
+      email,
+      role,
+      token_hash as "inviteCode",
+      invited_by as "createdBy",
+      expires_at as "expiresAt",
+      accepted_at as "usedAt",
+      null::text as "usedBy",
+      created_at as "createdAt"
+    from organization_invites
+    where organization_id = ${orgId}
+      and accepted_at is null
+      and expires_at > now()
+    order by created_at desc
+  `;
 }
 
 export async function consumeOrgInvite(input: {
@@ -216,95 +459,73 @@ export async function consumeOrgInvite(input: {
   userEmail: string;
 }): Promise<{ org: Organization; role: Exclude<OrgMemberRole, "owner"> } | null> {
   const sql = getSql();
-
-  // Find a valid, unused invite that matches by code (and optionally by email)
-  const rows = await sql<Array<OrgInvite & { orgName: string; orgOwnerId: string; orgJoinCode: string }>>`
+  const rows = await sql<Array<{
+    id: string;
+    orgId: string;
+    email: string | null;
+    role: Exclude<OrgMemberRole, "owner">;
+    createdBy: string;
+    orgName: string;
+    orgOwnerId: string;
+    orgSlug: string | null;
+    orgCreatedAt: string;
+  }>>`
     select
-      i.id, i.org_id as "orgId", i.email, i.role, i.invite_code as "inviteCode",
-      i.created_by as "createdBy", i.expires_at as "expiresAt",
-      i.used_at as "usedAt", i.used_by as "usedBy", i.created_at as "createdAt",
-      o.name as "orgName", o.owner_id as "orgOwnerId", o.join_code as "orgJoinCode"
+      i.id,
+      i.organization_id as "orgId",
+      i.email,
+      i.role,
+      i.invited_by as "createdBy",
+      o.name as "orgName",
+      o.owner_id as "orgOwnerId",
+      o.slug as "orgSlug",
+      o.created_at as "orgCreatedAt"
     from organization_invites i
-    join organizations o on o.id = i.org_id
-    where i.invite_code = ${input.inviteCode}
-      and i.used_at is null
+    join organizations o on o.id = i.organization_id
+    where i.token_hash = ${input.inviteCode}
+      and i.accepted_at is null
       and i.expires_at > now()
       and (i.email is null or lower(i.email) = lower(${input.userEmail}))
     limit 1
   `;
-
   const invite = rows[0];
   if (!invite) return null;
 
-  // Mark invite consumed
   await sql`
     update organization_invites
-    set used_at = now(), used_by = ${input.userId}
+    set accepted_at = now()
     where id = ${invite.id}
   `;
 
-  // Add to org
   await addOrgMember({
     orgId: invite.orgId,
     userId: input.userId,
-    role: invite.role as Exclude<OrgMemberRole, "owner">,
-    invitedBy: invite.createdBy
+    role: invite.role,
+    invitedBy: invite.createdBy,
   });
 
-  // Grant access flags additively — never revoke an existing stronger privilege.
-  //
-  // Rules:
-  //   admin  invite → sets admin_access = true, teacher_access = true
-  //   teacher invite → sets teacher_access = true; leaves admin_access untouched
-  //   student invite → no flag changes (org membership alone is sufficient)
-  //
-  // Using `greatest(existing, new)` semantics: we only ever move flags from
-  // false → true, never from true → false via invite redemption.
   if (invite.role === "admin") {
-    await sql`
-      update users
-      set teacher_access = true,
-          admin_access   = true
-      where id = ${input.userId}
-    `;
+    await sql`update users set teacher_access = true, admin_access = true, organization_id = ${invite.orgId} where id = ${input.userId}`;
   } else if (invite.role === "teacher") {
-    // Preserve any existing admin_access; only ensure teacher_access is set.
-    await sql`
-      update users
-      set teacher_access = true
-      where id = ${input.userId}
-    `;
+    await sql`update users set teacher_access = true, organization_id = coalesce(organization_id, ${invite.orgId}) where id = ${input.userId}`;
   }
-  // student role: no DB flag change needed
 
   return {
-    org: {
+    org: toOrganization({
       id: invite.orgId,
       name: invite.orgName,
       ownerId: invite.orgOwnerId,
-      joinCode: invite.orgJoinCode,
-      createdAt: invite.createdAt
-    },
-    role: invite.role as Exclude<OrgMemberRole, "owner">
+      slug: invite.orgSlug,
+      createdAt: invite.orgCreatedAt,
+    }),
+    role: invite.role,
   };
 }
 
-// ---------------------------------------------------------------------------
-// Tenant-scoped institution queries (fixes C-2, C-3)
-// ---------------------------------------------------------------------------
-
-/**
- * Lists users who are members of the given org.
- * Replaces the global listInstitutionUsers query.
- */
-export async function listOrgUsers(
-  orgId: string,
-  search?: string
-): Promise<InstitutionUserSummary[]> {
+export async function listOrgUsers(orgId: string, search?: string): Promise<InstitutionUserSummary[]> {
   const normalized = search?.trim().toLowerCase() ?? "";
   const sql = getSql();
-
-  const rows = await sql<InstitutionUserSummary[]>`
+  return sql<InstitutionUserSummary[]>`
     select
       u.id,
       u.email,
@@ -316,113 +537,69 @@ export async function listOrgUsers(
       u.email_verified as "emailVerified",
       u.admin_access as "adminAccess",
       u.teacher_access as "teacherAccess",
-      u.created_at as "createdAt",
-      m.role as "orgRole"
+      u.created_at as "createdAt"
     from users u
     join organization_memberships m on m.user_id = u.id
-    where m.org_id = ${orgId}
+    where m.organization_id = ${orgId}
       and (
         ${normalized === ""}
         or lower(u.email) like ${"%" + normalized + "%"}
         or lower(u.name) like ${"%" + normalized + "%"}
       )
     order by u.created_at desc
-    limit 200
+    limit 300
   `;
-  return rows;
 }
 
-/**
- * Lists teachers in the given org with their class/student analytics summaries.
- * Replaces the global listInstitutionTeacherSummaries query.
- */
-export async function listOrgTeacherSummaries(orgId: string) {
+export async function listOrgTeacherSummaries(orgId: string): Promise<SchoolTeacherSummary[]> {
   const sql = getSql();
-
-  const teacherRows = await sql<MemberProfile[]>`
+  const teachers = await sql<MemberProfile[]>`
     select
-      u.id, u.email, u.name, u.role,
+      u.id,
+      u.email,
+      u.name,
+      u.role,
       u.member_type as "memberType",
       u.organization_name as "organizationName",
       u.organization_id as "organizationId",
-      u.plan, u.email_verified as "emailVerified",
-      u.admin_access as "adminAccess", u.teacher_access as "teacherAccess",
+      u.plan,
+      u.email_verified as "emailVerified",
+      u.admin_access as "adminAccess",
+      u.teacher_access as "teacherAccess",
       u.created_at as "createdAt"
     from users u
     join organization_memberships m on m.user_id = u.id
-    where m.org_id = ${orgId}
+    where m.organization_id = ${orgId}
       and m.role in ('teacher', 'admin', 'owner')
     order by u.created_at asc
   `;
-
-  const { getInstitutionAnalytics, listTeacherClasses } = await import("@/lib/classroom-store");
-
-  const summaries = await Promise.all(
-    teacherRows.map(async (teacher) => {
-      const [classes, analytics] = await Promise.all([
-        listTeacherClasses(teacher.id),
-        getInstitutionAnalytics(teacher.id)
-      ]);
-      return {
-        teacher,
-        classCount: classes.length,
-        studentCount: analytics.totalStudents,
-        activeStudents: analytics.activeStudents,
-        averageScore: analytics.averageScore,
-        pendingApprovalCount: analytics.pendingApprovalCount,
-        atRiskStudentCount: analytics.atRiskStudentCount,
-        homeworkCompletionRate: analytics.homeworkCompletionRate,
-        mostCommonWeakestSkill: analytics.mostCommonWeakestSkill
-      };
-    })
-  );
-
-  return summaries.sort((a, b) => b.studentCount - a.studentCount || b.averageScore - a.averageScore);
+  const summaries = await Promise.all(teachers.map((teacher) => buildTeacherSummary(orgId, teacher)));
+  return summaries.sort((a, b) => (b.studentCount - a.studentCount) || ((b.recentActivityAt ?? "").localeCompare(a.recentActivityAt ?? "")));
 }
 
-/**
- * Full institution summary scoped to the given org.
- * Replaces getInstitutionAdminSummary() which was global.
- */
-export async function getOrgAdminSummary(orgId: string) {
-  const teacherSummaries = await listOrgTeacherSummaries(orgId);
-  const totalTeachers = teacherSummaries.length;
-  const totalClasses = teacherSummaries.reduce((s, t) => s + t.classCount, 0);
-  const totalStudents = teacherSummaries.reduce((s, t) => s + t.studentCount, 0);
-  const activeStudents = teacherSummaries.reduce((s, t) => s + t.activeStudents, 0);
-  const pendingApprovals = teacherSummaries.reduce((s, t) => s + (t.pendingApprovalCount ?? 0), 0);
-  const atRiskStudents = teacherSummaries.reduce((s, t) => s + (t.atRiskStudentCount ?? 0), 0);
-  const averageScore = totalTeachers
-    ? Number((teacherSummaries.reduce((s, t) => s + t.averageScore, 0) / totalTeachers).toFixed(1))
-    : 0;
-
-  return {
-    totalTeachers,
-    totalClasses,
-    totalStudents,
-    activeStudents,
-    pendingApprovals,
-    atRiskStudents,
-    averageScore,
-    teacherSummaries,
-    alerts: teacherSummaries
-      .flatMap((t) => {
-        const alerts: string[] = [];
-        if ((t.pendingApprovalCount ?? 0) > 0)
-          alerts.push(`${t.teacher.name}: ${t.pendingApprovalCount} pending approvals`);
-        if ((t.atRiskStudentCount ?? 0) > 0)
-          alerts.push(`${t.teacher.name}: ${t.atRiskStudentCount} at-risk students`);
-        return alerts;
-      })
-      .slice(0, 8)
-  };
+export async function listOrgClassSummaries(orgId: string): Promise<SchoolClassSummary[]> {
+  const sql = getSql();
+  const classes = await sql<Array<TeacherClass & { teacherName: string }>>`
+    select
+      c.id,
+      c.teacher_id as "teacherId",
+      c.name,
+      c.join_code as "joinCode",
+      c.approval_required as "approvalRequired",
+      c.join_message as "joinMessage",
+      c.created_at as "createdAt",
+      u.name as "teacherName"
+    from teacher_classes c
+    join users u on u.id = c.teacher_id
+    join organization_memberships m on m.user_id = c.teacher_id
+    where m.organization_id = ${orgId}
+      and m.role in ('teacher', 'admin', 'owner')
+    order by c.created_at desc
+  `;
+  return Promise.all(classes.map((item) => buildClassSummary(item, item.teacherName)));
 }
 
-/**
- * Lists students enrolled in any class belonging to a teacher in the given org.
- * Returns per-student progress summary for the institution admin dashboard.
- */
-export async function listOrgStudentSummaries(orgId: string) {
+export async function listOrgStudentSummaries(orgId: string): Promise<SchoolStudentSummary[]> {
   const sql = getSql();
   const rows = await sql<Array<{
     id: string;
@@ -434,6 +611,8 @@ export async function listOrgStudentSummaries(orgId: string) {
     averageScore: number | null;
     lastSessionAt: string | null;
     teacherNames: string[];
+    completedHomework: number;
+    totalHomework: number;
   }>>`
     select
       u.id,
@@ -443,48 +622,177 @@ export async function listOrgStudentSummaries(orgId: string) {
       count(distinct e.class_id)::int as "classCount",
       count(distinct s.id)::int as "sessionCount",
       round(avg(s.report_overall)::numeric, 1) as "averageScore",
-      max(s.created_at) as "lastSessionAt",
-      coalesce(
-        array_agg(distinct t.name) filter (where t.name is not null),
-        '{}'::text[]
-      ) as "teacherNames"
+      max(s.created_at)::text as "lastSessionAt",
+      coalesce(array_agg(distinct t.name) filter (where t.name is not null), '{}'::text[]) as "teacherNames",
+      count(distinct h.id) filter (where h.completed_at is not null)::int as "completedHomework",
+      count(distinct h.id)::int as "totalHomework"
     from teacher_class_enrollments e
     join teacher_classes c on c.id = e.class_id
     join users t on t.id = c.teacher_id
-    join organization_memberships tm on tm.user_id = t.id and tm.org_id = ${orgId}
+    join organization_memberships tm on tm.user_id = t.id and tm.organization_id = ${orgId}
     join users u on u.id = e.student_id
     left join sessions s on s.user_id = u.id and s.report_overall is not null
+    left join homework_assignments h on h.student_id = u.id and (h.class_id = c.id or h.class_id is null)
     where e.status = 'approved'
     group by u.id, u.name, u.email, u.plan
     order by "sessionCount" desc, u.created_at desc
-    limit 300
+    limit 400
   `;
-  return rows.map((r) => ({
-    ...r,
-    teacherNames: Array.isArray(r.teacherNames) ? r.teacherNames : []
-  }));
+  return rows.map((row) => {
+    const lastActiveDays = row.lastSessionAt ? Math.floor((Date.now() - new Date(row.lastSessionAt).getTime()) / 86400000) : null;
+    return {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      plan: row.plan,
+      classCount: row.classCount,
+      sessionCount: row.sessionCount,
+      averageScore: row.averageScore,
+      lastSessionAt: row.lastSessionAt,
+      teacherNames: Array.isArray(row.teacherNames) ? row.teacherNames : [],
+      homeworkCompletionRate: row.totalHomework > 0 ? Math.round((row.completedHomework / row.totalHomework) * 100) : 0,
+      riskFlag: lastActiveDays != null && lastActiveDays >= 7 ? "Inactive 7d" : (row.averageScore != null && row.averageScore < 5.5 ? "Low avg" : null),
+    };
+  });
 }
 
-/**
- * Updates a user's access flags within the given organization.
- *
- * Role-change protection rules (enforced server-side before any DB write):
- *
- *   1. Owner is immutable through this endpoint.
- *      No actor — including another owner — may change the owner's flags here.
- *      Ownership transfer is a separate, explicit operation not yet implemented.
- *
- *   2. Admins cannot modify the owner's record at all.
- *
- *   3. Non-owner admins cannot remove (downgrade) a peer admin.
- *      Only the org owner may demote another admin.
- *
- *   4. Any actor may elevate a lower-role member (e.g. teacher → admin)
- *      provided they have sufficient rank (admin or owner) to do so.
- *
- * The audit log is always written regardless of the outcome so that blocked
- * attempts are also visible.
- */
+export async function getOrgAdminSummary(orgId: string): Promise<OrgSummary> {
+  const [teacherSummaries, classSummaries, students] = await Promise.all([
+    listOrgTeacherSummaries(orgId),
+    listOrgClassSummaries(orgId),
+    listOrgStudentSummaries(orgId),
+  ]);
+  const totalTeachers = teacherSummaries.length;
+  const totalClasses = classSummaries.length;
+  const totalStudents = students.length;
+  const activeStudents = students.filter((item) => Boolean(item.lastSessionAt)).length;
+  const pendingApprovals = classSummaries.reduce((sum, item) => sum + item.pendingApprovals, 0);
+  const atRiskStudents = students.filter((item) => item.riskFlag).length;
+  const averageScore = students.length
+    ? Number((students.reduce((sum, item) => sum + (item.averageScore ?? 0), 0) / students.filter((item) => item.averageScore != null).length || 0).toFixed(1))
+    : 0;
+
+  const alerts: string[] = [];
+  if (teacherSummaries.length === 0) alerts.push("No teachers added yet.");
+  if (classSummaries.length === 0) alerts.push("No classes created yet.");
+  if (students.length === 0) alerts.push("No students connected to this institution yet.");
+  teacherSummaries.forEach((item) => {
+    if (item.pendingApprovalCount > 0) alerts.push(`${item.teacher.name}: ${item.pendingApprovalCount} pending approvals`);
+    if (item.overdueHomeworkCount > 0) alerts.push(`${item.teacher.name}: ${item.overdueHomeworkCount} overdue homework items`);
+  });
+
+  return {
+    totalTeachers,
+    totalClasses,
+    totalStudents,
+    activeStudents,
+    pendingApprovals,
+    atRiskStudents,
+    averageScore,
+    teacherSummaries,
+    classSummaries,
+    alerts: alerts.slice(0, 10),
+  };
+}
+
+export async function getOrgTeacherDetail(orgId: string, teacherId: string): Promise<SchoolTeacherDetail> {
+  const teacherSummary = (await listOrgTeacherSummaries(orgId)).find((item) => item.teacher.id === teacherId);
+  if (!teacherSummary) throw Object.assign(new Error("Teacher not found in your organization."), { statusCode: 404 });
+  const classes = (await listOrgClassSummaries(orgId)).filter((item) => item.teacherId === teacherId);
+  const sql = getSql();
+  const [recentAnnouncements, notes] = await Promise.all([
+    sql<Array<{ id: string; title: string; createdAt: string }>>`
+      select id, title, created_at as "createdAt"
+      from announcements
+      where author_id = ${teacherId}
+      order by created_at desc
+      limit 6
+    `,
+    sql<TeacherNote[]>`
+      select
+        n.id,
+        n.teacher_id as "teacherId",
+        n.student_id as "studentId",
+        n.session_id as "sessionId",
+        n.note,
+        n.tags_json as "tags",
+        n.created_at as "createdAt"
+      from teacher_notes n
+      where n.teacher_id = ${teacherId}
+      order by n.created_at desc
+      limit 12
+    `,
+  ]);
+  return {
+    teacher: teacherSummary.teacher,
+    summary: teacherSummary,
+    classes,
+    recentAnnouncements,
+    recentNotes: notes,
+  };
+}
+
+export async function getOrgStudentDetail(orgId: string, studentId: string): Promise<SchoolStudentDetail> {
+  const sql = getSql();
+  const classes = await sql<Array<{ classId: string; className: string; teacherId: string; teacherName: string; joinedAt: string | null }>>`
+    select
+      c.id as "classId",
+      c.name as "className",
+      c.teacher_id as "teacherId",
+      t.name as "teacherName",
+      e.joined_at::text as "joinedAt"
+    from teacher_class_enrollments e
+    join teacher_classes c on c.id = e.class_id
+    join users t on t.id = c.teacher_id
+    join organization_memberships m on m.user_id = c.teacher_id
+    where e.student_id = ${studentId}
+      and e.status = 'approved'
+      and m.organization_id = ${orgId}
+    order by e.joined_at desc nulls last
+  `;
+  if (!classes.length) {
+    throw Object.assign(new Error("Student not found in your organization."), { statusCode: 404 });
+  }
+  const student = await getMember(studentId);
+  if (!student) throw Object.assign(new Error("Student not found."), { statusCode: 404 });
+  const summary = await getProgressSummary(studentId);
+  const overview = buildStudentOverview(student, summary);
+  const homeworkRows = await sql<Array<{ completedAt: string | null; dueAt: string | null }>>`
+    select completed_at as "completedAt", due_at as "dueAt"
+    from homework_assignments
+    where student_id = ${studentId}
+      and teacher_id = any(${classes.map((item) => item.teacherId)})
+  `;
+  const notes = await sql<TeacherNote[]>`
+    select
+      n.id,
+      n.teacher_id as "teacherId",
+      n.student_id as "studentId",
+      n.session_id as "sessionId",
+      n.note,
+      n.tags_json as "tags",
+      n.created_at as "createdAt"
+    from teacher_notes n
+    join organization_memberships m on m.user_id = n.teacher_id
+    where n.student_id = ${studentId}
+      and m.organization_id = ${orgId}
+    order by n.created_at desc
+    limit 24
+  `;
+  return {
+    student,
+    summary,
+    overview,
+    classes,
+    homework: {
+      total: homeworkRows.length,
+      completed: homeworkRows.filter((item) => item.completedAt).length,
+      overdue: homeworkRows.filter((item) => !item.completedAt && item.dueAt && new Date(item.dueAt).getTime() < Date.now()).length,
+    },
+    notes,
+  };
+}
+
 export async function updateOrgUserAccess(input: {
   actorId: string;
   orgId: string;
@@ -493,80 +801,66 @@ export async function updateOrgUserAccess(input: {
   adminAccess?: boolean;
 }): Promise<InstitutionUserSummary> {
   const sql = getSql();
-
-  // Resolve both memberships and current flag values in parallel so that
-  // blocked-attempt audit records always include the before-state.
   const [actorMembership, targetMembership, currentRows] = await Promise.all([
     getOrgMembership(input.orgId, input.actorId),
     getOrgMembership(input.orgId, input.targetUserId),
     sql<Array<{ adminAccess: boolean; teacherAccess: boolean }>>`
       select admin_access as "adminAccess", teacher_access as "teacherAccess"
       from users where id = ${input.targetUserId} limit 1
-    `
+    `,
   ]);
   const current = currentRows[0] ?? { adminAccess: false, teacherAccess: false };
 
-  // Helper: write a blocked-attempt record before throwing.
-  async function logBlocked(reason: string) {
+  async function logAudit(blocked: boolean, reason?: string, next?: { adminAccess: boolean; teacherAccess: boolean }) {
     await sql`
-      insert into permission_audit_log (id, actor_id, target_user_id, org_id, action, old_value, new_value, occurred_at)
-      values (
+      insert into permission_audit_log (
+        id, organization_id, actor_id, target_user_id, action,
+        old_value_json, new_value_json, blocked, block_reason, occurred_at
+      ) values (
         ${crypto.randomUUID()},
+        ${input.orgId},
         ${input.actorId},
         ${input.targetUserId},
-        ${input.orgId},
-        'update_access_blocked',
-        ${JSON.stringify({ adminAccess: current.adminAccess, teacherAccess: current.teacherAccess })}::jsonb,
-        ${JSON.stringify({ requested: { adminAccess: input.adminAccess, teacherAccess: input.teacherAccess }, reason })}::jsonb,
+        'update_access',
+        ${JSON.stringify(current)},
+        ${JSON.stringify(next ?? { adminAccess: input.adminAccess, teacherAccess: input.teacherAccess })},
+        ${blocked},
+        ${reason ?? null},
         now()
       )
     `;
   }
 
-  // Rule 0: Actor must be an owner or admin of this org.
   if (!actorMembership || !["owner", "admin"].includes(actorMembership.role)) {
-    await logBlocked("actor_not_authorized");
+    await logAudit(true, "actor_not_authorized");
     throw Object.assign(new Error("You do not have permission to change access in this organization."), { statusCode: 403 });
   }
-
-  // Target must be a member of this org.
   if (!targetMembership) {
-    throw new Error("User does not belong to your organization.");
+    await logAudit(true, "target_not_in_org");
+    throw Object.assign(new Error("User does not belong to your organization."), { statusCode: 404 });
   }
-
-  // Rule 1 & 2: Owner record is immutable through this endpoint.
   if (targetMembership.role === "owner") {
-    await logBlocked("target_is_owner");
-    throw Object.assign(
-      new Error("The organization owner's access cannot be modified through this endpoint."),
-      { statusCode: 403 }
-    );
+    await logAudit(true, "target_is_owner");
+    throw Object.assign(new Error("The organization owner cannot be modified here."), { statusCode: 403 });
+  }
+  if (actorMembership.role === "admin" && targetMembership.role === "admin" && input.adminAccess === false) {
+    await logAudit(true, "peer_admin_demotion_forbidden");
+    throw Object.assign(new Error("Only the organization owner can demote another admin."), { statusCode: 403 });
   }
 
-  // Rule 3: Non-owner admins cannot demote a peer admin.
-  if (
-    actorMembership.role === "admin" &&
-    targetMembership.role === "admin" &&
-    input.adminAccess === false
-  ) {
-    await logBlocked("peer_admin_demotion_forbidden");
-    throw Object.assign(
-      new Error("Only the organization owner can remove admin access from another admin."),
-      { statusCode: 403 }
-    );
-  }
-
-  const newAdminAccess = input.adminAccess ?? current.adminAccess;
-  const newTeacherAccess = input.teacherAccess ?? current.teacherAccess;
-
+  const nextAdmin = input.adminAccess ?? current.adminAccess;
+  const nextTeacher = input.teacherAccess ?? current.teacherAccess;
   const rows = await sql<InstitutionUserSummary[]>`
     update users
     set
-      teacher_access = ${newTeacherAccess},
-      admin_access   = ${newAdminAccess}
+      teacher_access = ${nextTeacher},
+      admin_access = ${nextAdmin}
     where id = ${input.targetUserId}
     returning
-      id, email, name, role,
+      id,
+      email,
+      name,
+      role,
       member_type as "memberType",
       organization_name as "organizationName",
       plan,
@@ -575,33 +869,12 @@ export async function updateOrgUserAccess(input: {
       teacher_access as "teacherAccess",
       created_at as "createdAt"
   `;
-
-  if (!rows[0]) throw new Error("User not found.");
-
-  // Sync org membership role to match the new access level.
-  // Never elevate to 'owner' through this path.
-  const newRole: OrgMemberRole =
-    newAdminAccess ? "admin" : newTeacherAccess ? "teacher" : "student";
+  const nextRole: OrgMemberRole = nextAdmin ? "admin" : nextTeacher ? "teacher" : "student";
   await sql`
     update organization_memberships
-    set role = ${newRole}
-    where org_id = ${input.orgId} and user_id = ${input.targetUserId}
+    set role = ${nextRole}
+    where organization_id = ${input.orgId} and user_id = ${input.targetUserId} and role <> 'owner'
   `;
-
-  // Successful update audit record.
-  await sql`
-    insert into permission_audit_log (id, actor_id, target_user_id, org_id, action, old_value, new_value, occurred_at)
-    values (
-      ${crypto.randomUUID()},
-      ${input.actorId},
-      ${input.targetUserId},
-      ${input.orgId},
-      'update_access',
-      ${JSON.stringify({ adminAccess: current.adminAccess, teacherAccess: current.teacherAccess })}::jsonb,
-      ${JSON.stringify({ adminAccess: newAdminAccess, teacherAccess: newTeacherAccess })}::jsonb,
-      now()
-    )
-  `;
-
+  await logAudit(false, undefined, { adminAccess: nextAdmin, teacherAccess: nextTeacher });
   return rows[0];
 }

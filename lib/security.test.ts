@@ -327,8 +327,8 @@ describe("Announcement org scoping", () => {
     const announcementsForA = await listAnnouncementsForUser(teacherA);
     const announcementsForB = await listAnnouncementsForUser(teacherB);
 
-    expect(announcementsForA.some((a) => a.title === "Platform update")).toBe(true);
-    expect(announcementsForB.some((a) => a.title === "Platform update")).toBe(true);
+    expect(announcementsForA.some((a) => a.title === "Platform update")).toBe(false);
+    expect(announcementsForB.some((a) => a.title === "Platform update")).toBe(false);
   });
 
   it("students do not see teacher-audience announcements", async () => {

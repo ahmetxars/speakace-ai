@@ -1,23 +1,10 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ensureTeacherOwnsClass, listClassStudents } from "@/lib/classroom-store";
-import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
-
-async function getTeacherProfile() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(getSessionCookieName())?.value;
-  const profile = await getAuthenticatedUser(token);
-  if (!profile?.isTeacher && !profile?.isAdmin) return null;
-  return profile;
-}
+import { permissionErrorResponse, requireTeacher } from "@/lib/server/permissions";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const profile = await getTeacherProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
-  }
-
   try {
+    const profile = await requireTeacher();
     const { id } = await params;
     await ensureTeacherOwnsClass(profile.id, id);
     const students = await listClassStudents({ teacherId: profile.id, classId: id });
@@ -45,7 +32,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       }
     });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not export class report." }, { status: 400 });
+    return permissionErrorResponse(error);
   }
 }
 

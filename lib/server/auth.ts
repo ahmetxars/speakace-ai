@@ -56,6 +56,68 @@ function isStrongEnoughPassword(password: string) {
   return trimmed.length >= 8 && /\d/.test(trimmed);
 }
 
+export async function ensureSchoolAccountAccess(profile: MemberProfile): Promise<MemberProfile> {
+  const resolved = withAdminPrivileges(profile);
+  if (resolved.memberType !== "school") {
+    return resolved;
+  }
+
+  const orgName = resolved.organizationName?.trim();
+  if (!orgName) {
+    return resolved;
+  }
+
+  if (resolved.adminAccess && resolved.organizationId) {
+    return resolved;
+  }
+
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const { addOrgMember, createOrganization, getOrganizationById, getOrganizationByOwnerId } = await import("@/lib/server/org-store");
+
+    const ownedOrg = await getOrganizationByOwnerId(resolved.id);
+    let org = ownedOrg;
+
+    if (!org && resolved.organizationId) {
+      org = await getOrganizationById(resolved.organizationId);
+      if (org) {
+        await addOrgMember({ orgId: org.id, userId: resolved.id, role: "admin", invitedBy: resolved.id });
+      }
+    }
+
+    if (!org) {
+      org = await createOrganization({ name: orgName, ownerId: resolved.id });
+    } else if (ownedOrg) {
+      await addOrgMember({ orgId: ownedOrg.id, userId: resolved.id, role: "owner", invitedBy: resolved.id });
+    }
+
+    await sql`
+      update users
+      set
+        admin_access = true,
+        organization_id = ${org.id},
+        organization_name = ${org.name}
+      where id = ${resolved.id}
+    `;
+
+    return withAdminPrivileges({
+      ...resolved,
+      adminAccess: true,
+      organizationId: org.id,
+      organizationName: org.name
+    });
+  }
+
+  const nextProfile = withAdminPrivileges({
+    ...resolved,
+    adminAccess: true,
+    organizationId: resolved.organizationId ?? `org-${resolved.id}`,
+    organizationName: orgName
+  });
+  await upsertMember(nextProfile);
+  return nextProfile;
+}
+
 export function getSessionCookieName() {
   return SESSION_COOKIE;
 }
@@ -99,6 +161,9 @@ export async function signUpWithPassword(input: {
 
   const requestedMemberType =
     input.memberType === "teacher" || input.memberType === "school" ? input.memberType : "student";
+  if (requestedMemberType === "school" && !input.organizationName?.trim()) {
+    throw new Error("School accounts require an organization name.");
+  }
   const passwordHash = await hash(input.password, 12);
   const purchasedPlan = await getActiveBillingPlanForEmail(normalizedEmail);
   const referral = await validateReferralCode(input.referralCode);
@@ -153,12 +218,12 @@ export async function signUpWithPassword(input: {
         email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
     `;
 
-    return withAdminPrivileges(rows[0]);
+    return ensureSchoolAccountAccess(rows[0]);
   }
 
   await upsertMember({ ...profile, emailVerified: autoVerified });
   getMemoryAuthStore().passwordHashes.set(profile.id, passwordHash);
-  return { ...profile, emailVerified: autoVerified };
+  return ensureSchoolAccountAccess({ ...profile, emailVerified: autoVerified });
 }
 
 export async function signUpWithGoogle(input: {
@@ -176,6 +241,9 @@ export async function signUpWithGoogle(input: {
 
   const requestedMemberType =
     input.memberType === "teacher" || input.memberType === "school" ? input.memberType : "student";
+  if (requestedMemberType === "school" && !input.organizationName?.trim()) {
+    throw new Error("School accounts require an organization name.");
+  }
   const purchasedPlan = await getActiveBillingPlanForEmail(normalizedEmail);
   const referral = await validateReferralCode(input.referralCode);
   const inviteReferrer =
@@ -228,11 +296,11 @@ export async function signUpWithGoogle(input: {
         email_verified as "emailVerified", admin_access as "adminAccess", teacher_access as "teacherAccess", created_at as "createdAt"
     `;
 
-    return withAdminPrivileges(rows[0]);
+    return ensureSchoolAccountAccess(rows[0]);
   }
 
   await upsertMember(profile);
-  return profile;
+  return ensureSchoolAccountAccess(profile);
 }
 
 export async function signInWithPassword(input: { email: string; password: string }) {
@@ -299,8 +367,9 @@ export async function signInWithPassword(input: { email: string; password: strin
       emailVerified: user.emailVerified,
       createdAt: user.createdAt
     });
-    await recordAuthActivity({ userId: profile.id, eventType: "signin", meta: { source: "password" } });
-    return profile;
+    const normalizedProfile = await ensureSchoolAccountAccess(profile);
+    await recordAuthActivity({ userId: normalizedProfile.id, eventType: "signin", meta: { source: "password" } });
+    return normalizedProfile;
   }
 
   const profile = await findMemberByEmail(normalizedEmail);
@@ -325,7 +394,7 @@ export async function signInWithPassword(input: { email: string; password: strin
     return withAdminPrivileges({ ...profile, emailVerified: true });
   }
 
-  return withAdminPrivileges(profile);
+  return ensureSchoolAccountAccess(profile);
 }
 
 export async function applyInviteReferralToUser(input: {
@@ -449,7 +518,7 @@ export async function getAuthenticatedUser(sessionToken: string | undefined) {
       limit 1
     `;
 
-    return rows[0] ? withAdminPrivileges(rows[0]) : null;
+    return rows[0] ? ensureSchoolAccountAccess(rows[0]) : null;
   }
 
   const session = getMemoryAuthStore().sessions.get(tokenHash);
@@ -463,7 +532,7 @@ export async function getAuthenticatedUser(sessionToken: string | undefined) {
   }
 
   const profile = await getMember(session.userId);
-  return profile ? withAdminPrivileges(profile) : null;
+  return profile ? ensureSchoolAccountAccess(profile) : null;
 }
 
 export async function signOutSession(sessionToken: string | undefined) {

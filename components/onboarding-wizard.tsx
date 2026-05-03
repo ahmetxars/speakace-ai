@@ -266,6 +266,13 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
   }
 
   const studyDays = Array.isArray(form.studyDays) ? form.studyDays : [];
+  const stepIntroCardStyle = {
+    padding: "1rem",
+    background: "color-mix(in srgb, var(--surface-strong) 88%, var(--surface) 12%)",
+    border: "1px solid var(--line)",
+    display: "grid",
+    gap: "0.35rem"
+  } as const;
 
   if (planReady && savedProfile) {
     const p = savedProfile;
@@ -464,7 +471,7 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
           {/* STEP 1 – EXAM GOAL */}
           {step === 1 ? (
             <>
-              <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)", display: "grid", gap: "0.35rem" }}>
+              <div className="card" style={stepIntroCardStyle}>
                 <strong>{tr ? "Hangi sınava hazırlanıyorsun?" : "What's your exam goal?"}</strong>
                 <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
                   {tr
@@ -520,7 +527,7 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
           {/* STEP 2 – ENGLISH BACKGROUND */}
           {step === 2 ? (
             <>
-              <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)", display: "grid", gap: "0.35rem" }}>
+              <div className="card" style={stepIntroCardStyle}>
                 <strong>{tr ? "İngilizce geçmişin nasıl?" : "What's your English background?"}</strong>
                 <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
                   {tr
@@ -547,7 +554,7 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
           {/* STEP 3 – BIGGEST CHALLENGE */}
           {step === 3 ? (
             <>
-              <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)", display: "grid", gap: "0.35rem" }}>
+              <div className="card" style={stepIntroCardStyle}>
                 <strong>{tr ? "Konuşurken seni en çok ne zorluyor?" : "What's your biggest speaking challenge?"}</strong>
                 <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
                   {tr
@@ -574,7 +581,7 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
           {/* STEP 4 – LEVEL ESTIMATION */}
           {step === 4 ? (
             <>
-              <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)", display: "grid", gap: "0.35rem" }}>
+              <div className="card" style={stepIntroCardStyle}>
                 <strong>{tr ? "Mevcut İngilizce seviyeni kendin nasıl değerlendirirsin?" : "How would you rate your current English level?"}</strong>
                 <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
                   {tr
@@ -601,7 +608,7 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
           {/* STEP 5 – STUDY RHYTHM */}
           {step === 5 ? (
             <>
-              <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.58)", display: "grid", gap: "0.35rem" }}>
+              <div className="card" style={stepIntroCardStyle}>
                 <strong>{tr ? "Çalışma ritmin nasıl olacak?" : "How will you study?"}</strong>
                 <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
                   {tr
@@ -736,5 +743,7 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
 const inputStyle = {
   padding: "0.9rem",
   borderRadius: 14,
-  border: "1px solid var(--line)"
+  border: "1px solid var(--line)",
+  background: "var(--surface-strong)",
+  color: "var(--text)"
 } as const;

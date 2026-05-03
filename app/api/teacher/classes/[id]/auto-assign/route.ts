@@ -1,53 +1,33 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { ensureTeacherOwnsClass, listClassStudents } from "@/lib/classroom-store";
-import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
+import { permissionErrorResponse, requireTeacher } from "@/lib/server/permissions";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 import { getHomeworkAutoAssignRule, runAdaptiveHomeworkAutoAssign, upsertHomeworkAutoAssignRule } from "@/lib/homework-store";
 
-async function getTeacherProfile() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(getSessionCookieName())?.value;
-  const profile = await getAuthenticatedUser(token);
-  if (!profile?.isTeacher && !profile?.isAdmin) {
-    return null;
-  }
-  return profile;
-}
-
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const profile = await getTeacherProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
-  }
-
   try {
+    const profile = await requireTeacher();
     const { id } = await params;
     await ensureTeacherOwnsClass(profile.id, id);
     const rule = await getHomeworkAutoAssignRule({ teacherId: profile.id, classId: id });
     return NextResponse.json({ rule });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not load rule." }, { status: 400 });
+    return permissionErrorResponse(error);
   }
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const profile = await getTeacherProfile();
-  if (!profile) {
-    return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
-  }
-
-  const ip = getRequestIp(request);
-  const limit = checkRateLimit({
-    key: `teacher-auto-assign:${ip}:${profile.id}`,
-    windowMs: 1000 * 60 * 15,
-    max: 40
-  });
-  if (!limit.allowed) {
-    return NextResponse.json({ error: "Too many auto-assign actions. Please try again later." }, { status: 429 });
-  }
-
   try {
+    const profile = await requireTeacher();
+    const ip = getRequestIp(request);
+    const limit = checkRateLimit({
+      key: `teacher-auto-assign:${ip}:${profile.id}`,
+      windowMs: 1000 * 60 * 15,
+      max: 40
+    });
+    if (!limit.allowed) {
+      return NextResponse.json({ error: "Too many auto-assign actions. Please try again later." }, { status: 429 });
+    }
     const { id } = await params;
     await ensureTeacherOwnsClass(profile.id, id);
     const body = await request.json();
@@ -82,6 +62,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     return NextResponse.json({ rule });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not update auto-assign rule." }, { status: 400 });
+    return permissionErrorResponse(error);
   }
 }

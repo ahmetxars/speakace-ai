@@ -1,6 +1,8 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { useAppState } from "@/components/providers";
@@ -27,14 +29,27 @@ type HomeworkSummary = {
   overdue: number;
 };
 
+type TeacherDashboardAnalytics = {
+  totalClasses: number;
+  totalStudents: number;
+  activeStudents: number;
+  averageScore: number;
+  homeworkCompletionRate: number;
+  overdueHomeworkCount: number;
+  pendingApprovalCount: number;
+  atRiskStudentCount: number;
+  classes: TeacherClassAnalytics[];
+};
+
 type ClassTab = "overview" | "students" | "homework" | "study" | "settings";
 
 const IELTS_TASKS: TaskType[] = ["ielts-part-1", "ielts-part-2", "ielts-part-3"];
 const TOEFL_TASKS: TaskType[] = ["toefl-task-1", "toefl-task-2", "toefl-task-3", "toefl-task-4"];
 
-export function TeacherHub() {
+export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
   const { currentUser, language } = useAppState();
   const tr = language === "tr";
+  const router = useRouter();
 
   // ── core state ──────────────────────────────────────────────────────────────
   const [classes, setClasses] = useState<TeacherClassSummary[]>([]);
@@ -45,6 +60,7 @@ export function TeacherHub() {
   const [sharedItems, setSharedItems] = useState<SharedClassStudyItem[]>([]);
   const [pendingRequests, setPendingRequests] = useState<TeacherEnrollmentRequest[]>([]);
   const [homeworkSummary, setHomeworkSummary] = useState<HomeworkSummary>({ total: 0, completed: 0, pending: 0, overdue: 0 });
+  const [dashboardAnalytics, setDashboardAnalytics] = useState<TeacherDashboardAnalytics | null>(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [loadingClasses, setLoadingClasses] = useState(true);
@@ -132,9 +148,20 @@ export function TeacherHub() {
       .then((data: { classes?: TeacherClassSummary[] }) => {
         const next = data.classes ?? [];
         setClasses(next);
-        setSelectedClassId((cur) => cur || next[0]?.id || "");
+        setSelectedClassId((cur) => {
+          if (initialClassId && next.some((item) => item.id === initialClassId)) return initialClassId;
+          return cur && next.some((item) => item.id === cur) ? cur : "";
+        });
       })
       .finally(() => setLoadingClasses(false));
+  }, [currentUser?.id, currentUser?.isAdmin, currentUser?.isTeacher, initialClassId]);
+
+  useEffect(() => {
+    if (!currentUser?.isTeacher && !currentUser?.isAdmin) return;
+    fetch("/api/teacher/institution")
+      .then((r) => r.json())
+      .then((data: { analytics?: TeacherDashboardAnalytics }) => setDashboardAnalytics(data.analytics ?? null))
+      .catch(() => setDashboardAnalytics(null));
   }, [currentUser?.id, currentUser?.isAdmin, currentUser?.isTeacher]);
 
   const refreshHomeworkSummary = useCallback(async () => {
@@ -201,22 +228,23 @@ export function TeacherHub() {
     const data = (await r.json()) as { classroom?: TeacherClassSummary; error?: string };
     if (!r.ok || !data.classroom) { setError(data.error ?? (tr ? "Sınıf oluşturulamadı." : "Could not create class.")); return; }
     setClasses([data.classroom, ...classes]);
-    setSelectedClassId(data.classroom.id);
     setActiveTab("overview");
     setNewClassName("");
     setNotice(tr ? "Sınıf oluşturuldu." : "Class created.");
+    router.push(`/app/teacher/classes/${data.classroom.id}` as Route);
   };
 
   const openClass = (id: string) => {
-    setSelectedClassId(id);
     setActiveTab("overview");
     setNotice(""); setError("");
+    router.push(`/app/teacher/classes/${id}` as Route);
   };
 
   const goBack = () => {
     setSelectedClassId("");
     setActiveTab("overview");
     setNotice(""); setError("");
+    router.push("/app/teacher" as Route);
   };
 
   const addStudent = async () => {
@@ -373,20 +401,20 @@ export function TeacherHub() {
 
   // ── CLASS LIST VIEW ──────────────────────────────────────────────────────────
   if (!selectedClassId) {
+    const topClasses = classes.slice(0, 3);
+    const recentSignals = [...classes]
+      .sort((a, b) => (b.pendingCount ?? 0) - (a.pendingCount ?? 0))
+      .slice(0, 4);
     return (
       <div className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
 
         {/* Header */}
         <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
-          <span className="eyebrow">Teacher hub</span>
-          <h1 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", margin: 0 }}>{tr ? "Sınıflarım" : "My classes"}</h1>
+          <span className="eyebrow">{tr ? "Class management" : "Class management"}</span>
+          <h1 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", margin: 0 }}>{tr ? "Öğretmen paneli" : "Teacher dashboard"}</h1>
           <p style={{ color: "var(--muted)", margin: 0, lineHeight: 1.7 }}>
-            {tr ? "Bir sınıfa girerek öğrenci listesini, ödevleri ve ayarları yönetebilirsin." : "Open a class to manage students, assignments, and settings."}
+            {tr ? "Önce genel görünümü gör, sonra istediğin sınıfa girip öğrencileri, ödevleri ve ayarları yönet." : "Start from the overview, then open any class to manage students, homework, and settings."}
           </p>
-          <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
-            <Link className="button button-secondary" href="/app/teacher/institution">{tr ? "Kurum analitiği" : "Institution analytics"}</Link>
-            <Link className="button button-secondary" href="/app/teacher/billing">{tr ? "Kurum paketi" : "Institution plan"}</Link>
-          </div>
         </section>
 
         {/* Feedback */}
@@ -412,6 +440,68 @@ export function TeacherHub() {
             <button type="button" className="button button-primary" onClick={createClass} disabled={!newClassName.trim()}>
               {tr ? "Oluştur" : "Create"}
             </button>
+          </div>
+        </section>
+
+        {/* Snapshot */}
+        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.8rem" }}>
+          <TeacherStat label={tr ? "Sınıf" : "Classes"} value={String(dashboardAnalytics?.totalClasses ?? classes.length)} />
+          <TeacherStat label={tr ? "Öğrenci" : "Students"} value={String(dashboardAnalytics?.totalStudents ?? 0)} />
+          <TeacherStat label={tr ? "Aktif öğrenci" : "Active students"} value={String(dashboardAnalytics?.activeStudents ?? 0)} />
+          <TeacherStat label={tr ? "Ort. skor" : "Avg score"} value={dashboardAnalytics?.averageScore ? dashboardAnalytics.averageScore.toFixed(1) : "-"} />
+          <TeacherStat label={tr ? "Bekleyen onay" : "Pending approvals"} value={String(dashboardAnalytics?.pendingApprovalCount ?? classes.reduce((sum, item) => sum + (item.pendingCount ?? 0), 0))} />
+          <TeacherStat label={tr ? "Geciken ödev" : "Overdue homework"} value={String(homeworkSummary.overdue)} />
+        </section>
+
+        {/* Priority actions + recent signals */}
+        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <div className="section-header-row">
+              <ShieldAlert size={16} style={{ color: "var(--destructive)" }} />
+              <strong>{tr ? "Öncelikli aksiyonlar" : "Priority actions"}</strong>
+            </div>
+            <ActionRow
+              label={tr ? "Geciken ödevleri hatırlat" : "Remind overdue homework"}
+              value={homeworkSummary.overdue}
+              cta={tr ? "Ödevler" : "Homework"}
+              onClick={() => topClasses[0] && openClass(topClasses[0].id)}
+            />
+            <ActionRow
+              label={tr ? "Bekleyen katılım onayları" : "Pending join approvals"}
+              value={dashboardAnalytics?.pendingApprovalCount ?? classes.reduce((sum, item) => sum + (item.pendingCount ?? 0), 0)}
+              cta={tr ? "Sınıflar" : "Classes"}
+              onClick={() => recentSignals[0] && openClass(recentSignals[0].id)}
+            />
+            <ActionRow
+              label={tr ? "Riskli öğrencileri incele" : "Review at-risk students"}
+              value={dashboardAnalytics?.atRiskStudentCount ?? 0}
+              cta={tr ? "Detay" : "Review"}
+              onClick={() => topClasses[0] && openClass(topClasses[0].id)}
+            />
+          </div>
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <div className="section-header-row">
+              <TrendingUp size={16} style={{ color: "var(--accent)" }} />
+              <strong>{tr ? "Son sınıf sinyalleri" : "Recent class signals"}</strong>
+            </div>
+            {recentSignals.length ? recentSignals.map((cls) => (
+              <button
+                key={cls.id}
+                type="button"
+                onClick={() => openClass(cls.id)}
+                className="card"
+                style={{ padding: "0.9rem", background: "var(--surface-strong)", textAlign: "left", cursor: "pointer", display: "grid", gap: "0.35rem" }}
+              >
+                <strong>{cls.name}</strong>
+                <div className="practice-meta">
+                  {(cls.pendingCount ?? 0)} {tr ? "bekleyen onay" : "pending approvals"} · {cls.studentCount} {tr ? "öğrenci" : "students"}
+                </div>
+              </button>
+            )) : (
+              <p style={{ margin: 0, color: "var(--muted)" }}>
+                {tr ? "Sınıf açtıkça burada son aktivite sinyallerini göreceksin." : "Class activity signals will appear here as you grow your roster."}
+              </p>
+            )}
           </div>
         </section>
 
@@ -1051,7 +1141,6 @@ export function TeacherHub() {
             <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
               <a className="button button-secondary" href={`/api/teacher/classes/${selectedClassId}/export`}>{tr ? "CSV rapor indir" : "Download CSV"}</a>
               <Link className="button button-secondary" href="/app/teacher/compare">{tr ? "Öğrenci karşılaştır" : "Compare students"}</Link>
-              <Link className="button button-secondary" href="/app/teacher/billing">{tr ? "Kurum paketi" : "Institution plan"}</Link>
             </div>
           </div>
 
@@ -1160,6 +1249,23 @@ function TeacherStat({ label, value }: { label: string; value: string }) {
       <div style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "0.2rem" }}>{label}</div>
       <strong>{value}</strong>
     </div>
+  );
+}
+
+function ActionRow({ label, value, cta, onClick }: { label: string; value: number; cta: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="card"
+      style={{ padding: "0.9rem", background: "var(--surface-strong)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", cursor: "pointer" }}
+    >
+      <div style={{ textAlign: "left" }}>
+        <strong>{value}</strong>
+        <div className="practice-meta">{label}</div>
+      </div>
+      <span className="teacher-link-hint">{cta} →</span>
+    </button>
   );
 }
 

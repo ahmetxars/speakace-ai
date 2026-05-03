@@ -9,10 +9,9 @@
  *   Returns all pending invites for the admin's organization.
  */
 import { NextResponse } from "next/server";
-import { createOrgInvite, getOrgForAdmin } from "@/lib/server/org-store";
-import { getSql, hasDatabaseUrl } from "@/lib/server/db";
+import { createOrgInvite, getOrgForAdmin, listOrgInvites } from "@/lib/server/org-store";
+import { hasDatabaseUrl } from "@/lib/server/db";
 import { permissionErrorResponse, requireSchoolAdmin } from "@/lib/server/permissions";
-import { OrgInvite } from "@/lib/types";
 
 export async function POST(request: Request) {
   try {
@@ -58,18 +57,7 @@ export async function GET() {
       return NextResponse.json({ invites: [] });
     }
 
-    const sql = getSql();
-    const invites = await sql<OrgInvite[]>`
-      select
-        id, org_id as "orgId", email, role, invite_code as "inviteCode",
-        created_by as "createdBy", expires_at as "expiresAt",
-        used_at as "usedAt", used_by as "usedBy", created_at as "createdAt"
-      from organization_invites
-      where org_id = ${org.id}
-        and used_at is null
-        and expires_at > now()
-      order by created_at desc
-    `;
+    const invites = await listOrgInvites(org.id);
 
     return NextResponse.json({ invites });
   } catch (error) {

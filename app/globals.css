@@ -3800,6 +3800,8 @@ body[data-theme="dark"] .button-primary {
 
 .auth-shell {
   position: relative;
+  padding-top: clamp(5.25rem, 10vh, 7.5rem);
+  padding-bottom: clamp(4rem, 8vh, 6rem);
 }
 
 .auth-shell::before {
@@ -4211,6 +4213,11 @@ body[data-theme="dark"] .auth-inline-error {
 
 body[data-theme="dark"] .auth-inline-notice {
   color: #a7f0c2;
+}
+
+body[data-theme="dark"] .auth-panel,
+body[data-theme="dark"] .auth-showcase {
+  background: color-mix(in srgb, var(--surface) 96%, black 4%);
 }
 
 .teacher-feedback {
@@ -6870,6 +6877,11 @@ body[data-theme="dark"] .marketing-sticky-copy span {
 @media (max-width: 768px) {
   .auth-layout {
     grid-template-columns: 1fr;
+  }
+
+  .auth-shell {
+    padding-top: 4.5rem;
+    padding-bottom: 4rem;
   }
 
   .auth-showcase {

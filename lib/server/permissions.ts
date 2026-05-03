@@ -2,30 +2,15 @@
  * Centralized authorization helpers.
  *
  * Every helper either returns the verified profile / resource or throws an
- * error that the calling route handler should turn into a 403 response.  No
+ * error that the calling route handler should turn into a 403 response. No
  * helper silently returns null so callers can never accidentally skip the
  * check by forgetting a null guard.
- *
- * Hierarchy:
- *   requireAuthenticatedUser
- *     └─ requireStudent          (member, not a teacher/admin)
- *     └─ requireTeacher          (isTeacher flag set by explicit grant)
- *     └─ requireSchoolAdmin      (isAdmin flag set by explicit grant)
- *          └─ requireSchoolOwnsTeacher   (teacher's org_id === admin's org_id)
- *          └─ requireSchoolOwnsStudent   (student's org_id === admin's org_id)
- *          └─ requireSchoolOwnsClass     (class → teacher → same org)
- *     └─ requireTeacherOwnsClass  (class.teacher_id === teacher.id)
- *     └─ requireTeacherOwnsStudent (student enrolled in one of teacher's classes)
  */
 
 import { cookies } from "next/headers";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
 import { MemberProfile } from "@/lib/types";
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
 
 async function getSessionProfile(): Promise<MemberProfile | null> {
   const cookieStore = await cookies();
@@ -37,11 +22,6 @@ function deny(message: string): never {
   throw Object.assign(new Error(message), { statusCode: 403 });
 }
 
-// ---------------------------------------------------------------------------
-// Exported helpers
-// ---------------------------------------------------------------------------
-
-/** Returns the authenticated member or throws 401. */
 export async function requireAuthenticatedUser(): Promise<MemberProfile> {
   const profile = await getSessionProfile();
   if (!profile || profile.role === "guest") {
@@ -50,11 +30,6 @@ export async function requireAuthenticatedUser(): Promise<MemberProfile> {
   return profile;
 }
 
-/**
- * Returns the profile if the user is a plain student (not a teacher/admin).
- * Teachers and admins are rejected so they cannot accidentally use student-only
- * endpoints (e.g. class join) from privileged accounts.
- */
 export async function requireStudent(): Promise<MemberProfile> {
   const profile = await requireAuthenticatedUser();
   if (profile.isAdmin || profile.isTeacher) {
@@ -63,46 +38,37 @@ export async function requireStudent(): Promise<MemberProfile> {
   return profile;
 }
 
-/**
- * Returns the profile if the caller has an explicit teacher grant.
- * Grant sources (in order of trust):
- *   1. TEACHER_EMAILS env var  (platform-level config)
- *   2. teacher_access = true in DB  (set by platform admin or org admin)
- *   3. organization_memberships.role IN ('teacher','admin','owner') for the user
- * memberType alone is NOT sufficient (fixes C-1 / privilege escalation).
- */
 export async function requireTeacher(): Promise<MemberProfile> {
   const profile = await requireAuthenticatedUser();
-  if (!profile.isTeacher && !profile.isAdmin) {
+  if (!profile.isTeacher) {
     deny("Teacher access required.");
   }
   return profile;
 }
 
-/**
- * Returns the profile if the caller is a school/institution admin.
- * Grant sources:
- *   1. ADMIN_EMAILS env var
- *   2. admin_access = true in DB
- *   3. organization_memberships.role IN ('admin','owner') for the user
- * memberType alone is NOT sufficient (fixes C-1).
- */
 export async function requireSchoolAdmin(): Promise<MemberProfile> {
   const profile = await requireAuthenticatedUser();
-  if (!profile.isAdmin) {
-    deny("School admin access required.");
+  if (profile.isAdmin) {
+    return profile;
   }
-  return profile;
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const rows = await sql<Array<{ id: string }>>`
+      select u.id
+      from users u
+      join organization_memberships m on m.user_id = u.id
+      where u.id = ${profile.id}
+        and m.organization_id = u.organization_id
+        and m.role in ('admin', 'owner')
+      limit 1
+    `;
+    if (rows[0]) {
+      return profile;
+    }
+  }
+  deny("School admin access required.");
 }
 
-// ---------------------------------------------------------------------------
-// Teacher ownership checks
-// ---------------------------------------------------------------------------
-
-/**
- * Verifies that classId exists and belongs to the given teacher.
- * Returns the raw class row on success; throws on failure.
- */
 export async function requireTeacherOwnsClass(
   teacherId: string,
   classId: string
@@ -121,15 +87,10 @@ export async function requireTeacherOwnsClass(
     return rows[0];
   }
 
-  // Memory fallback: delegate to the classroom-store check
   const { ensureTeacherOwnsClass } = await import("@/lib/classroom-store");
   return ensureTeacherOwnsClass(teacherId, classId);
 }
 
-/**
- * Verifies that the student is enrolled (approved) in at least one of the
- * teacher's classes.  Returns the student's MemberProfile on success.
- */
 export async function requireTeacherOwnsStudent(
   teacherId: string,
   studentId: string
@@ -162,20 +123,11 @@ export async function requireTeacherOwnsStudent(
     return profileRows[0];
   }
 
-  // Memory fallback
   const { getTeacherStudentDetail } = await import("@/lib/classroom-store");
   const detail = await getTeacherStudentDetail({ teacherId, studentId });
   return detail.student;
 }
 
-// ---------------------------------------------------------------------------
-// School ownership checks
-// ---------------------------------------------------------------------------
-
-/**
- * Verifies that the target teacher is a member of the admin's organization.
- * Returns the teacher's MemberProfile.
- */
 export async function requireSchoolOwnsTeacher(
   adminOrgId: string,
   teacherId: string
@@ -196,7 +148,7 @@ export async function requireSchoolOwnsTeacher(
       from users u
       join organization_memberships m on m.user_id = u.id
       where u.id = ${teacherId}
-        and m.org_id = ${adminOrgId}
+        and m.organization_id = ${adminOrgId}
         and m.role in ('teacher', 'admin', 'owner')
       limit 1
     `;
@@ -207,9 +159,6 @@ export async function requireSchoolOwnsTeacher(
   deny("Organization checks require a database connection.");
 }
 
-/**
- * Verifies that the target student is a member (any role) of the admin's org.
- */
 export async function requireSchoolOwnsStudent(
   adminOrgId: string,
   studentId: string
@@ -228,9 +177,11 @@ export async function requireSchoolOwnsStudent(
              u.admin_access as "adminAccess", u.teacher_access as "teacherAccess",
              u.created_at as "createdAt"
       from users u
-      join organization_memberships m on m.user_id = u.id
+      join teacher_class_enrollments e on e.student_id = u.id and e.status = 'approved'
+      join teacher_classes c on c.id = e.class_id
+      join organization_memberships m on m.user_id = c.teacher_id
       where u.id = ${studentId}
-        and m.org_id = ${adminOrgId}
+        and m.organization_id = ${adminOrgId}
       limit 1
     `;
     if (!rows[0]) deny("Student does not belong to your organization.");
@@ -240,9 +191,6 @@ export async function requireSchoolOwnsStudent(
   deny("Organization checks require a database connection.");
 }
 
-/**
- * Verifies that the class belongs to a teacher who is a member of the admin's org.
- */
 export async function requireSchoolOwnsClass(
   adminOrgId: string,
   classId: string
@@ -257,7 +205,7 @@ export async function requireSchoolOwnsClass(
       from teacher_classes c
       join organization_memberships m on m.user_id = c.teacher_id
       where c.id = ${classId}
-        and m.org_id = ${adminOrgId}
+        and m.organization_id = ${adminOrgId}
         and m.role in ('teacher', 'admin', 'owner')
       limit 1
     `;
@@ -268,12 +216,8 @@ export async function requireSchoolOwnsClass(
   deny("Organization checks require a database connection.");
 }
 
-// ---------------------------------------------------------------------------
-// Convenience: parse a 403-throwing error into a Next.js JSON response
-// ---------------------------------------------------------------------------
-
 export function permissionErrorResponse(error: unknown): Response {
   const err = error instanceof Error ? error : new Error(String(error));
-  const status = (err as Error & { statusCode?: number }).statusCode ?? 403;
+  const status = (err as Error & { statusCode?: number }).statusCode ?? 400;
   return Response.json({ error: err.message }, { status });
 }

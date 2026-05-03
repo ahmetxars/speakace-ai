@@ -37,7 +37,7 @@ export function InstitutionAnalytics() {
         if (data.error) { setError(data.error); return; }
         setAnalytics(data.analytics ?? emptyAnalytics);
       })
-      .catch(() => setError(tr ? "Kurum analitiği yüklenemedi." : "Could not load institution analytics."))
+      .catch(() => setError(tr ? "Öğretim özeti yüklenemedi." : "Could not load teaching snapshot."))
       .finally(() => setLoading(false));
   }, [tr]);
 
@@ -49,7 +49,7 @@ export function InstitutionAnalytics() {
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeOpacity="0.2" />
             <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" />
           </svg>
-          <span style={{ fontSize: "0.92rem" }}>{tr ? "Kurum analitiği yükleniyor…" : "Loading institution analytics…"}</span>
+          <span style={{ fontSize: "0.92rem" }}>{tr ? "Öğretim özeti yükleniyor…" : "Loading teaching snapshot…"}</span>
         </div>
       </main>
     );
@@ -84,12 +84,12 @@ export function InstitutionAnalytics() {
 
       {/* Header */}
       <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "0.8rem" }}>
-        <span className="eyebrow">{tr ? "Kurum analitiği" : "Institution analytics"}</span>
-        <h1 style={{ margin: 0 }}>{tr ? "Kurs genel görünümü" : "Institution overview"}</h1>
+        <span className="eyebrow">{tr ? "Öğretim görünümü" : "Teaching snapshot"}</span>
+        <h1 style={{ margin: 0 }}>{tr ? "Sınıflarımın genel görünümü" : "Overview of my classes"}</h1>
         <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
           {tr
-            ? "Sınıflar, riskli öğrenciler, yorum kapsamı ve homework durumunu tek ekranda gör."
-            : "Track classes, at-risk learners, note coverage, and homework health from one place."}
+            ? "Kendi sınıflarındaki riskli öğrencileri, yorum kapsamını ve homework durumunu tek ekrandan izle."
+            : "Track at-risk learners, note coverage, and homework health across only your own classes."}
         </p>
       </section>
 

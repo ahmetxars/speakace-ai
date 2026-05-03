@@ -1,30 +1,10 @@
 import { MemberProfile, PlanLimits, SubscriptionPlan } from "@/lib/types";
 
 export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
-  free: {
-    sessionsPerDay: 4,
-    speakingMinutesPerDay: 8,
-    label: "Free",
-    price: 0
-  },
-  plus: {
-    sessionsPerDay: 18,
-    speakingMinutesPerDay: 35,
-    label: "Plus",
-    price: 9
-  },
-  pro: {
-    sessionsPerDay: 40,
-    speakingMinutesPerDay: 90,
-    label: "Pro",
-    price: 12
-  },
-  lifetime: {
-    sessionsPerDay: 40,
-    speakingMinutesPerDay: 90,
-    label: "Lifetime",
-    price: 149
-  }
+  free: { sessionsPerDay: 4, speakingMinutesPerDay: 8, label: "Free", price: 0 },
+  plus: { sessionsPerDay: 18, speakingMinutesPerDay: 35, label: "Plus", price: 9 },
+  pro: { sessionsPerDay: 40, speakingMinutesPerDay: 90, label: "Pro", price: 12 },
+  lifetime: { sessionsPerDay: 40, speakingMinutesPerDay: 90, label: "Lifetime", price: 149 },
 };
 
 export function createGuestProfile(): MemberProfile {
@@ -36,7 +16,7 @@ export function createGuestProfile(): MemberProfile {
     memberType: "student",
     plan: "free",
     emailVerified: true,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 }
 
@@ -46,7 +26,6 @@ export function createMemberProfile(
   options?: { memberType?: MemberProfile["memberType"]; organizationName?: string | null }
 ): MemberProfile {
   const normalizedName = name?.trim() || email.split("@")[0] || "Learner";
-
   return {
     id: `user-${crypto.randomUUID()}`,
     email,
@@ -56,6 +35,6 @@ export function createMemberProfile(
     organizationName: options?.organizationName ?? null,
     plan: "free",
     emailVerified: false,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 }

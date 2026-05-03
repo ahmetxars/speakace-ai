@@ -1,9 +1,9 @@
 "use client";
 
+import type { Route } from "next";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "@/components/providers";
-
-// ── Types ──────────────────────────────────────────────────────────────────
 
 type TeacherSummary = {
   teacher: { id: string; name: string; email: string };
@@ -11,10 +11,28 @@ type TeacherSummary = {
   studentCount: number;
   activeStudents: number;
   averageScore: number;
-  pendingApprovalCount?: number;
-  atRiskStudentCount?: number;
-  homeworkCompletionRate?: number;
-  mostCommonWeakestSkill?: string | null;
+  pendingApprovalCount: number;
+  atRiskStudentCount: number;
+  homeworkCompletionRate: number;
+  homeworkAssignedCount: number;
+  overdueHomeworkCount: number;
+  recentActivityAt: string | null;
+  mostCommonWeakestSkill: string | null;
+};
+
+type ClassSummary = {
+  id: string;
+  name: string;
+  teacherId: string;
+  teacherName: string;
+  joinCode: string;
+  studentCount: number;
+  activeStudents: number;
+  averageScore: number;
+  pendingApprovals: number;
+  homeworkAssignedCount: number;
+  overdueHomeworkCount: number;
+  lastActivityAt: string | null;
 };
 
 type StudentSummary = {
@@ -27,6 +45,8 @@ type StudentSummary = {
   averageScore: number | null;
   lastSessionAt: string | null;
   teacherNames: string[];
+  homeworkCompletionRate: number;
+  riskFlag: string | null;
 };
 
 type InstitutionSummary = {
@@ -41,8 +61,38 @@ type InstitutionSummary = {
   atRiskStudents: number;
   averageScore: number;
   teacherSummaries: TeacherSummary[];
+  classSummaries: ClassSummary[];
   students: StudentSummary[];
   alerts: string[];
+};
+
+type InviteItem = {
+  id: string;
+  orgId: string;
+  email?: string | null;
+  role: "teacher" | "admin" | "student";
+  inviteCode: string;
+  createdBy: string;
+  expiresAt: string;
+  createdAt: string;
+};
+
+type UserSummary = {
+  id: string;
+  email: string;
+  name: string;
+  memberType: string;
+  plan: string;
+  adminAccess?: boolean;
+  teacherAccess?: boolean;
+};
+
+type AnnouncementItem = {
+  id: string;
+  audienceType: "global" | "teacher" | "class";
+  title: string;
+  body: string;
+  createdAt: string;
 };
 
 const empty: InstitutionSummary = {
@@ -54,13 +104,12 @@ const empty: InstitutionSummary = {
   atRiskStudents: 0,
   averageScore: 0,
   teacherSummaries: [],
+  classSummaries: [],
   students: [],
   alerts: [],
 };
 
-type Tab = "overview" | "teachers" | "students";
-
-// ── Component ──────────────────────────────────────────────────────────────
+type Tab = "overview" | "teachers" | "classes" | "students" | "access" | "announcements";
 
 export function InstitutionAdminPanel() {
   const { language } = useAppState();
@@ -74,93 +123,183 @@ export function InstitutionAdminPanel() {
     });
   }
 
+
   const [summary, setSummary] = useState<InstitutionSummary>(empty);
   const [tab, setTab] = useState<Tab>("overview");
-  const [studentSearch, setStudentSearch] = useState("");
   const [teacherSearch, setTeacherSearch] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
+  const [classSearch, setClassSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [users, setUsers] = useState<UserSummary[]>([]);
+  const [invites, setInvites] = useState<InviteItem[]>([]);
+  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<InviteItem["role"]>("teacher");
+  const [announcementTitle, setAnnouncementTitle] = useState("");
+  const [announcementBody, setAnnouncementBody] = useState("");
 
-  const [noOrg, setNoOrg] = useState(false);
+  const loadSummary = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/institution-admin/summary");
+      const data = (await response.json()) as InstitutionSummary & { error?: string };
+      if (!response.ok || data.error) {
+        throw new Error(data.error ?? (tr ? "Kurum verisi yüklenemedi." : "Could not load institution data."));
+      }
+      setSummary({ ...empty, ...data });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tr ? "Kurum verisi yüklenemedi." : "Could not load institution data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAccessData = async () => {
+    try {
+      const [usersResponse, invitesResponse] = await Promise.all([
+        fetch("/api/institution-admin/users"),
+        fetch("/api/institution-admin/invites"),
+      ]);
+      const usersData = (await usersResponse.json()) as { users?: UserSummary[] };
+      const invitesData = (await invitesResponse.json()) as { invites?: InviteItem[] };
+      setUsers(usersData.users ?? []);
+      setInvites(invitesData.invites ?? []);
+    } catch {
+      setUsers([]);
+      setInvites([]);
+    }
+  };
+
+  const loadAnnouncements = async () => {
+    try {
+      const response = await fetch("/api/announcements");
+      const data = (await response.json()) as { announcements?: AnnouncementItem[] };
+      setAnnouncements((data.announcements ?? []).filter((item) => item.audienceType === "teacher"));
+    } catch {
+      setAnnouncements([]);
+    }
+  };
 
   useEffect(() => {
-    setLoading(true);
-    fetch("/api/institution-admin/summary")
-      .then(async (r) => {
-        const data = (await r.json()) as InstitutionSummary & { error?: string };
-        if (r.status === 404) { setNoOrg(true); return; }
-        if (data.error) throw new Error(data.error);
-        setSummary(data);
-      })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : tr ? "Veri yüklenemedi." : "Could not load data."))
-      .finally(() => setLoading(false));
+    void loadSummary();
   }, [tr]);
 
-  const filteredTeachers = useMemo(() =>
-    teacherSearch
-      ? summary.teacherSummaries.filter((t) =>
-          `${t.teacher.name} ${t.teacher.email}`.toLowerCase().includes(teacherSearch.toLowerCase()))
+  useEffect(() => {
+    if (tab === "access") void loadAccessData();
+    if (tab === "announcements") void loadAnnouncements();
+  }, [tab]);
+
+  const filteredTeachers = useMemo(
+    () => teacherSearch
+      ? summary.teacherSummaries.filter((item) => `${item.teacher.name} ${item.teacher.email}`.toLowerCase().includes(teacherSearch.toLowerCase()))
       : summary.teacherSummaries,
-    [teacherSearch, summary.teacherSummaries]
+    [summary.teacherSummaries, teacherSearch]
   );
 
-  const filteredStudents = useMemo(() =>
-    studentSearch
-      ? summary.students.filter((s) =>
-          `${s.name} ${s.email}`.toLowerCase().includes(studentSearch.toLowerCase()))
+  const filteredStudents = useMemo(
+    () => studentSearch
+      ? summary.students.filter((item) => `${item.name} ${item.email}`.toLowerCase().includes(studentSearch.toLowerCase()))
       : summary.students,
     [studentSearch, summary.students]
   );
+
+  const filteredClasses = useMemo(
+    () => classSearch
+      ? summary.classSummaries.filter((item) => `${item.name} ${item.teacherName}`.toLowerCase().includes(classSearch.toLowerCase()))
+      : summary.classSummaries,
+    [classSearch, summary.classSummaries]
+  );
+
+  const createInvite = async () => {
+    setNotice("");
+    setError("");
+    const response = await fetch("/api/institution-admin/invites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: inviteEmail || undefined, role: inviteRole }),
+    });
+    const data = (await response.json()) as { invite?: InviteItem; error?: string };
+    if (!response.ok || !data.invite) {
+      setError(data.error ?? (tr ? "Davet oluşturulamadı." : "Could not create invite."));
+      return;
+    }
+    setInvites((cur) => [data.invite!, ...cur]);
+    setInviteEmail("");
+    setNotice(tr ? "Davet oluşturuldu." : "Invite created.");
+  };
+
+  const updateAccess = async (userId: string, patch: Partial<Pick<UserSummary, "adminAccess" | "teacherAccess">>) => {
+    setNotice("");
+    setError("");
+    const response = await fetch("/api/institution-admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, ...patch }),
+    });
+    const data = (await response.json()) as { user?: UserSummary; error?: string };
+    if (!response.ok || !data.user) {
+      setError(data.error ?? (tr ? "Yetki güncellenemedi." : "Could not update access."));
+      return;
+    }
+    setUsers((cur) => cur.map((item) => (item.id === userId ? { ...item, ...data.user } : item)));
+    setNotice(tr ? "Yetki güncellendi." : "Access updated.");
+  };
+
+  const sendAnnouncement = async () => {
+    setNotice("");
+    setError("");
+    const response = await fetch("/api/announcements", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audienceType: "teacher", title: announcementTitle, body: announcementBody }),
+    });
+    const data = (await response.json()) as { announcement?: AnnouncementItem; error?: string };
+    if (!response.ok || !data.announcement) {
+      setError(data.error ?? (tr ? "Duyuru gönderilemedi." : "Could not send announcement."));
+      return;
+    }
+    setAnnouncementTitle("");
+    setAnnouncementBody("");
+    setAnnouncements((cur) => [data.announcement!, ...cur]);
+    setNotice(tr ? "Duyuru gönderildi." : "Announcement sent.");
+  };
 
   if (loading) {
     return (
       <main className="page-shell section">
         <div className="card" style={{ padding: "2rem", textAlign: "center", color: "var(--muted)" }}>
-          {tr ? "Kurumsal veriler yükleniyor…" : "Loading institution data…"}
+          {tr ? "Kurum paneli yükleniyor…" : "Loading institution control…"}
         </div>
       </main>
     );
   }
 
-  if (noOrg) {
-    return (
-      <main className="page-shell section">
-        <div className="card" style={{ padding: "2rem", display: "grid", gap: "1rem", maxWidth: 480 }}>
-          <span className="eyebrow">{tr ? "Kurum kurulumu" : "Institution setup"}</span>
-          <h2 style={{ margin: 0 }}>{tr ? "Kurumunuz henüz oluşturulmadı" : "Your institution hasn't been set up yet"}</h2>
-          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
-            {tr
-              ? "Öğretmen ve öğrencilerinizi yönetmek için önce bir kurum profili oluşturmanız gerekiyor."
-              : "To manage teachers and students, you need to create an institution profile first."}
-          </p>
-          <a href="/app/institution-admin/setup" className="button button-primary" style={{ justifySelf: "start" }}>
-            {tr ? "Kurumu kur" : "Set up institution"}
-          </a>
-        </div>
-      </main>
-    );
-  }
+  const setupCard = !summary.totalTeachers
+    ? (tr ? "İlk öğretmeni davet ederek kurum yapısını başlatın." : "Start by inviting your first teacher.")
+    : !summary.totalClasses
+      ? (tr ? "Öğretmenler sınıf oluşturduğunda class görünümü burada dolacak." : "Class visibility will fill in once teachers create classes.")
+      : !summary.totalStudents
+        ? (tr ? "Öğrenciler sınıflara bağlandığında öğrenci analitiği burada açılacak." : "Student analytics will appear once learners join classes.")
+        : "";
 
   return (
     <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
-
-      {/* Header */}
-      <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.6rem" }}>
-        <span className="eyebrow">{tr ? "Kurum yönetimi" : "Institution management"}</span>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
+      <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.65rem" }}>
+        <span className="eyebrow">{tr ? "Institution control" : "Institution control"}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", flexWrap: "wrap" }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: "1.6rem" }}>
-              {summary.orgName ?? (tr ? "Kurumunuz" : "Your Institution")}
-            </h1>
-            <p style={{ margin: "0.25rem 0 0", color: "var(--muted)", fontSize: "0.9rem" }}>
-              {tr
-                ? "Öğretmenlerinizi, sınıflarınızı ve öğrencilerinizi buradan takip edin."
-                : "Monitor your teachers, classes, and students from here."}
+            <h1 style={{ margin: 0, fontSize: "1.8rem" }}>{summary.orgName ?? (tr ? "Kurum paneli" : "Institution control")}</h1>
+            <p style={{ margin: "0.25rem 0 0", color: "var(--muted)" }}>
+              {tr ? "Öğretmenleri, sınıfları, öğrencileri ve kurum aksiyonlarını tek merkezden yönetin." : "Manage teachers, classes, students, and institution actions from one control center."}
             </p>
           </div>
-          <a className="button button-secondary" href="/api/institution-admin/export" style={{ alignSelf: "center" }}>
-            {tr ? "CSV dışa aktar" : "Export CSV"}
-          </a>
+          <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+            <a className="button button-secondary" href="/api/institution-admin/export">{tr ? "CSV dışa aktar" : "Export CSV"}</a>
+            <button type="button" className="button button-secondary" onClick={() => setTab("access")}>{tr ? "Davet ve erişim" : "Invites & access"}</button>
+          </div>
         </div>
         {summary.joinCode && (
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", background: "var(--input-bg)", border: "1px solid var(--line)", borderRadius: "10px", padding: "0.75rem 1rem", marginTop: "0.25rem", flexWrap: "wrap" }}>
@@ -189,262 +328,264 @@ export function InstitutionAdminPanel() {
         )}
       </section>
 
-      {/* Error */}
-      {error && (
-        <section className="card" style={{ padding: "1rem", borderLeft: "3px solid var(--accent-deep)" }}>
-          <p style={{ margin: 0, color: "var(--accent-deep)" }}>{error}</p>
+      {(notice || error) && (
+        <section className="card" style={{ padding: "0.9rem", color: error ? "var(--destructive)" : "var(--success)" }}>
+          {error || notice}
         </section>
       )}
 
-      {/* Alerts */}
+      {setupCard && (
+        <section className="card" style={{ padding: "1rem", borderLeft: "3px solid var(--accent)" }}>
+          <strong>{tr ? "Sonraki adım" : "Next step"}</strong>
+          <p style={{ margin: "0.35rem 0 0", color: "var(--muted)" }}>{setupCard}</p>
+        </section>
+      )}
+
       {summary.alerts.length > 0 && (
-        <section className="card" style={{ padding: "1rem", display: "grid", gap: "0.4rem", borderLeft: "3px solid #f59e0b" }}>
-          <strong style={{ fontSize: "0.85rem" }}>{tr ? "Dikkat gerektiren durumlar" : "Needs attention"}</strong>
-          {summary.alerts.map((a, i) => (
-            <div key={i} style={{ fontSize: "0.875rem", color: "var(--muted)" }}>• {a}</div>
-          ))}
+        <section className="card" style={{ padding: "1rem", display: "grid", gap: "0.35rem" }}>
+          <strong>{tr ? "Kurumsal uyarılar" : "Institution alerts"}</strong>
+          {summary.alerts.map((item, index) => <div key={index} style={{ color: "var(--muted)" }}>• {item}</div>)}
         </section>
       )}
 
-      {/* Stat strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.75rem" }}>
-        <StatCard label={tr ? "Öğretmen" : "Teachers"} value={summary.totalTeachers} />
-        <StatCard label={tr ? "Sınıf" : "Classes"} value={summary.totalClasses} />
-        <StatCard label={tr ? "Öğrenci" : "Students"} value={summary.totalStudents} />
-        <StatCard label={tr ? "Aktif öğrenci" : "Active"} value={summary.activeStudents} />
-        <StatCard label={tr ? "Ort. skor" : "Avg score"} value={summary.averageScore > 0 ? summary.averageScore.toFixed(1) : "—"} />
-        {summary.pendingApprovals > 0 && (
-          <StatCard label={tr ? "Bekleyen onay" : "Pending"} value={summary.pendingApprovals} accent />
-        )}
-        {summary.atRiskStudents > 0 && (
-          <StatCard label={tr ? "Risk altında" : "At risk"} value={summary.atRiskStudents} accent />
-        )}
-      </div>
+      <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.8rem" }}>
+        <Metric label={tr ? "Öğretmen" : "Teachers"} value={String(summary.totalTeachers)} />
+        <Metric label={tr ? "Sınıf" : "Classes"} value={String(summary.totalClasses)} />
+        <Metric label={tr ? "Öğrenci" : "Students"} value={String(summary.totalStudents)} />
+        <Metric label={tr ? "Aktif öğrenci" : "Active students"} value={String(summary.activeStudents)} />
+        <Metric label={tr ? "Bekleyen onay" : "Pending approvals"} value={String(summary.pendingApprovals)} />
+        <Metric label={tr ? "Riskli öğrenci" : "At-risk students"} value={String(summary.atRiskStudents)} />
+        <Metric label={tr ? "Ort. skor" : "Average score"} value={summary.averageScore ? summary.averageScore.toFixed(1) : "—"} />
+      </section>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: "0.5rem", borderBottom: "1px solid var(--line)", paddingBottom: "0.5rem" }}>
-        {(["overview", "teachers", "students"] as Tab[]).map((t) => (
+      <div style={{ display: "flex", gap: "0.5rem", borderBottom: "1px solid var(--line)", paddingBottom: "0.45rem", flexWrap: "wrap" }}>
+        {([
+          ["overview", tr ? "Genel bakış" : "Overview"],
+          ["teachers", tr ? "Öğretmenler" : "Teachers"],
+          ["classes", tr ? "Sınıflar" : "Classes"],
+          ["students", tr ? "Öğrenciler" : "Students"],
+          ["access", tr ? "Davet & erişim" : "Invites & access"],
+          ["announcements", tr ? "Duyurular" : "Announcements"],
+        ] as Array<[Tab, string]>).map(([id, label]) => (
           <button
-            key={t}
+            key={id}
             type="button"
-            onClick={() => setTab(t)}
+            onClick={() => setTab(id)}
+            className="button button-secondary"
             style={{
-              padding: "0.5rem 1rem",
-              borderRadius: 10,
-              border: "none",
-              background: tab === t ? "var(--accent)" : "transparent",
-              color: tab === t ? "#fff" : "var(--muted)",
-              fontWeight: tab === t ? 600 : 400,
-              cursor: "pointer",
-              fontSize: "0.875rem",
+              background: tab === id ? "var(--accent)" : "transparent",
+              color: tab === id ? "#fff" : "var(--text)",
             }}
           >
-            {t === "overview"
-              ? (tr ? "Genel bakış" : "Overview")
-              : t === "teachers"
-              ? (tr ? `Öğretmenler (${summary.totalTeachers})` : `Teachers (${summary.totalTeachers})`)
-              : (tr ? `Öğrenciler (${summary.totalStudents})` : `Students (${summary.totalStudents})`)}
+            {label}
           </button>
         ))}
       </div>
 
-      {/* ── Tab: Overview ── */}
       {tab === "overview" && (
-        <div style={{ display: "grid", gap: "1rem" }}>
-          <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+        <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
             <strong>{tr ? "En aktif öğretmenler" : "Most active teachers"}</strong>
-            {summary.teacherSummaries.length === 0
-              ? <Empty text={tr ? "Henüz öğretmen yok." : "No teachers yet."} />
-              : summary.teacherSummaries.slice(0, 5).map((t) => <TeacherRow key={t.teacher.id} t={t} tr={tr} />)
-            }
-            {summary.teacherSummaries.length > 5 && (
-              <button type="button" className="button button-secondary" onClick={() => setTab("teachers")} style={{ justifySelf: "start" }}>
-                {tr ? `Tümünü gör (${summary.teacherSummaries.length})` : `View all (${summary.teacherSummaries.length})`}
-              </button>
-            )}
-          </section>
-
-          <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-            <strong>{tr ? "Son aktif öğrenciler" : "Recently active students"}</strong>
-            {summary.students.length === 0
-              ? <Empty text={tr ? "Henüz öğrenci verisi yok." : "No student data yet."} />
-              : [...summary.students]
-                  .sort((a, b) => (b.lastSessionAt ?? "").localeCompare(a.lastSessionAt ?? ""))
-                  .slice(0, 8)
-                  .map((s) => <StudentRow key={s.id} s={s} tr={tr} />)
-            }
-            {summary.students.length > 8 && (
-              <button type="button" className="button button-secondary" onClick={() => setTab("students")} style={{ justifySelf: "start" }}>
-                {tr ? `Tüm öğrenciler (${summary.students.length})` : `All students (${summary.students.length})`}
-              </button>
-            )}
-          </section>
-        </div>
-      )}
-
-      {/* ── Tab: Teachers ── */}
-      {tab === "teachers" && (
-        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
-            <strong>{tr ? "Tüm öğretmenler" : "All teachers"}</strong>
-            <input value={teacherSearch} onChange={(e) => setTeacherSearch(e.target.value)}
-              placeholder={tr ? "İsim veya e-posta ara…" : "Search…"} style={inputStyle} />
+            {summary.teacherSummaries.length ? summary.teacherSummaries.slice(0, 5).map((item) => (
+              <Link key={item.teacher.id} href={`/app/institution-admin/teachers/${item.teacher.id}` as Route} className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)", display: "grid", gap: "0.3rem", color: "inherit", textDecoration: "none" }}>
+                <strong>{item.teacher.name}</strong>
+                <div className="practice-meta">{item.classCount} {tr ? "sınıf" : "classes"} · {item.studentCount} {tr ? "öğrenci" : "students"}</div>
+                <div className="practice-meta">{tr ? "Atanan ödev" : "Homework"}: {item.homeworkAssignedCount} · {tr ? "Geciken" : "Overdue"}: {item.overdueHomeworkCount}</div>
+              </Link>
+            )) : <Empty text={tr ? "Henüz öğretmen yok." : "No teachers yet."} />}
           </div>
-          {filteredTeachers.length === 0 && <Empty text={tr ? "Öğretmen bulunamadı." : "No teachers found."} />}
-          {filteredTeachers.map((t) => (
-            <div key={t.teacher.id} className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.5rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem" }}>
-                <div>
-                  <strong>{t.teacher.name}</strong>
-                  <div style={{ fontSize: "0.78rem", color: "var(--muted)" }}>{t.teacher.email}</div>
-                </div>
-                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                  {(t.atRiskStudentCount ?? 0) > 0 && (
-                    <span className="pill" style={{ background: "var(--accent-deep)", color: "#fff" }}>
-                      {t.atRiskStudentCount} {tr ? "risk" : "at risk"}
-                    </span>
-                  )}
-                  {(t.pendingApprovalCount ?? 0) > 0 && (
-                    <span className="pill">{t.pendingApprovalCount} {tr ? "bekliyor" : "pending"}</span>
-                  )}
-                </div>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "0.45rem" }}>
-                <MiniStat label={tr ? "Sınıf" : "Classes"} value={String(t.classCount)} />
-                <MiniStat label={tr ? "Öğrenci" : "Students"} value={String(t.studentCount)} />
-                <MiniStat label={tr ? "Aktif" : "Active"} value={String(t.activeStudents)} />
-                <MiniStat label={tr ? "Ort. skor" : "Avg score"} value={t.averageScore > 0 ? t.averageScore.toFixed(1) : "—"} />
-                {t.homeworkCompletionRate !== undefined && (
-                  <MiniStat label={tr ? "Ödev tamamlama" : "HW done"} value={`${Math.round(t.homeworkCompletionRate)}%`} />
-                )}
-                {t.mostCommonWeakestSkill && (
-                  <MiniStat label={tr ? "Zayıf alan" : "Weak area"} value={t.mostCommonWeakestSkill} />
-                )}
-              </div>
-            </div>
-          ))}
+
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <strong>{tr ? "Son aktif öğrenciler" : "Recently active students"}</strong>
+            {summary.students.length ? summary.students.slice(0, 8).map((item) => (
+              <Link key={item.id} href={`/app/institution-admin/students/${item.id}` as Route} className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)", display: "grid", gap: "0.3rem", color: "inherit", textDecoration: "none" }}>
+                <strong>{item.name}</strong>
+                <div className="practice-meta">{item.teacherNames.join(", ") || "—"}</div>
+                <div className="practice-meta">{tr ? "Son session" : "Last session"}: {item.lastSessionAt ? new Date(item.lastSessionAt).toLocaleDateString(tr ? "tr-TR" : "en-US") : "—"}</div>
+              </Link>
+            )) : <Empty text={tr ? "Henüz öğrenci yok." : "No students yet."} />}
+          </div>
         </section>
       )}
 
-      {/* ── Tab: Students ── */}
+      {tab === "teachers" && (
+        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap" }}>
+            <strong>{tr ? "Öğretmen gözetimi" : "Teacher oversight"}</strong>
+            <input value={teacherSearch} onChange={(e) => setTeacherSearch(e.target.value)} placeholder={tr ? "İsim veya e-posta ara…" : "Search by name or email…"} style={inputStyle} />
+          </div>
+          {filteredTeachers.length ? filteredTeachers.map((item) => (
+            <Link key={item.teacher.id} href={`/app/institution-admin/teachers/${item.teacher.id}` as Route} className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.5rem", color: "inherit", textDecoration: "none" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap" }}>
+                <div>
+                  <strong>{item.teacher.name}</strong>
+                  <div className="practice-meta">{item.teacher.email}</div>
+                </div>
+                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                  {item.atRiskStudentCount > 0 ? <span className="risk-pill">{item.atRiskStudentCount} {tr ? "risk" : "at risk"}</span> : null}
+                  {item.pendingApprovalCount > 0 ? <span className="pill">{item.pendingApprovalCount} {tr ? "bekliyor" : "pending"}</span> : null}
+                </div>
+              </div>
+              <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.45rem" }}>
+                <Metric label={tr ? "Sınıf" : "Classes"} value={String(item.classCount)} />
+                <Metric label={tr ? "Öğrenci" : "Students"} value={String(item.studentCount)} />
+                <Metric label={tr ? "Aktif" : "Active"} value={String(item.activeStudents)} />
+                <Metric label={tr ? "Ort." : "Avg"} value={item.averageScore ? item.averageScore.toFixed(1) : "—"} />
+                <Metric label={tr ? "Atanan ödev" : "HW assigned"} value={String(item.homeworkAssignedCount)} />
+                <Metric label={tr ? "Tamamlama" : "Completion"} value={`${Math.round(item.homeworkCompletionRate)}%`} />
+              </div>
+            </Link>
+          )) : <Empty text={tr ? "Öğretmen bulunamadı." : "No teachers found."} />}
+        </section>
+      )}
+
+      {tab === "classes" && (
+        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap" }}>
+            <strong>{tr ? "Sınıf görünümü" : "Class oversight"}</strong>
+            <input value={classSearch} onChange={(e) => setClassSearch(e.target.value)} placeholder={tr ? "Sınıf veya öğretmen ara…" : "Search class or teacher…"} style={inputStyle} />
+          </div>
+          {filteredClasses.length ? filteredClasses.map((item) => (
+            <div key={item.id} className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.5rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap" }}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <div className="practice-meta">{item.teacherName}</div>
+                </div>
+                <span className="pill">{item.joinCode}</span>
+              </div>
+              <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "0.45rem" }}>
+                <Metric label={tr ? "Öğrenci" : "Students"} value={String(item.studentCount)} />
+                <Metric label={tr ? "Aktif" : "Active"} value={String(item.activeStudents)} />
+                <Metric label={tr ? "Ort." : "Avg"} value={item.averageScore ? item.averageScore.toFixed(1) : "—"} />
+                <Metric label={tr ? "Bekleyen" : "Pending"} value={String(item.pendingApprovals)} />
+                <Metric label={tr ? "Ödev" : "Homework"} value={String(item.homeworkAssignedCount)} />
+                <Metric label={tr ? "Geciken" : "Overdue"} value={String(item.overdueHomeworkCount)} />
+              </div>
+            </div>
+          )) : <Empty text={tr ? "Sınıf bulunamadı." : "No classes found."} />}
+        </section>
+      )}
+
       {tab === "students" && (
         <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
-            <strong>{tr ? `Tüm öğrenciler (${filteredStudents.length})` : `All students (${filteredStudents.length})`}</strong>
-            <input value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)}
-              placeholder={tr ? "İsim veya e-posta ara…" : "Search…"} style={inputStyle} />
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap" }}>
+            <strong>{tr ? "Öğrenci görünümü" : "Student oversight"}</strong>
+            <input value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)} placeholder={tr ? "İsim veya e-posta ara…" : "Search by name or email…"} style={inputStyle} />
           </div>
-          {filteredStudents.length === 0 && <Empty text={tr ? "Öğrenci bulunamadı." : "No students found."} />}
-          {filteredStudents.map((s) => <StudentRow key={s.id} s={s} tr={tr} expanded />)}
+          {filteredStudents.length ? filteredStudents.map((item) => (
+            <Link key={item.id} href={`/app/institution-admin/students/${item.id}` as Route} className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.45rem", color: "inherit", textDecoration: "none" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", flexWrap: "wrap" }}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <div className="practice-meta">{item.email}</div>
+                </div>
+                {item.riskFlag ? <span className="risk-pill">{item.riskFlag}</span> : null}
+              </div>
+              <div className="practice-meta">{item.teacherNames.join(", ") || "—"}</div>
+              <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: "0.45rem" }}>
+                <Metric label={tr ? "Session" : "Sessions"} value={String(item.sessionCount)} />
+                <Metric label={tr ? "Sınıf" : "Classes"} value={String(item.classCount)} />
+                <Metric label={tr ? "Ort." : "Avg"} value={item.averageScore ? item.averageScore.toFixed(1) : "—"} />
+                <Metric label={tr ? "Ödev" : "HW done"} value={`${item.homeworkCompletionRate}%`} />
+              </div>
+            </Link>
+          )) : <Empty text={tr ? "Öğrenci bulunamadı." : "No students found."} />}
+        </section>
+      )}
+
+      {tab === "access" && (
+        <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 0.8fr) minmax(360px, 1.2fr)", gap: "1rem", alignItems: "start" }}>
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <strong>{tr ? "Yeni davet oluştur" : "Create a new invite"}</strong>
+            <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as InviteItem["role"])} style={inputStyle}>
+              <option value="teacher">{tr ? "Öğretmen" : "Teacher"}</option>
+              <option value="admin">{tr ? "Kurum admini" : "School admin"}</option>
+              <option value="student">{tr ? "Öğrenci" : "Student"}</option>
+            </select>
+            <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder={tr ? "E-posta (opsiyonel)" : "Email (optional)"} style={inputStyle} />
+            <button type="button" className="button button-primary" onClick={createInvite}>{tr ? "Davet oluştur" : "Create invite"}</button>
+            <div style={{ display: "grid", gap: "0.5rem" }}>
+              <strong style={{ fontSize: "0.95rem" }}>{tr ? "Bekleyen davetler" : "Pending invites"}</strong>
+              {invites.length ? invites.map((item) => (
+                <div key={item.id} className="card" style={{ padding: "0.8rem", background: "var(--surface-strong)", display: "grid", gap: "0.25rem" }}>
+                  <div><strong>{item.role}</strong> · {item.email || (tr ? "Genel kullanım" : "General use")}</div>
+                  <div className="practice-meta">{item.inviteCode}</div>
+                </div>
+              )) : <Empty text={tr ? "Bekleyen davet yok." : "No pending invites."} />}
+            </div>
+          </div>
+
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <strong>{tr ? "Üyeler ve erişim" : "Members and access"}</strong>
+            {users.length ? users.map((item) => (
+              <div key={item.id} className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)", display: "grid", gap: "0.5rem" }}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <div className="practice-meta">{item.email}</div>
+                </div>
+                <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
+                  <button type="button" className="button button-secondary" onClick={() => updateAccess(item.id, { teacherAccess: !item.teacherAccess })}>
+                    {item.teacherAccess ? (tr ? "Teacher kapat" : "Disable teacher") : (tr ? "Teacher aç" : "Enable teacher")}
+                  </button>
+                  <button type="button" className="button button-secondary" onClick={() => updateAccess(item.id, { adminAccess: !item.adminAccess, teacherAccess: !item.adminAccess ? true : item.teacherAccess })}>
+                    {item.adminAccess ? (tr ? "Admin kapat" : "Disable admin") : (tr ? "Admin aç" : "Enable admin")}
+                  </button>
+                </div>
+              </div>
+            )) : <Empty text={tr ? "Üye bulunamadı." : "No members found."} />}
+          </div>
+        </section>
+      )}
+
+      {tab === "announcements" && (
+        <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 0.9fr) minmax(360px, 1.1fr)", gap: "1rem", alignItems: "start" }}>
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <strong>{tr ? "Kurum duyurusu" : "Institution announcement"}</strong>
+            <input value={announcementTitle} onChange={(e) => setAnnouncementTitle(e.target.value)} placeholder={tr ? "Başlık" : "Title"} style={inputStyle} />
+            <textarea value={announcementBody} onChange={(e) => setAnnouncementBody(e.target.value)} rows={5} placeholder={tr ? "Öğretmenlere gidecek duyuru…" : "Announcement for teachers…"} style={textareaStyle} />
+            <button type="button" className="button button-primary" onClick={sendAnnouncement}>{tr ? "Gönder" : "Send"}</button>
+          </div>
+
+          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+            <strong>{tr ? "Son duyurular" : "Recent announcements"}</strong>
+            {announcements.length ? announcements.map((item) => (
+              <div key={item.id} className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)", display: "grid", gap: "0.3rem" }}>
+                <strong>{item.title}</strong>
+                <div className="practice-meta">{new Date(item.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</div>
+                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.6 }}>{item.body}</p>
+              </div>
+            )) : <Empty text={tr ? "Henüz duyuru yok." : "No announcements yet."} />}
+          </div>
         </section>
       )}
     </main>
   );
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────
-
-function TeacherRow({ t, tr }: { t: TeacherSummary; tr: boolean }) {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", padding: "0.6rem 0", borderBottom: "1px solid var(--line)", flexWrap: "wrap" }}>
-      <div>
-        <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{t.teacher.name}</div>
-        <div style={{ fontSize: "0.78rem", color: "var(--muted)" }}>{t.teacher.email}</div>
-      </div>
-      <div style={{ display: "flex", gap: "1rem", fontSize: "0.8rem", color: "var(--muted)", flexWrap: "wrap" }}>
-        <span>{t.classCount} {tr ? "sınıf" : "classes"}</span>
-        <span>{t.studentCount} {tr ? "öğrenci" : "students"}</span>
-        {t.averageScore > 0 && <span>{tr ? "ort." : "avg"} {t.averageScore.toFixed(1)}</span>}
-        {(t.atRiskStudentCount ?? 0) > 0 && (
-          <span style={{ color: "var(--accent-deep)", fontWeight: 600 }}>
-            {t.atRiskStudentCount} {tr ? "risk" : "at risk"}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StudentRow({ s, tr, expanded }: { s: StudentSummary; tr: boolean; expanded?: boolean }) {
-  const scoreColor =
-    s.averageScore == null ? "var(--muted)"
-    : s.averageScore >= 7 ? "var(--success, #22c55e)"
-    : s.averageScore >= 5 ? "inherit"
-    : "var(--accent-deep)";
-
-  return (
-    <div className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)", display: "grid", gap: "0.4rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem" }}>
-        <div>
-          <strong style={{ fontSize: "0.9rem" }}>{s.name}</strong>
-          <div style={{ fontSize: "0.78rem", color: "var(--muted)" }}>{s.email}</div>
-        </div>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          {s.averageScore != null && (
-            <span style={{ fontWeight: 700, fontSize: "1.1rem", color: scoreColor }}>
-              {s.averageScore.toFixed(1)}
-            </span>
-          )}
-          <span className="pill">{s.plan.toUpperCase()}</span>
-        </div>
-      </div>
-
-      {expanded ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "0.45rem", marginTop: "0.2rem" }}>
-          <MiniStat label={tr ? "Oturum" : "Sessions"} value={String(s.sessionCount)} />
-          <MiniStat label={tr ? "Sınıf" : "Classes"} value={String(s.classCount)} />
-          <MiniStat label={tr ? "Son aktivite" : "Last active"} value={s.lastSessionAt ? relDate(s.lastSessionAt) : "—"} />
-          {s.teacherNames.length > 0 && (
-            <MiniStat label={tr ? "Öğretmenler" : "Teachers"} value={s.teacherNames.slice(0, 2).join(", ")} />
-          )}
-        </div>
-      ) : (
-        <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.78rem", color: "var(--muted)", flexWrap: "wrap" }}>
-          <span>{s.sessionCount} {tr ? "oturum" : "sessions"}</span>
-          <span>{s.classCount} {tr ? "sınıf" : "classes"}</span>
-          {s.lastSessionAt && <span>{tr ? "son:" : "last:"} {relDate(s.lastSessionAt)}</span>}
-          {s.teacherNames.length > 0 && <span>· {s.teacherNames[0]}</span>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StatCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
-  return (
-    <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
-      <div style={{ fontSize: "0.75rem", color: accent ? "var(--accent-deep)" : "var(--muted)", marginBottom: "0.3rem" }}>{label}</div>
-      <strong style={{ fontSize: "1.6rem", color: accent ? "var(--accent-deep)" : undefined }}>{value}</strong>
-    </div>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="card" style={{ padding: "0.5rem 0.65rem" }}>
-      <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginBottom: "0.15rem" }}>{label}</div>
-      <strong style={{ fontSize: "0.85rem" }}>{value}</strong>
+    <div className="card teacher-stat-card" style={{ padding: "0.85rem" }}>
+      <div style={{ color: "var(--muted)", fontSize: "0.8rem", marginBottom: "0.2rem" }}>{label}</div>
+      <strong>{value}</strong>
     </div>
   );
 }
 
 function Empty({ text }: { text: string }) {
-  return <div style={{ color: "var(--muted)", fontSize: "0.875rem", padding: "0.5rem 0" }}>{text}</div>;
+  return <p style={{ margin: 0, color: "var(--muted)" }}>{text}</p>;
 }
 
-function relDate(iso: string): string {
-  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-  if (d === 0) return "today";
-  if (d === 1) return "1d ago";
-  if (d < 7) return `${d}d ago`;
-  if (d < 30) return `${Math.floor(d / 7)}w ago`;
-  return `${Math.floor(d / 30)}mo ago`;
-}
-
-const inputStyle: React.CSSProperties = {
-  padding: "0.5rem 0.85rem",
-  borderRadius: 10,
+const inputStyle = {
+  padding: "0.8rem",
+  borderRadius: 14,
   border: "1px solid var(--line)",
-  fontSize: "0.875rem",
-  minWidth: 200,
+  background: "var(--surface)",
+  color: "var(--text)",
+  font: "inherit",
+} as const;
+
+const textareaStyle = {
+  ...inputStyle,
+  resize: "vertical" as const,
 };

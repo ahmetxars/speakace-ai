@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "@/components/providers";
+import { ScoreLineChart } from "@/components/score-line-chart";
 import { TeacherNoteTemplates } from "@/components/teacher-note-templates";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { HomeworkAssignment, ProgressSummary, TeacherNote, TeacherStudentOverview } from "@/lib/types";
@@ -220,6 +221,14 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
   const riskFlags = detail.overview.riskFlags ?? [];
   const last3Notes = detail.notes.filter((n) => !n.sessionId).slice(0, 3);
   const nextAction = homeworkSuggestions[0]?.title ?? (tr ? "Pratik yapmaya devam et" : "Continue practicing");
+  const timelinePoints = [...detail.summary.recentSessions]
+    .reverse()
+    .filter((session) => session.report?.overall != null)
+    .map((session) => ({
+      label: new Date(session.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US", { month: "short", day: "numeric" }),
+      value: session.report?.overall ?? 0,
+      meta: `${session.examType} • ${session.taskType}`,
+    }));
 
   return (
     <div className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
@@ -387,6 +396,46 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
       </section>
 
       <section className="grid no-print" style={{ gridTemplateColumns: "minmax(320px, 1.1fr) minmax(320px, 0.9fr)", gap: "1rem", alignItems: "start" }}>
+
+        {/* ── Analytics + timeline ── */}
+        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem", gridColumn: "1 / -1" }}>
+          <div>
+            <span className="eyebrow">{tr ? "Performans analizi" : "Performance analysis"}</span>
+            <h2 style={{ fontSize: "1.6rem", margin: "0.3rem 0 0" }}>{tr ? "Session skor trendi" : "Session score trend"}</h2>
+          </div>
+          <ScoreLineChart points={timelinePoints} />
+          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.88rem" }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: "var(--muted)" }}>
+                  <th style={{ paddingBottom: "0.65rem" }}>{tr ? "Tarih" : "Date"}</th>
+                  <th style={{ paddingBottom: "0.65rem" }}>{tr ? "Görev" : "Task"}</th>
+                  <th style={{ paddingBottom: "0.65rem" }}>{tr ? "Skor" : "Score"}</th>
+                  <th style={{ paddingBottom: "0.65rem" }}>{tr ? "Zayıf alan" : "Weak area"}</th>
+                  <th style={{ paddingBottom: "0.65rem" }}>{tr ? "İncele" : "Review"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.summary.recentSessions.map((session) => {
+                  const weakest = session.report?.categories?.slice().sort((a, b) => a.score - b.score)[0]?.label ?? null;
+                  return (
+                    <tr key={session.id} style={{ borderTop: "1px solid var(--line)" }}>
+                      <td style={{ padding: "0.7rem 0" }}>{new Date(session.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</td>
+                      <td style={{ padding: "0.7rem 0" }}>{session.examType} · {session.taskType}</td>
+                      <td style={{ padding: "0.7rem 0", fontWeight: 700 }}>{session.report?.overall?.toFixed(1) ?? "—"}</td>
+                      <td style={{ padding: "0.7rem 0" }}>{weakest ? translateCategoryLabel(weakest, tr) : "—"}</td>
+                      <td style={{ padding: "0.7rem 0" }}>
+                        <Link href={`/app/results/${session.id}`} className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem" }}>
+                          {tr ? "Aç" : "Open"}
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         {/* ── Recent speaking attempts ── */}
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>

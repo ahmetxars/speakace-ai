@@ -5,6 +5,12 @@ import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
 import { getSession } from "@/lib/store";
 import { getStudentProfile } from "@/lib/student-profile-store";
 
+function parseDelta(value: unknown) {
+  const numeric = typeof value === "number" ? value : typeof value === "string" ? Number(value) : null;
+  if (numeric == null || Number.isNaN(numeric)) return null;
+  return Math.max(-9, Math.min(9, numeric));
+}
+
 export async function POST(request: Request) {
   const cookieStore = await cookies();
   const token = cookieStore.get(getSessionCookieName())?.value;
@@ -31,12 +37,12 @@ export async function POST(request: Request) {
       difficulty: session.difficulty,
       overallScore: session.report.overall,
       scaleLabel: session.report.scaleLabel,
-      delta: typeof body.delta === "number" ? body.delta : body.delta ? Number(body.delta) : null,
-      learnerName: body.learnerName ? String(body.learnerName) : profile.name,
+      delta: parseDelta(body.delta),
+      learnerName: profile.name,
       avatarDataUrl: studentProfile.avatarDataUrl || undefined,
-      localeFlag: body.localeFlag ? String(body.localeFlag) : "🌍",
-      streakLabel: body.streakLabel ? String(body.streakLabel) : "",
-      badgeLabel: body.badgeLabel ? String(body.badgeLabel) : "Building momentum",
+      localeFlag: "🌍",
+      streakLabel: "",
+      badgeLabel: "Building momentum",
       nextExercise: session.report.nextExercise,
       categories: session.report.categories.map((item) => ({ label: item.label, score: item.score }))
     });

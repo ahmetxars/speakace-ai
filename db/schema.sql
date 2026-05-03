@@ -573,45 +573,46 @@ create index if not exists idx_shared_result_cards_session_id
 create table if not exists organizations (
   id text primary key,
   name text not null,
+  slug text unique,
   owner_id text not null references users(id) on delete restrict,
-  join_code text not null unique,
   created_at timestamptz not null default now()
 );
 
 -- Organization memberships: binds users to an org with a role
 create table if not exists organization_memberships (
   id text primary key,
-  org_id text not null references organizations(id) on delete cascade,
+  organization_id text not null references organizations(id) on delete cascade,
   user_id text not null references users(id) on delete cascade,
   role text not null check (role in ('owner', 'admin', 'teacher', 'student')),
-  invited_by text references users(id) on delete set null,
+  added_by text references users(id) on delete set null,
   joined_at timestamptz not null default now(),
-  unique (org_id, user_id)
+  unique (organization_id, user_id)
 );
 
 -- Organization invitations: scoped invite links / codes
 create table if not exists organization_invites (
   id text primary key,
-  org_id text not null references organizations(id) on delete cascade,
+  organization_id text not null references organizations(id) on delete cascade,
   email text,
   role text not null check (role in ('admin', 'teacher', 'student')),
-  invite_code text not null unique,
-  created_by text not null references users(id) on delete cascade,
+  token_hash text not null unique,
+  invited_by text not null references users(id) on delete cascade,
   expires_at timestamptz not null,
-  used_at timestamptz,
-  used_by text references users(id) on delete set null,
+  accepted_at timestamptz,
   created_at timestamptz not null default now()
 );
 
 -- Audit log for all privilege changes (fixes L-4)
 create table if not exists permission_audit_log (
   id text primary key default gen_random_uuid()::text,
+  organization_id text references organizations(id) on delete set null,
   actor_id text not null references users(id) on delete cascade,
   target_user_id text not null references users(id) on delete cascade,
-  org_id text references organizations(id) on delete set null,
   action text not null,
-  old_value jsonb not null default '{}'::jsonb,
-  new_value jsonb not null default '{}'::jsonb,
+  old_value_json jsonb not null default '{}'::jsonb,
+  new_value_json jsonb not null default '{}'::jsonb,
+  blocked boolean not null default false,
+  block_reason text,
   occurred_at timestamptz not null default now()
 );
 
@@ -620,16 +621,16 @@ alter table users add column if not exists organization_id text references organ
 
 -- Indexes for tenant lookups (performance requirement)
 create index if not exists idx_org_memberships_org_id
-  on organization_memberships(org_id, role, joined_at desc);
+  on organization_memberships(organization_id, role, joined_at desc);
 
 create index if not exists idx_org_memberships_user_id
   on organization_memberships(user_id);
 
 create index if not exists idx_org_invites_org_id
-  on organization_invites(org_id, created_at desc);
+  on organization_invites(organization_id, created_at desc);
 
 create index if not exists idx_org_invites_code
-  on organization_invites(invite_code);
+  on organization_invites(token_hash);
 
 create index if not exists idx_org_invites_email
   on organization_invites(email);
@@ -646,13 +647,15 @@ create index if not exists idx_permission_audit_log_target
 create index if not exists idx_organizations_owner_id
   on organizations(owner_id);
 
+create index if not exists idx_organizations_slug
+  on organizations(slug);
+
 create index if not exists idx_teacher_classes_teacher_org
   on teacher_classes(teacher_id);
 
-
 -- Batch 2: scope announcements to their creating organization.
--- NULL org_id means platform-wide (visible to all matching audience_type).
-alter table announcements add column if not exists org_id text references organizations(id);
+-- organization_id NULL is legacy/global; dashboard routes now avoid creating these.
+alter table announcements add column if not exists organization_id text references organizations(id);
 
 create index if not exists idx_announcements_org_id
-  on announcements(org_id);
+  on announcements(organization_id);
