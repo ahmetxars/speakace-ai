@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Download, Link2, MessageCircle, Share2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
+import posthog from "posthog-js";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { ProgressSummary, SpeakingSession } from "@/lib/types";
 import { readStudyFolders, readStudyItems, writeStudyFolders, writeStudyItems } from "@/lib/study-lists";
@@ -183,6 +184,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     if (typeof window === "undefined") return;
     if (currentUser?.id) {
       void trackClientEvent({ userId: currentUser.id, event: "pdf_report_export", path: `/app/results/${session.id}` });
+      posthog.capture("session_result_exported", { exam_type: session.examType, task_type: session.taskType });
     }
     const printWindow = window.open("", "_blank", "noopener,noreferrer,width=960,height=1200");
     if (!printWindow) return;
@@ -355,6 +357,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         });
         if (currentUser?.id) {
           void trackClientEvent({ userId: currentUser.id, event: "result_share_native", path: `/app/results/${session.id}` });
+          posthog.capture("session_result_shared", { method: "native", exam_type: session.examType, task_type: session.taskType });
         }
         setShareMessage(tr ? "Sonuç başarıyla paylaşıldı." : "Result shared successfully.");
         return;
@@ -363,6 +366,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
       await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
       if (currentUser?.id) {
         void trackClientEvent({ userId: currentUser.id, event: "result_share_copy", path: `/app/results/${session.id}` });
+      posthog.capture("session_result_shared", { method: "copy", exam_type: session.examType, task_type: session.taskType });
       }
       setShareMessage(tr ? "Paylaşım metni panoya kopyalandı." : "Share text copied to clipboard.");
     } catch {

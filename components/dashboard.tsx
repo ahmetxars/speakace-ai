@@ -4,11 +4,10 @@ import Link from "next/link";
 import { ArrowRight, BookOpenCheck, CheckCircle2, Flame, LayoutGrid, Mic, PenSquare, Sparkles, Target } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { InstitutionAdminPanel } from "@/components/institution-admin-panel";
 import { useAppState } from "@/components/providers";
-import { TeacherHub } from "@/components/teacher-hub";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
+import { resolveDashboardRole } from "@/lib/roles";
 import { AnnouncementItem, HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership, StudentProfile } from "@/lib/types";
 
 const emptySummary: ProgressSummary = {
@@ -38,8 +37,19 @@ export function Dashboard() {
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
 
-  const isSchoolMember = Boolean(signedIn && currentUser?.memberType === "school");
-  const isTeacherMember = Boolean(signedIn && currentUser?.memberType === "teacher");
+  const dashboardRole = resolveDashboardRole(currentUser);
+  const isSchoolMember = Boolean(signedIn && dashboardRole === "school");
+  const isTeacherMember = Boolean(signedIn && dashboardRole === "teacher");
+
+  useEffect(() => {
+    if (isSchoolMember) {
+      router.replace("/app/institution-admin");
+      return;
+    }
+    if (isTeacherMember) {
+      router.replace("/app/teacher");
+    }
+  }, [isSchoolMember, isTeacherMember, router]);
 
   useEffect(() => {
     if (!signedIn || !currentUser) return;
@@ -99,12 +109,12 @@ export function Dashboard() {
       .then((data: { profile?: StudentProfile }) => {
         const p = data.profile ?? null;
         setProfile(p);
-        if (p && !p.onboardingComplete && currentUser?.memberType === "student") {
+        if (p && !p.onboardingComplete && dashboardRole === "student") {
           router.replace("/app/onboarding");
         }
       })
       .catch(() => setProfile(null));
-  }, [currentUser, signedIn, router]);
+  }, [currentUser, signedIn, router, dashboardRole]);
 
   const scoredSessions = useMemo(
     () => summary.recentSessions.filter((s) => s.report),
@@ -329,8 +339,7 @@ export function Dashboard() {
     setHomework((current) => current.map((item) => (item.id === assignmentId ? data.assignment! : item)));
   };
 
-  if (isSchoolMember) return <InstitutionAdminPanel />;
-  if (isTeacherMember) return <TeacherHub />;
+  if (isSchoolMember || isTeacherMember) return null;
 
   const firstName = currentUser?.name?.split(" ")[0] ?? "";
   const pendingHomeworkCount = homework.filter((item) => !item.completedAt).length;

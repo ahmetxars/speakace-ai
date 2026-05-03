@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getPostHogClient } from "@/lib/posthog-server";
 import {
   applyBillingPlanByEmail,
   applyBillingPlanByUserId,
@@ -72,6 +73,8 @@ export async function POST(request: Request) {
   const basePlan = resolvePlanFromLemonPayload(payload);
   const nextPlan = resolvePlanForStatus(basePlan, status);
   const institutionType = getInstitutionType(payload);
+  const posthog = getPostHogClient();
+  const distinctId = userId ?? email ?? providerCustomerId ?? providerSubscriptionId ?? `billing:${eventName}`;
 
   await recordBillingEvent({
     provider: "lemonsqueezy",
@@ -120,6 +123,44 @@ export async function POST(request: Request) {
         providerSubscriptionId
       });
     }
+  }
+
+  posthog.capture({
+    distinctId,
+    event: "billing_status_updated",
+    properties: {
+      event_name: eventName,
+      billing_status: status,
+      plan: nextPlan,
+      provider: "lemonsqueezy",
+      institution_type: institutionType
+    }
+  });
+
+  if (["order_created", "subscription_created", "subscription_resumed", "subscription_unpaused"].includes(eventName)) {
+    posthog.capture({
+      distinctId,
+      event: "checkout_completed",
+      properties: {
+        plan: nextPlan,
+        billing_status: status,
+        provider: "lemonsqueezy",
+        institution_type: institutionType
+      }
+    });
+  }
+
+  if (eventName === "subscription_payment_failed") {
+    posthog.capture({
+      distinctId,
+      event: "payment_failed",
+      properties: {
+        plan: nextPlan,
+        billing_status: status,
+        provider: "lemonsqueezy",
+        institution_type: institutionType
+      }
+    });
   }
 
   return NextResponse.json({ received: true });

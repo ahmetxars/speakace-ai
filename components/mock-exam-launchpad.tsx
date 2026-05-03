@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import posthog from "posthog-js";
 import { useAppState } from "@/components/providers";
 
 export function MockExamLaunchpad() {
@@ -28,10 +29,18 @@ export function MockExamLaunchpad() {
               : "You no longer need to build the test one task at a time. One click now starts the full IELTS Part 1-2-3 or full TOEFL Task 1-2-3-4 chain."}
           </p>
           <div style={{ display: "grid", gap: "0.7rem" }}>
-            <Link href="/app/practice?runMode=simulation&examType=IELTS&difficulty=Target&quickStart=1" className="button button-primary">
+            <Link
+              href="/app/practice?runMode=simulation&examType=IELTS&difficulty=Target&quickStart=1"
+              className="button button-primary"
+              onClick={() => posthog.capture("mock_exam_started", { exam_type: "IELTS", run_mode: "simulation" })}
+            >
               {tr ? "Komple IELTS mock başlat" : "Start full IELTS mock"}
             </Link>
-            <Link href="/app/practice?runMode=simulation&examType=TOEFL&difficulty=Target&quickStart=1" className="button button-secondary">
+            <Link
+              href="/app/practice?runMode=simulation&examType=TOEFL&difficulty=Target&quickStart=1"
+              className="button button-secondary"
+              onClick={() => posthog.capture("mock_exam_started", { exam_type: "TOEFL", run_mode: "simulation" })}
+            >
               {tr ? "Komple TOEFL mock başlat" : "Start full TOEFL mock"}
             </Link>
           </div>

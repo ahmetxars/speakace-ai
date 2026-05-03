@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { resolveDashboardRole } from "@/lib/roles";
 import { listWritingPrompts } from "@/lib/writing-prompts";
 import { getSessionCookieName, getAuthenticatedUser } from "@/lib/server/auth";
 import { getWritingSummary } from "@/lib/writing-store";
@@ -8,6 +10,13 @@ export default async function WritingHubPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get(getSessionCookieName())?.value;
   const profile = await getAuthenticatedUser(token);
+  const dashboardRole = resolveDashboardRole(profile);
+  if (dashboardRole === "teacher") {
+    redirect("/app/teacher");
+  }
+  if (dashboardRole === "school") {
+    redirect("/app/institution-admin");
+  }
   const summary = profile ? await getWritingSummary(profile.id) : { totalSessions: 0, averageScore: 0, latestSession: null, recentSessions: [], weakestCategory: null };
   const taskOnePrompts = listWritingPrompts("ielts-writing-task-1", "Target").slice(0, 3);
   const taskTwoPrompts = listWritingPrompts("ielts-writing-task-2", "Target").slice(0, 3);

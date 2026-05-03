@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
 import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
 import { Difficulty, ExamType, ProgressSummary, SpeakingSession, TaskType } from "@/lib/types";
+import posthog from "posthog-js";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { listPromptsForTask } from "@/lib/prompts";
 
@@ -127,6 +128,16 @@ export function PracticeConsole() {
   const chunksRef = useRef<Blob[]>([]);
   const autoStartedRef = useRef(false);
 
+  const capturePracticeEvent = useCallback((event: string, properties: Record<string, unknown>) => {
+    posthog.capture(event, {
+      run_mode: runMode,
+      exam_type: examType,
+      task_type: taskType,
+      difficulty,
+      ...properties
+    });
+  }, [difficulty, examType, runMode, taskType]);
+
   useEffect(() => {
     const nextExam = searchParams.get("examType");
     const nextTask = searchParams.get("taskType");
@@ -232,18 +243,31 @@ export function PracticeConsole() {
     const data = (await readJsonSafely(response)) as { error?: string; session?: SpeakingSession };
 
     if (!response.ok) {
+      capturePracticeEvent("evaluation_failed", {
+        session_id: sessionId,
+        reason: data.error ?? "Evaluation failed."
+      });
       setError(data.error ?? (tr ? "Değerlendirme tamamlanamadı." : "Evaluation failed."));
       setMode("done");
       return null;
     }
 
     if (!data.session) {
+      capturePracticeEvent("evaluation_failed", {
+        session_id: sessionId,
+        reason: "empty_result"
+      });
       setError(tr ? "Sonuç verisi boş döndü." : "The result response was empty.");
       setMode("done");
       return null;
     }
 
     const evaluatedSession = data.session;
+    capturePracticeEvent("evaluation_completed", {
+      session_id: sessionId,
+      transcript_source: evaluatedSession.transcriptSource ?? "unknown",
+      overall_score: evaluatedSession.report?.overall ?? null
+    });
     setSession(evaluatedSession);
     setMode("done");
 
@@ -284,6 +308,11 @@ export function PracticeConsole() {
         );
         if (currentUser?.id) {
           void trackClientEvent({ userId: currentUser.id, event: "simulation_complete", path: "/app/practice" });
+          posthog.capture("practice_session_completed", {
+            run_mode: runMode,
+            exam_type: examType,
+            completed_tasks: simulationState?.completed.length
+          });
         }
       }
       return evaluatedSession;
@@ -323,7 +352,7 @@ export function PracticeConsole() {
     setStatus(tr ? "Sonuç hazır. Sonuç ekranı açılıyor." : "Your result is ready. Opening the full review.");
     router.push(`/app/results/${sessionId}`);
     return evaluatedSession;
-  }, [currentUser?.id, router, runMode, simulationState, tr]);
+  }, [capturePracticeEvent, currentUser?.id, examType, interviewState?.step, router, runMode, simulationState, tr]);
 
   const prepareMicrophone = useCallback(async (activeSession?: SpeakingSession | null) => {
     setError(null);
@@ -379,7 +408,13 @@ export function PracticeConsole() {
         }
         if (currentUser?.id) {
           void trackClientEvent({ userId: currentUser.id, event: "recording_uploaded", path: "/app/practice" });
+          posthog.capture("practice_session_completed", { run_mode: runMode, exam_type: examType, task_type: taskType });
         }
+        capturePracticeEvent("recording_submitted", {
+          session_id: targetSession.id,
+          audio_bytes: blob.size,
+          speaking_seconds: targetSession.prompt.speakingSeconds
+        });
         setMode("saving");
         setStatus(tr ? "Kayıt yükleniyor, yanıtın analiz ediliyor..." : "Uploading your recording and analyzing your answer...");
 
@@ -401,6 +436,10 @@ export function PracticeConsole() {
         };
 
         if (!uploadResponse.ok) {
+          capturePracticeEvent("recording_upload_failed", {
+            session_id: targetSession.id,
+            reason: uploadData.error ?? "Recording upload failed."
+          });
           setError(uploadData.error ?? (tr ? "Kayıt yüklenemedi." : "Recording upload failed."));
           setMode("done");
           return;
@@ -413,6 +452,12 @@ export function PracticeConsole() {
           setError(uploadData.transcriptionError);
         }
 
+        capturePracticeEvent("transcript_generated", {
+          session_id: targetSession.id,
+          transcript_source: uploadData.transcriptSource ?? uploadData.session?.transcriptSource ?? "unknown",
+          has_transcription_error: Boolean(uploadData.transcriptionError)
+        });
+
         setStatus(
           uploadData.transcriptSource === "openai"
             ? tr
@@ -423,6 +468,10 @@ export function PracticeConsole() {
               : "Recording was captured, but the transcript fell back to generated mode."
         );
 
+        capturePracticeEvent("evaluation_requested", {
+          session_id: targetSession.id,
+          transcript_source: uploadData.transcriptSource ?? uploadData.session?.transcriptSource ?? "unknown"
+        });
         await evaluateSessionNow(targetSession.id);
       };
 
@@ -433,7 +482,7 @@ export function PracticeConsole() {
       setStatus(tr ? "Speaking calismasi icin mikrofon izni gerekli." : "Microphone access is required for speaking practice.");
       return false;
     }
-  }, [canPractice, cleanupMedia, currentUser, evaluateSessionNow, tr]);
+  }, [canPractice, capturePracticeEvent, cleanupMedia, currentUser, evaluateSessionNow, examType, runMode, taskType, tr]);
 
   const beginRecording = useCallback(async () => {
     if (!recorderRef.current) {
@@ -447,9 +496,12 @@ export function PracticeConsole() {
     if (recorder && recorder.state === "inactive") {
       recorder.start(1000);
       setRecordingLive(true);
+      capturePracticeEvent("recording_started", {
+        session_id: sessionRef.current?.id ?? null
+      });
       setStatus(tr ? "Kayıt başladı. Şimdi konuşmaya başlayabilirsin." : "Recording in progress.");
     }
-  }, [prepareMicrophone, tr]);
+  }, [capturePracticeEvent, prepareMicrophone, tr]);
 
   const requestMicrophoneAccess = useCallback(async () => {
     const granted = await prepareMicrophone(sessionRef.current);
@@ -587,8 +639,23 @@ export function PracticeConsole() {
       window.localStorage.setItem(`speakace-session-mode-${data.session.id}`, runMode);
     }
 
+    capturePracticeEvent("practice_prompt_selected", {
+      session_id: data.session.id,
+      prompt_id: data.session.prompt.id,
+      prompt_title: data.session.prompt.title,
+      selected_task_type: requestedTaskType,
+      selected_difficulty: requestedDifficulty,
+      used_custom_prompt: Boolean(customPrompt)
+    });
+
     if (currentUser?.id) {
       void trackClientEvent({ userId: currentUser.id, event: "practice_start", path: "/app/practice" });
+      posthog.capture("practice_session_started", {
+        run_mode: runMode,
+        exam_type: examType,
+        task_type: taskType,
+        difficulty
+      });
     }
 
   };

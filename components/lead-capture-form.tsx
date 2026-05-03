@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import posthog from "posthog-js";
 import { useAppState } from "@/components/providers";
 
 export function LeadCaptureForm({ source = "site" }: { source?: string }) {
@@ -30,6 +31,7 @@ export function LeadCaptureForm({ source = "site" }: { source?: string }) {
       return;
     }
 
+    posthog.capture("lead_captured", { source, has_name: Boolean(name) });
     setStatus("success");
     setMessage(
       tr

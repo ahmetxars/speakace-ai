@@ -11,8 +11,13 @@ import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { isAdminEmail } from "@/lib/admin";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(request: Request) {
+  const body = await request.json();
+  const email = String(body.email ?? "").trim().toLowerCase();
+  const posthog = getPostHogClient();
+
   try {
     const exposeAuthUrls = process.env.APP_ENV !== "production";
     const ip = getRequestIp(request);
@@ -22,10 +27,14 @@ export async function POST(request: Request) {
       max: 5
     });
     if (!limit.allowed) {
+      posthog.capture({
+        distinctId: email || `anonymous-signup:${ip}`,
+        event: "signup_failed",
+        properties: { email, member_type: body.memberType ?? "student", reason: "rate_limited" }
+      });
       return NextResponse.json({ error: "Too many sign-up attempts. Please try again later." }, { status: 429 });
     }
 
-    const body = await request.json();
     const profile = await signUpWithPassword({
       email: body.email ?? "",
       password: body.password ?? "",
@@ -58,6 +67,9 @@ export async function POST(request: Request) {
         path: body.attributionPath.trim()
       });
     }
+    posthog.identify({ distinctId: profile.id, properties: { email: profile.email, name: profile.name, member_type: profile.memberType } });
+    posthog.capture({ distinctId: profile.id, event: "user_signed_up", properties: { email: profile.email, member_type: profile.memberType, has_referral_code: Boolean(body.referralCode), has_class_code: Boolean(body.classCode) } });
+
     const verification = await createEmailVerificationFlow(profile.email);
     try {
       const result = await sendOnboardingEmail(profile.id, 1);
@@ -77,6 +89,17 @@ export async function POST(request: Request) {
       classJoinMessage
     });
   } catch (error) {
+    posthog.capture({
+      distinctId: email || "anonymous-signup",
+      event: "signup_failed",
+      properties: {
+        email,
+        member_type: body.memberType ?? "student",
+        has_referral_code: Boolean(body.referralCode),
+        has_class_code: Boolean(body.classCode),
+        reason: error instanceof Error ? error.message : "Sign up failed."
+      }
+    });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Sign up failed." },
       { status: 400 }

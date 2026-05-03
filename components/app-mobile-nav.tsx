@@ -4,6 +4,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAppState } from "@/components/providers";
+import { resolveDashboardRole } from "@/lib/roles";
 
 const navItem = (href: Route, en: string, tr: string, icon: string) => ({ href, en, tr, icon });
 
@@ -11,24 +12,15 @@ export function AppMobileNav() {
   const pathname = usePathname();
   const { language, currentUser } = useAppState();
   const tr = language === "tr";
+  const dashboardRole = resolveDashboardRole(currentUser);
   const accountHref =
-    currentUser?.memberType === "school"
+    dashboardRole === "school"
       ? "/app/institution-admin"
-      : currentUser?.isTeacher || currentUser?.memberType === "teacher"
+      : dashboardRole === "teacher"
         ? "/app/teacher"
         : "/app/profile";
-  const accountLabelEn =
-    currentUser?.memberType === "school"
-      ? "School"
-      : currentUser?.isTeacher || currentUser?.memberType === "teacher"
-        ? "Teacher"
-        : "Profile";
-  const accountLabelTr =
-    currentUser?.memberType === "school"
-      ? "Kurum"
-      : currentUser?.isTeacher || currentUser?.memberType === "teacher"
-        ? "Öğretmen"
-        : "Profil";
+  const accountLabelEn = dashboardRole === "school" ? "Institution" : dashboardRole === "teacher" ? "Teaching" : "Profile";
+  const accountLabelTr = dashboardRole === "school" ? "Kurum" : dashboardRole === "teacher" ? "Sınıf" : "Profil";
 
   const items = [
     navItem("/app", "Home", "Ana sayfa", "•"),

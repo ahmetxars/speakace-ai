@@ -54,8 +54,9 @@ describe("session store", () => {
       throw new Error("Expected session creation to succeed.");
     }
 
-    await uploadSessionAudio(created.session.id, 140_000);
-    const evaluated = await evaluateStoredSession(created.session.id);
+    const session = created.session!;
+    await uploadSessionAudio(session.id, 140_000);
+    const evaluated = await evaluateStoredSession(session.id);
 
     expect(evaluated?.report?.overall).toBeGreaterThan(0);
     expect(evaluated?.transcript).toContain("In this response");
@@ -76,8 +77,9 @@ describe("session store", () => {
       throw new Error("Expected session creation to succeed.");
     }
 
-    await uploadSessionAudio(created.session.id, 110_000);
-    await evaluateStoredSession(created.session.id);
+    const session = created.session!;
+    await uploadSessionAudio(session.id, 110_000);
+    await evaluateStoredSession(session.id);
 
     const summary = await getProgressSummary(member.id);
 

@@ -17,6 +17,7 @@ import { withTeacherPrivileges } from "@/lib/teacher";
 import { createMemberProfile } from "@/lib/membership";
 import { MemberProfile } from "@/lib/types";
 import {
+  addStudentToTeacherClass,
   createTeacherClass,
   ensureTeacherOwnsClass,
   getTeacherStudentDetail,
@@ -116,8 +117,8 @@ describe("Teacher isolation", () => {
     const classA = await createTeacherClass({ teacherId: teacherA.id, name: "Class A" });
     const classB = await createTeacherClass({ teacherId: teacherB.id, name: "Class B" });
 
-    // Student joins Class B only (approval not required in test)
-    await joinTeacherClassByCode({ studentId: student.id, joinCode: classB.joinCode });
+    // Directly enroll student in Class B (approved state — bypasses approval gate)
+    await addStudentToTeacherClass({ teacherId: teacherB.id, classId: classB.id, studentEmail: student.email });
 
     // Teacher A should NOT be able to see this student
     await expect(
@@ -231,14 +232,15 @@ describe("H-3: class join restrictions", () => {
 // ---------------------------------------------------------------------------
 
 describe("Privilege flag integrity", () => {
-  it("isAdmin always implies isTeacher (admin users can use teacher features)", () => {
+  it("isAdmin does NOT imply isTeacher — school admins and teachers are separate roles", () => {
     const profile: MemberProfile = {
       ...createMemberProfile("admin@platform.com", "Admin", { memberType: "school" }),
       adminAccess: true
     };
     const elevated = withAdminPrivileges(profile);
     expect(elevated.isAdmin).toBe(true);
-    expect(elevated.isTeacher).toBe(true);
+    // School admins don't automatically get teacher access — roles are intentionally separate
+    expect(elevated.isTeacher).toBeFalsy();
   });
 
   it("isTeacher does NOT imply isAdmin", () => {

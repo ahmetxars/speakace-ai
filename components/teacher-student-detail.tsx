@@ -177,7 +177,7 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
     }, 100);
   };
 
-  if (!currentUser?.isTeacher && !currentUser?.isAdmin) {
+  if (!currentUser?.isTeacher) {
     return (
       <div className="page-shell section">
         <div className="card" style={{ padding: "2rem", display: "grid", gap: "0.6rem" }}>

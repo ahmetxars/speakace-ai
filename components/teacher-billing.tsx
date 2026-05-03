@@ -34,7 +34,7 @@ export function TeacherBilling() {
   const [classes, setClasses] = useState<TeacherClassSummary[]>([]);
 
   useEffect(() => {
-    if (!currentUser?.isTeacher && !currentUser?.isAdmin) return;
+    if (!currentUser?.isAdmin) return;
     fetch("/api/teacher/billing")
       .then((response) => response.json())
       .then((data: { billing?: InstitutionBillingSummary }) => {
@@ -48,15 +48,15 @@ export function TeacherBilling() {
         setPlan("starter");
         setSeatCount(20);
       });
-  }, [currentUser?.id, currentUser?.isAdmin, currentUser?.isTeacher]);
+  }, [currentUser?.id, currentUser?.isAdmin]);
 
   useEffect(() => {
-    if (!currentUser?.isTeacher && !currentUser?.isAdmin) return;
+    if (!currentUser?.isAdmin) return;
     fetch("/api/teacher/classes")
       .then((response) => response.json())
       .then((data: { classes?: TeacherClassSummary[] }) => setClasses(data.classes ?? []))
       .catch(() => setClasses([]));
-  }, [currentUser?.id, currentUser?.isAdmin, currentUser?.isTeacher]);
+  }, [currentUser?.id, currentUser?.isAdmin]);
 
   const draftSummary = useMemo(() => {
     if (plan === "campus") {
@@ -99,14 +99,14 @@ export function TeacherBilling() {
     window.location.href = `/api/payments/lemon/institution-checkout?${params.toString()}`;
   };
 
-  if (!currentUser?.isTeacher && !currentUser?.isAdmin) {
+  if (!currentUser?.isAdmin) {
     return (
       <main className="page-shell section">
         <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
           <span className="eyebrow">{tr ? "Kurum" : "Institution"}</span>
-          <h1 style={{ margin: 0 }}>{tr ? "Ogretmen erisimi gerekli" : "Teacher access required"}</h1>
+          <h1 style={{ margin: 0 }}>{tr ? "Kurum erişimi gerekli" : "Institution access required"}</h1>
           <p style={{ color: "var(--muted)", maxWidth: 720 }}>
-            {tr ? "Bu alan kurum ve kurs paketlerini yonetmek icin ogretmen hesabina aciktir." : "This area is reserved for teachers managing institution plans."}
+            {tr ? "Bu alan kurum paketi ve seat planlaması için kurum yöneticilerine açıktır." : "This area is reserved for institution administrators managing billing and seats."}
           </p>
         </div>
       </main>

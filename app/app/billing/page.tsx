@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
+import { resolveDashboardRole } from "@/lib/roles";
 
 export default function BillingPage() {
+  const router = useRouter();
   const { currentUser, signedIn, language, refreshSession } = useAppState();
   const tr = language === "tr";
+  const dashboardRole = resolveDashboardRole(currentUser);
   const comparison = getPlanComparison(tr);
   const planOutcome = useMemo(
     () =>
@@ -24,6 +29,20 @@ export default function BillingPage() {
           ],
     [tr]
   );
+
+  useEffect(() => {
+    if (dashboardRole === "teacher") {
+      router.replace("/app/teacher");
+      return;
+    }
+    if (dashboardRole === "school") {
+      router.replace("/app/teacher/billing");
+    }
+  }, [dashboardRole, router]);
+
+  if (dashboardRole === "teacher" || dashboardRole === "school") {
+    return null;
+  }
 
   if (!signedIn) {
     return (
@@ -91,6 +110,7 @@ export default function BillingPage() {
                 className="button button-primary"
                 href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_buy_plus" })}
                 onClick={() => {
+                  posthog.capture("checkout_initiated", { plan: "plus", current_plan: currentUser?.plan, campaign: "billing_buy_plus" });
                   if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
                     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
                       currency: 'USD',
@@ -107,6 +127,7 @@ export default function BillingPage() {
                 href={buildPlanCheckoutPath({ plan: "pro", campaign: "billing_buy_pro" })}
                 style={{ background: "#c9a227", borderColor: "#c9a227" }}
                 onClick={() => {
+                  posthog.capture("checkout_initiated", { plan: "pro", current_plan: currentUser?.plan, campaign: "billing_buy_pro" });
                   if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
                     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
                       currency: 'USD',
@@ -126,6 +147,7 @@ export default function BillingPage() {
                 href={buildPlanCheckoutPath({ plan: "pro", campaign: "billing_upgrade_pro" })}
                 style={{ background: "#c9a227", borderColor: "#c9a227" }}
                 onClick={() => {
+                  posthog.capture("checkout_initiated", { plan: "pro", current_plan: currentUser?.plan, campaign: "billing_upgrade_pro" });
                   if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
                     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
                       currency: 'USD',

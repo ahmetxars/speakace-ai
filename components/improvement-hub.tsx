@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAppState } from "@/components/providers";
 import { GrowthProofBoard } from "@/components/growth-proof-board";
 import { buildBandProgress, buildReactivationSignals, buildRetrySuggestions } from "@/lib/improvement-center";
+import { resolveDashboardRole } from "@/lib/roles";
 import type { ProgressSummary, StudentProfile } from "@/lib/types";
 
 const emptySummary: ProgressSummary = {
@@ -42,7 +43,8 @@ export function ImprovementHub() {
   const progress = useMemo(() => buildBandProgress(profile, summary, tr), [profile, summary, tr]);
   const retrySuggestions = useMemo(() => buildRetrySuggestions(summary, tr), [summary, tr]);
   const reactivation = useMemo(() => buildReactivationSignals(profile, summary, tr), [profile, summary, tr]);
-  const teacherHref: Route = currentUser?.memberType === "school" ? "/app/institution-admin" : "/app/teacher";
+  const dashboardRole = resolveDashboardRole(currentUser);
+  const teacherHref: Route = dashboardRole === "school" ? "/app/institution-admin" : "/app/teacher";
   const hubCards: Array<{ title: string; href: Route; body: string }> = [
     { title: tr ? "Placement" : "Placement", href: "/app/placement", body: profile?.currentLevel ?? (tr ? "Seviyeni netleştir" : "Lock your level") },
     { title: tr ? "Study plan" : "Study plan", href: "/app/plan", body: tr ? `${profile?.weeklyGoal ?? 4} oturumluk haftalık ritim` : `${profile?.weeklyGoal ?? 4}-session weekly rhythm` },

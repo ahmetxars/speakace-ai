@@ -40,7 +40,7 @@ export function TeacherStudentCompare() {
     setComparison(data.comparison);
   };
 
-  if (!currentUser?.isTeacher && !currentUser?.isAdmin) {
+  if (!currentUser?.isTeacher) {
     return <main className="page-shell section"><div className="card" style={{ padding: "1.5rem" }}>{tr ? "Teacher erisimi gerekli." : "Teacher access required."}</div></main>;
   }
 

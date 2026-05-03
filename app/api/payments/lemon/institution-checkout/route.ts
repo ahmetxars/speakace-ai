@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { buildInstitutionCheckoutUrl, commerceConfig } from "@/lib/commerce";
 import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
+import { getPostHogClient } from "@/lib/posthog-server";
 import { InstitutionBillingSummary } from "@/lib/types";
 
 export async function GET(request: Request) {
@@ -35,6 +36,9 @@ export async function GET(request: Request) {
     userId: profile.id,
     seatCount: isNaN(seatCount) ? undefined : seatCount
   });
+
+  const posthog = getPostHogClient();
+  posthog.capture({ distinctId: profile.id, event: "institution_checkout_initiated", properties: { plan, seat_count: isNaN(seatCount) ? 20 : seatCount, email: profile.email } });
 
   return NextResponse.redirect(checkoutUrl || commerceConfig.institutionStarterCheckout);
 }

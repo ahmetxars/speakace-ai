@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import posthog from "posthog-js";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog } from "@/lib/commerce";
 
 export function PricingCards() {
@@ -138,6 +139,7 @@ export function PricingCards() {
               coupon: couponCatalog.LAUNCH20.code,
               campaign: "pricing_hero"
             })}
+            onClick={() => posthog.capture("pricing_plan_selected", { plan: "plus", billing })}
           >
             Unlock full feedback
           </a>
@@ -208,6 +210,7 @@ export function PricingCards() {
               campaign: "pricing_hero_pro"
             })}
             style={{ background: "#c9a227", borderColor: "#c9a227" }}
+            onClick={() => posthog.capture("pricing_plan_selected", { plan: "pro", billing })}
           >
             Get Pro
           </a>
@@ -254,6 +257,7 @@ export function PricingCards() {
             className="button button-primary"
             href={buildPlanCheckoutPath({ plan: "lifetime", campaign: "pricing_hero_lifetime" })}
             style={{ background: "oklch(0.55 0.18 165.41)", borderColor: "oklch(0.55 0.18 165.41)" }}
+            onClick={() => posthog.capture("pricing_plan_selected", { plan: "lifetime", billing: "one_time" })}
           >
             Get Lifetime Access
           </a>
