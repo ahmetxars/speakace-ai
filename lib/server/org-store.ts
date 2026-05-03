@@ -408,6 +408,53 @@ export async function getOrgAdminSummary(orgId: string) {
 }
 
 /**
+ * Lists students enrolled in any class belonging to a teacher in the given org.
+ * Returns per-student progress summary for the institution admin dashboard.
+ */
+export async function listOrgStudentSummaries(orgId: string) {
+  const sql = getSql();
+  const rows = await sql<Array<{
+    id: string;
+    name: string;
+    email: string;
+    plan: string;
+    classCount: number;
+    sessionCount: number;
+    averageScore: number | null;
+    lastSessionAt: string | null;
+    teacherNames: string[];
+  }>>`
+    select
+      u.id,
+      u.name,
+      u.email,
+      u.plan,
+      count(distinct e.class_id)::int as "classCount",
+      count(distinct s.id)::int as "sessionCount",
+      round(avg(s.report_overall)::numeric, 1) as "averageScore",
+      max(s.created_at) as "lastSessionAt",
+      coalesce(
+        array_agg(distinct t.name) filter (where t.name is not null),
+        '{}'::text[]
+      ) as "teacherNames"
+    from teacher_class_enrollments e
+    join teacher_classes c on c.id = e.class_id
+    join users t on t.id = c.teacher_id
+    join organization_memberships tm on tm.user_id = t.id and tm.org_id = ${orgId}
+    join users u on u.id = e.student_id
+    left join sessions s on s.user_id = u.id and s.report_overall is not null
+    where e.status = 'approved'
+    group by u.id, u.name, u.email, u.plan
+    order by "sessionCount" desc, u.created_at desc
+    limit 300
+  `;
+  return rows.map((r) => ({
+    ...r,
+    teacherNames: Array.isArray(r.teacherNames) ? r.teacherNames : []
+  }));
+}
+
+/**
  * Updates a user's access flags within the given organization.
  *
  * Role-change protection rules (enforced server-side before any DB write):

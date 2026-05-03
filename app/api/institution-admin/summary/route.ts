@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOrgAdminSummary, getOrgForAdmin } from "@/lib/server/org-store";
+import { getOrgAdminSummary, getOrgForAdmin, listOrgStudentSummaries } from "@/lib/server/org-store";
 import { permissionErrorResponse, requireSchoolAdmin } from "@/lib/server/permissions";
 import { hasDatabaseUrl } from "@/lib/server/db";
 import { getInstitutionAdminSummary } from "@/lib/classroom-store";
@@ -16,13 +16,16 @@ export async function GET() {
           { status: 404 }
         );
       }
-      const summary = await getOrgAdminSummary(org.id);
-      return NextResponse.json({ ...summary, orgId: org.id, orgName: org.name });
+      const [summary, students] = await Promise.all([
+        getOrgAdminSummary(org.id),
+        listOrgStudentSummaries(org.id)
+      ]);
+      return NextResponse.json({ ...summary, orgId: org.id, orgName: org.name, students });
     }
 
     // In-memory dev fallback
     const summary = await getInstitutionAdminSummary();
-    return NextResponse.json(summary);
+    return NextResponse.json({ ...summary, students: [] });
   } catch (error) {
     return permissionErrorResponse(error);
   }
