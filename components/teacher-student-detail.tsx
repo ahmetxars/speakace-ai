@@ -461,7 +461,7 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
                   </button>
                   {sessionNotesMap.get(session.id)?.length ? (
                     <div style={{ display: "grid", gap: "0.4rem", paddingTop: "0.3rem", borderTop: "1px solid var(--line)" }}>
-                      {sessionNotesMap.get(session.id)!.slice(0, 2).map((item) => (
+                      {(sessionNotesMap.get(session.id) ?? []).slice(0, 2).map((item) => (
                         <div key={item.id} style={{ fontSize: "0.83rem", color: "var(--muted)", lineHeight: 1.6 }}>
                           {item.tags?.length ? <div style={{ marginBottom: "0.2rem", fontWeight: 600 }}>{item.tags.map((t) => `#${t}`).join(" ")}</div> : null}
                           {item.note}

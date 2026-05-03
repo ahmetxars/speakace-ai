@@ -72,11 +72,14 @@ export function InstitutionAdminPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [noOrg, setNoOrg] = useState(false);
+
   useEffect(() => {
     setLoading(true);
     fetch("/api/institution-admin/summary")
-      .then((r) => r.json())
-      .then((data: InstitutionSummary & { error?: string }) => {
+      .then(async (r) => {
+        const data = (await r.json()) as InstitutionSummary & { error?: string };
+        if (r.status === 404) { setNoOrg(true); return; }
         if (data.error) throw new Error(data.error);
         setSummary(data);
       })
@@ -105,6 +108,25 @@ export function InstitutionAdminPanel() {
       <main className="page-shell section">
         <div className="card" style={{ padding: "2rem", textAlign: "center", color: "var(--muted)" }}>
           {tr ? "Kurumsal veriler yükleniyor…" : "Loading institution data…"}
+        </div>
+      </main>
+    );
+  }
+
+  if (noOrg) {
+    return (
+      <main className="page-shell section">
+        <div className="card" style={{ padding: "2rem", display: "grid", gap: "1rem", maxWidth: 480 }}>
+          <span className="eyebrow">{tr ? "Kurum kurulumu" : "Institution setup"}</span>
+          <h2 style={{ margin: 0 }}>{tr ? "Kurumunuz henüz oluşturulmadı" : "Your institution hasn't been set up yet"}</h2>
+          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
+            {tr
+              ? "Öğretmen ve öğrencilerinizi yönetmek için önce bir kurum profili oluşturmanız gerekiyor."
+              : "To manage teachers and students, you need to create an institution profile first."}
+          </p>
+          <a href="/app/institution-admin/setup" className="button button-primary" style={{ justifySelf: "start" }}>
+            {tr ? "Kurumu kur" : "Set up institution"}
+          </a>
         </div>
       </main>
     );

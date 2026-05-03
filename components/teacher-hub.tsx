@@ -772,7 +772,7 @@ export function TeacherHub() {
                 </div>
                 {(s.riskFlags?.length ?? 0) > 0 && (
                   <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
-                    {s.riskFlags!.map((flag, i) => <span key={i} className="risk-pill">{flag}</span>)}
+                    {(s.riskFlags ?? []).map((flag, i) => <span key={i} className="risk-pill">{flag}</span>)}
                   </div>
                 )}
                 <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
