@@ -7,7 +7,7 @@ import type { AnalyticsEventName } from "@/lib/analytics-store";
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
 import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
-import { createAuthSession, getSessionCookieName, getSessionCookieOptions, signUpWithGoogle } from "@/lib/server/auth";
+import { createAuthSession, ensureSchoolAccountAccess, getSessionCookieName, getSessionCookieOptions, signUpWithGoogle } from "@/lib/server/auth";
 import { recordAuthActivity } from "@/lib/server/admin-panel";
 import { upsertMember } from "@/lib/store";
 import { MemberProfile } from "@/lib/types";
@@ -153,7 +153,7 @@ async function findOrCreateGoogleUser(input: {
         await sql`update users set email_verified = true where email = ${normalizedEmail}`;
         existing[0].emailVerified = true;
       }
-      return { profile: withAdminPrivileges(existing[0]), isNewUser: false };
+      return { profile: await ensureSchoolAccountAccess(existing[0]), isNewUser: false };
     }
 
     const profile = await signUpWithGoogle({
@@ -165,7 +165,7 @@ async function findOrCreateGoogleUser(input: {
       inviteReferrerId: input.inviteReferrerId
     });
 
-    return { profile, isNewUser: true };
+    return { profile: await ensureSchoolAccountAccess(profile), isNewUser: true };
   }
 
   // Memory store fallback
@@ -179,9 +179,9 @@ async function findOrCreateGoogleUser(input: {
       if (profile.email.toLowerCase() === normalizedEmail) {
         if (!profile.emailVerified) {
           await upsertMember({ ...profile, emailVerified: true });
-          return { profile: withAdminPrivileges({ ...profile, emailVerified: true }), isNewUser: false };
+          return { profile: await ensureSchoolAccountAccess({ ...profile, emailVerified: true }), isNewUser: false };
         }
-        return { profile: withAdminPrivileges(profile), isNewUser: false };
+        return { profile: await ensureSchoolAccountAccess(profile), isNewUser: false };
       }
     }
   }
@@ -194,7 +194,7 @@ async function findOrCreateGoogleUser(input: {
     referralCode: input.referralCode,
     inviteReferrerId: input.inviteReferrerId
   });
-  return { profile: newProfile, isNewUser: true };
+  return { profile: await ensureSchoolAccountAccess(newProfile), isNewUser: true };
 }
 
 export async function GET(request: Request) {

@@ -100,9 +100,12 @@ function AuthPageInner() {
       });
       setSuccessToast(
         data.emailSent
-          ? tr ? "Hesabın oluşturuldu. Doğrulama maili gönderildi." : "Your account was created. Verification email sent."
+          ? tr ? "Hesabın oluşturuldu. Lütfen hesabını e-posta kutundan onayla." : "Your account was created. Please verify it from your inbox."
           : tr ? "Hesabın oluşturuldu. Giriş yapmadan önce e-posta doğrulaması gerekiyor." : "Your account was created. Email verification is required."
       );
+      setPassword("");
+      setMode("signin");
+      window.scrollTo({ top: 0, behavior: "smooth" });
       if (data.classJoinMessage) {
         setNotice(data.classJoinMessage);
       }
