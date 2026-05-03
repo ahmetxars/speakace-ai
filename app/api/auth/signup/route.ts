@@ -7,6 +7,8 @@ import {
   signUpWithPassword
 } from "@/lib/server/auth";
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
+import { addOrgMember, getOrganizationByJoinCode } from "@/lib/server/org-store";
+import { hasDatabaseUrl } from "@/lib/server/db";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { isAdminEmail } from "@/lib/admin";
@@ -45,6 +47,17 @@ export async function POST(request: Request) {
       inviteReferrerId: body.inviteReferrerId ?? null
     });
     let classJoinMessage: string | undefined;
+    if (profile.memberType === "teacher" && typeof body.schoolInviteCode === "string" && body.schoolInviteCode.trim() && hasDatabaseUrl()) {
+      try {
+        const org = await getOrganizationByJoinCode(body.schoolInviteCode.trim());
+        if (org) {
+          await addOrgMember({ orgId: org.id, userId: profile.id, role: "teacher" });
+          classJoinMessage = `Joined ${org.name} as a teacher.`;
+        }
+      } catch {
+        // non-blocking — signup still succeeds even if org join fails
+      }
+    }
     if (profile.memberType === "student" && typeof body.classCode === "string" && body.classCode.trim()) {
       try {
         const joinResult = await joinTeacherClassByCode({

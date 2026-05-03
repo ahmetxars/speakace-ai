@@ -32,6 +32,7 @@ type StudentSummary = {
 type InstitutionSummary = {
   orgId?: string;
   orgName?: string;
+  joinCode?: string;
   totalTeachers: number;
   totalClasses: number;
   totalStudents: number;
@@ -64,6 +65,14 @@ type Tab = "overview" | "teachers" | "students";
 export function InstitutionAdminPanel() {
   const { language } = useAppState();
   const tr = language === "tr";
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  function copyJoinCode(code: string) {
+    void navigator.clipboard.writeText(code).then(() => {
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    });
+  }
 
   const [summary, setSummary] = useState<InstitutionSummary>(empty);
   const [tab, setTab] = useState<Tab>("overview");
@@ -153,6 +162,31 @@ export function InstitutionAdminPanel() {
             {tr ? "CSV dışa aktar" : "Export CSV"}
           </a>
         </div>
+        {summary.joinCode && (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", background: "var(--input-bg)", border: "1px solid var(--line)", borderRadius: "10px", padding: "0.75rem 1rem", marginTop: "0.25rem", flexWrap: "wrap" }}>
+            <div style={{ flexGrow: 1 }}>
+              <div style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.2rem" }}>
+                {tr ? "Öğretmen davet kodu" : "Teacher invite code"}
+              </div>
+              <div style={{ fontSize: "1.1rem", fontWeight: 700, letterSpacing: "0.15em", color: "var(--foreground)", fontFamily: "monospace" }}>
+                {summary.joinCode}
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+                {tr
+                  ? "Bu kodu paylaşın. Öğretmenler kayıt sırasında bu kodu girerek kurumunuza katılır."
+                  : "Share this code. Teachers enter it during signup to join your institution."}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => copyJoinCode(summary.joinCode!)}
+              className="button button-secondary"
+              style={{ flexShrink: 0, minWidth: "80px" }}
+            >
+              {codeCopied ? (tr ? "Kopyalandı!" : "Copied!") : (tr ? "Kopyala" : "Copy")}
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Error */}

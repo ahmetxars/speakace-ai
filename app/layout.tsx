@@ -78,8 +78,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const showMarketingHeader =
     !hideGlobalChrome &&
     !currentPath.startsWith("/app") &&
-    !currentPath.startsWith("/admin") &&
-    currentPath !== "/auth";
+    !currentPath.startsWith("/admin");
 
   return (
     <html lang={language} dir={direction}>

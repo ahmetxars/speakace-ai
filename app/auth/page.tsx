@@ -27,6 +27,7 @@ function AuthPageInner() {
   const [password, setPassword] = useState("");
   const [memberType, setMemberType] = useState<"student" | "teacher" | "school">("student");
   const [classCode, setClassCode] = useState("");
+  const [schoolInviteCode, setSchoolInviteCode] = useState("");
   const [organizationName, setOrganizationName] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState("");
@@ -73,6 +74,7 @@ function AuthPageInner() {
         name,
         memberType,
         classCode,
+        schoolInviteCode,
         organizationName,
         referralCode,
         inviteReferrerId,
@@ -478,6 +480,23 @@ function AuthPageInner() {
                       {tr
                         ? "Opsiyonel. Eklersen hesabın kayıt sonrası doğrudan sınıfa bağlanır."
                         : "Optional. If you add one, your account will connect to the class right after signup."}
+                    </small>
+                  </label>
+                ) : null}
+
+                {memberType === "teacher" ? (
+                  <label className="auth-field">
+                    <span>{tr ? "Okul davet kodu" : "School invite code"}</span>
+                    <input
+                      type="text"
+                      value={schoolInviteCode}
+                      onChange={(event) => setSchoolInviteCode(event.target.value.toUpperCase())}
+                      placeholder={tr ? "Okulunuzdan aldığınız kod (opsiyonel)" : "Code from your school admin (optional)"}
+                    />
+                    <small>
+                      {tr
+                        ? "Opsiyonel. Girerseniz hesabınız okul bünyesine otomatik eklenir."
+                        : "Optional. If entered, your account will automatically join the school."}
                     </small>
                   </label>
                 ) : null}

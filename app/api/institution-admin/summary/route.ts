@@ -20,7 +20,7 @@ export async function GET() {
         getOrgAdminSummary(org.id),
         listOrgStudentSummaries(org.id)
       ]);
-      return NextResponse.json({ ...summary, orgId: org.id, orgName: org.name, students });
+      return NextResponse.json({ ...summary, orgId: org.id, orgName: org.name, joinCode: org.joinCode, students });
     }
 
     // In-memory dev fallback

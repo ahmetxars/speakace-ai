@@ -88,6 +88,17 @@ export async function getOrganizationById(orgId: string): Promise<Organization |
   return rows[0] ?? null;
 }
 
+export async function getOrganizationByJoinCode(joinCode: string): Promise<Organization | null> {
+  const sql = getSql();
+  const rows = await sql<Organization[]>`
+    select id, name, owner_id as "ownerId", join_code as "joinCode", created_at as "createdAt"
+    from organizations
+    where lower(join_code) = lower(${joinCode.trim()})
+    limit 1
+  `;
+  return rows[0] ?? null;
+}
+
 /** Returns the organization for which the given user is an owner or admin. */
 export async function getOrgForAdmin(userId: string): Promise<Organization | null> {
   const sql = getSql();
