@@ -1,8 +1,8 @@
 "use client";
 
 import type { Route } from "next";
+import dynamic from "next/dynamic";
 import { useState } from "react";
-import { motion } from "framer-motion";
 import {
   ArrowRight,
   Zap,
@@ -17,10 +17,19 @@ import {
   School
 } from "lucide-react";
 import { useAppState } from "@/components/providers";
-import { AdSenseUnit } from "@/components/adsense-unit";
-import { MiniSpeakingDemo } from "@/components/mini-speaking-demo";
+import { motion } from "@/components/static-motion";
 import { TrackedLink } from "@/components/tracked-link";
 import { buildFaqJsonLd, jsonLdToHtml } from "@/lib/structured-data";
+
+const MiniSpeakingDemo = dynamic(
+  () => import("@/components/mini-speaking-demo").then((module) => module.MiniSpeakingDemo),
+  { ssr: false }
+);
+
+const AdSenseUnit = dynamic(
+  () => import("@/components/adsense-unit").then((module) => module.AdSenseUnit),
+  { ssr: false }
+);
 
 type MarketingPageProps = {
   eyebrow: string;

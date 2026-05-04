@@ -87,22 +87,14 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {maintenanceMode ? <meta name="robots" content="noindex,nofollow" /> : null}
         {!hideGlobalChrome ? (
           <>
-            <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
-            <link rel="dns-prefetch" href="https://googleads.g.doubleclick.net" />
-            <link rel="dns-prefetch" href="https://fundingchoicesmessages.google.com" />
-            <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-            <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
-            <link rel="preconnect" href="https://googleads.g.doubleclick.net" crossOrigin="anonymous" />
-            <link rel="preconnect" href="https://fundingchoicesmessages.google.com" crossOrigin="anonymous" />
-            <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
-            <script
-              async
-              fetchPriority="low"
+            <Script
+              id="google-adsense"
               src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5993485576421978"
+              strategy="lazyOnload"
               crossOrigin="anonymous"
             />
-            <Script src="https://www.googletagmanager.com/gtag/js?id=G-806S0CWRWX" strategy="afterInteractive" />
-            <Script id="google-analytics" strategy="afterInteractive">
+            <Script src="https://www.googletagmanager.com/gtag/js?id=G-806S0CWRWX" strategy="lazyOnload" />
+            <Script id="google-analytics" strategy="lazyOnload">
               {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
@@ -111,7 +103,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               `}
             </Script>
             {process.env.NEXT_PUBLIC_CLARITY_ID ? (
-              <Script id="microsoft-clarity" strategy="afterInteractive">
+              <Script id="microsoft-clarity" strategy="lazyOnload">
                 {`
                   (function(c,l,a,r,i,t,y){
                     c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
