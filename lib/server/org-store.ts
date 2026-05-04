@@ -251,10 +251,11 @@ async function buildClassSummary(classroom: TeacherClass, teacherName: string): 
       count(distinct case when e.status = 'approved' then e.student_id end)::int as "studentCount",
       count(distinct case when e.status = 'pending' then e.student_id end)::int as "pendingApprovals",
       count(distinct case when s.id is not null then e.student_id end)::int as "activeStudents",
-      round(avg(s.report_overall)::numeric, 1) as "averageScore",
+      round(avg(fr.overall_score)::numeric, 1) as "averageScore",
       max(coalesce(s.created_at, e.joined_at, e.requested_at))::text as "lastActivityAt"
     from teacher_class_enrollments e
-    left join speaking_sessions s on s.user_id = e.student_id and s.report_overall is not null
+    left join speaking_sessions s on s.user_id = e.student_id
+    left join feedback_reports fr on fr.session_id = s.id
     where e.class_id = ${classroom.id}
   `;
   const [homeworkRow] = await sql<Array<{ total: number; overdue: number }>>`
@@ -621,7 +622,7 @@ export async function listOrgStudentSummaries(orgId: string): Promise<SchoolStud
       u.plan,
       count(distinct e.class_id)::int as "classCount",
       count(distinct s.id)::int as "sessionCount",
-      round(avg(s.report_overall)::numeric, 1) as "averageScore",
+      round(avg(fr.overall_score)::numeric, 1) as "averageScore",
       max(s.created_at)::text as "lastSessionAt",
       coalesce(array_agg(distinct t.name) filter (where t.name is not null), '{}'::text[]) as "teacherNames",
       count(distinct h.id) filter (where h.completed_at is not null)::int as "completedHomework",
@@ -631,7 +632,8 @@ export async function listOrgStudentSummaries(orgId: string): Promise<SchoolStud
     join users t on t.id = c.teacher_id
     join organization_memberships tm on tm.user_id = t.id and tm.organization_id = ${orgId}
     join users u on u.id = e.student_id
-    left join speaking_sessions s on s.user_id = u.id and s.report_overall is not null
+    left join speaking_sessions s on s.user_id = u.id
+    left join feedback_reports fr on fr.session_id = s.id
     left join homework_assignments h on h.student_id = u.id and (h.class_id = c.id or h.class_id is null)
     where e.status = 'approved'
     group by u.id, u.name, u.email, u.plan
