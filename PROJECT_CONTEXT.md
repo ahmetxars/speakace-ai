@@ -1,0 +1,990 @@
+# PROJECT_CONTEXT.md
+
+## Overview
+
+SpeakAce AI is a single-repo Next.js 15 application for AI-assisted English speaking and writing practice, primarily around IELTS and TOEFL preparation.
+
+The product combines:
+
+- a marketing and SEO-heavy public website
+- a signed-in learner dashboard under `/app`
+- speaking and writing practice workflows
+- teacher and institution/classroom features
+- an admin panel
+- Postgres-backed persistence with in-memory fallbacks
+- Lemon Squeezy billing hooks
+- Resend email flows
+- PostHog plus internal event tracking
+- Vercel deployment and scheduled cron routes
+
+## Tech stack
+
+- Framework: Next.js 15 App Router
+- UI: React 19
+- Language: TypeScript with `strict: true`
+- Styling: global CSS in `app/globals.css`, Tailwind v4 dependencies, utility classes, and hand-authored design tokens/CSS variables
+- Motion/UI helpers: `framer-motion`, Radix Slot, `class-variance-authority`, `clsx`, `tailwind-merge`
+- Database access: raw SQL through `postgres`
+- Database: PostgreSQL, Neon intended for production
+- Auth: custom cookie/session auth, not NextAuth
+- AI: OpenAI transcription and feedback generation
+- Email: Resend
+- Analytics: PostHog plus internal `analytics_events`
+- Tests: Vitest
+- Deployment target: Vercel
+
+## Top-level structure
+
+### Application code
+
+- `app/`
+  - public pages, app dashboard pages, admin pages, API routes, metadata routes
+- `components/`
+  - feature UI for dashboards, practice consoles, admin, teacher tools, and marketing pages
+- `lib/`
+  - shared domain logic, prompts, evaluators, content, stores, type definitions
+- `lib/server/`
+  - server-only helpers for DB, auth, env, email, OpenAI, billing, admin, orgs, permissions
+
+### Data and operations
+
+- `db/schema.sql`
+  - production schema draft and compatibility patches
+- `scripts/`
+  - DB push, i18n audit, campaign sender
+- `public/`
+  - brand assets, robots, ad config, email HTML assets
+- `vercel.json`
+  - cron configuration
+- `next.config.ts`
+  - security headers, rewrites, redirects
+- `middleware.ts`
+  - HTTPS redirect, maintenance mode, request metadata headers
+
+### Reference / non-source directories
+
+- `.next/`
+  - build output
+- `.claude/`
+  - local agent/worktree state, not app source of truth
+- `design-previews/`
+  - design/reference material
+- `email-campaigns-claude/`
+  - auxiliary campaign-related material outside the core app
+
+## Read order for future work
+
+For almost every task, the shortest useful read order is:
+
+1. `AGENTS.md`
+2. this file
+3. exact route page
+4. exact owning component
+5. exact route handler or store file
+6. only then broader context if still needed
+
+Do not begin with repo-wide search unless the task itself is architectural.
+
+## Functional ownership matrix
+
+This is the project-wide “where things live” map.
+
+### Shell, layout, and cross-cutting UI
+
+- `app/layout.tsx`
+  - root metadata, scripts, canonical links, providers, marketing chrome
+- `app/app/layout.tsx`
+  - signed-in app shell
+- `components/providers.tsx`
+  - language/theme/session bootstrapping and client app state
+- `app/globals.css`
+  - global design system, dark mode, shared namespaces
+- `middleware.ts`
+  - HTTPS enforcement and maintenance mode
+
+### Public marketing product
+
+- Pages:
+  - `app/page.tsx`
+  - public route pages under `app/*`
+- Main UI:
+  - `components/marketing-page.tsx`
+  - `components/audience-page.tsx`
+  - `components/site-header.tsx`
+  - `components/site-footer.tsx`
+  - `components/marketing-sticky-cta.tsx`
+- Content:
+  - `lib/marketing-content.ts`
+  - `lib/blog-content.ts`
+  - `lib/copy.ts`
+- SEO:
+  - `lib/seo.ts`
+  - `lib/blog-seo.ts`
+  - `lib/seo-growth.ts`
+  - `lib/seo-topics.ts`
+
+### Learner dashboard product
+
+- Entry:
+  - `app/app/page.tsx`
+- Main UI:
+  - `components/dashboard.tsx`
+  - `components/student-profile.tsx`
+  - `components/onboarding-wizard.tsx`
+  - `components/notifications-center.tsx`
+  - `components/study-plan-board.tsx`
+  - `components/study-lists-board.tsx`
+- Data:
+  - `lib/store.ts`
+  - `lib/student-profile-store.ts`
+  - `lib/study-lists-store.ts`
+  - `lib/notifications.ts`
+
+### Speaking product
+
+- UI:
+  - `components/practice-console.tsx`
+  - `components/result-view.tsx`
+  - `components/review-mistakes.tsx`
+  - `components/mock-exam-launchpad.tsx`
+  - `components/mock-exam-report.tsx`
+- Data and scoring:
+  - `lib/store.ts`
+  - `lib/evaluator.ts`
+  - `lib/prompts.ts`
+  - `lib/shared-result-cards.ts`
+- AI integration:
+  - `lib/server/openai.ts`
+
+### Writing product
+
+- UI:
+  - `components/writing-console.tsx`
+  - `components/writing-result-view.tsx`
+- Data and scoring:
+  - `lib/writing-store.ts`
+  - `lib/writing-evaluator.ts`
+  - `lib/writing-prompts.ts`
+- AI integration:
+  - `lib/server/openai.ts`
+
+### Teacher product
+
+- Route entry:
+  - `app/app/teacher/page.tsx`
+- Main UI:
+  - `components/teacher-hub.tsx`
+  - `components/teacher-student-detail.tsx`
+  - `components/teacher-student-compare.tsx`
+  - `components/teacher-note-templates.tsx`
+  - `components/teacher-billing.tsx`
+- Data and business rules:
+  - `lib/classroom-store.ts`
+  - `lib/homework-store.ts`
+  - `lib/announcements-store.ts`
+  - `lib/teacher.ts`
+
+### Institution admin product
+
+- Route entry:
+  - `app/app/institution-admin/page.tsx`
+- Main UI:
+  - `components/institution-admin-panel.tsx`
+  - `components/institution-analytics.tsx`
+  - `components/institution-student-detail.tsx`
+  - `components/institution-teacher-detail.tsx`
+- Data:
+  - `lib/classroom-store.ts`
+  - `lib/server/org-store.ts`
+
+### Admin/CMS product
+
+- Route entry:
+  - `app/admin/page.tsx`
+- Main UI:
+  - `components/admin-panel.tsx`
+  - `components/admin-blog-editor.tsx`
+- Data:
+  - `lib/server/admin-panel.ts`
+  - `lib/server/custom-blog.ts`
+  - `lib/server/editable-pages.ts`
+
+### Billing product
+
+- UI:
+  - `app/app/billing/page.tsx`
+- API:
+  - `app/api/account/plan/route.ts`
+  - `app/api/payments/lemon/**`
+- Logic:
+  - `lib/server/lemon.ts`
+  - `lib/store.ts`
+  - `lib/commerce.ts`
+
+### Analytics product
+
+- Client:
+  - `components/providers.tsx`
+  - `lib/analytics-client.ts`
+- API and persistence:
+  - `app/api/analytics/**`
+  - `lib/analytics-store.ts`
+- External tracking:
+  - `instrumentation-client.ts`
+  - `lib/posthog-server.ts`
+
+### Email and lifecycle product
+
+- Transport/templates:
+  - `lib/server/email.ts`
+- Sequences:
+  - `lib/server/email-sequences.ts`
+- Cron:
+  - `app/api/cron/onboarding-emails/route.ts`
+  - `app/api/cron/study-task-reminders/route.ts`
+- Campaign tooling:
+  - `scripts/send-campaign.mjs`
+  - `public/email-assets/**`
+
+## Main route groups
+
+### Public marketing and SEO pages
+
+Examples:
+
+- `/`
+- `/pricing`
+- `/about`
+- `/contact`
+- `/resources`
+- `/reviews`
+- `/success-stories`
+- `/for-students`
+- `/for-teachers`
+- `/for-schools`
+- many SEO landing pages under `app/*`
+- blog, guides, compare, tools, topics, and share pages
+
+Relevant files:
+
+- `app/page.tsx`
+- `components/marketing-page.tsx`
+- `components/audience-page.tsx`
+- `components/site-header.tsx`
+- `components/site-footer.tsx`
+- `lib/marketing-content.ts`
+- `lib/blog-content.ts`
+- `lib/seo*.ts`
+
+### Learner app routes
+
+Under `app/app/`:
+
+- dashboard
+- practice
+- improve
+- review
+- placement
+- mock exam/results
+- study lists
+- notifications
+- onboarding
+- profile
+- settings
+- billing
+- analytics
+- writing
+- teacher
+- institution-admin
+
+Relevant files:
+
+- `app/app/layout.tsx`
+- `app/app/page.tsx`
+- feature components such as `components/dashboard.tsx`, `components/practice-console.tsx`, `components/writing-console.tsx`
+
+Sub-groups worth treating as separate mini-products:
+
+- `/app/practice`
+  - speaking practice workflow
+- `/app/writing`
+  - writing workflow
+- `/app/teacher`
+  - teacher dashboard
+- `/app/institution-admin`
+  - school/institution operations
+- `/app/profile`, `/app/onboarding`, `/app/settings`
+  - learner account/profile setup
+- `/app/study-lists`, `/app/plan`, `/app/notifications`
+  - retention and organization workflows
+
+### Admin routes
+
+- `app/admin/login/page.tsx`
+- `app/admin/page.tsx`
+- `app/admin/layout.tsx`
+- `app/api/admin/**`
+
+### Metadata/platform routes
+
+- `app/manifest.ts`
+- `app/robots.ts`
+- `app/sitemap.ts`
+- `app/sitemap.xml/route.ts`
+- `app/share/[slug]/opengraph-image.tsx`
+
+## API surface by domain
+
+### Auth and session
+
+- `app/api/auth/signup/route.ts`
+- `app/api/auth/signin/route.ts`
+- `app/api/auth/signout/route.ts`
+- `app/api/auth/session/route.ts`
+- `app/api/auth/verify-email/route.ts`
+- `app/api/auth/request-password-reset/route.ts`
+- `app/api/auth/reset-password/route.ts`
+- `app/api/auth/google/**`
+- `app/api/auth/accept-invite/route.ts`
+
+Core logic:
+
+- `lib/server/auth.ts`
+- `lib/admin.ts`
+- `lib/teacher.ts`
+- `lib/roles.ts`
+
+### Learner profile, progress, speaking, writing
+
+- `app/api/profile/route.ts`
+- `app/api/progress/summary/route.ts`
+- `app/api/speaking/session/start/route.ts`
+- `app/api/speaking/session/[id]/route.ts`
+- `app/api/writing/session/start/route.ts`
+- `app/api/writing/session/[id]/route.ts`
+- `app/api/writing/summary/route.ts`
+
+Core logic:
+
+- `lib/store.ts`
+- `lib/student-profile-store.ts`
+- `lib/evaluator.ts`
+- `lib/writing-store.ts`
+- `lib/writing-evaluator.ts`
+- `lib/server/openai.ts`
+
+### Teacher, classroom, institution
+
+- `app/api/classes/**`
+- `app/api/homework/route.ts`
+- `app/api/announcements/route.ts`
+- `app/api/teacher/**`
+- `app/api/institution-admin/**`
+
+Core logic:
+
+- `lib/classroom-store.ts`
+- `lib/homework-store.ts`
+- `lib/announcements-store.ts`
+- `lib/server/org-store.ts`
+
+### Billing and referrals
+
+- `app/api/account/plan/route.ts`
+- `app/api/payments/lemon/**`
+- `app/api/referrals/me/route.ts`
+- `app/api/admin/referrals/route.ts`
+
+Core logic:
+
+- `lib/server/lemon.ts`
+- `lib/commerce.ts`
+- `lib/referrals.ts`
+- `lib/store.ts`
+
+### Analytics, notifications, marketing
+
+- `app/api/analytics/**`
+- `app/api/notifications/route.ts`
+- `app/api/marketing/lead/route.ts`
+- `app/api/results/share/route.ts`
+- `app/api/tools/study-plan/route.ts`
+
+Core logic:
+
+- `lib/analytics-store.ts`
+- `lib/analytics-client.ts`
+- `lib/posthog-server.ts`
+- `lib/marketing-leads.ts`
+- `lib/share-growth.ts`
+
+### Cron
+
+- `app/api/cron/study-task-reminders/route.ts`
+- `app/api/cron/onboarding-emails/route.ts`
+
+Scheduled by:
+
+- `vercel.json`
+
+## Important modules and what they do
+
+### Root application shell
+
+- `app/layout.tsx`
+  - global metadata, canonical handling, analytics scripts, theme bootstrap, global providers, marketing chrome
+- `app/globals.css`
+  - design tokens, theme variables, shared component classes, large amount of visual system styling
+- `middleware.ts`
+  - HTTPS redirect, maintenance mode rewrite, request path headers
+- `next.config.ts`
+  - security headers, PostHog rewrites, SEO redirects
+
+Styling note:
+
+- `app/globals.css` is not a small reset file.
+- It contains multiple feature namespaces and many dark-mode overrides.
+- For UI bugs, always search only the relevant namespace first:
+  - teacher: `.teacher-*`
+  - practice: `.practice-*`, `.task-*`, `.simulation-*`
+  - dashboard: `.dashboard-*`, `.db-*`
+  - admin: `.admin-*`, `.adm-*`
+  - marketing: `.sa-*`
+
+### Providers and client state
+
+- `components/providers.tsx`
+  - client app context for language, theme, session refresh, local guest state, tracking
+- `lib/language.ts`
+  - server language/direction helpers
+- `lib/copy.ts`
+  - supported languages and localization helpers
+- `lib/language-context.tsx`
+  - separate older language context implementation; appears less central than `components/providers.tsx`
+
+Important implication:
+
+- if a bug is about session state, theme mode, language mode, or client bootstrapping, start with `components/providers.tsx`
+- do not start with DB or API routes unless the UI state is clearly correct but server data is wrong
+
+### Persistence and store layer
+
+- `lib/server/db.ts`
+  - singleton Postgres connection helper and `DATABASE_URL` detection
+- `lib/store.ts`
+  - speaking sessions, member state, usage tracking, billing sync, progress summaries
+- `lib/writing-store.ts`
+  - writing session lifecycle and summaries
+- `lib/student-profile-store.ts`
+  - student profile CRUD with schema compatibility guards
+- `lib/classroom-store.ts`
+  - teacher classes, enrollments, institution billing, permissions
+
+Important architectural pattern:
+
+- most store modules support two modes:
+  - Postgres-backed when `DATABASE_URL` exists
+  - in-memory fallback when it does not
+
+This pattern is core to the repo and should not be broken casually.
+
+Store ownership hints:
+
+- `lib/store.ts`
+  - speaking session lifecycle, usage tracking, member plan sync, progress summaries
+- `lib/writing-store.ts`
+  - writing session lifecycle
+- `lib/student-profile-store.ts`
+  - learner profile and onboarding persistence
+- `lib/classroom-store.ts`
+  - teacher classes, student membership, organization and institution-adjacent data
+
+If a route handler calls one of these, that file is almost always the next place to inspect.
+
+### Auth and authorization
+
+- `lib/server/auth.ts`
+  - password auth, session cookies, verify/reset flows, privilege handling, fallback auth store
+- `lib/server/admin-panel.ts`
+  - admin session cookie, configured admin credentials, admin auth activity, referrals, admin queries
+- `lib/admin.ts`
+  - admin privilege helpers
+- `lib/teacher.ts`
+  - teacher privilege helpers
+- `lib/roles.ts`
+  - dashboard routing role resolution
+
+Cookie names:
+
+- user session: `speakace_session`
+- admin session: `speakace_admin_session`
+
+Role model:
+
+- guest
+- member/student
+- teacher
+- school/admin
+
+Role routing starts in `lib/roles.ts`, while capability enforcement is split across `lib/server/auth.ts`, `lib/admin.ts`, `lib/teacher.ts`, route guards, and store-level checks.
+
+### AI evaluation
+
+- `lib/evaluator.ts`
+  - local speaking evaluation heuristics and improved-answer generation
+- `lib/writing-evaluator.ts`
+  - local writing scoring heuristics and structured guidance
+- `lib/server/openai.ts`
+  - OpenAI transcription and structured feedback generation for speaking and writing
+- `lib/prompts.ts`
+  - speaking prompt selection
+- `lib/writing-prompts.ts`
+  - writing prompt selection
+
+### Content and SEO
+
+- `lib/marketing-content.ts`
+  - major marketing copy blocks and blog seed content
+- `lib/blog-content.ts`
+  - blog/article content helpers
+- `lib/server/custom-blog.ts`
+  - DB-backed custom blog CMS
+- `lib/seo.ts`, `lib/blog-seo.ts`, `lib/seo-growth.ts`, `lib/seo-topics.ts`
+  - metadata/SEO helpers
+
+### Billing and payments
+
+- `lib/server/lemon.ts`
+  - Lemon webhook verification and billing-plan mapping
+- `app/api/payments/lemon/webhook/route.ts`
+  - webhook ingestion, billing event recording, plan updates, PostHog events
+
+Important caution:
+
+- some docs/envs still mention Stripe
+- current code path is Lemon-first
+- when debugging billing, trust route code and `lib/server/lemon.ts` over older docs
+
+### Email
+
+- `lib/server/email.ts`
+  - Resend transport and transactional email templates
+- `lib/server/email-sequences.ts`
+  - onboarding and daily tip workflows
+- `scripts/send-campaign.mjs`
+  - one-off email campaign sender from `public/email-assets/<campaign>/preview.html`
+
+## Database model summary
+
+Main tables in `db/schema.sql`:
+
+- `users`
+- `auth_sessions`
+- `admin_panel_sessions`
+- `auth_tokens`
+- `student_profiles`
+- `teacher_classes`
+- `teacher_class_enrollments`
+- `institution_billing`
+- `homework_assignments`
+- `homework_auto_assign_rules`
+- `class_shared_study_items`
+- `study_list_folders`
+- `study_list_items`
+- `study_list_tasks`
+- `study_task_reminders`
+- `analytics_events`
+- `auth_activity`
+- `billing_events`
+- `announcements`
+- `marketing_leads`
+- `referral_codes`
+- `custom_blog_posts`
+- `usage_daily`
+- `speaking_sessions`
+- `feedback_reports`
+- `writing_sessions`
+- `writing_reports`
+- `teacher_notes`
+
+Observations:
+
+- There is no ORM. SQL schema and handwritten queries are the canonical data layer.
+- The schema includes many `alter table ... add column if not exists` lines for compatibility.
+- Several stores also create/ensure tables at runtime.
+
+Practical rule:
+
+- do not open `db/schema.sql` first for normal UI bugs
+- open it only when:
+  - a field seems missing
+  - a table mismatch is suspected
+  - persistence or migration behavior is the issue
+
+## How the app works
+
+### Public/marketing flow
+
+1. Request enters `middleware.ts`.
+2. Middleware may redirect to HTTPS or rewrite to `/maintenance`.
+3. `app/layout.tsx` sets metadata, canonical URL, global scripts, providers, and shared chrome.
+4. Public pages render mostly through feature components and content modules in `lib/`.
+5. Marketing interactions may call tracking or lead-capture endpoints.
+
+### Learner session flow
+
+1. Client bootstraps through `components/providers.tsx`.
+2. Provider fetches `/api/auth/session`.
+3. Signed-in state comes from `speakace_session`; guest state can still exist in local storage.
+4. Dashboard role is derived via `lib/roles.ts`.
+5. App routes under `/app` render the proper feature consoles.
+
+Fast debugging split:
+
+- wrong UI state before request: `components/providers.tsx` or component-local state
+- request fails: route handler
+- request succeeds but saved data is wrong: store file
+- data is correct but page still wrong: component render or CSS
+
+### Speaking practice data flow
+
+1. UI starts a session via `POST /api/speaking/session/start`.
+2. Route delegates to `lib/store.ts`.
+3. Store checks plan limits from `lib/membership.ts`, usage data, and prompt selection.
+4. Transcript and feedback logic are handled through:
+   - local heuristics in `lib/evaluator.ts`
+   - optional OpenAI calls in `lib/server/openai.ts`
+5. Sessions, usage, and reports persist to Postgres when available, otherwise memory.
+
+### Writing practice data flow
+
+1. UI starts a session via `POST /api/writing/session/start`.
+2. `lib/writing-store.ts` creates the draft session and enforces limits.
+3. Draft submission/evaluation logic uses:
+   - `lib/writing-evaluator.ts`
+   - optional OpenAI writing feedback in `lib/server/openai.ts`
+4. Reports persist in `writing_sessions` and `writing_reports` when DB mode is active.
+
+### Teacher and institution flow
+
+1. Role resolution sends teachers and school admins to dedicated app areas.
+2. Route handlers call classroom/homework/announcement store modules.
+3. Access checks rely on explicit ownership and enrollment validation.
+4. Institution billing and user summaries are layered on top of classroom and user data.
+
+### Billing flow
+
+1. Checkout and webhook routes live under `app/api/payments/lemon/**`.
+2. Webhook route verifies HMAC signature via `lib/server/lemon.ts`.
+3. Billing events are recorded.
+4. User or institution billing state is updated in the store layer.
+5. PostHog captures billing lifecycle events.
+
+### Cron flow
+
+1. Vercel invokes cron endpoints from `vercel.json`.
+2. Routes authorize using `CRON_SECRET` or Vercel cron header fallback outside production.
+3. Reminder and onboarding/email sequence jobs execute from store/server-email logic.
+
+## Entry points and important files
+
+- `package.json`
+  - project scripts and dependency list
+- `app/layout.tsx`
+  - global rendering shell
+- `app/page.tsx`
+  - main marketing homepage
+- `app/app/page.tsx`
+  - dashboard role router
+- `middleware.ts`
+  - request middleware
+- `next.config.ts`
+  - app-wide config
+- `db/schema.sql`
+  - database schema
+- `lib/types.ts`
+  - central type system
+- `lib/store.ts`
+  - core speaking/member store
+- `lib/writing-store.ts`
+  - core writing store
+- `lib/server/auth.ts`
+  - session/auth backbone
+- `lib/server/openai.ts`
+  - AI service integration
+- `lib/server/db.ts`
+  - DB access
+- `components/providers.tsx`
+  - client app context
+- `vercel.json`
+  - cron scheduling
+
+## “Inspect these first” lookup table
+
+### UI-only bugs
+
+- target `app/.../page.tsx`
+- target component in `components/...`
+- relevant namespace in `app/globals.css`
+
+### Client interaction bugs
+
+- target component
+- `components/providers.tsx` if auth/theme/language/session is involved
+- matching route handler
+
+### Server/data bugs
+
+- matching route handler
+- relevant store/helper in `lib/`
+- `db/schema.sql` only if shape mismatch is suspected
+
+### Role/access bugs
+
+- route page guard
+- `lib/roles.ts`
+- `lib/server/auth.ts`
+- `lib/admin.ts` or `lib/teacher.ts`
+- route/store enforcement
+
+### Billing bugs
+
+- billing UI
+- `app/api/account/plan/route.ts`
+- `app/api/payments/lemon/**`
+- `lib/server/lemon.ts`
+- `lib/store.ts`
+
+### Cron/email bugs
+
+- `vercel.json`
+- exact cron route
+- `lib/server/email-sequences.ts`
+- `lib/server/email.ts`
+
+## Files that cause most unnecessary scanning
+
+Agents often waste time here because the surface is large. If the task clearly belongs to one of these, open that file directly first.
+
+- `components/teacher-hub.tsx`
+- `components/practice-console.tsx`
+- `components/writing-console.tsx`
+- `components/dashboard.tsx`
+- `components/admin-panel.tsx`
+- `app/globals.css`
+- `lib/store.ts`
+- `lib/classroom-store.ts`
+
+These are hotspots, but still narrower than scanning the repo.
+
+## Coding conventions and patterns
+
+- Use TypeScript types from `lib/types.ts` whenever possible.
+- Keep API route handlers thin and delegate to `lib/` or `lib/server/`.
+- Prefer existing store modules over introducing new parallel data-access abstractions.
+- Use the `@/` import alias.
+- Favor server components unless state/effects/browser APIs require `"use client"`.
+- Keep naming consistent with the repo:
+  - components: PascalCase filenames
+  - utilities/stores/helpers: camelCase exports
+  - route handlers: `route.ts`
+  - pages: `page.tsx`
+  - layouts: `layout.tsx`
+- Styling should extend the existing visual system in `app/globals.css` rather than replacing it.
+
+## Setup, run, build, and test
+
+### Core commands
+
+- `npm install`
+- `npm run dev`
+- `npm run build`
+- `npm run start`
+- `npm run lint`
+- `npm run test`
+
+### Database
+
+- `npm run db:push`
+
+This runs `scripts/apply-schema.mjs`, which:
+
+- loads `.env.local` if present
+- reads `db/schema.sql`
+- applies it directly to `DATABASE_URL`
+
+### Utility scripts
+
+- `npm run audit:i18n`
+- `npm run send:campaign -- --campaign <campaign> --to <email>`
+
+## Files/folders usually checked for common tasks
+
+### New page or page bug
+
+- target route in `app/...`
+- related component in `components/...`
+- `app/layout.tsx` or `app/app/layout.tsx` if chrome is involved
+
+### Auth bug
+
+- `lib/server/auth.ts`
+- `app/api/auth/**`
+- `components/providers.tsx`
+- `lib/roles.ts`
+
+### DB bug
+
+- relevant store file in `lib/`
+- `lib/server/db.ts`
+- `db/schema.sql`
+
+### Payment bug
+
+- `app/api/payments/lemon/**`
+- `lib/server/lemon.ts`
+- `lib/store.ts`
+- `app/api/account/plan/route.ts`
+
+### Teacher / school bug
+
+- `lib/classroom-store.ts`
+- `lib/homework-store.ts`
+- `app/api/teacher/**`
+- `app/api/institution-admin/**`
+
+### SEO/content bug
+
+- route page
+- `lib/marketing-content.ts`
+- `lib/blog-content.ts`
+- `lib/server/custom-blog.ts`
+- `lib/seo*.ts`
+
+## Files/folders not to touch unless necessary
+
+- `.next/**`
+- `node_modules/**`
+- `.claude/**`
+- `tsconfig.tsbuildinfo`
+- `design-previews/**`
+- generated or static campaign HTML unless doing email work
+
+Use extra caution with:
+
+- `db/schema.sql`
+- `middleware.ts`
+- `next.config.ts`
+- `app/layout.tsx`
+- `app/globals.css`
+- `vercel.json`
+
+Also avoid using these as first-read files unless the task explicitly points there:
+
+- `README.md`
+- `DEPLOYMENT.md`
+- `docs/backend-and-deploy.md`
+
+They are useful context, but not always the freshest source of truth.
+
+## Known risks, inconsistencies, and assumptions
+
+### Confirmed inconsistencies
+
+- `README.md` mentions Stripe as a next step, but current active payment routes are Lemon Squeezy-based.
+- `.env.example` includes both Stripe and Lemon variables.
+- `DEPLOYMENT.md` and `docs/backend-and-deploy.md` are partly outdated relative to the current route tree.
+- `components/providers.tsx` calls `POST /api/account/plan`, but `app/api/account/plan/route.ts` currently exposes `GET` in the inspected portion.
+- `components/practice-console.tsx` references speaking upload/evaluate endpoints that were not found under `app/api/speaking/session/**`.
+- `components/writing-console.tsx` references submit/evaluate endpoints that were not found under `app/api/writing/session/**`.
+
+These should be treated as real project risks before making changes to those flows.
+
+## Examples of minimal file sets
+
+These are here to reduce future over-scanning.
+
+### Teacher dashboard dark mode text bug
+
+Inspect only:
+
+1. `app/app/teacher/page.tsx`
+2. `components/teacher-hub.tsx`
+3. relevant `.teacher-*` and shared surface rules in `app/globals.css`
+
+Only expand further if:
+
+- text comes from a child component not rendered directly in `TeacherHub`
+- the issue is data-driven rather than visual
+
+### Learner profile not saving
+
+Inspect only:
+
+1. profile/onboarding component
+2. `app/api/profile/route.ts`
+3. `lib/student-profile-store.ts`
+4. `db/schema.sql` only if a field is missing
+
+### Practice session start failing
+
+Inspect only:
+
+1. `components/practice-console.tsx`
+2. `app/api/speaking/session/start/route.ts`
+3. `lib/store.ts`
+4. `lib/prompts.ts`
+5. `lib/membership.ts`
+
+### Class enrollment/teacher access bug
+
+Inspect only:
+
+1. `components/teacher-hub.tsx`
+2. relevant `app/api/teacher/**` or `app/api/classes/**` route
+3. `lib/classroom-store.ts`
+4. `lib/teacher.ts` or `lib/server/auth.ts` if role enforcement is involved
+
+### Fragile areas
+
+- auth and privilege boundaries
+- classroom isolation and teacher/student visibility
+- billing state synchronization
+- DB/in-memory dual-mode behavior
+- large global CSS surface in `app/globals.css`
+- cron jobs that may send emails or generate reminders
+
+### Assumptions
+
+- `npm` is the safest package manager default because `package-lock.json` is present.
+- Neon Postgres is the intended production DB.
+- Vercel is the intended runtime/deployment platform.
+- Postgres-backed behavior is the production path; in-memory mode mainly supports local fallback/testing behavior.
+
+## Tests and verification
+
+Current visible tests:
+
+- `lib/security.test.ts`
+- `lib/store.test.ts`
+
+These focus on:
+
+- privilege escalation prevention
+- cross-tenant isolation
+- teacher/classroom restrictions
+- store behavior
+
+There is no visible full E2E suite in the main app source.
+
+## Guidance for future updates
+
+If you discover:
+
+- missing route implementations
+- new API families
+- additional DB tables or runtime migrations
+- production-only behavior not captured here
+- resolved contradictions in docs or billing flows
+
+update this file so future agents do not need to repeat the same discovery work.

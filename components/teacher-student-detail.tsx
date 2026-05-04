@@ -231,7 +231,7 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
     }));
 
   return (
-    <div className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
+    <div className="page-shell section" style={{ display: "grid", gap: "1.5rem", maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
 
       {/* ── Print Report Card (hidden on screen, visible only when printing) ── */}
       <div
@@ -339,12 +339,14 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
       </div>
 
       {/* ── Student header ── */}
-      <section className="card no-print" style={{ padding: "1.5rem", display: "grid", gap: "0.9rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.8rem" }}>
+      <section className="card no-print" style={{ padding: "1.5rem 2rem", display: "grid", gap: "1.2rem" }}>
+
+        {/* Name + actions */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
           <div>
             <span className="eyebrow">{tr ? "Öğrenci detayı" : "Student detail"}</span>
-            <h1 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", margin: "0.3rem 0 0" }}>{detail.student.name}</h1>
-            <p style={{ color: "var(--muted)", margin: "0.2rem 0 0" }}>{detail.student.email}</p>
+            <h1 style={{ fontSize: "clamp(1.6rem, 3vw, 2.4rem)", margin: "0.25rem 0 0", lineHeight: 1.2 }}>{detail.student.name}</h1>
+            <p style={{ color: "var(--muted)", margin: "0.25rem 0 0", fontSize: "0.92rem" }}>{detail.student.email}</p>
           </div>
           <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
             <Link href={`/app/teacher/compare?left=${studentId}`} className="button button-secondary" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
@@ -364,7 +366,7 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
         </div>
 
         {/* Stats row */}
-        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(165px, 1fr))" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem" }}>
           <Stat label={tr ? "Toplam deneme" : "Total attempts"} value={String(detail.overview.totalSessions)} />
           <Stat label={tr ? "Ortalama skor" : "Average score"} value={detail.overview.averageScore?.toFixed(1) ?? "-"} />
           <Stat label={tr ? "En iyi skor" : "Best score"} value={detail.overview.bestScore?.toFixed(1) ?? "-"} />
@@ -382,7 +384,7 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
 
         {/* Risk flags */}
         {riskFlags.length > 0 && (
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap", paddingTop: "0.2rem" }}>
             <AlertTriangle size={14} style={{ color: "var(--destructive)", flexShrink: 0 }} />
             {riskFlags.map((flag, i) => (
               <span key={i} className="risk-pill">{flag}</span>
@@ -391,165 +393,182 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
         )}
 
         {/* Feedback */}
-        {notice ? <p style={{ color: "var(--success)", margin: 0 }}>{notice}</p> : null}
-        {error ? <p style={{ color: "var(--destructive)", margin: 0 }}>{error}</p> : null}
+        {notice ? <p style={{ color: "var(--success)", margin: 0, fontSize: "0.9rem" }}>{notice}</p> : null}
+        {error ? <p style={{ color: "var(--destructive)", margin: 0, fontSize: "0.9rem" }}>{error}</p> : null}
       </section>
 
-      <section className="grid no-print" style={{ gridTemplateColumns: "minmax(320px, 1.1fr) minmax(320px, 0.9fr)", gap: "1rem", alignItems: "start" }}>
+      {/* ── Main 2-column layout ── */}
+      <div className="no-print" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(340px, 0.85fr)", gap: "1.2rem", alignItems: "start" }}>
 
-        {/* ── Analytics + timeline ── */}
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem", gridColumn: "1 / -1" }}>
-          <div>
-            <span className="eyebrow">{tr ? "Performans analizi" : "Performance analysis"}</span>
-            <h2 style={{ fontSize: "1.6rem", margin: "0.3rem 0 0" }}>{tr ? "Session skor trendi" : "Session score trend"}</h2>
-          </div>
-          <ScoreLineChart points={timelinePoints} />
-          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.88rem" }}>
-              <thead>
-                <tr style={{ textAlign: "left", color: "var(--muted)" }}>
-                  <th style={{ paddingBottom: "0.65rem" }}>{tr ? "Tarih" : "Date"}</th>
-                  <th style={{ paddingBottom: "0.65rem" }}>{tr ? "Görev" : "Task"}</th>
-                  <th style={{ paddingBottom: "0.65rem" }}>{tr ? "Skor" : "Score"}</th>
-                  <th style={{ paddingBottom: "0.65rem" }}>{tr ? "Zayıf alan" : "Weak area"}</th>
-                  <th style={{ paddingBottom: "0.65rem" }}>{tr ? "İncele" : "Review"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.summary.recentSessions.map((session) => {
-                  const weakest = session.report?.categories?.slice().sort((a, b) => a.score - b.score)[0]?.label ?? null;
-                  return (
-                    <tr key={session.id} style={{ borderTop: "1px solid var(--line)" }}>
-                      <td style={{ padding: "0.7rem 0" }}>{new Date(session.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</td>
-                      <td style={{ padding: "0.7rem 0" }}>{session.examType} · {session.taskType}</td>
-                      <td style={{ padding: "0.7rem 0", fontWeight: 700 }}>{session.report?.overall?.toFixed(1) ?? "—"}</td>
-                      <td style={{ padding: "0.7rem 0" }}>{weakest ? translateCategoryLabel(weakest, tr) : "—"}</td>
-                      <td style={{ padding: "0.7rem 0" }}>
-                        <Link href={`/app/results/${session.id}`} className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem" }}>
-                          {tr ? "Aç" : "Open"}
-                        </Link>
-                      </td>
+        {/* ══ LEFT COLUMN ══ */}
+        <div style={{ display: "grid", gap: "1.2rem" }}>
+
+          {/* Performance analysis */}
+          <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1.1rem" }}>
+            <div>
+              <span className="eyebrow">{tr ? "Performans analizi" : "Performance analysis"}</span>
+              <h2 style={{ fontSize: "1.4rem", margin: "0.2rem 0 0" }}>{tr ? "Session skor trendi" : "Session score trend"}</h2>
+            </div>
+            <ScoreLineChart points={timelinePoints} />
+            {detail.summary.recentSessions.length > 0 && (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.87rem" }}>
+                  <thead>
+                    <tr style={{ textAlign: "left" }}>
+                      <th style={{ paddingBottom: "0.65rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "Tarih" : "Date"}</th>
+                      <th style={{ paddingBottom: "0.65rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "Görev" : "Task"}</th>
+                      <th style={{ paddingBottom: "0.65rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "Skor" : "Score"}</th>
+                      <th style={{ paddingBottom: "0.65rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "Zayıf alan" : "Weak area"}</th>
+                      <th style={{ paddingBottom: "0.65rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "İncele" : "Review"}</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* ── Recent speaking attempts ── */}
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-          <div>
-            <span className="eyebrow">{tr ? "Sonuçlar" : "Results"}</span>
-            <h2 style={{ fontSize: "1.8rem", margin: "0.4rem 0 0" }}>{tr ? "Son speaking denemeleri" : "Recent speaking attempts"}</h2>
-          </div>
-          <div className="grid" style={{ gap: "0.75rem" }}>
-            {detail.summary.recentSessions.length ? detail.summary.recentSessions.map((session) => (
-              <div key={session.id} className="card" style={{ padding: "1rem", display: "grid", gap: "0.7rem", background: "var(--surface-strong)" }}>
-                <Link href={`/app/results/${session.id}`} style={{ display: "grid", gap: "0.45rem", color: "inherit", textDecoration: "none" }}>
-                  <strong>{session.prompt.title}</strong>
-                  <div className="practice-meta">{session.examType} · {session.taskType}</div>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "center" }}>
-                    <span style={{ color: "var(--muted)", fontSize: "0.88rem" }}>
-                      {session.report?.scaleLabel ?? (tr ? "Değerlendiriliyor" : "Awaiting evaluation")}
-                    </span>
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                      {sessionNotesMap.get(session.id)?.length ? (
-                        <span style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.78rem", color: "var(--accent)" }}>
-                          <CheckCircle size={12} />
-                          {tr ? "İncelendi" : "Reviewed"}
-                        </span>
-                      ) : null}
-                      <strong style={{ fontSize: "1.05rem" }}>{session.report?.overall ?? "—"}</strong>
-                    </div>
-                  </div>
-                </Link>
-                <Link href={`/app/replay/${session.id}`} className="button button-secondary" style={{ width: "fit-content", fontSize: "0.85rem" }}>
-                  {tr ? "Replay aç" : "Open replay"}
-                </Link>
-
-                {/* Session comment area */}
-                <div className="card" style={{ padding: "0.85rem", background: "var(--surface)", border: "1px solid var(--line)", display: "grid", gap: "0.55rem" }}>
-                  <strong style={{ fontSize: "0.88rem" }}>{tr ? "Bu denemeye yorum bırak" : "Comment on this attempt"}</strong>
-                  <TeacherNoteTemplates
-                    tr={tr}
-                    onSelect={(value) =>
-                      setSessionDrafts((cur) => ({ ...cur, [session.id]: cur[session.id] ? `${cur[session.id]}\n${value}` : value }))
-                    }
-                  />
-                  <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                    {["fluency", "pronunciation", "structure", "example", "vocabulary"].map((tag) => {
-                      const active = (sessionTags[session.id] ?? []).includes(tag);
+                  </thead>
+                  <tbody>
+                    {detail.summary.recentSessions.map((session) => {
+                      const weakest = session.report?.categories?.slice().sort((a, b) => a.score - b.score)[0]?.label ?? null;
                       return (
-                        <button
-                          key={`${session.id}-${tag}`}
-                          type="button"
-                          className="button button-secondary"
-                          style={{ background: active ? "color-mix(in srgb, var(--accent) 14%, var(--surface) 86%)" : undefined, fontSize: "0.8rem" }}
-                          onClick={() =>
-                            setSessionTags((cur) => {
-                              const tags = cur[session.id] ?? [];
-                              return { ...cur, [session.id]: active ? tags.filter((t) => t !== tag) : [...tags, tag] };
-                            })
-                          }
-                        >
-                          #{tag}
-                        </button>
+                        <tr key={session.id} style={{ borderTop: "1px solid var(--line)" }}>
+                          <td style={{ padding: "0.65rem 0.5rem 0.65rem 0", whiteSpace: "nowrap" }}>{new Date(session.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</td>
+                          <td style={{ padding: "0.65rem 0.5rem", color: "var(--muted)", fontSize: "0.83rem" }}>{session.examType} · {session.taskType}</td>
+                          <td style={{ padding: "0.65rem 0.5rem", fontWeight: 700 }}>{session.report?.overall?.toFixed(1) ?? "—"}</td>
+                          <td style={{ padding: "0.65rem 0.5rem", color: "var(--muted)", fontSize: "0.83rem" }}>{weakest ? translateCategoryLabel(weakest, tr) : "—"}</td>
+                          <td style={{ padding: "0.65rem 0 0.65rem 0.5rem" }}>
+                            <Link href={`/app/results/${session.id}`} className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.25rem 0.65rem" }}>
+                              {tr ? "Aç" : "Open"}
+                            </Link>
+                          </td>
+                        </tr>
                       );
                     })}
-                  </div>
-                  <textarea
-                    value={sessionDrafts[session.id] ?? ""}
-                    onChange={(e) => setSessionDrafts((cur) => ({ ...cur, [session.id]: e.target.value }))}
-                    rows={3}
-                    placeholder={tr ? "Bu denemede öğrenciye neyi düzeltmesini önerirsin?" : "What should the student improve in this attempt?"}
-                    style={{ padding: "0.85rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical", background: "var(--surface)", color: "var(--text)", font: "inherit" }}
-                  />
-                  <button type="button" className="button button-secondary" onClick={() => saveSessionNote(session.id)}>
-                    {tr ? "Yorumu kaydet" : "Save comment"}
-                  </button>
-                  {sessionNotesMap.get(session.id)?.length ? (
-                    <div style={{ display: "grid", gap: "0.4rem", paddingTop: "0.3rem", borderTop: "1px solid var(--line)" }}>
-                      {(sessionNotesMap.get(session.id) ?? []).slice(0, 2).map((item) => (
-                        <div key={item.id} style={{ fontSize: "0.83rem", color: "var(--muted)", lineHeight: 1.6 }}>
-                          {item.tags?.length ? <div style={{ marginBottom: "0.2rem", fontWeight: 600 }}>{item.tags.map((t) => `#${t}`).join(" ")}</div> : null}
-                          {item.note}
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
+                  </tbody>
+                </table>
               </div>
-            )) : (
-              <div style={{ padding: "1rem", color: "var(--muted)" }}>{tr ? "Henüz speaking denemesi yok." : "No speaking attempts yet."}</div>
             )}
+          </div>
+
+          {/* Recent speaking attempts */}
+          <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
+            <div>
+              <span className="eyebrow">{tr ? "Sonuçlar" : "Results"}</span>
+              <h2 style={{ fontSize: "1.4rem", margin: "0.2rem 0 0" }}>{tr ? "Son speaking denemeleri" : "Recent speaking attempts"}</h2>
+            </div>
+            <div style={{ display: "grid", gap: "0.75rem" }}>
+              {detail.summary.recentSessions.length ? detail.summary.recentSessions.map((session) => (
+                <div key={session.id} className="card" style={{ padding: "1rem", display: "grid", gap: "0.7rem", background: "var(--surface-strong)" }}>
+                  <Link href={`/app/results/${session.id}`} style={{ display: "grid", gap: "0.4rem", color: "inherit", textDecoration: "none" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.8rem" }}>
+                      <strong style={{ lineHeight: 1.4 }}>{session.prompt.title}</strong>
+                      <strong style={{ fontSize: "1.1rem", flexShrink: 0 }}>{session.report?.overall ?? "—"}</strong>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
+                      <div className="practice-meta" style={{ fontSize: "0.83rem" }}>{session.examType} · {session.taskType}</div>
+                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                        {sessionNotesMap.get(session.id)?.length ? (
+                          <span style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.78rem", color: "var(--accent)" }}>
+                            <CheckCircle size={12} />
+                            {tr ? "İncelendi" : "Reviewed"}
+                          </span>
+                        ) : null}
+                        <span style={{ color: "var(--muted)", fontSize: "0.82rem" }}>
+                          {session.report?.scaleLabel ?? (tr ? "Değerlendiriliyor" : "Awaiting evaluation")}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    <Link href={`/app/replay/${session.id}`} className="button button-secondary" style={{ fontSize: "0.82rem" }}>
+                      {tr ? "Replay aç" : "Open replay"}
+                    </Link>
+                  </div>
+
+                  {/* Session comment area */}
+                  <div style={{ borderTop: "1px solid var(--line)", paddingTop: "0.75rem", display: "grid", gap: "0.55rem" }}>
+                    <strong style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{tr ? "Bu denemeye yorum bırak" : "Leave a comment"}</strong>
+                    <TeacherNoteTemplates
+                      tr={tr}
+                      onSelect={(value) =>
+                        setSessionDrafts((cur) => ({ ...cur, [session.id]: cur[session.id] ? `${cur[session.id]}\n${value}` : value }))
+                      }
+                    />
+                    <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+                      {["fluency", "pronunciation", "structure", "example", "vocabulary"].map((tag) => {
+                        const active = (sessionTags[session.id] ?? []).includes(tag);
+                        return (
+                          <button
+                            key={`${session.id}-${tag}`}
+                            type="button"
+                            className="button button-secondary"
+                            style={{ background: active ? "color-mix(in srgb, var(--accent) 14%, var(--surface) 86%)" : undefined, fontSize: "0.78rem", padding: "0.3rem 0.65rem" }}
+                            onClick={() =>
+                              setSessionTags((cur) => {
+                                const tags = cur[session.id] ?? [];
+                                return { ...cur, [session.id]: active ? tags.filter((t) => t !== tag) : [...tags, tag] };
+                              })
+                            }
+                          >
+                            #{tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <textarea
+                      value={sessionDrafts[session.id] ?? ""}
+                      onChange={(e) => setSessionDrafts((cur) => ({ ...cur, [session.id]: e.target.value }))}
+                      rows={2}
+                      placeholder={tr ? "Bu denemede öğrenciye neyi düzeltmesini önerirsin?" : "What should the student improve in this attempt?"}
+                      style={{ padding: "0.75rem", borderRadius: 12, border: "1px solid var(--line)", resize: "vertical", background: "var(--surface)", color: "var(--text)", font: "inherit", fontSize: "0.88rem" }}
+                    />
+                    <button type="button" className="button button-secondary" style={{ justifySelf: "start" }} onClick={() => saveSessionNote(session.id)}>
+                      {tr ? "Yorumu kaydet" : "Save comment"}
+                    </button>
+                    {sessionNotesMap.get(session.id)?.length ? (
+                      <div style={{ display: "grid", gap: "0.4rem", paddingTop: "0.3rem", borderTop: "1px solid var(--line)" }}>
+                        {(sessionNotesMap.get(session.id) ?? []).slice(0, 2).map((item) => (
+                          <div key={item.id} style={{ fontSize: "0.82rem", color: "var(--muted)", lineHeight: 1.6 }}>
+                            {item.tags?.length ? <div style={{ marginBottom: "0.15rem", fontWeight: 600, color: "var(--accent)" }}>{item.tags.map((t) => `#${t}`).join(" ")}</div> : null}
+                            {item.note}
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              )) : (
+                <div style={{ padding: "2rem 1rem", color: "var(--muted)", textAlign: "center" }}>
+                  {tr ? "Henüz speaking denemesi yok." : "No speaking attempts yet."}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ── Right column ── */}
-        <div style={{ display: "grid", gap: "1rem" }}>
+        {/* ══ RIGHT COLUMN ══ */}
+        <div style={{ display: "grid", gap: "1.2rem" }}>
 
           {/* Adaptive homework */}
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <BookOpen size={17} style={{ color: "var(--accent)" }} />
+          <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <BookOpen size={18} style={{ color: "var(--accent)", flexShrink: 0 }} />
               <div>
                 <span className="eyebrow">{tr ? "Adaptive ödev" : "Adaptive homework"}</span>
-                <h2 style={{ fontSize: "1.4rem", margin: "0.2rem 0 0" }}>{tr ? "Skora göre otomatik ödev" : "Score-based assignment"}</h2>
+                <h2 style={{ fontSize: "1.2rem", margin: "0.1rem 0 0", lineHeight: 1.3 }}>{tr ? "Skora göre otomatik ödev" : "Score-based assignment"}</h2>
               </div>
             </div>
 
             {/* Due date presets */}
-            <div className="card" style={{ padding: "0.85rem", background: "var(--surface-strong)", display: "grid", gap: "0.5rem" }}>
-              <strong style={{ fontSize: "0.88rem" }}>{tr ? "Teslim süresi" : "Due date preset"}</strong>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "0.5rem", fontWeight: 600 }}>{tr ? "Teslim süresi" : "Due date preset"}</div>
+              <div style={{ display: "flex", gap: "0.4rem" }}>
                 {[3, 7, 14].map((value) => (
                   <button
                     key={value}
                     type="button"
                     className="button button-secondary"
                     onClick={() => setDueDays(value)}
-                    style={{ background: dueDays === value ? "color-mix(in srgb, var(--accent) 14%, var(--surface) 86%)" : undefined }}
+                    style={{
+                      background: dueDays === value ? "color-mix(in srgb, var(--accent) 18%, var(--surface) 82%)" : undefined,
+                      borderColor: dueDays === value ? "color-mix(in srgb, var(--accent) 40%, transparent 60%)" : undefined,
+                      fontSize: "0.85rem",
+                    }}
                   >
                     {tr ? `${value} gün` : `${value} days`}
                   </button>
@@ -559,78 +578,80 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
 
             {/* Suggestions */}
             {homeworkSuggestions.map((item, index) => (
-              <div key={`${item.title}-${index}`} className="card" style={{ padding: "0.95rem", background: "color-mix(in srgb, var(--accent) 8%, var(--surface) 92%)", display: "grid", gap: "0.5rem" }}>
-                <strong style={{ fontSize: "0.9rem" }}>{item.title}</strong>
-                <div className="practice-meta">{item.focusSkill}</div>
-                <p style={{ margin: 0, lineHeight: 1.7, fontSize: "0.88rem" }}>{item.instructions}</p>
-                <button type="button" className="button button-secondary" onClick={() => assignHomework(item)}>
+              <div key={`${item.title}-${index}`} className="card" style={{ padding: "1rem", background: "color-mix(in srgb, var(--accent) 7%, var(--surface) 93%)", display: "grid", gap: "0.6rem", borderColor: "color-mix(in srgb, var(--accent) 20%, transparent 80%)" }}>
+                <div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--accent)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.3rem" }}>{item.focusSkill}</div>
+                  <strong style={{ fontSize: "0.95rem", lineHeight: 1.4 }}>{item.title}</strong>
+                </div>
+                <p style={{ margin: 0, lineHeight: 1.65, fontSize: "0.85rem", color: "var(--muted)" }}>{item.instructions}</p>
+                <button type="button" className="button button-primary" style={{ fontSize: "0.88rem" }} onClick={() => assignHomework(item)}>
                   {tr ? "Bu ödevi ata" : "Assign this homework"}
                 </button>
               </div>
             ))}
 
             {/* Assigned homework list */}
-            <div className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)" }}>
-              <strong style={{ fontSize: "0.88rem" }}>{tr ? "Atanmış ödevler" : "Assigned homework"}</strong>
-              <div style={{ display: "grid", gap: "0.45rem", marginTop: "0.65rem" }}>
+            <div>
+              <div style={{ fontSize: "0.82rem", color: "var(--muted)", fontWeight: 600, marginBottom: "0.6rem" }}>{tr ? "Atanmış ödevler" : "Assigned homework"}</div>
+              <div style={{ display: "grid", gap: "0.4rem" }}>
                 {assignedHomework.length ? assignedHomework.slice(0, 5).map((item) => {
                   const overdue = !item.completedAt && item.dueAt && new Date(item.dueAt).getTime() < Date.now();
                   return (
-                    <div key={item.id} style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start", fontSize: "0.85rem", lineHeight: 1.5 }}>
-                      <span style={{ color: item.completedAt ? "var(--success)" : overdue ? "var(--destructive)" : "var(--muted)", flexShrink: 0 }}>
+                    <div key={item.id} style={{ display: "flex", gap: "0.55rem", alignItems: "flex-start", fontSize: "0.85rem", lineHeight: 1.5, padding: "0.5rem 0", borderBottom: "1px solid var(--line)" }}>
+                      <span style={{ color: item.completedAt ? "var(--success)" : overdue ? "var(--destructive)" : "var(--muted)", flexShrink: 0, fontSize: "1rem" }}>
                         {item.completedAt ? "✓" : overdue ? "⚠" : "·"}
                       </span>
-                      <span style={{ color: overdue ? "var(--destructive)" : "var(--text)" }}>
+                      <span style={{ color: overdue ? "var(--destructive)" : undefined }}>
                         {item.title}
-                        {item.dueAt && <span style={{ color: "var(--muted)" }}> · {tr ? "teslim" : "due"} {new Date(item.dueAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</span>}
+                        {item.dueAt && <span style={{ color: "var(--muted)", fontSize: "0.8rem" }}> · {tr ? "teslim" : "due"} {new Date(item.dueAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</span>}
                       </span>
                     </div>
                   );
                 }) : (
-                  <div style={{ color: "var(--muted)", fontSize: "0.85rem" }}>{tr ? "Henüz ödev atanmadı." : "No homework assigned yet."}</div>
+                  <div style={{ color: "var(--muted)", fontSize: "0.85rem", padding: "0.5rem 0" }}>{tr ? "Henüz ödev atanmadı." : "No homework assigned yet."}</div>
                 )}
               </div>
             </div>
           </div>
 
           {/* Activity heatmap */}
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
             <div>
               <span className="eyebrow">{tr ? "Aktivite" : "Activity"}</span>
-              <h2 style={{ fontSize: "1.4rem", margin: "0.3rem 0 0" }}>{tr ? "Son 28 gün" : "Last 28 days"}</h2>
+              <h2 style={{ fontSize: "1.2rem", margin: "0.1rem 0 0" }}>{tr ? "Son 28 gün" : "Last 28 days"}</h2>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "0.4rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "0.35rem" }}>
               {buildActivityHeatmap(detail.summary.recentSessions, tr).map((day) => (
                 <div
                   key={day.key}
                   className={`card heatmap-${Math.min(day.count, 3)}`}
-                  style={{ padding: "0.6rem 0.3rem", textAlign: "center" }}
+                  style={{ padding: "0.5rem 0.25rem", textAlign: "center" }}
                 >
-                  <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginBottom: "0.2rem" }}>{day.label}</div>
-                  <strong style={{ fontSize: "0.85rem" }}>{day.count}</strong>
+                  <div style={{ fontSize: "0.65rem", color: "var(--muted)", marginBottom: "0.15rem" }}>{day.label}</div>
+                  <strong style={{ fontSize: "0.82rem" }}>{day.count}</strong>
                 </div>
               ))}
             </div>
-            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.6 }}>
+            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.8rem", lineHeight: 1.55 }}>
               {tr ? "Koyu kutular aynı gün içinde daha fazla speaking denemesi yapıldığını gösterir." : "Darker cells indicate more speaking activity on that day."}
             </p>
           </div>
 
           {/* Teacher notes */}
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
+          <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
             <div>
               <span className="eyebrow">{tr ? "Öğretmen notları" : "Teacher notes"}</span>
-              <h2 style={{ fontSize: "1.4rem", margin: "0.3rem 0 0" }}>{tr ? "Not bırak" : "Leave a note"}</h2>
+              <h2 style={{ fontSize: "1.2rem", margin: "0.1rem 0 0" }}>{tr ? "Not bırak" : "Leave a note"}</h2>
             </div>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              rows={4}
+              rows={3}
               placeholder={tr ? "Öğrencinin bir sonraki derste neye odaklanması gerektiğini yaz…" : "What should this student focus on in the next lesson?"}
-              style={{ padding: "0.95rem", borderRadius: 14, border: "1px solid var(--line)", resize: "vertical", background: "var(--surface)", color: "var(--text)", font: "inherit" }}
+              style={{ padding: "0.85rem", borderRadius: 12, border: "1px solid var(--line)", resize: "vertical", background: "var(--surface)", color: "var(--text)", font: "inherit", fontSize: "0.9rem" }}
             />
             <TeacherNoteTemplates tr={tr} onSelect={(v) => setNote((cur) => (cur ? `${cur}\n${v}` : v))} />
-            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
               {["fluency", "pronunciation", "structure", "example", "vocabulary"].map((tag) => {
                 const active = noteTags.includes(tag);
                 return (
@@ -638,7 +659,7 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
                     key={tag}
                     type="button"
                     className="button button-secondary"
-                    style={{ background: active ? "color-mix(in srgb, var(--accent) 14%, var(--surface) 86%)" : undefined, fontSize: "0.8rem" }}
+                    style={{ background: active ? "color-mix(in srgb, var(--accent) 14%, var(--surface) 86%)" : undefined, fontSize: "0.78rem", padding: "0.3rem 0.65rem" }}
                     onClick={() => setNoteTags((cur) => (active ? cur.filter((t) => t !== tag) : [...cur, tag]))}
                   >
                     #{tag}
@@ -652,27 +673,28 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
 
             {/* Saved notes list */}
             {detail.notes.filter((n) => !n.sessionId).length > 0 && (
-              <div className="grid" style={{ gap: "0.65rem" }}>
+              <div style={{ display: "grid", gap: "0.6rem", paddingTop: "0.2rem", borderTop: "1px solid var(--line)" }}>
+                <div style={{ fontSize: "0.8rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "Kaydedilen notlar" : "Saved notes"}</div>
                 {detail.notes.filter((n) => !n.sessionId).map((item) => (
-                  <div key={item.id} className="card" style={{ padding: "0.9rem", background: "var(--surface-strong)", display: "grid", gap: "0.35rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "flex-start" }}>
-                      <div style={{ fontSize: "0.77rem", color: "var(--muted)" }}>
+                  <div key={item.id} className="card" style={{ padding: "0.85rem", background: "var(--surface-strong)", display: "grid", gap: "0.35rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "center" }}>
+                      <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
                         {new Date(item.createdAt).toLocaleString(tr ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short" })}
                       </div>
                       {item.tags?.length ? (
-                        <div style={{ fontSize: "0.75rem", color: "var(--accent)", fontWeight: 600 }}>
+                        <div style={{ fontSize: "0.73rem", color: "var(--accent)", fontWeight: 600 }}>
                           {item.tags.map((t) => `#${t}`).join(" ")}
                         </div>
                       ) : null}
                     </div>
-                    <p style={{ margin: 0, lineHeight: 1.7, fontSize: "0.88rem" }}>{item.note}</p>
+                    <p style={{ margin: 0, lineHeight: 1.65, fontSize: "0.87rem" }}>{item.note}</p>
                   </div>
                 ))}
               </div>
             )}
           </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

@@ -2897,6 +2897,7 @@ input,
 select,
 textarea {
   font: inherit;
+  color: inherit;
 }
 
 img {
@@ -4360,6 +4361,11 @@ body[data-theme="dark"] .teacher-tab-badge {
 body[data-theme="dark"] .teacher-soft-card,
 body[data-theme="dark"] .teacher-stat-card {
   background: rgba(255, 255, 255, 0.05);
+  color: rgba(245, 239, 232, 0.92);
+}
+
+body[data-theme="dark"] .teacher-stat-card > div {
+  color: rgba(245, 239, 232, 0.58);
 }
 
 body[data-theme="dark"] .teacher-highlight-warm {
@@ -4373,6 +4379,7 @@ body[data-theme="dark"] .teacher-highlight-danger {
 body[data-theme="dark"] .teacher-highlight-cool {
   background: linear-gradient(180deg, rgba(115, 193, 199, 0.12), rgba(255, 255, 255, 0.04));
 }
+
 
 .grid {
   display: grid;
