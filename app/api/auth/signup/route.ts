@@ -8,7 +8,7 @@ import {
 } from "@/lib/server/auth";
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
 import { addOrgMember, getOrganizationByJoinCode } from "@/lib/server/org-store";
-import { hasDatabaseUrl } from "@/lib/server/db";
+import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { isAdminEmail } from "@/lib/admin";
@@ -52,6 +52,8 @@ export async function POST(request: Request) {
         const org = await getOrganizationByJoinCode(body.schoolInviteCode.trim());
         if (org) {
           await addOrgMember({ orgId: org.id, userId: profile.id, role: "teacher" });
+          await getSql()`update users set teacher_access = true where id = ${profile.id}`;
+          profile.teacherAccess = true;
           classJoinMessage = `Joined ${org.name} as a teacher.`;
         }
       } catch {

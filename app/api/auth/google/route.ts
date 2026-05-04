@@ -43,6 +43,7 @@ export async function GET(request: Request) {
   const classCode = searchParams.get("classCode");
   const organizationName = searchParams.get("organizationName");
   const referralCode = searchParams.get("referralCode");
+  const schoolInviteCode = searchParams.get("schoolInviteCode");
   const nonce = randomBytes(24).toString("base64url");
   const payload = Buffer.from(
     JSON.stringify({
@@ -54,7 +55,8 @@ export async function GET(request: Request) {
       memberType: memberType === "teacher" || memberType === "school" ? memberType : "student",
       classCode: classCode?.trim() || null,
       organizationName: organizationName?.trim() || null,
-      referralCode: referralCode?.trim().toUpperCase() || null
+      referralCode: referralCode?.trim().toUpperCase() || null,
+      schoolInviteCode: schoolInviteCode?.trim().toUpperCase() || null
     }),
     "utf8"
   ).toString("base64url");

@@ -201,6 +201,9 @@ function AuthPageInner() {
     if (referralCode.trim()) {
       googleParams.set("referralCode", referralCode.trim().toUpperCase());
     }
+    if (memberType === "teacher" && schoolInviteCode.trim()) {
+      googleParams.set("schoolInviteCode", schoolInviteCode.trim().toUpperCase());
+    }
   }
 
   const googleErrorMessage =

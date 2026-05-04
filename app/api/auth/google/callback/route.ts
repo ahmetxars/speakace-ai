@@ -5,6 +5,7 @@ import { withAdminPrivileges } from "@/lib/admin";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import type { AnalyticsEventName } from "@/lib/analytics-store";
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
+import { addOrgMember, getOrganizationByJoinCode } from "@/lib/server/org-store";
 import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { createAuthSession, ensureSchoolAccountAccess, getSessionCookieName, getSessionCookieOptions, signUpWithGoogle } from "@/lib/server/auth";
@@ -244,6 +245,7 @@ export async function GET(request: Request) {
       classCode?: string | null;
       organizationName?: string | null;
       referralCode?: string | null;
+      schoolInviteCode?: string | null;
     };
 
     if (parsedState.nonce !== expectedNonce) {
@@ -272,6 +274,7 @@ export async function GET(request: Request) {
     const organizationName =
       typeof parsedState.organizationName === "string" ? parsedState.organizationName.trim() : null;
     const referralCode = typeof parsedState.referralCode === "string" ? parsedState.referralCode.trim() : null;
+    const schoolInviteCode = typeof parsedState.schoolInviteCode === "string" ? parsedState.schoolInviteCode.trim() : "";
 
     const { profile, isNewUser } = await findOrCreateGoogleUser({
       googleUser,
@@ -295,6 +298,18 @@ export async function GET(request: Request) {
         });
       } catch {
         // Non-blocking: the user can still join a class later from the app.
+      }
+    }
+    if (isNewUser && schoolInviteCode && profile.memberType === "teacher" && hasDatabaseUrl()) {
+      try {
+        const org = await getOrganizationByJoinCode(schoolInviteCode);
+        if (org) {
+          await addOrgMember({ orgId: org.id, userId: profile.id, role: "teacher" });
+          await getSql()`update users set teacher_access = true where id = ${profile.id}`;
+          profile.teacherAccess = true;
+        }
+      } catch {
+        // Non-blocking.
       }
     }
     if (isNewUser) {
