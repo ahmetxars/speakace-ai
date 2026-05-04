@@ -3031,7 +3031,7 @@ body[data-theme="dark"] .case-study-list li {
   border-color: transparent;
   box-shadow: none;
   backdrop-filter: none;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease;
 }
 
 .site-header-card.is-scrolled {
@@ -3730,7 +3730,10 @@ body[data-theme="dark"] .eyebrow {
 }
 
 body[data-theme="dark"] .card {
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.26);
+  /* Slightly lighter than page background so cards read as elevated surfaces */
+  background: oklch(0.135 0.015 280);
+  border-color: oklch(1 0 0 / 9%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), 0 18px 38px rgba(0, 0, 0, 0.28);
 }
 
 .pill {
@@ -3756,17 +3759,35 @@ body[data-theme="dark"] .card {
   line-height: 1.05;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, color 0.18s ease;
 }
 
-.button:hover {
-  transform: none;
+.button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .button-primary {
   background: var(--primary);
   color: #fff;
-  box-shadow: 0 0 24px oklch(0.623 0.214 259.815 / 0.35);
+  box-shadow: 0 0 24px oklch(0.623 0.214 259.815 / 0.28);
+}
+
+.button-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 32px oklch(0.623 0.214 259.815 / 0.45);
+}
+
+.button-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 0 16px oklch(0.623 0.214 259.815 / 0.22);
 }
 
 .button-secondary {
@@ -3776,8 +3797,14 @@ body[data-theme="dark"] .card {
 }
 
 .button-secondary:hover {
+  transform: translateY(-1px);
   background: var(--surface-strong);
   border-color: oklch(0.623 0.214 259.815 / 25%);
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.08);
+}
+
+.button-secondary:active {
+  transform: translateY(0);
 }
 
 body[data-theme="dark"] .button-secondary {
@@ -3787,12 +3814,8 @@ body[data-theme="dark"] .button-secondary {
 
 body[data-theme="dark"] .button-secondary:hover {
   background: oklch(1 0 0 / 13%);
-  border-color: oklch(1 0 0 / 25%);
-}
-
-body[data-theme="dark"] .button-secondary:hover {
-  background: rgba(255, 255, 255, 0.08);
   border-color: rgba(115, 193, 199, 0.24);
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.28);
 }
 
 body[data-theme="dark"] .button-primary {
@@ -4303,7 +4326,17 @@ body[data-theme="dark"] .auth-showcase {
 }
 
 .teacher-stat-card {
-  background: color-mix(in srgb, var(--surface) 78%, white 22%);
+  background: color-mix(in srgb, var(--surface-strong) 60%, var(--surface) 40%);
+}
+
+/* Stat card value emphasis */
+.teacher-stat-card strong {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-top: 0.25rem;
 }
 
 body[data-theme="dark"] .auth-showcase-copy,
@@ -4623,7 +4656,7 @@ body[data-theme="dark"] .notification-dropdown-item.is-success {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 20px;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .testimonial-week-card:hover {
@@ -7142,42 +7175,66 @@ body[data-theme="dark"] .marketing-sticky-copy span {
 
   .app-mobile-nav {
     position: fixed;
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: 0.75rem;
+    left: 0.6rem;
+    right: 0.6rem;
+    bottom: 0.6rem;
     z-index: 55;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.45rem;
-    padding: 0.55rem;
-    border-radius: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: 0.2rem;
+    padding: 0.45rem;
+    border-radius: 1.15rem;
     border: 1px solid var(--line);
-    background: rgba(255, 249, 242, 0.96);
-    box-shadow: 0 18px 36px rgba(27, 18, 13, 0.12);
-    backdrop-filter: blur(10px);
+    background: oklch(0.99 0.003 65 / 0.96);
+    box-shadow: 0 14px 32px rgba(27, 18, 13, 0.12);
+    backdrop-filter: blur(12px);
+  }
+
+  body[data-theme="dark"] .app-mobile-nav {
+    background: oklch(0.10 0.015 280 / 0.96);
+    border-color: oklch(1 0 0 / 10%);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
   }
 
   .app-mobile-nav-link {
     min-width: 0;
     display: grid;
     justify-items: center;
-    gap: 0.22rem;
-    padding: 0.55rem 0.2rem;
-    border-radius: 0.95rem;
+    gap: 0.18rem;
+    padding: 0.48rem 0.15rem;
+    border-radius: 0.85rem;
     color: var(--muted);
-    font-size: 0.72rem;
+    font-size: 0.66rem;
+    font-weight: 600;
     text-align: center;
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 
   .app-mobile-nav-link.is-active {
-    background: rgba(217, 93, 57, 0.1);
-    color: var(--accent-deep);
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    color: var(--primary);
     font-weight: 700;
   }
 
+  body[data-theme="dark"] .app-mobile-nav-link.is-active {
+    background: color-mix(in srgb, var(--primary) 18%, transparent);
+    color: oklch(0.75 0.18 259.815);
+  }
+
   .app-mobile-nav-icon {
-    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     line-height: 1;
+  }
+
+  .app-mobile-nav-label {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
   }
 
   .theme-fab-shell {
@@ -8776,12 +8833,15 @@ body[data-theme="dark"] .share-option:hover {
 
 /* Dark mode — db-* */
 body[data-theme="dark"] .db-hero {
-  background: linear-gradient(180deg, rgba(20, 18, 31, 0.98), rgba(14, 12, 24, 0.94));
+  background:
+    radial-gradient(circle at top right, rgba(29, 111, 117, 0.1), transparent 40%),
+    linear-gradient(180deg, oklch(0.15 0.018 280) 0%, oklch(0.12 0.015 280) 100%);
+  border-color: oklch(1 0 0 / 10%);
 }
 
 body[data-theme="dark"] .db-hero-stat {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: oklch(1 0 0 / 6%);
+  border-color: oklch(1 0 0 / 10%);
 }
 
 body[data-theme="dark"] .db-roadmap-block {
@@ -9137,4 +9197,384 @@ body[data-theme="dark"] .db-upgrade-card {
   color: var(--muted);
   font-size: 0.92rem;
   line-height: 1.7;
+}
+
+/* ── Interactive card (card used as button/link) ── */
+button.card,
+a.card {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+button.card:hover,
+a.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px oklch(0 0 0 / 0.1);
+  border-color: color-mix(in srgb, var(--primary) 20%, var(--line) 80%);
+}
+
+button.card:focus-visible,
+a.card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+body[data-theme="dark"] button.card:hover,
+body[data-theme="dark"] a.card:hover {
+  box-shadow: 0 8px 24px oklch(0 0 0 / 0.35);
+  border-color: color-mix(in srgb, var(--primary) 30%, oklch(1 0 0 / 10%) 70%);
+}
+
+/* ── Session row link (Progress & History) ── */
+.db-session-row {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.8rem;
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  text-decoration: none;
+  color: var(--text);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.db-session-row:hover {
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface-strong) 95%);
+  transform: translateX(2px);
+}
+
+.db-session-row:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.db-session-date {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.db-session-title {
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.db-session-score {
+  font-size: 0.95rem;
+  font-weight: 800;
+  min-width: 2.5rem;
+  text-align: right;
+  color: var(--sa-accent);
+}
+
+.db-session-score.is-empty {
+  color: var(--muted);
+}
+
+/* ═══════════════════════════════════════
+   SKELETON LOADING
+   ═══════════════════════════════════════ */
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.skeleton {
+  border-radius: var(--radius);
+  background: var(--surface-strong);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+body[data-theme="dark"] .skeleton {
+  background: oklch(1 0 0 / 8%);
+}
+
+.skeleton-text {
+  height: 0.95em;
+  border-radius: 4px;
+}
+
+.skeleton-heading {
+  height: 1.5em;
+  border-radius: 6px;
+}
+
+.skeleton-stat {
+  height: 2.4rem;
+  border-radius: var(--radius);
+}
+
+/* Card skeleton wrapper — matches .card dimensions */
+.skeleton-card {
+  padding: 1.4rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+/* ── Global input / select focus ──── */
+
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* ═══════════════════════════════════════
+   APP SHELL  (signed-in /app/* routes)
+   ═══════════════════════════════════════ */
+
+/* ── App Header ──────────────────────────────────────────── */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.app-header.is-scrolled {
+  background: var(--nav-bg-scrolled);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom-color: var(--nav-border);
+  box-shadow: 0 1px 12px oklch(0 0 0 / 0.06);
+}
+
+.app-header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.app-header-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.app-header-logo-mark {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.app-header-logo-mark span {
+  color: white;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.app-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  flex: 1;
+}
+
+.app-header-nav-link {
+  padding: 0.375rem 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.app-header-nav-link:hover {
+  color: var(--text);
+  background: var(--surface-strong);
+}
+
+.app-header-nav-link.is-active {
+  color: var(--primary);
+  background: oklch(0.623 0.214 259.815 / 0.1);
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-left: auto;
+}
+
+.app-header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.app-header-icon-btn:hover {
+  background: var(--surface-strong);
+  color: var(--text);
+  border-color: var(--line);
+}
+
+.app-header-icon-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.app-header-account {
+  position: relative;
+}
+
+.app-header-account-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--nav-btn-bg);
+  border: 1px solid var(--nav-btn-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.app-header-account-btn:hover {
+  background: var(--surface-strong);
+}
+
+.app-header-account-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.app-header-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: var(--nav-dropdown-bg);
+  border: 1px solid var(--nav-border);
+  border-radius: 10px;
+  padding: 0.375rem;
+  min-width: 160px;
+  box-shadow: var(--nav-dropdown-shadow);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+}
+
+.app-header-dropdown-item {
+  display: block;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.12s ease;
+  width: 100%;
+}
+
+.app-header-dropdown-item:hover {
+  background: var(--surface-strong);
+}
+
+.app-header-dropdown-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 0.25rem 0.25rem;
+}
+
+.app-header-dropdown-signout {
+  color: var(--muted);
+}
+
+.app-header-dropdown-signout:hover {
+  color: var(--text);
+}
+
+/* ── App Shell ───────────────────────────────────────────── */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 768px) {
+  .app-main {
+    padding-bottom: 5.5rem;
+  }
+}
+
+/* ── App inline theme toggle ─────────── */
+/* Fixed icon button for /app/* routes. Replaces the marketing floating fab
+   so the app shell has its own theme control without page-level visual clutter. */
+.app-theme-toggle {
+  position: fixed;
+  right: 1.1rem;
+  bottom: 5.8rem;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  box-shadow: 0 2px 8px oklch(0 0 0 / 0.10);
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.app-theme-toggle:hover {
+  color: var(--text);
+  background: var(--surface-strong);
+  box-shadow: 0 4px 14px oklch(0 0 0 / 0.14);
+  transform: scale(1.06);
+}
+
+.app-theme-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* On desktop the AppHeader carries the theme toggle, so hide the FAB */
+@media (min-width: 769px) {
+  .app-theme-toggle {
+    display: none;
+  }
 }

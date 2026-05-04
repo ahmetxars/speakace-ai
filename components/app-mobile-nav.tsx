@@ -3,43 +3,77 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BookOpen, ClipboardList, FileText, Home, Layers, Mic, PenLine, Scale, Target } from "lucide-react";
 import { useAppState } from "@/components/providers";
 import { resolveDashboardRole } from "@/lib/roles";
 
-const navItem = (href: Route, en: string, tr: string, icon: string) => ({ href, en, tr, icon });
+type NavItem = {
+  href: Route;
+  en: string;
+  tr: string;
+  icon: React.ReactNode;
+};
+
+const navIcon = (href: Route, en: string, tr: string, icon: React.ReactNode): NavItem => ({
+  href,
+  en,
+  tr,
+  icon,
+});
 
 export function AppMobileNav() {
   const pathname = usePathname();
   const { language, currentUser } = useAppState();
   const tr = language === "tr";
   const dashboardRole = resolveDashboardRole(currentUser);
-  const accountHref =
-    dashboardRole === "school"
-      ? "/app/institution-admin"
-      : dashboardRole === "teacher"
-        ? "/app/teacher"
-        : "/app/profile";
-  const accountLabelEn = dashboardRole === "school" ? "Institution" : dashboardRole === "teacher" ? "Teaching" : "Profile";
-  const accountLabelTr = dashboardRole === "school" ? "Kurum" : dashboardRole === "teacher" ? "Sınıf" : "Profil";
 
-  const items = [
-    navItem("/app", "Home", "Ana sayfa", "•"),
-    navItem("/app/improve", "Improve", "Gelisim", "✦"),
-    navItem("/app/practice", "Practice", "Practice", "◦"),
-    navItem("/app/writing", "Writing", "Writing", "✎"),
-    navItem("/app/review", "Review", "Gözden geçir", "△"),
-    navItem("/app/plan", "Plan", "Plan", "◇"),
-    navItem(accountHref, accountLabelEn, accountLabelTr, "☰")
+  const studentItems: NavItem[] = [
+    navIcon("/app", "Home", "Ana sayfa", <Home size={18} strokeWidth={2} />),
+    navIcon("/app/practice", "Speaking", "Konuşma", <Mic size={18} strokeWidth={2} />),
+    navIcon("/app/writing", "Writing", "Yazma", <PenLine size={18} strokeWidth={2} />),
+    navIcon("/app/review", "Review", "Gözden geç", <BookOpen size={18} strokeWidth={2} />),
+    navIcon("/app/improve", "Improve", "Gelişim", <Layers size={18} strokeWidth={2} />),
+    navIcon("/app/plan", "Plan", "Plan", <Target size={18} strokeWidth={2} />),
+    navIcon("/app/profile", "Profile", "Profil", <ClipboardList size={18} strokeWidth={2} />),
   ];
 
+  const teacherItems: NavItem[] = [
+    navIcon("/app/teacher", "Teaching", "Sınıf", <ClipboardList size={18} strokeWidth={2} />),
+    navIcon("/app/teacher/compare", "Compare", "Kıyasla", <Scale size={18} strokeWidth={2} />),
+    navIcon("/app/teacher/billing", "Billing", "Fatura", <FileText size={18} strokeWidth={2} />),
+    navIcon("/app/settings", "Settings", "Ayarlar", <Layers size={18} strokeWidth={2} />),
+  ];
+
+  const schoolItems: NavItem[] = [
+    navIcon("/app/institution-admin", "Admin", "Kurum", <ClipboardList size={18} strokeWidth={2} />),
+    navIcon("/app/billing", "Billing", "Fatura", <FileText size={18} strokeWidth={2} />),
+    navIcon("/app/settings", "Settings", "Ayarlar", <Layers size={18} strokeWidth={2} />),
+  ];
+
+  const items =
+    dashboardRole === "school"
+      ? schoolItems
+      : dashboardRole === "teacher"
+        ? teacherItems
+        : studentItems;
+
   return (
-    <nav className="app-mobile-nav">
+    <nav className="app-mobile-nav" aria-label="App navigation">
       {items.map((item) => {
-        const active = pathname === item.href || (item.href !== "/app" && pathname?.startsWith(item.href));
+        const active =
+          pathname === item.href ||
+          (item.href !== "/app" && pathname?.startsWith(item.href));
         return (
-          <Link key={item.href} href={item.href} className={`app-mobile-nav-link ${active ? "is-active" : ""}`}>
-            <span className="app-mobile-nav-icon" aria-hidden="true">{item.icon}</span>
-            <span>{tr ? item.tr : item.en}</span>
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`app-mobile-nav-link${active ? " is-active" : ""}`}
+            aria-current={active ? "page" : undefined}
+          >
+            <span className="app-mobile-nav-icon" aria-hidden="true">
+              {item.icon}
+            </span>
+            <span className="app-mobile-nav-label">{tr ? item.tr : item.en}</span>
           </Link>
         );
       })}

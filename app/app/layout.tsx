@@ -1,13 +1,17 @@
 import type { ReactNode } from "react";
+import { AppHeader } from "@/components/app-header";
 import { AppMobileNav } from "@/components/app-mobile-nav";
-import { SiteHeader } from "@/components/site-header";
+import { AppThemeToggle } from "@/components/app-theme-toggle";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <>
-      <SiteHeader />
-      {children}
+    <div className="app-shell">
+      <AppHeader />
+      <main className="app-main">
+        {children}
+      </main>
       <AppMobileNav />
-    </>
+      <AppThemeToggle />
+    </div>
   );
 }

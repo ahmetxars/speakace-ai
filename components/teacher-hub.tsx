@@ -377,8 +377,20 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
   // ── access guard ─────────────────────────────────────────────────────────────
   if (loadingClasses && currentUser) {
     return (
-      <div className="page-shell section">
-        <HubLoading label={tr ? "Sınıflar yükleniyor…" : "Loading your classes…"} />
+      <div className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
+        <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "0.75rem" }}>
+          <div className="skeleton" style={{ height: "0.75rem", width: "6rem", borderRadius: 4 }} />
+          <div className="skeleton" style={{ height: "2.2rem", width: "14rem", borderRadius: 6 }} />
+          <div className="skeleton" style={{ height: "1rem", width: "22rem", maxWidth: "100%", borderRadius: 4 }} />
+        </section>
+        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.8rem" }}>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="card teacher-stat-card" style={{ padding: "1rem", display: "grid", gap: "0.4rem" }}>
+              <div className="skeleton" style={{ height: "0.75rem", width: "60%", borderRadius: 4 }} />
+              <div className="skeleton skeleton-stat" style={{ width: "40%" }} />
+            </div>
+          ))}
+        </section>
       </div>
     );
   }

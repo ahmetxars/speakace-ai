@@ -25,6 +25,7 @@ export function Dashboard() {
   const { signedIn, currentUser, language, signOut } = useAppState();
   const tr = language === "tr";
   const [summary, setSummary] = useState<ProgressSummary>(emptySummary);
+  const [loadingSummary, setLoadingSummary] = useState(true);
   const [targetScore, setTargetScore] = useState<string>("");
   const [joinedClasses, setJoinedClasses] = useState<StudentClassMembership[]>([]);
   const [joinCode, setJoinCode] = useState("");
@@ -56,10 +57,11 @@ export function Dashboard() {
   useEffect(() => {
     if (!signedIn || !currentUserId) return;
     const ctrl = new AbortController();
+    setLoadingSummary(true);
     fetch("/api/progress/summary", { signal: ctrl.signal })
       .then((r) => r.json())
-      .then((data: ProgressSummary) => setSummary(data))
-      .catch(() => setSummary(emptySummary));
+      .then((data: ProgressSummary) => { setSummary(data); setLoadingSummary(false); })
+      .catch(() => { setSummary(emptySummary); setLoadingSummary(false); });
     return () => ctrl.abort();
   }, [currentUserId, signedIn]);
 
@@ -413,25 +415,36 @@ export function Dashboard() {
           </div>
         </div>
         <div className="db-hero-stats">
-          <div className="db-hero-stat">
-            <Mic size={16} />
-            <strong>{summary.averageScore || "—"}</strong>
-            <span>{tr ? "ort skor" : "avg score"}</span>
-          </div>
-          <div className="db-hero-stat">
-            <Flame size={16} />
-            <strong>{summary.streakDays}</strong>
-            <span>{tr ? "gun seri" : "day streak"}</span>
-          </div>
-          <div className="db-hero-stat">
-            <strong>{summary.totalSessions}</strong>
-            <span>{tr ? "toplam deneme" : "total sessions"}</span>
-          </div>
-          <div className="db-hero-stat">
-            <Target size={16} />
-            <strong>{targetScore || "—"}</strong>
-            <span>{targetLabel}</span>
-          </div>
+          {loadingSummary ? (
+            <>
+              <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
+              <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
+              <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
+              <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
+            </>
+          ) : (
+            <>
+              <div className="db-hero-stat">
+                <Mic size={16} />
+                <strong>{summary.averageScore || "—"}</strong>
+                <span>{tr ? "ort skor" : "avg score"}</span>
+              </div>
+              <div className="db-hero-stat">
+                <Flame size={16} />
+                <strong>{summary.streakDays}</strong>
+                <span>{tr ? "gun seri" : "day streak"}</span>
+              </div>
+              <div className="db-hero-stat">
+                <strong>{summary.totalSessions}</strong>
+                <span>{tr ? "toplam deneme" : "total sessions"}</span>
+              </div>
+              <div className="db-hero-stat">
+                <Target size={16} />
+                <strong>{targetScore || "—"}</strong>
+                <span>{targetLabel}</span>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -766,35 +779,13 @@ function SessionRow({ session, tr }: { session: SpeakingSession; tr: boolean }) 
     day: "numeric"
   });
   return (
-    <Link
-      href={`/app/results/${session.id}`}
-      style={{
-        display: "grid",
-        gridTemplateColumns: "3.5rem 1fr auto auto",
-        alignItems: "center",
-        gap: "0.75rem",
-        padding: "0.7rem 0.9rem",
-        borderRadius: "0.8rem",
-        background: "var(--surface-strong)",
-        border: "1px solid var(--line)",
-        textDecoration: "none",
-        color: "var(--text)",
-        transition: "background 0.15s ease"
-      }}
-    >
-      <span style={{ color: "var(--muted)", fontSize: "0.8rem" }}>{date}</span>
-      <strong style={{ fontSize: "0.88rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-        {session.prompt.title}
-      </strong>
+    <Link href={`/app/results/${session.id}`} className="db-session-row">
+      <span className="db-session-date">{date}</span>
+      <strong className="db-session-title">{session.prompt.title}</strong>
       <span className="pill" style={{ fontSize: "0.78rem" }}>
         {session.examType} · {session.taskType}
       </span>
-      <strong style={{
-        color: session.report ? "var(--sa-accent)" : "var(--muted)",
-        fontSize: "0.95rem",
-        minWidth: "2.5rem",
-        textAlign: "right"
-      }}>
+      <strong className={`db-session-score${session.report ? "" : " is-empty"}`}>
         {session.report ? session.report.overall : "—"}
       </strong>
     </Link>

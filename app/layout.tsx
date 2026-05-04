@@ -75,9 +75,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const canonicalUrl = `${siteConfig.domain}${currentPath === "/" ? "" : currentPath}`;
   const isMaintenancePage = currentPath === "/maintenance";
   const hideGlobalChrome = isMaintenancePage;
+  const isAppRoute = currentPath.startsWith("/app");
   const showMarketingHeader =
     !hideGlobalChrome &&
-    !currentPath.startsWith("/app") &&
+    !isAppRoute &&
     !currentPath.startsWith("/admin");
 
   return (
@@ -189,9 +190,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           />
           {showMarketingHeader ? <SiteHeader /> : null}
           {children}
-          {!hideGlobalChrome ? <FloatingThemeToggle /> : null}
-          {!hideGlobalChrome ? <MarketingStickyCta /> : null}
-          {!hideGlobalChrome ? <SiteFooter /> : null}
+          {!hideGlobalChrome && !isAppRoute ? <FloatingThemeToggle /> : null}
+          {!hideGlobalChrome && !isAppRoute ? <MarketingStickyCta /> : null}
+          {!hideGlobalChrome && !isAppRoute ? <SiteFooter /> : null}
         </Providers>
       </body>
     </html>
