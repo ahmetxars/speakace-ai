@@ -35,6 +35,8 @@ function AuthPageInner() {
   const [successToast, setSuccessToast] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [handledVerifyToken, setHandledVerifyToken] = useState("");
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendingVerification, setResendingVerification] = useState(false);
   const [storedAttributionPath, setStoredAttributionPath] = useState<string | null>(null);
   const inviteReferrerId = searchParams.get("invite");
 
@@ -64,6 +66,7 @@ function AuthPageInner() {
     setError("");
     setNotice("");
     setSuccessToast("");
+    setNeedsVerification(false);
     const effectiveAttributionPath = searchParams.get("cta") ?? storedAttributionPath ?? null;
     const response = await fetch(mode === "signup" ? "/api/auth/signup" : "/api/auth/signin", {
       method: "POST",
@@ -88,6 +91,7 @@ function AuthPageInner() {
       setError(data.error ?? (tr ? "Kimlik doğrulama işlemi tamamlanamadı." : "Authentication failed."));
       if (data.needsEmailVerification) {
         setNotice(tr ? "Giriş yapmadan önce e-posta adresini doğrulaman gerekiyor. Aşağıdan yeni bir doğrulama maili isteyebilirsin." : "You need to verify your email before signing in. You can request a new verification link below.");
+        setNeedsVerification(true);
       }
       return;
     }
@@ -152,6 +156,37 @@ function AuthPageInner() {
       })
       .finally(() => setVerifying(false));
   }, [handledVerifyToken, searchParams, tr, verifying]);
+
+  const resendVerification = async () => {
+    if (!email || resendingVerification) return;
+    setResendingVerification(true);
+    setError("");
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      const data = (await response.json()) as { error?: string; emailSent?: boolean };
+      if (!response.ok) {
+        setError(data.error ?? (tr ? "Doğrulama maili gönderilemedi." : "Could not send verification email."));
+      } else {
+        setNeedsVerification(false);
+        setNotice("");
+        setSuccessToast(
+          data.emailSent
+            ? tr
+              ? "Doğrulama maili gönderildi. Lütfen e-posta kutunu kontrol et."
+              : "Verification email sent. Please check your inbox."
+            : tr
+              ? "Hesabın zaten doğrulanmış olabilir. Giriş yapmayı dene."
+              : "Your account may already be verified. Try signing in."
+        );
+      }
+    } finally {
+      setResendingVerification(false);
+    }
+  };
 
   const resetPassword = async () => {
     const resetToken = searchParams.get("reset");
@@ -564,6 +599,23 @@ function AuthPageInner() {
             {error ? <p className="auth-inline-message auth-inline-error">{error}</p> : null}
             {googleErrorMessage ? <p className="auth-inline-message auth-inline-error">{googleErrorMessage}</p> : null}
             {notice ? <p className="auth-inline-message auth-inline-notice">{notice}</p> : null}
+            {needsVerification ? (
+              <button
+                className="button button-secondary"
+                type="button"
+                onClick={resendVerification}
+                disabled={resendingVerification}
+                style={{ width: "100%" }}
+              >
+                {resendingVerification
+                  ? tr
+                    ? "Gönderiliyor…"
+                    : "Sending…"
+                  : tr
+                    ? "Doğrulama mailini tekrar gönder"
+                    : "Resend verification email"}
+              </button>
+            ) : null}
 
             <div className="auth-actions">
               {resetToken ? (
