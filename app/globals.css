@@ -8874,6 +8874,166 @@ body[data-theme="dark"] .db-upgrade-card {
   background: linear-gradient(180deg, rgba(20, 18, 31, 0.98), rgba(14, 12, 24, 0.94));
 }
 
+/* ── Primary KPI stat (avg score) ── */
+.db-hero-stat-primary {
+  grid-column: span 2;
+  background: rgba(29, 111, 117, 0.1);
+  border-color: rgba(29, 111, 117, 0.22);
+  gap: 0.2rem;
+}
+
+.db-hero-stat-primary strong {
+  font-size: 2.4rem;
+  color: var(--sa-accent);
+}
+
+.db-hero-stat-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.1rem;
+}
+
+.db-gap-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(217, 93, 57, 0.1);
+  color: var(--accent);
+  border: 1px solid rgba(217, 93, 57, 0.2);
+  width: fit-content;
+}
+
+.db-gap-badge[data-positive="true"] {
+  background: rgba(29, 111, 117, 0.1);
+  color: var(--sa-accent);
+  border-color: rgba(29, 111, 117, 0.2);
+}
+
+/* ── Decision strip ── */
+.db-decision-strip {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.1rem 1.4rem;
+  background: linear-gradient(90deg, rgba(29, 111, 117, 0.07), transparent);
+  border: 1.5px solid rgba(29, 111, 117, 0.18);
+}
+
+.db-decision-strip[data-variant="streak"] {
+  background: linear-gradient(90deg, rgba(217, 93, 57, 0.07), transparent);
+  border-color: rgba(217, 93, 57, 0.2);
+}
+
+.db-decision-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(29, 111, 117, 0.12);
+  color: var(--sa-accent);
+  border: 1px solid rgba(29, 111, 117, 0.2);
+  white-space: nowrap;
+}
+
+.db-decision-strip[data-variant="streak"] .db-decision-badge {
+  background: rgba(217, 93, 57, 0.1);
+  color: var(--accent);
+  border-color: rgba(217, 93, 57, 0.2);
+}
+
+.db-decision-content {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.db-decision-content strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.db-decision-content p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--muted);
+  line-height: 1.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.db-decision-cta {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Focus insight text (replaces db-focus-text) ── */
+.db-focus-insight {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 0.92rem;
+}
+
+/* ── Weakest skill chip with score ── */
+.db-focus-skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.db-focus-skill-score {
+  font-size: 0.78rem;
+  font-weight: 800;
+  opacity: 0.75;
+}
+
+/* ── Dark mode additions ── */
+body[data-theme="dark"] .db-hero-stat-primary {
+  background: rgba(29, 111, 117, 0.14);
+  border-color: rgba(29, 111, 117, 0.28);
+}
+
+body[data-theme="dark"] .db-decision-strip {
+  background: linear-gradient(90deg, rgba(29, 111, 117, 0.1), transparent);
+  border-color: rgba(29, 111, 117, 0.22);
+}
+
+body[data-theme="dark"] .db-decision-strip[data-variant="streak"] {
+  background: linear-gradient(90deg, rgba(217, 93, 57, 0.1), transparent);
+  border-color: rgba(217, 93, 57, 0.24);
+}
+
+body[data-theme="dark"] .db-decision-badge {
+  background: rgba(29, 111, 117, 0.18);
+  border-color: rgba(29, 111, 117, 0.28);
+}
+
+body[data-theme="dark"] .db-decision-strip[data-variant="streak"] .db-decision-badge {
+  background: rgba(217, 93, 57, 0.14);
+  border-color: rgba(217, 93, 57, 0.28);
+}
+
+body[data-theme="dark"] .db-gap-badge {
+  background: rgba(217, 93, 57, 0.14);
+}
+
+body[data-theme="dark"] .db-gap-badge[data-positive="true"] {
+  background: rgba(29, 111, 117, 0.16);
+}
+
 @media (max-width: 960px) {
   .db-hero {
     grid-template-columns: 1fr;
@@ -8893,6 +9053,10 @@ body[data-theme="dark"] .db-upgrade-card {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .db-hero-stat-primary {
+    grid-column: span 2;
+  }
+
   .db-workspace-grid,
   .db-stats-row,
   .db-duo-row {
@@ -8901,6 +9065,20 @@ body[data-theme="dark"] .db-upgrade-card {
 
   .db-hero {
     padding: 1.4rem;
+  }
+
+  .db-decision-strip {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .db-decision-content p {
+    white-space: normal;
+  }
+
+  .db-decision-cta {
+    width: 100%;
+    justify-content: center;
   }
 }
 

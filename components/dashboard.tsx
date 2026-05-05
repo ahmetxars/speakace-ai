@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpenCheck, CheckCircle2, Flame, LayoutGrid, Mic, PenSquare, Sparkles, Target } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -18,6 +19,21 @@ const emptySummary: ProgressSummary = {
   remainingMinutesToday: 8,
   currentPlan: "free",
   recentSessions: []
+};
+
+type DashboardNextAction = {
+  icon: "mic" | "book" | "flame" | "target" | "sparkles";
+  badge: string;
+  headline: string;
+  context: string;
+  href:
+    | Route
+    | {
+        pathname: Route;
+        query: Record<string, string>;
+      };
+  cta: string;
+  variant: "primary" | "streak" | "default";
 };
 
 export function Dashboard() {
@@ -303,6 +319,110 @@ export function Dashboard() {
     [summary.recentSessions]
   );
 
+  const practicedToday = streakCalendar[streakCalendar.length - 1]?.active ?? false;
+
+  const nextAction = useMemo<DashboardNextAction>(() => {
+    if (!summary.totalSessions) {
+      return {
+        icon: "mic" as const,
+        badge: tr ? "Başlangıç" : "Get started",
+        headline: tr ? "İlk speaking pratiğini başlat" : "Start your first speaking practice",
+        context: tr
+          ? "İlk oturum yaklaşık 5 dakika sürer. Sistem skor ortalamanı ve gelişim alanlarını buradan takip etmeye başlar."
+          : "Your first session takes about 5 minutes. The system begins tracking your scores and growth areas from session one.",
+        href: "/app/practice",
+        cta: tr ? "Pratik başlat →" : "Start practice →",
+        variant: "primary" as const,
+      };
+    }
+    const pending = homework.filter((h) => !h.completedAt);
+    if (pending.length > 0 && pending[0]) {
+      const hw = pending[0];
+      const dueStr = hw.dueAt
+        ? ` · ${tr ? "Teslim" : "Due"}: ${new Date(hw.dueAt).toLocaleDateString(tr ? "tr-TR" : "en-US", { month: "short", day: "numeric" })}`
+        : "";
+      return {
+        icon: "book" as const,
+        badge: tr ? "Ödev" : "Homework",
+        headline: hw.title,
+        context: tr ? `Öğretmenin atadı${dueStr}` : `Assigned by your teacher${dueStr}`,
+        href: hw.promptId
+          ? {
+              pathname: "/app/practice",
+              query: {
+                promptId: hw.promptId,
+                examType: hw.recommendedTaskType.startsWith("toefl") ? "TOEFL" : "IELTS",
+                taskType: hw.recommendedTaskType,
+                difficulty: "Target",
+              },
+            }
+          : "/app/practice",
+        cta: tr ? "Ödevi başlat →" : "Start homework →",
+        variant: "primary" as const,
+      };
+    }
+    if (summary.streakDays > 0 && !practicedToday) {
+      return {
+        icon: "flame" as const,
+        badge: tr ? "Seri riski" : "Streak at risk",
+        headline: tr
+          ? `${summary.streakDays} günlük serin var — bugün pratiğini yap`
+          : `You have a ${summary.streakDays}-day streak — don't break it today`,
+        context: tr
+          ? "Bugün en az bir speaking oturumu yapman seriyi canlı tutar."
+          : "Complete at least one speaking session today to keep your streak alive.",
+        href: "/app/practice",
+        cta: tr ? "Seriyi koru →" : "Keep streak →",
+        variant: "streak" as const,
+      };
+    }
+    if (scoreGap !== null && scoreGap >= (latestExamType === "IELTS" ? 1.2 : 0.8)) {
+      return {
+        icon: "target" as const,
+        badge: tr ? "Hedef açığı" : "Gap to target",
+        headline: tr
+          ? `Hedefine ${scoreGap} puan uzakta — odaklı pratik gerekiyor`
+          : `${scoreGap} points from your ${targetLabel} — focused practice needed`,
+        context: weakestSkill
+          ? tr
+            ? `${translateCategoryLabel(weakestSkill.label)} en zayıf kategorin (${weakestSkill.score}).`
+            : `${weakestSkill.label} is your weakest category (${weakestSkill.score}).`
+          : tr
+            ? "Düzenli pratik bu açığı kapatır."
+            : "Consistent targeted practice will close this gap.",
+        href: "/app/practice",
+        cta: tr ? "Odaklı pratik →" : "Targeted practice →",
+        variant: "primary" as const,
+      };
+    }
+    if (weakestSkill) {
+      return {
+        icon: "sparkles" as const,
+        badge: tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label,
+        headline: tr
+          ? `En zayıf alanın: ${translateCategoryLabel(weakestSkill.label)}`
+          : `Weakest area: ${weakestSkill.label}`,
+        context: tr
+          ? `Skor ${weakestSkill.score} · Bu kategoriye odaklanmak ortalamayı daha hızlı yükseltir.`
+          : `Score ${weakestSkill.score} · Targeting this category raises your average fastest.`,
+        href: "/app/practice",
+        cta: tr ? "Bu alanda pratik →" : "Practice this skill →",
+        variant: "primary" as const,
+      };
+    }
+    return {
+      icon: "mic" as const,
+      badge: tr ? "Devam et" : "Keep going",
+      headline: tr ? "Bugün bir speaking oturumu daha yap" : "Try another speaking session today",
+      context: tr
+        ? "Daha fazla oturum, sistemin performans örüntülerini daha net görmesini sağlar."
+        : "More sessions help the system surface clearer performance patterns.",
+      href: "/app/practice",
+      cta: tr ? "Pratik başlat →" : "Start session →",
+      variant: "default" as const,
+    };
+  }, [homework, latestExamType, practicedToday, scoreGap, summary.streakDays, summary.totalSessions, targetLabel, tr, weakestSkill]);
+
   const needsOnboarding = Boolean(
     signedIn && currentUser && !isTeacherMember && !isSchoolMember && profile && !profile.onboardingComplete
   );
@@ -417,36 +537,63 @@ export function Dashboard() {
         <div className="db-hero-stats">
           {loadingSummary ? (
             <>
-              <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
+              <div className="db-hero-stat db-hero-stat-primary"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
               <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
               <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
               <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
             </>
           ) : (
             <>
-              <div className="db-hero-stat">
-                <Mic size={16} />
+              <div className="db-hero-stat db-hero-stat-primary">
+                <span className="db-hero-stat-label">{tr ? "ort skor" : "avg score"}</span>
                 <strong>{summary.averageScore || "—"}</strong>
-                <span>{tr ? "ort skor" : "avg score"}</span>
+                {scoreGap !== null ? (
+                  <span className="db-gap-badge" data-positive={scoreGap <= 0 ? "true" : "false"}>
+                    {scoreGap <= 0
+                      ? (tr ? "hedefte" : "on target")
+                      : `−${scoreGap} ${tr ? "hedefe" : "to goal"}`}
+                  </span>
+                ) : null}
               </div>
               <div className="db-hero-stat">
-                <Flame size={16} />
+                <Target size={14} />
+                <strong>{targetScore || "—"}</strong>
+                <span>{targetLabel}</span>
+              </div>
+              <div className="db-hero-stat">
+                <Flame size={14} />
                 <strong>{summary.streakDays}</strong>
-                <span>{tr ? "gun seri" : "day streak"}</span>
+                <span>{tr ? "gün seri" : "day streak"}</span>
               </div>
               <div className="db-hero-stat">
                 <strong>{summary.totalSessions}</strong>
-                <span>{tr ? "toplam deneme" : "total sessions"}</span>
-              </div>
-              <div className="db-hero-stat">
-                <Target size={16} />
-                <strong>{targetScore || "—"}</strong>
-                <span>{targetLabel}</span>
+                <span>{tr ? "toplam" : "sessions"}</span>
               </div>
             </>
           )}
         </div>
       </section>
+
+      {/* DECISION STRIP */}
+      {!loadingSummary ? (
+        <section className="db-decision-strip card" data-variant={nextAction.variant}>
+          <div className="db-decision-badge">
+            {nextAction.icon === "flame" ? <Flame size={14} /> :
+             nextAction.icon === "book" ? <BookOpenCheck size={14} /> :
+             nextAction.icon === "target" ? <Target size={14} /> :
+             nextAction.icon === "sparkles" ? <Sparkles size={14} /> :
+             <Mic size={14} />}
+            <span>{nextAction.badge}</span>
+          </div>
+          <div className="db-decision-content">
+            <strong>{nextAction.headline}</strong>
+            <p>{nextAction.context}</p>
+          </div>
+          <Link className="button button-primary db-decision-cta" href={nextAction.href}>
+            {nextAction.cta}
+          </Link>
+        </section>
+      ) : null}
 
       {/* PERSONALIZED INSIGHT */}
       {profile?.onboardingComplete && (profile?.englishBackground || profile?.biggestChallenge) ? (
@@ -488,8 +635,8 @@ export function Dashboard() {
         ) : (
           <p className="dashboard-empty-copy" style={{ margin: 0 }}>
             {tr
-              ? "Henuz session yok. Ilk denemeni yukardaki butona basarak baslat."
-              : "No sessions yet. Hit Start practice above to begin."}
+              ? "İlk oturum yaklaşık 5 dakika sürer. Sistem skor ortalamanı ve gelişim alanlarını birinci oturumdan itibaren takip etmeye başlar."
+              : "Your first session takes about 5 minutes. The system begins tracking your scores and growth areas from session one."}
           </p>
         )}
       </section>
@@ -503,52 +650,48 @@ export function Dashboard() {
           {/* TODAY'S FOCUS */}
           <div className="db-focus-card card">
             <div className="dashboard-section-head">
-              <span className="eyebrow">{tr ? "Bugunku odak" : "Today's focus"}</span>
+              <span className="eyebrow">{tr ? "Bugünkü odak" : "Today's focus"}</span>
               {weakestSkill ? (
-                <span className="dashboard-chip">
+                <span className="dashboard-chip db-focus-skill-chip">
                   {tr ? translateCategoryLabel(weakestSkill.label) : weakestSkill.label}
+                  <span className="db-focus-skill-score">{weakestSkill.score}</span>
                 </span>
               ) : null}
             </div>
-            <p className="db-focus-text">{nextStudyFocus}</p>
+            <p className="db-focus-insight">{nextStudyFocus}</p>
             <div className="db-roadmap-block">
-              <strong>{tr ? "Yol haritasi" : "Roadmap"}</strong>
+              <strong>{tr ? "Yol haritası" : "Your path"}</strong>
               <p>{roadmap}</p>
             </div>
-            <div className="dashboard-inline-actions">
-              <Link className="button button-primary" href="/app/practice">
-                {tr ? "Pratige git" : "Start practice"}
-              </Link>
-              <Link className="button button-secondary" href="/app/review">
-                {tr ? "Review board" : "Review board"}
-              </Link>
-            </div>
+            <Link className="button button-primary" href="/app/practice" style={{ alignSelf: "start" }}>
+              {tr ? "Pratiğe git →" : "Go to practice →"}
+            </Link>
           </div>
 
           {/* QUICK ACTIONS */}
           <div className="db-workspace-grid">
-            <a href="/app/writing" className="db-workspace-card card">
-              <div className="db-workspace-icon"><PenSquare size={18} /></div>
-              <strong>{tr ? "Writing coach" : "Writing coach"}</strong>
-              <p>{tr ? "Essay yaz, band tahmini al, duzeltmeleri gor." : "Write an essay, get a band estimate, and review corrections."}</p>
-              <span className="db-workspace-cta">
-                {tr ? "Writing hub" : "Open writing"} <ArrowRight size={14} />
-              </span>
-            </a>
             <a href="/app/review" className="db-workspace-card card">
               <div className="db-workspace-icon"><BookOpenCheck size={18} /></div>
               <strong>{tr ? "Review board" : "Review board"}</strong>
-              <p>{tr ? "Tekrarlayan zayif kaliplari tek yerde topla." : "Keep repeated weak patterns in one focused space."}</p>
+              <p>{tr ? "Tekrarlayan zayıf kalıpları tek yerde takip et." : "Track repeated weak patterns in one focused space."}</p>
               <span className="db-workspace-cta">
-                {tr ? "Hataya don" : "Open review"} <ArrowRight size={14} />
+                {tr ? "Hataya dön" : "Open review"} <ArrowRight size={14} />
+              </span>
+            </a>
+            <a href="/app/writing" className="db-workspace-card card">
+              <div className="db-workspace-icon"><PenSquare size={18} /></div>
+              <strong>{tr ? "Writing coach" : "Writing coach"}</strong>
+              <p>{tr ? "Essay yaz, band tahmini al, düzeltmeleri gör." : "Write an essay, get a band estimate, and review corrections."}</p>
+              <span className="db-workspace-cta">
+                {tr ? "Writing'e git" : "Open writing"} <ArrowRight size={14} />
               </span>
             </a>
             <a href="/app/study-lists" className="db-workspace-card card">
               <div className="db-workspace-icon"><LayoutGrid size={18} /></div>
-              <strong>{tr ? "Calisma listeleri" : "Study lists"}</strong>
-              <p>{tr ? "Kayitli promptlar ve ogretmen listeleri." : "Saved prompts and teacher study lists."}</p>
+              <strong>{tr ? "Çalışma listeleri" : "Study lists"}</strong>
+              <p>{tr ? "Kaydedilen promptlar ve öğretmen listeleri." : "Saved prompts and teacher study lists."}</p>
               <span className="db-workspace-cta">
-                {tr ? "Listeyi ac" : "Open lists"} <ArrowRight size={14} />
+                {tr ? "Listeyi aç" : "Open lists"} <ArrowRight size={14} />
               </span>
             </a>
           </div>
