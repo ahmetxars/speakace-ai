@@ -7,6 +7,7 @@ import { defaultLanguage, isSupportedLanguage, Language } from "@/lib/copy";
 import { createGuestProfile } from "@/lib/membership";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { MemberProfile, SubscriptionPlan } from "@/lib/types";
+import { SplashScreen } from "@/components/splash-screen";
 
 export type ThemeMode = "light" | "dark";
 
@@ -186,6 +187,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{ language, setLanguage, theme, setTheme, signedIn, signOut, currentUser, setGuestProfile, refreshSession, updatePlan }}>
+      <SplashScreen />
       {children}
     </AppContext.Provider>
   );
