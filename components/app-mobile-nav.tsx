@@ -23,9 +23,13 @@ const navIcon = (href: Route, en: string, tr: string, icon: React.ReactNode): Na
 
 export function AppMobileNav() {
   const pathname = usePathname();
-  const { language, currentUser } = useAppState();
+  const { language, currentUser, signedIn } = useAppState();
   const tr = language === "tr";
   const dashboardRole = resolveDashboardRole(currentUser);
+
+  if (!signedIn) {
+    return null;
+  }
 
   const studentItems: NavItem[] = [
     navIcon("/app", "Home", "Ana sayfa", <Home size={18} strokeWidth={2} />),

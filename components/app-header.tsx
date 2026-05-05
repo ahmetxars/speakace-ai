@@ -3,18 +3,43 @@
 import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Moon, Sun, ChevronDown } from "lucide-react";
 import { useAppState } from "@/components/providers";
 import { resolveDashboardRole } from "@/lib/roles";
 
 const labels = {
-  en: { profile: "Profile", billing: "Billing", settings: "Settings", signOut: "Sign out", account: "Account" },
-  tr: { profile: "Profil", billing: "Fatura", settings: "Ayarlar", signOut: "Çıkış yap", account: "Hesap" },
+  en: {
+    profile: "Profile",
+    billing: "Billing",
+    settings: "Settings",
+    signOut: "Sign out",
+    account: "Account",
+    dashboard: "Dashboard",
+    speaking: "Speaking",
+    writing: "Writing",
+    review: "Review",
+    signIn: "Sign in",
+    signUp: "Sign up",
+  },
+  tr: {
+    profile: "Profil",
+    billing: "Fatura",
+    settings: "Ayarlar",
+    signOut: "Çıkış yap",
+    account: "Hesap",
+    dashboard: "Panel",
+    speaking: "Konuşma",
+    writing: "Yazma",
+    review: "İnceleme",
+    signIn: "Giriş yap",
+    signUp: "Kayıt ol",
+  },
 };
 
 export function AppHeader() {
+  const router = useRouter();
   const pathname = usePathname() ?? "/app";
   const { language, theme, setTheme, signedIn, signOut, currentUser } = useAppState();
   const tr = language === "tr";
@@ -52,6 +77,40 @@ export function AppHeader() {
     ? (tr ? "Aydınlık temaya geç" : "Switch to light theme")
     : (tr ? "Koyu temaya geç" : "Switch to dark theme");
 
+  const logoHref: Route = !signedIn
+    ? "/"
+    : dashboardRole === "school"
+      ? "/app/institution-admin"
+      : dashboardRole === "teacher"
+        ? "/app/teacher"
+        : "/app";
+
+  const desktopNavItems: Array<{ href: Route; label: string; active: boolean }> =
+    !signedIn
+      ? [
+          { href: "/", label: tr ? "Ana sayfa" : "Home", active: pathname === "/" },
+          { href: "/pricing", label: tr ? "Fiyatlar" : "Pricing", active: pathname.startsWith("/pricing") },
+          { href: "/for-schools", label: tr ? "Kurumlar" : "Schools", active: pathname.startsWith("/for-schools") },
+        ]
+      : dashboardRole === "teacher"
+        ? [
+            { href: "/app/teacher", label: tr ? "Sınıf" : "Teaching", active: pathname.startsWith("/app/teacher") && !pathname.startsWith("/app/teacher/compare") },
+            { href: "/app/teacher/compare", label: tr ? "Karşılaştır" : "Compare", active: pathname.startsWith("/app/teacher/compare") },
+            { href: "/app/settings", label: l.settings, active: pathname.startsWith("/app/settings") },
+          ]
+        : dashboardRole === "school"
+          ? [
+              { href: "/app/institution-admin", label: tr ? "Kurum" : "Admin", active: pathname.startsWith("/app/institution-admin") },
+              { href: "/app/billing", label: l.billing, active: pathname.startsWith("/app/billing") || pathname.startsWith("/app/teacher/billing") },
+              { href: "/app/settings", label: l.settings, active: pathname.startsWith("/app/settings") },
+            ]
+          : [
+              { href: "/app", label: l.dashboard, active: pathname === "/app" },
+              { href: "/app/practice", label: l.speaking, active: pathname.startsWith("/app/practice") },
+              { href: "/app/writing", label: l.writing, active: pathname.startsWith("/app/writing") },
+              { href: "/app/review", label: l.review, active: pathname.startsWith("/app/review") },
+            ];
+
   const accountItems =
     dashboardRole === "school"
       ? [
@@ -74,8 +133,7 @@ export function AppHeader() {
   return (
     <header className={`app-header${scrolled ? " is-scrolled" : ""}`}>
       <div className="app-header-inner">
-        {/* Logo → /app */}
-        <Link href="/app" className="app-header-logo" aria-label="SpeakAce dashboard">
+        <Link href={logoHref} className="app-header-logo" aria-label="SpeakAce dashboard">
           <div className="app-header-logo-mark" aria-hidden="true">
             <span>SA</span>
           </div>
@@ -90,29 +148,19 @@ export function AppHeader() {
           />
         </Link>
 
-        {/* Desktop role breadcrumb */}
         <nav className="app-header-nav desktop-nav" aria-label="App navigation">
-          {dashboardRole === "teacher" && (
+          {desktopNavItems.map((item) => (
             <Link
-              href="/app/teacher"
-              className={`app-header-nav-link${pathname.startsWith("/app/teacher") ? " is-active" : ""}`}
+              key={item.href}
+              href={item.href}
+              className={`app-header-nav-link${item.active ? " is-active" : ""}`}
             >
-              {tr ? "Sınıf" : "Teaching"}
+              {item.label}
             </Link>
-          )}
-          {dashboardRole === "school" && (
-            <Link
-              href="/app/institution-admin"
-              className={`app-header-nav-link${pathname.startsWith("/app/institution-admin") ? " is-active" : ""}`}
-            >
-              {tr ? "Kurum" : "Admin"}
-            </Link>
-          )}
+          ))}
         </nav>
 
-        {/* Actions */}
         <div className="app-header-actions">
-          {/* Theme toggle — desktop only */}
           <button
             type="button"
             className="app-header-icon-btn desktop-nav"
@@ -123,8 +171,7 @@ export function AppHeader() {
             {isDark ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
           </button>
 
-          {/* Account dropdown */}
-          {signedIn && (
+          {signedIn ? (
             <div ref={accountRef} className="app-header-account">
               <button
                 type="button"
@@ -159,12 +206,27 @@ export function AppHeader() {
                     type="button"
                     role="menuitem"
                     className="app-header-dropdown-item app-header-dropdown-signout"
-                    onClick={() => { setAccountOpen(false); void signOut(); }}
+                    onClick={() => {
+                      setAccountOpen(false);
+                      void signOut().then(() => {
+                        router.push("/");
+                        router.refresh();
+                      });
+                    }}
                   >
                     {l.signOut}
                   </button>
                 </div>
               )}
+            </div>
+          ) : (
+            <div className="app-header-auth desktop-nav">
+              <Link href="/auth" className="button button-secondary">
+                {l.signIn}
+              </Link>
+              <Link href="/pricing" className="button button-primary">
+                {l.signUp}
+              </Link>
             </div>
           )}
         </div>
