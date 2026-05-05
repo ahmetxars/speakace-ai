@@ -1257,7 +1257,7 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
 
 function TeacherStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card teacher-stat-card" style={{ padding: "0.75rem" }}>
+    <div className="teacher-stat-card" style={{ padding: "0.75rem" }}>
       <div style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "0.2rem" }}>{label}</div>
       <strong>{value}</strong>
     </div>

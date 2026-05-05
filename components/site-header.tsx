@@ -535,6 +535,8 @@ export function SiteHeader() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [activeGroup]);
 
+  if (pathname.startsWith("/app") || pathname.startsWith("/admin")) return null;
+
   const isActive = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
 
   return (

@@ -4327,6 +4327,7 @@ body[data-theme="dark"] .auth-showcase {
 
 .teacher-stat-card {
   background: color-mix(in srgb, var(--surface-strong) 60%, var(--surface) 40%);
+  border-radius: 0.65rem;
 }
 
 /* Stat card value emphasis */
@@ -6647,7 +6648,7 @@ body[data-theme="dark"] .practice-empty-state {
   background: rgba(27, 18, 13, 0.58);
   display: grid;
   place-items: center;
-  z-index: 50;
+  z-index: 100;
   padding: 1rem;
 }
 
