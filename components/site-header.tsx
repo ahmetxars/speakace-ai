@@ -475,6 +475,7 @@ export function SiteHeader() {
   const [localeOpen, setLocaleOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const hideHeader = pathname.startsWith("/app") || pathname.startsWith("/admin") || pathname.startsWith("/maintenance");
 
   const localeRef = useRef<HTMLDivElement>(null);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -536,6 +537,10 @@ export function SiteHeader() {
   }, [activeGroup]);
 
   const isActive = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+
+  if (hideHeader) {
+    return null;
+  }
 
   return (
     <header
