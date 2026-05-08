@@ -514,6 +514,20 @@ export interface AdminOverview {
   ctaClicks30d: number;
   checkoutClicks7d: number;
   checkoutClicks30d: number;
+  pricingViews7d: number;
+  pricingViews30d: number;
+  pricingPlusClicks7d: number;
+  pricingPlusClicks30d: number;
+  practiceLimitHits7d: number;
+  practiceLimitHits30d: number;
+  upgradePromptViews7d: number;
+  upgradePromptViews30d: number;
+  checkoutInitiated7d: number;
+  checkoutInitiated30d: number;
+  checkoutCompleted7d: number;
+  checkoutCompleted30d: number;
+  billingSuccessSeen7d: number;
+  billingSuccessSeen30d: number;
   interviewStarts7d: number;
   interviewStarts30d: number;
   interviewFollowUps7d: number;
@@ -583,6 +597,12 @@ export interface AdminOverview {
     clickToSignupRate: number;
     clickToPaidRate: number;
   }>;
+  topCheckoutSources: Array<{
+    path: string;
+    initiated: number;
+    completed: number;
+    completionRate: number;
+  }>;
   winnerCta7d: {
     path: string;
     clicks: number;
@@ -603,6 +623,28 @@ export interface AdminOverview {
     checkoutClicks: number;
     paidCount: number;
   }>;
+  monetizationFunnel7d: {
+    pricingViews: number;
+    practiceLimitHits: number;
+    upgradePromptViews: number;
+    checkoutInitiated: number;
+    checkoutCompleted: number;
+    billingSuccessSeen: number;
+    pricingViewToCheckoutRate: number;
+    limitHitToCheckoutRate: number;
+    checkoutToCompletionRate: number;
+  };
+  monetizationFunnel30d: {
+    pricingViews: number;
+    practiceLimitHits: number;
+    upgradePromptViews: number;
+    checkoutInitiated: number;
+    checkoutCompleted: number;
+    billingSuccessSeen: number;
+    pricingViewToCheckoutRate: number;
+    limitHitToCheckoutRate: number;
+    checkoutToCompletionRate: number;
+  };
   funnel7d: {
     ctaClicks: number;
     signupCount: number;

@@ -765,6 +765,22 @@ export function AdminPanel(props: {
                 ))}
               </div>
 
+              <div className="adm-stats-row adm-stats-sm" style={{ marginBottom: "0.5rem" }}>
+                {[
+                  { label: "Pricing views (7d)", value: props.overview.pricingViews7d },
+                  { label: "Pricing Plus clicks (7d)", value: props.overview.pricingPlusClicks7d },
+                  { label: "Limit hits (7d)", value: props.overview.practiceLimitHits7d },
+                  { label: "Upgrade prompts (7d)", value: props.overview.upgradePromptViews7d },
+                  { label: "Checkout initiated (7d)", value: props.overview.checkoutInitiated7d },
+                  { label: "Checkout completed (7d)", value: props.overview.checkoutCompleted7d }
+                ].map(({ label, value }) => (
+                  <div key={label} className="adm-mini-stat">
+                    <strong>{value}</strong>
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+
               {/* Conversion Funnel + CTA Trend side-by-side */}
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
@@ -827,6 +843,75 @@ export function AdminPanel(props: {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="adm-grid-2">
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>First-Payment Funnel</h3>
+                    <p>Shows where self-serve monetization is breaking between pricing, paywall, checkout, and success.</p>
+                  </div>
+                  <div className="adm-overview-list">
+                    {[
+                      {
+                        label: "Pricing view → checkout",
+                        v7: props.overview.monetizationFunnel7d.pricingViewToCheckoutRate,
+                        v30: props.overview.monetizationFunnel30d.pricingViewToCheckoutRate
+                      },
+                      {
+                        label: "Limit hit → checkout",
+                        v7: props.overview.monetizationFunnel7d.limitHitToCheckoutRate,
+                        v30: props.overview.monetizationFunnel30d.limitHitToCheckoutRate
+                      },
+                      {
+                        label: "Checkout → completion",
+                        v7: props.overview.monetizationFunnel7d.checkoutToCompletionRate,
+                        v30: props.overview.monetizationFunnel30d.checkoutToCompletionRate
+                      }
+                    ].map((item) => (
+                      <div key={item.label} className="adm-overview-item">
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
+                          <span>{item.label}</span>
+                          <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30d: {formatPercent(item.v30)}</span>
+                        </div>
+                        <strong style={{ fontSize: "1.1rem" }}>{formatPercent(item.v7)}</strong>
+                      </div>
+                    ))}
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.billingSuccessSeen7d}</strong>
+                      <span>Billing success screens seen in the last 7 days</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="adm-panel-card">
+                  <div className="adm-panel-card-head">
+                    <h3>Top Checkout Sources</h3>
+                    <p>Best-performing `checkout_initiated` paths over the last 30 days.</p>
+                  </div>
+                  <div className="adm-stack-list">
+                    {props.overview.topCheckoutSources.length === 0 ? (
+                      <p className="adm-muted">No first-payment checkout sources recorded yet.</p>
+                    ) : (
+                      props.overview.topCheckoutSources.map((item) => (
+                        <div key={item.path} className="adm-list-row" style={{ alignItems: "stretch" }}>
+                          <div style={{ flex: 1, display: "grid", gap: "0.3rem" }}>
+                            <div className="adm-table-name">{formatCtaLabel(item.path)}</div>
+                            <div className="adm-table-email">{item.path}</div>
+                            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                              <StatusBadge label={`${item.initiated} initiated`} />
+                              <StatusBadge label={`${item.completed} completed`} tone="success" />
+                            </div>
+                          </div>
+                          <div className="adm-list-side" style={{ alignItems: "flex-end" }}>
+                            <strong>{formatPercent(item.completionRate)}</strong>
+                            <span className="adm-table-muted" style={{ fontSize: "0.75rem" }}>complete rate</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>

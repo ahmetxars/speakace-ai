@@ -100,7 +100,7 @@ This is the project-wide “where things live” map.
 - `app/globals.css`
   - global design system, dark mode, shared namespaces
 - `middleware.ts`
-  - HTTPS enforcement and maintenance mode
+  - HTTPS enforcement, `www` to apex host canonicalization, and maintenance mode
 
 ### Public marketing product
 
@@ -213,6 +213,7 @@ This is the project-wide “where things live” map.
 
 - UI:
   - `app/app/billing/page.tsx`
+  - `app/app/billing/success/page.tsx`
 - API:
   - `app/api/account/plan/route.ts`
   - `app/api/payments/lemon/**`
@@ -220,11 +221,14 @@ This is the project-wide “where things live” map.
   - `lib/server/lemon.ts`
   - `lib/store.ts`
   - `lib/commerce.ts`
+  - `app/api/account/plan/route.ts` is also the signed-in billing-state sync endpoint used by client refresh flows.
 
 ### Analytics product
 
 - Client:
   - `components/providers.tsx`
+  - `components/pricing-cards.tsx`
+  - `components/practice-console.tsx`
   - `lib/analytics-client.ts`
 - API and persistence:
   - `app/api/analytics/**`
@@ -232,6 +236,7 @@ This is the project-wide “where things live” map.
 - External tracking:
   - `instrumentation-client.ts`
   - `lib/posthog-server.ts`
+  - first-payment funnel events include `pricing_view`, `pricing_plus_click`, `practice_limit_hit`, `upgrade_prompt_view`, `checkout_initiated`, `checkout_completed`, and `billing_success_seen`
 
 ### Email and lifecycle product
 
@@ -894,9 +899,9 @@ They are useful context, but not always the freshest source of truth.
 - `README.md` mentions Stripe as a next step, but current active payment routes are Lemon Squeezy-based.
 - `.env.example` includes both Stripe and Lemon variables.
 - `DEPLOYMENT.md` and `docs/backend-and-deploy.md` are partly outdated relative to the current route tree.
-- `components/providers.tsx` calls `POST /api/account/plan`, but `app/api/account/plan/route.ts` currently exposes `GET` in the inspected portion.
 - `components/practice-console.tsx` references speaking upload/evaluate endpoints that were not found under `app/api/speaking/session/**`.
 - `components/writing-console.tsx` references submit/evaluate endpoints that were not found under `app/api/writing/session/**`.
+- Custom domain behavior is split between repo code and Vercel project settings; `www.speakace.org` issues should be checked in both `middleware.ts` and the Vercel Domains dashboard.
 
 These should be treated as real project risks before making changes to those flows.
 

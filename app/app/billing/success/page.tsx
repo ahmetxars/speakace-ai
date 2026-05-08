@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAppState } from "@/components/providers";
+import { trackClientEvent } from "@/lib/analytics-client";
 
 type PlanCheckResponse = {
-  plan?: "free" | "plus" | "pro";
+  plan?: "free" | "plus" | "pro" | "lifetime";
   billingStatus?: string;
 };
 
@@ -13,15 +14,33 @@ type CheckoutAttribution = {
   ctaPath?: string | null;
   ctaEvent?: string | null;
   campaign?: string | null;
-  plan?: string | null;
+  plan?: "plus" | "pro" | "lifetime" | null;
+  billing?: "weekly" | "annual" | null;
 };
 
+const PLAN_PURCHASE_META = {
+  plus: {
+    weekly: { value: 3.99, itemId: "plus_weekly", itemName: "SpeakAce Plus - Weekly" },
+    annual: { value: 49, itemId: "plus_annual", itemName: "SpeakAce Plus - Annual" }
+  },
+  pro: {
+    weekly: { value: 12, itemId: "pro_monthly", itemName: "SpeakAce Pro - Monthly" },
+    annual: { value: 99, itemId: "pro_annual", itemName: "SpeakAce Pro - Annual" }
+  },
+  lifetime: {
+    weekly: { value: 149, itemId: "lifetime", itemName: "SpeakAce Lifetime" },
+    annual: { value: 149, itemId: "lifetime", itemName: "SpeakAce Lifetime" }
+  }
+} as const;
+
 export default function BillingSuccessPage() {
-  const { language, refreshSession } = useAppState();
+  const { language, refreshSession, currentUser } = useAppState();
   const tr = language === "tr";
   const [status, setStatus] = useState<"checking" | "active" | "pending">("checking");
   const [plan, setPlan] = useState<string>("free");
   const [attribution, setAttribution] = useState<CheckoutAttribution | null>(null);
+  const hasTrackedPurchaseRef = useRef(false);
+  const hasTrackedAnalyticsRef = useRef(false);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -51,23 +70,9 @@ export default function BillingSuccessPage() {
         const data = (await response.json()) as PlanCheckResponse;
         if (cancelled) return;
         setPlan(data.plan ?? "free");
-        if (data.plan === "plus" || data.plan === "pro") {
+        if (data.plan === "plus" || data.plan === "pro" || data.plan === "lifetime") {
           await refreshSession();
           setStatus("active");
-          // Fire GA4 purchase event
-          if (typeof window !== 'undefined' && (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag) {
-            (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'purchase', {
-              transaction_id: Date.now().toString(),
-              value: 3.99,
-              currency: 'USD',
-              items: [{
-                item_id: 'plus_weekly',
-                item_name: 'SpeakAce Plus - Weekly',
-                price: 3.99,
-                quantity: 1
-              }]
-            });
-          }
           return;
         }
       } catch {
@@ -89,6 +94,58 @@ export default function BillingSuccessPage() {
     };
   }, [refreshSession]);
 
+  useEffect(() => {
+    if (status !== "active") {
+      return;
+    }
+
+    if (currentUser?.id && !hasTrackedAnalyticsRef.current) {
+      hasTrackedAnalyticsRef.current = true;
+      void trackClientEvent({
+        userId: currentUser.id,
+        event: "checkout_completed",
+        path: attribution?.ctaPath ?? "/app/billing/success"
+      });
+      void trackClientEvent({
+        userId: currentUser.id,
+        event: "billing_success_seen",
+        path: "/app/billing/success"
+      });
+    }
+
+    if (hasTrackedPurchaseRef.current) {
+      return;
+    }
+
+    hasTrackedPurchaseRef.current = true;
+
+    const trackedPlan = attribution?.plan === "pro" || attribution?.plan === "lifetime" ? attribution.plan : "plus";
+    const trackedBilling = attribution?.billing === "annual" ? "annual" : "weekly";
+    const purchaseMeta = PLAN_PURCHASE_META[trackedPlan][trackedBilling];
+
+    if (typeof window !== "undefined" && typeof window.gtag === "function") {
+      window.gtag("event", "purchase", {
+        transaction_id: Date.now().toString(),
+        value: purchaseMeta.value,
+        currency: "USD",
+        items: [
+          {
+            item_id: purchaseMeta.itemId,
+            item_name: purchaseMeta.itemName,
+            price: purchaseMeta.value,
+            quantity: 1
+          }
+        ]
+      });
+    }
+  }, [attribution?.billing, attribution?.ctaPath, attribution?.plan, currentUser?.id, status]);
+
+  const activePlanLabel = plan === "lifetime"
+    ? "Lifetime"
+    : plan === "pro"
+      ? "Pro"
+      : "Plus";
+
   return (
     <main className="page-shell section">
       <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
@@ -96,8 +153,8 @@ export default function BillingSuccessPage() {
         <h1 style={{ margin: 0 }}>
           {status === "active"
             ? tr
-              ? "Plus plani aktif"
-              : "Plus is active"
+              ? `${activePlanLabel} plani aktif`
+              : `${activePlanLabel} is active`
             : tr
               ? "Odeme dogrulaniyor"
               : "Checking your payment"}
@@ -105,8 +162,8 @@ export default function BillingSuccessPage() {
         <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
           {status === "active"
             ? tr
-              ? "Odemen hesabina baglandi. Daha yuksek speaking limiti ve genisletilmis geri bildirim artik acik."
-              : "Your payment is linked to this account. Higher limits and expanded feedback are now unlocked."
+              ? "Odemen hesabina baglandi. Yukseltilmis geri bildirim ve daha guclu practice akisi artik acik."
+              : "Your payment is linked to this account. Upgraded feedback and the stronger practice flow are now unlocked."
             : tr
               ? "Webhook ve plan gecisi birkac saniye surebilir. Bu sayfa planini otomatik kontrol ediyor."
               : "Webhook processing can take a few seconds. This page is checking your plan automatically."}

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
 import { syncBillingStateForMember } from "@/lib/store";
 
-export async function GET() {
+async function syncPlanResponse() {
   const cookieStore = await cookies();
   const token = cookieStore.get(getSessionCookieName())?.value;
   const profile = await getAuthenticatedUser(token);
@@ -21,3 +21,10 @@ export async function GET() {
   });
 }
 
+export async function GET() {
+  return syncPlanResponse();
+}
+
+export async function POST() {
+  return syncPlanResponse();
+}

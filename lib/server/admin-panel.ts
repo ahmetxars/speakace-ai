@@ -280,6 +280,20 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       ctaClicks30d: 0,
       checkoutClicks7d: 0,
       checkoutClicks30d: 0,
+      pricingViews7d: 0,
+      pricingViews30d: 0,
+      pricingPlusClicks7d: 0,
+      pricingPlusClicks30d: 0,
+      practiceLimitHits7d: 0,
+      practiceLimitHits30d: 0,
+      upgradePromptViews7d: 0,
+      upgradePromptViews30d: 0,
+      checkoutInitiated7d: 0,
+      checkoutInitiated30d: 0,
+      checkoutCompleted7d: 0,
+      checkoutCompleted30d: 0,
+      billingSuccessSeen7d: 0,
+      billingSuccessSeen30d: 0,
       interviewStarts7d: 0,
       interviewStarts30d: 0,
       interviewFollowUps7d: 0,
@@ -312,9 +326,32 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       writingPdfExports30d: 0,
       topCtas: [],
       bestPerformingCtas: [],
+      topCheckoutSources: [],
       winnerCta7d: null,
       topCtaPages: [],
       ctaTrend14d: [],
+      monetizationFunnel7d: {
+        pricingViews: 0,
+        practiceLimitHits: 0,
+        upgradePromptViews: 0,
+        checkoutInitiated: 0,
+        checkoutCompleted: 0,
+        billingSuccessSeen: 0,
+        pricingViewToCheckoutRate: 0,
+        limitHitToCheckoutRate: 0,
+        checkoutToCompletionRate: 0
+      },
+      monetizationFunnel30d: {
+        pricingViews: 0,
+        practiceLimitHits: 0,
+        upgradePromptViews: 0,
+        checkoutInitiated: 0,
+        checkoutCompleted: 0,
+        billingSuccessSeen: 0,
+        pricingViewToCheckoutRate: 0,
+        limitHitToCheckoutRate: 0,
+        checkoutToCompletionRate: 0
+      },
       funnel7d: {
         ctaClicks: 0,
         signupCount: 0,
@@ -360,6 +397,20 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       cta_clicks_30d: number;
       checkout_clicks_7d: number;
       checkout_clicks_30d: number;
+      pricing_views_7d: number;
+      pricing_views_30d: number;
+      pricing_plus_clicks_7d: number;
+      pricing_plus_clicks_30d: number;
+      practice_limit_hits_7d: number;
+      practice_limit_hits_30d: number;
+      upgrade_prompt_views_7d: number;
+      upgrade_prompt_views_30d: number;
+      checkout_initiated_7d: number;
+      checkout_initiated_30d: number;
+      checkout_completed_7d: number;
+      checkout_completed_30d: number;
+      billing_success_seen_7d: number;
+      billing_success_seen_30d: number;
       interview_starts_7d: number;
       interview_starts_30d: number;
       interview_followups_7d: number;
@@ -449,6 +500,90 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         where event = 'checkout_cta_click'
           and created_at > now() - interval '30 days'
       ) as checkout_clicks_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'pricing_view'
+          and created_at > now() - interval '7 days'
+      ) as pricing_views_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'pricing_view'
+          and created_at > now() - interval '30 days'
+      ) as pricing_views_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'pricing_plus_click'
+          and created_at > now() - interval '7 days'
+      ) as pricing_plus_clicks_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'pricing_plus_click'
+          and created_at > now() - interval '30 days'
+      ) as pricing_plus_clicks_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'practice_limit_hit'
+          and created_at > now() - interval '7 days'
+      ) as practice_limit_hits_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'practice_limit_hit'
+          and created_at > now() - interval '30 days'
+      ) as practice_limit_hits_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'upgrade_prompt_view'
+          and created_at > now() - interval '7 days'
+      ) as upgrade_prompt_views_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'upgrade_prompt_view'
+          and created_at > now() - interval '30 days'
+      ) as upgrade_prompt_views_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'checkout_initiated'
+          and created_at > now() - interval '7 days'
+      ) as checkout_initiated_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'checkout_initiated'
+          and created_at > now() - interval '30 days'
+      ) as checkout_initiated_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'checkout_completed'
+          and created_at > now() - interval '7 days'
+      ) as checkout_completed_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'checkout_completed'
+          and created_at > now() - interval '30 days'
+      ) as checkout_completed_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'billing_success_seen'
+          and created_at > now() - interval '7 days'
+      ) as billing_success_seen_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'billing_success_seen'
+          and created_at > now() - interval '30 days'
+      ) as billing_success_seen_30d,
       (
         select count(*)::int
         from recent_analytics
@@ -863,6 +998,39 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     limit 8
   `;
 
+  const topCheckoutSourceRows = await sql<
+    Array<{
+      path: string | null;
+      initiated: number;
+      completed: number;
+    }>
+  >`
+    with initiated as (
+      select path, count(*)::int as initiated
+      from analytics_events
+      where event = 'checkout_initiated'
+        and path is not null
+        and created_at > now() - interval '30 days'
+      group by path
+    ),
+    completed as (
+      select path, count(*)::int as completed
+      from analytics_events
+      where event = 'checkout_completed'
+        and path is not null
+        and created_at > now() - interval '30 days'
+      group by path
+    )
+    select
+      coalesce(initiated.path, completed.path) as path,
+      coalesce(initiated.initiated, 0)::int as initiated,
+      coalesce(completed.completed, 0)::int as completed
+    from initiated
+    full outer join completed on completed.path = initiated.path
+    order by initiated desc, completed desc, path asc nulls last
+    limit 8
+  `;
+
   const [winnerCtaRow] = await sql<
     Array<{
       path: string | null;
@@ -1040,6 +1208,26 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     clickToPaidRate: input.ctaClicks ? Number(((input.paidCount / input.ctaClicks) * 100).toFixed(1)) : 0
   });
 
+  const buildMonetizationFunnel = (input: {
+    pricingViews: number;
+    practiceLimitHits: number;
+    upgradePromptViews: number;
+    checkoutInitiated: number;
+    checkoutCompleted: number;
+    billingSuccessSeen: number;
+  }) => ({
+    ...input,
+    pricingViewToCheckoutRate: input.pricingViews
+      ? Number(((input.checkoutInitiated / input.pricingViews) * 100).toFixed(1))
+      : 0,
+    limitHitToCheckoutRate: input.practiceLimitHits
+      ? Number(((input.checkoutInitiated / input.practiceLimitHits) * 100).toFixed(1))
+      : 0,
+    checkoutToCompletionRate: input.checkoutInitiated
+      ? Number(((input.checkoutCompleted / input.checkoutInitiated) * 100).toFixed(1))
+      : 0
+  });
+
   return {
     totalUsers: row?.total_users ?? 0,
     totalStudents: row?.total_students ?? 0,
@@ -1059,6 +1247,20 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     ctaClicks30d: row?.cta_clicks_30d ?? 0,
     checkoutClicks7d: row?.checkout_clicks_7d ?? 0,
     checkoutClicks30d: row?.checkout_clicks_30d ?? 0,
+    pricingViews7d: row?.pricing_views_7d ?? 0,
+    pricingViews30d: row?.pricing_views_30d ?? 0,
+    pricingPlusClicks7d: row?.pricing_plus_clicks_7d ?? 0,
+    pricingPlusClicks30d: row?.pricing_plus_clicks_30d ?? 0,
+    practiceLimitHits7d: row?.practice_limit_hits_7d ?? 0,
+    practiceLimitHits30d: row?.practice_limit_hits_30d ?? 0,
+    upgradePromptViews7d: row?.upgrade_prompt_views_7d ?? 0,
+    upgradePromptViews30d: row?.upgrade_prompt_views_30d ?? 0,
+    checkoutInitiated7d: row?.checkout_initiated_7d ?? 0,
+    checkoutInitiated30d: row?.checkout_initiated_30d ?? 0,
+    checkoutCompleted7d: row?.checkout_completed_7d ?? 0,
+    checkoutCompleted30d: row?.checkout_completed_30d ?? 0,
+    billingSuccessSeen7d: row?.billing_success_seen_7d ?? 0,
+    billingSuccessSeen30d: row?.billing_success_seen_30d ?? 0,
     interviewStarts7d: row?.interview_starts_7d ?? 0,
     interviewStarts30d: row?.interview_starts_30d ?? 0,
     interviewFollowUps7d: row?.interview_followups_7d ?? 0,
@@ -1128,6 +1330,12 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       clickToSignupRate: item.clicks ? Number(((item.signups / item.clicks) * 100).toFixed(1)) : 0,
       clickToPaidRate: item.clicks ? Number(((item.paid_count / item.clicks) * 100).toFixed(1)) : 0
     })),
+    topCheckoutSources: topCheckoutSourceRows.map((item) => ({
+      path: item.path ?? "Unknown source",
+      initiated: item.initiated,
+      completed: item.completed,
+      completionRate: item.initiated ? Number(((item.completed / item.initiated) * 100).toFixed(1)) : 0
+    })),
     winnerCta7d: winnerCtaRow
       ? {
           path: winnerCtaRow.path ?? "Unknown CTA",
@@ -1150,6 +1358,22 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       checkoutClicks: item.checkout_clicks,
       paidCount: item.paid_count
     })),
+    monetizationFunnel7d: buildMonetizationFunnel({
+      pricingViews: row?.pricing_views_7d ?? 0,
+      practiceLimitHits: row?.practice_limit_hits_7d ?? 0,
+      upgradePromptViews: row?.upgrade_prompt_views_7d ?? 0,
+      checkoutInitiated: row?.checkout_initiated_7d ?? 0,
+      checkoutCompleted: row?.checkout_completed_7d ?? 0,
+      billingSuccessSeen: row?.billing_success_seen_7d ?? 0
+    }),
+    monetizationFunnel30d: buildMonetizationFunnel({
+      pricingViews: row?.pricing_views_30d ?? 0,
+      practiceLimitHits: row?.practice_limit_hits_30d ?? 0,
+      upgradePromptViews: row?.upgrade_prompt_views_30d ?? 0,
+      checkoutInitiated: row?.checkout_initiated_30d ?? 0,
+      checkoutCompleted: row?.checkout_completed_30d ?? 0,
+      billingSuccessSeen: row?.billing_success_seen_30d ?? 0
+    }),
     funnel7d: buildFunnel({
       ctaClicks: funnelRow?.cta_clicks_7d ?? 0,
       signupCount: funnelRow?.signup_count_7d ?? 0,

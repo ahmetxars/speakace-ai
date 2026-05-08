@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
+import { TrackedLink } from "@/components/tracked-link";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
 import { resolveDashboardRole } from "@/lib/roles";
@@ -75,7 +76,7 @@ export default function BillingPage() {
         <span className="eyebrow">{tr ? "Ödeme" : "Billing"}</span>
         <h1 style={{ margin: 0 }}>{tr ? "SpeakAce Plus veya Pro ile daha fazla speaking pratiği aç" : "Unlock more speaking practice with SpeakAce Plus or Pro"}</h1>
         <p style={{ color: "var(--muted)", maxWidth: 720 }}>
-          {tr ? "Ücretli planı satın alan kullanıcılar daha yüksek günlük speaking limiti, daha derin AI geri bildirimi ve daha güçlü ilerleme takibi alır." : "Paid users unlock more daily speaking volume, deeper AI feedback, and stronger progress tracking."}
+          {tr ? "Ücretli plan, sadece daha fazla limit değil; ayni gun daha fazla speaking denemesi, daha derin AI geri bildirimi ve daha hizli retry dongusu aciyor." : "A paid plan does more than raise limits. It unlocks same-day retries, deeper AI feedback, and a faster improvement loop."}
         </p>
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
           <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
@@ -84,11 +85,11 @@ export default function BillingPage() {
           </div>
           <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
             <strong>{commerceConfig.plusPlanName} · {commerceConfig.plusMonthlyPrice}/week</strong>
-            <p>{tr ? "Haftalık planda günde 18 oturum, 35 dakika speaking süresi, daha ayrıntılı puan dökümü ve ilerleme takibi." : "Weekly plan with 18 daily sessions, 35 speaking minutes, score breakdowns, and stronger progress support."}</p>
+            <p>{tr ? "Ilk upgrade icin en net teklif: bugun devam et, daha fazla speaking yap, ayni prompt'u geri bildirimle tekrar dene." : "The clearest first upgrade: continue today, practice more, and retry the same prompt with stronger feedback."}</p>
           </div>
           <div className="card" style={{ padding: "1rem", background: "rgba(201,162,39,0.08)", border: "1px solid rgba(201,162,39,0.3)" }}>
             <strong style={{ color: "#b38600" }}>{commerceConfig.proPlanName} · {commerceConfig.proMonthlyPrice}/month</strong>
-            <p>{tr ? "Günde 40 oturum, 90 dakika speaking süresi, öncelikli destek ve gelişmiş analitik." : "40 daily sessions, 90 speaking minutes, priority support, and advanced analytics."}</p>
+            <p>{tr ? "Daha agir kullanim veya uzun sureli rutin icin ikincil secenek." : "Secondary option for heavier usage or a longer-term routine."}</p>
           </div>
         </div>
         <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.6)" }}>
@@ -106,9 +107,12 @@ export default function BillingPage() {
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
           {currentUser?.plan === "free" ? (
             <>
-              <a
+              <TrackedLink
                 className="button button-primary"
                 href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_buy_plus" })}
+                userId={currentUser?.id}
+                analyticsEvent="checkout_initiated"
+                analyticsPath="/app/billing/plus"
                 onClick={() => {
                   posthog.capture("checkout_initiated", { plan: "plus", current_plan: currentUser?.plan, campaign: "billing_buy_plus" });
                   if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
@@ -120,8 +124,8 @@ export default function BillingPage() {
                   }
                 }}
               >
-                {tr ? "Plus planını satın al" : "Buy Plus"}
-              </a>
+                {tr ? "Tam geri bildirimi ac" : "Unlock full feedback"}
+              </TrackedLink>
               <a
                 className="button button-primary"
                 href={buildPlanCheckoutPath({ plan: "pro", campaign: "billing_buy_pro" })}
@@ -180,8 +184,8 @@ export default function BillingPage() {
         </div>
         <p style={{ color: "var(--muted)" }}>
           {tr
-            ? `Şu anki planın: ${currentUser?.plan ?? "free"}. Checkout ve webhook akışı artık aynı hesabı kullanarak planı otomatik yükseltmek için hazır.`
-            : `Current plan: ${currentUser?.plan ?? "free"}. The checkout and webhook flow is now wired to upgrade the same account automatically.`}
+            ? `Su anki planin: ${currentUser?.plan ?? "free"}. Checkout ayni hesaba baglanir; odeme sonrasi planini success ekranindan otomatik dogrulayabilirsin.`
+            : `Current plan: ${currentUser?.plan ?? "free"}. Checkout stays on the same account, and the billing success screen can verify the upgrade automatically.`}
         </p>
         <div className="marketing-grid">
           {planOutcome.map((item) => (
@@ -197,17 +201,11 @@ export default function BillingPage() {
         </div>
 
         {currentUser?.plan === "free" ? (
-          <div className="marketing-grid">
-            {Object.values(couponCatalog).map((coupon) => (
-              <article key={coupon.code} className="card feature-card">
-                <span className="pill">{tr ? "Kupon" : "Coupon"}</span>
-                <h3>{coupon.code}</h3>
-                <p>{coupon.description}</p>
-                <a className="button button-secondary" href={buildPlanCheckoutPath({ plan: "plus", coupon: coupon.code, campaign: "billing_coupon" })}>
-                  {tr ? "Bu kuponla aç" : `Use ${coupon.code}`}
-                </a>
-              </article>
-            ))}
+          <div className="card" style={{ padding: "1rem", background: "rgba(255, 248, 242, 0.9)", border: "1px solid rgba(217, 93, 57, 0.16)" }}>
+            <strong style={{ display: "block", marginBottom: "0.45rem" }}>{tr ? "Ilk checkout notu" : "First checkout note"}</strong>
+            <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
+              {tr ? `Kararsizsan ${couponCatalog.LAUNCH20.code} kuponunu kullan. Asil amac indirim degil, ilk odemeyi risksiz hissettirmek.` : `If you need a softer first step, use ${couponCatalog.LAUNCH20.code}. The point is not the discount alone, but making the first upgrade feel low-risk.`}
+            </p>
           </div>
         ) : null}
       </div>

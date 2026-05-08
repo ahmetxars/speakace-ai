@@ -1,17 +1,71 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import posthog from "posthog-js";
+import { TrackedLink } from "@/components/tracked-link";
+import { useAppState } from "@/components/providers";
+import { trackClientEvent } from "@/lib/analytics-client";
 import { buildPlanCheckoutPath, commerceConfig, couponCatalog } from "@/lib/commerce";
+
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
 
 export function PricingCards() {
   const [billing, setBilling] = useState<"weekly" | "annual">("weekly");
+  const { currentUser } = useAppState();
   const isAnnual = billing === "annual";
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      void trackClientEvent({
+        userId: currentUser.id,
+        event: "pricing_view",
+        path: "/pricing"
+      });
+    }
+    posthog.capture("pricing_view", { page: "/pricing" });
+  }, [currentUser?.id]);
+
+  const trackPlusIntent = () => {
+    if (currentUser?.id) {
+      void trackClientEvent({
+        userId: currentUser.id,
+        event: "pricing_plus_click",
+        path: `/pricing/plus/${billing}`
+      });
+    }
+
+    posthog.capture("pricing_plus_click", {
+      billing,
+      plan: "plus"
+    });
+  };
+
+  const fireCheckoutGa = () => {
+    if (typeof window === "undefined" || typeof window.gtag !== "function") return;
+
+    window.gtag("event", "begin_checkout", {
+      currency: "USD",
+      value: isAnnual ? 49 : 3.99,
+      coupon: couponCatalog.LAUNCH20.code,
+      items: [
+        {
+          item_id: isAnnual ? "plus_annual" : "plus_weekly",
+          item_name: isAnnual ? "SpeakAce Plus - Annual" : "SpeakAce Plus - Weekly",
+          price: isAnnual ? 49 : 3.99,
+          quantity: 1
+        }
+      ]
+    });
+  };
 
   return (
     <div style={{ display: "grid", gap: "1.2rem" }}>
-      {/* Billing toggle */}
-      <div style={{ display: "flex", justifyContent: "center", gap: "0" }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 0 }}>
         <div
           className="card"
           style={{
@@ -58,7 +112,7 @@ export function PricingCards() {
             }}
           >
             Annual
-            {!isAnnual && (
+            {!isAnnual ? (
               <span
                 style={{
                   background: "rgba(47,125,75,0.14)",
@@ -71,32 +125,32 @@ export function PricingCards() {
               >
                 Save 30%
               </span>
-            )}
+            ) : null}
           </button>
         </div>
       </div>
 
-      {/* Pricing cards */}
-      <div className="marketing-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
-        {/* Free */}
+      <div className="marketing-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
         <article className="card pricing-card">
           <h3>Free</h3>
           <div className="price-tag">$0</div>
+          <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
+            See your score before you pay.
+          </div>
           <ul>
             <li>4 daily speaking sessions</li>
             <li>8 daily speaking minutes</li>
-            <li>Starter score view and limited feedback</li>
-            <li>Writing Task 2 preview access</li>
+            <li>Starter score view and transcript preview</li>
+            <li>Enough to test the workflow before upgrading</li>
           </ul>
-          <a className="button button-secondary" href="/auth">
-            Start Speaking Now
-          </a>
+          <Link className="button button-secondary" href="/auth">
+            Start free
+          </Link>
         </article>
 
-        {/* Plus */}
         <article className="card pricing-card" data-featured="true">
           <div className="pill" style={{ marginBottom: "0.8rem", width: "fit-content" }}>
-            Most Popular
+            Best first upgrade
           </div>
           <h3>{commerceConfig.plusPlanName}</h3>
           <div className="price-tag">
@@ -123,146 +177,72 @@ export function PricingCards() {
             {isAnnual ? `${commerceConfig.plusAnnualPrice}/year = ~$4/month` : "$3.99/week = ~$16/month"}
           </div>
           <ul>
-            <li>18 daily sessions</li>
-            <li>35 daily speaking minutes</li>
-            <li>Full feedback after each speaking attempt</li>
-            <li>IELTS Writing Task 2 scoring and corrected version</li>
-            <li>Expanded IELTS-style score insight</li>
-            <li>Unlimited-feeling retry and improvement workflow</li>
-            <li>Built for serious exam score growth</li>
+            <li>Keep practicing the same day instead of waiting for tomorrow</li>
+            <li>Full feedback after every speaking attempt</li>
+            <li>18 daily sessions and 35 speaking minutes</li>
+            <li>Writing Task 2 scoring with corrected version</li>
+            <li>Built for faster IELTS score improvement without private-lesson pricing</li>
           </ul>
-          <a
+          <TrackedLink
             className="button button-primary"
             href={buildPlanCheckoutPath({
               plan: "plus",
               billing,
               coupon: couponCatalog.LAUNCH20.code,
-              campaign: "pricing_hero"
+              campaign: "pricing_primary"
             })}
-            onClick={() => posthog.capture("pricing_plan_selected", { plan: "plus", billing })}
+            userId={currentUser?.id}
+            analyticsEvent="checkout_initiated"
+            analyticsPath={`/pricing/plus/${billing}`}
+            onClick={() => {
+              trackPlusIntent();
+              fireCheckoutGa();
+            }}
           >
             Unlock full feedback
-          </a>
-          <div className="practice-meta">Try coupon: {couponCatalog.LAUNCH20.code}</div>
-          <div className="practice-meta">Cancel anytime. No questions.</div>
+          </TrackedLink>
+          <div className="practice-meta">Launch offer: use {couponCatalog.LAUNCH20.code} for your first checkout.</div>
+          <div className="practice-meta">Cancel anytime. Keep the same account after upgrade.</div>
         </article>
+      </div>
 
-        {/* Pro */}
-        <article
-          className="card pricing-card"
-          style={{
-            border: "2px solid #c9a227",
-            background: "linear-gradient(135deg, rgba(201,162,39,0.07) 0%, var(--surface) 100%)"
-          }}
-        >
-          <div
-            className="pill"
-            style={{
-              marginBottom: "0.8rem",
-              width: "fit-content",
-              background: "rgba(201,162,39,0.18)",
-              color: "#b38600",
-              border: "1px solid rgba(201,162,39,0.4)"
-            }}
-          >
-            Best Value
-          </div>
-          <h3>{commerceConfig.proPlanName}</h3>
-          <div className="price-tag" style={{ color: "#b38600" }}>
-            {isAnnual ? (
-              <>
-                <span
-                  style={{
-                    textDecoration: "line-through",
-                    color: "var(--muted)",
-                    fontSize: "0.85em",
-                    fontWeight: 400,
-                    marginRight: "0.4rem"
-                  }}
-                >
-                  {commerceConfig.proMonthlyPrice}/mo
-                </span>
-                {commerceConfig.proAnnualPrice}/yr
-              </>
-            ) : (
-              <>{commerceConfig.proMonthlyPrice}/month</>
-            )}
-          </div>
-          <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
-            {isAnnual
-              ? `${commerceConfig.proAnnualPrice}/year = ~$8/month`
-              : "$12/month = $2.99/week"}
-          </div>
-          <ul>
-            <li>40 daily sessions</li>
-            <li>90 daily speaking minutes</li>
-            <li>All Plus features included</li>
-            <li>Speaking + Writing in one account</li>
-            <li>Priority support</li>
-            <li>Advanced analytics &amp; score trends</li>
-            <li>Maximum practice volume for fast progress</li>
-          </ul>
+      <div
+        className="card"
+        style={{
+          padding: "1rem 1.1rem",
+          display: "grid",
+          gap: "0.85rem",
+          background: "linear-gradient(135deg, rgba(201,162,39,0.05) 0%, var(--surface) 100%)"
+        }}
+      >
+        <div>
+          <strong style={{ display: "block", marginBottom: "0.35rem" }}>Need more than Plus?</strong>
+          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65 }}>
+            Advanced plans stay available if you want heavier usage or a long-term commitment, but most first-time buyers should start with Plus.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
           <a
-            className="button button-primary"
-            href={buildPlanCheckoutPath({
-              plan: "pro",
-              billing,
-              campaign: "pricing_hero_pro"
-            })}
-            style={{ background: "#c9a227", borderColor: "#c9a227" }}
-            onClick={() => posthog.capture("pricing_plan_selected", { plan: "pro", billing })}
-          >
-            Get Pro
-          </a>
-          <div className="practice-meta">Cancel anytime. No questions.</div>
-        </article>
-
-        {/* Lifetime */}
-        <article
-          className="card pricing-card"
-          style={{
-            border: "2px solid oklch(0.71 0.18 165.41)",
-            background: "linear-gradient(135deg, oklch(0.71 0.18 165.41 / 0.07) 0%, var(--surface) 100%)"
-          }}
-        >
-          <div
-            className="pill"
-            style={{
-              marginBottom: "0.8rem",
-              width: "fit-content",
-              background: "oklch(0.71 0.18 165.41 / 0.15)",
-              color: "oklch(0.45 0.18 165.41)",
-              border: "1px solid oklch(0.71 0.18 165.41 / 0.4)"
+            className="button button-secondary"
+            href={buildPlanCheckoutPath({ plan: "pro", billing, campaign: "pricing_advanced_pro" })}
+            onClick={() => {
+              posthog.capture("checkout_initiated", { plan: "pro", billing, source: "pricing_advanced_pro" });
             }}
+            style={{ borderColor: "#c9a227", color: "#b38600" }}
           >
-            ⚡ One-time
-          </div>
-          <h3>{commerceConfig.lifetimePlanName}</h3>
-          <div className="price-tag" style={{ color: "oklch(0.45 0.18 165.41)" }}>
-            {commerceConfig.lifetimePrice}
-            <span style={{ fontSize: "0.5em", fontWeight: 400, color: "var(--muted)", marginLeft: "0.3rem" }}>once</span>
-          </div>
-          <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
-            Pay once, use forever. No subscriptions.
-          </div>
-          <ul>
-            <li>Everything in Pro, forever</li>
-            <li>40 daily sessions</li>
-            <li>90 daily speaking minutes</li>
-            <li>All future feature updates included</li>
-            <li>Priority support, lifetime</li>
-            <li>Best deal for serious learners</li>
-          </ul>
-          <a
-            className="button button-primary"
-            href={buildPlanCheckoutPath({ plan: "lifetime", campaign: "pricing_hero_lifetime" })}
-            style={{ background: "oklch(0.55 0.18 165.41)", borderColor: "oklch(0.55 0.18 165.41)" }}
-            onClick={() => posthog.capture("pricing_plan_selected", { plan: "lifetime", billing: "one_time" })}
-          >
-            Get Lifetime Access
+            View Pro
           </a>
-          <div className="practice-meta">One payment. Lifetime access. No renewal.</div>
-        </article>
+          <a
+            className="button button-secondary"
+            href={buildPlanCheckoutPath({ plan: "lifetime", campaign: "pricing_advanced_lifetime" })}
+            onClick={() => {
+              posthog.capture("checkout_initiated", { plan: "lifetime", source: "pricing_advanced_lifetime" });
+            }}
+            style={{ borderColor: "oklch(0.55 0.18 165.41)", color: "oklch(0.45 0.18 165.41)" }}
+          >
+            View Lifetime
+          </a>
+        </div>
       </div>
     </div>
   );

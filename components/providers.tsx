@@ -33,6 +33,20 @@ export function Providers({ children }: { children: ReactNode }) {
   const [signedIn, setSignedInState] = useState(false);
   const [currentUser, setCurrentUser] = useState<MemberProfile | null>(null);
 
+  const fetchCurrentProfile = useCallback(async () => {
+    const syncedPlanResponse = await fetch("/api/account/plan", { cache: "no-store" });
+    if (syncedPlanResponse.ok) {
+      const syncedPlanData = (await syncedPlanResponse.json()) as { profile: MemberProfile | null };
+      if (syncedPlanData.profile) {
+        return syncedPlanData.profile;
+      }
+    }
+
+    const sessionResponse = await fetch("/api/auth/session", { cache: "no-store" });
+    const sessionData = (await sessionResponse.json()) as { profile: MemberProfile | null };
+    return sessionData.profile;
+  }, []);
+
   const setLanguage = (nextLanguage: Language) => {
     setLanguageState(nextLanguage);
     window.localStorage.setItem("speakace-language", nextLanguage);
@@ -51,13 +65,12 @@ export function Providers({ children }: { children: ReactNode }) {
   };
 
   const initializeUser = useCallback(async (storedUser: string | null) => {
-    const sessionResponse = await fetch("/api/auth/session");
-    const sessionData = (await sessionResponse.json()) as { profile: MemberProfile | null };
+    const profile = await fetchCurrentProfile();
 
-    if (sessionData.profile) {
-      setCurrentUser(sessionData.profile);
+    if (profile) {
+      setCurrentUser(profile);
       setSignedInState(true);
-      window.localStorage.setItem("speakace-user", JSON.stringify(sessionData.profile));
+      window.localStorage.setItem("speakace-user", JSON.stringify(profile));
       return;
     }
 
@@ -74,7 +87,7 @@ export function Providers({ children }: { children: ReactNode }) {
     setCurrentUser(guest);
     setSignedInState(false);
     window.localStorage.setItem("speakace-user", JSON.stringify(guest));
-  }, []);
+  }, [fetchCurrentProfile]);
 
   useEffect(() => {
     if (!currentUser?.id || !pathname) return;
@@ -134,13 +147,12 @@ export function Providers({ children }: { children: ReactNode }) {
   };
 
   const refreshSession = async () => {
-    const sessionResponse = await fetch("/api/auth/session");
-    const sessionData = (await sessionResponse.json()) as { profile: MemberProfile | null };
+    const profile = await fetchCurrentProfile();
 
-    if (sessionData.profile) {
-      setCurrentUser(sessionData.profile);
+    if (profile) {
+      setCurrentUser(profile);
       setSignedInState(true);
-      window.localStorage.setItem("speakace-user", JSON.stringify(sessionData.profile));
+      window.localStorage.setItem("speakace-user", JSON.stringify(profile));
       return;
     }
 

@@ -6,6 +6,7 @@ import { ArrowRight, BookOpenCheck, CheckCircle2, Flame, LayoutGrid, Mic, PenSqu
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppState } from "@/components/providers";
+import { TrackedLink } from "@/components/tracked-link";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
 import { resolveDashboardRole } from "@/lib/roles";
@@ -866,12 +867,15 @@ export function Dashboard() {
               <strong>{tr ? "Gunluk limiti kaldir" : "Remove the daily cap"}</strong>
               <p>{tr ? "Plus: 35 dk/gun, 18 session, daha guclu feedback." : "Plus: 35 min/day, 18 sessions, deeper feedback."}</p>
               <div className="dashboard-inline-actions">
-                <a
+                <TrackedLink
                   className="button button-primary"
-                  href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "dashboard_upgrade" })}
+                  href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "dashboard_secondary" })}
+                  userId={currentUser?.id}
+                  analyticsEvent="checkout_initiated"
+                  analyticsPath="/app/dashboard/upgrade"
                 >
                   {tr ? "Plus'a gec" : "Upgrade to Plus"}
-                </a>
+                </TrackedLink>
                 <Link className="button button-secondary" href="/pricing">
                   {tr ? "Planlar" : "Plans"}
                 </Link>

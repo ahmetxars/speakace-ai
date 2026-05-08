@@ -41,7 +41,8 @@ export async function GET(request: Request) {
         ctaPath: ctaPath ?? null,
         ctaEvent: ctaEvent ?? null,
         campaign: campaign ?? null,
-        plan
+        plan,
+        billing
       }),
       {
         httpOnly: false,

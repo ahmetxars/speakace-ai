@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
+import { TrackedLink } from "@/components/tracked-link";
 import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
 import { Difficulty, ExamType, ProgressSummary, SpeakingSession, TaskType } from "@/lib/types";
 import posthog from "posthog-js";
@@ -79,6 +80,7 @@ type PromptBookmark = {
 type DrillGoal = "balanced" | "fluency" | "pronunciation" | "topicDevelopment";
 type AnswerMode = "safe" | "natural" | "bold";
 type WizardStep = 1 | 2 | 3;
+type UpgradePromptReason = "practice_limit_hit" | "result_retry_locked";
 
 const emptySummary: ProgressSummary = {
   totalSessions: 0,
@@ -121,6 +123,11 @@ export function PracticeConsole() {
   const [wizardStep, setWizardStep] = useState<WizardStep>(1);
   const [topicSearch, setTopicSearch] = useState("");
   const [showAllTopics, setShowAllTopics] = useState(false);
+  const [upgradePrompt, setUpgradePrompt] = useState<{
+    reason: UpgradePromptReason;
+    title: string;
+    body: string;
+  } | null>(null);
 
   const sessionRef = useRef<SpeakingSession | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -192,6 +199,23 @@ export function PracticeConsole() {
     setRetryQueue(readRetryQueue());
     setBookmarks(readBookmarks());
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!upgradePrompt || !currentUser?.id) {
+      return;
+    }
+
+    void trackClientEvent({
+      userId: currentUser.id,
+      event: "upgrade_prompt_view",
+      path: `/app/practice/${upgradePrompt.reason}`
+    });
+
+    posthog.capture("upgrade_prompt_view", {
+      source: upgradePrompt.reason,
+      plan: currentUser.plan
+    });
+  }, [currentUser?.id, currentUser?.plan, upgradePrompt]);
 
   const progressLabel = useMemo(() => {
     if (!session) {
@@ -540,6 +564,7 @@ export function PracticeConsole() {
     };
   }) => {
     setError(null);
+    setUpgradePrompt(null);
 
     const resolvedExamType = overrides?.examType ?? examType;
     const resolvedTaskType = overrides?.taskType ?? taskType;
@@ -608,6 +633,47 @@ export function PracticeConsole() {
 
     const data = (await readJsonSafely(response)) as { error?: string; session?: SpeakingSession };
     if (!response.ok) {
+      if (response.status === 403 && currentUser?.plan === "free") {
+        const reason: UpgradePromptReason = mode === "done" ? "result_retry_locked" : "practice_limit_hit";
+        const minutesLimited = (data.error ?? "").toLowerCase().includes("minute");
+        const title =
+          reason === "result_retry_locked"
+            ? tr
+              ? "Ayni prompt'u bugun devam ettirmek icin Plus ac"
+              : "Unlock Plus to continue this prompt today"
+            : tr
+              ? "Bugunku ucretsiz speaking hakkini kullandin"
+              : "You used today's free speaking limit";
+        const body =
+          reason === "result_retry_locked"
+            ? tr
+              ? "Skorunu gordun. Simdi ayni prompt'u tekrar deneyip daha iyi bir cevap uretmek icin beklemek yerine bugun devam edebilirsin."
+              : "You already saw your score. Unlock Plus to retry the same prompt now instead of waiting for tomorrow."
+            : minutesLimited
+              ? tr
+                ? "Bugunku speaking dakikan doldu. Plus ile daha fazla speaking suresi, tam geri bildirim ve daha hizli retry dongusu acilir."
+                : "You hit today's speaking-minute cap. Plus unlocks more speaking time, full feedback, and a faster retry loop."
+              : tr
+                ? "Bugunku session limiti doldu. Yarini beklemek yerine bugun devam etmek icin Plus ac."
+                : "You hit today's session cap. Unlock Plus to continue today instead of waiting for tomorrow.";
+        setUpgradePrompt({ reason, title, body });
+        if (currentUser.id) {
+          void trackClientEvent({
+            userId: currentUser.id,
+            event: "practice_limit_hit",
+            path: `/app/practice/${reason}`
+          });
+        }
+        posthog.capture("practice_limit_hit", {
+          source: reason,
+          limit_type: minutesLimited ? "minutes" : "sessions",
+          plan: currentUser.plan
+        });
+        void fetch("/api/progress/summary", { cache: "no-store" })
+          .then((summaryResponse) => summaryResponse.json())
+          .then((nextSummary: ProgressSummary) => setSummary(nextSummary))
+          .catch(() => undefined);
+      }
       setError(data.error ?? (tr ? "Session olusturulamadi." : "Could not create session."));
       setStatus(tr ? "Planini guncelle veya tekrar dene." : "Update your plan or try again.");
       return;
@@ -891,22 +957,6 @@ export function PracticeConsole() {
 
   return (
     <div className="page-shell section">
-
-      {currentUser?.plan === "free" && summary.totalSessions > 0 ? (
-        <div style={{ maxWidth: 700, margin: "0 auto 1rem", padding: "0.7rem 1rem", borderRadius: 10, border: "1px solid var(--border)", background: "var(--card)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "0.88rem", color: "var(--muted-foreground)" }}>
-            {tr ? "Plus ile tam geri bildirim ve sınırsız deneme." : "Unlock full feedback and unlimited sessions with Plus."}
-          </span>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <a className="button button-primary" href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "practice_banner" })} style={{ padding: "0.4rem 0.9rem", fontSize: "0.85rem" }}>
-              {tr ? "Plus'i aç" : "Unlock Plus"}
-            </a>
-            <Link className="button button-secondary" href="/pricing" style={{ padding: "0.4rem 0.9rem", fontSize: "0.85rem" }}>
-              {tr ? "Planlar" : "Plans"}
-            </Link>
-          </div>
-        </div>
-      ) : null}
 
       <div style={{ maxWidth: 700, margin: "0 auto", display: "grid", gap: "2rem" }}>
 
@@ -1331,6 +1381,62 @@ export function PracticeConsole() {
                   <div style={{ fontWeight: 800, fontSize: "1rem", alignSelf: "center" }}>{entry.score ?? "-"}</div>
                 </div>
               ))}
+            </div>
+          </div>
+        ) : null}
+
+        {upgradePrompt ? (
+          <div
+            style={{
+              padding: "1.15rem",
+              borderRadius: 14,
+              border: "1px solid rgba(29, 111, 117, 0.18)",
+              background: "rgba(29, 111, 117, 0.08)",
+              display: "grid",
+              gap: "0.85rem"
+            }}
+          >
+            <div>
+              <span className="eyebrow">{tr ? "Continue today" : "Continue today"}</span>
+              <strong style={{ display: "block", marginTop: "0.35rem", fontSize: "1.05rem" }}>{upgradePrompt.title}</strong>
+              <p style={{ margin: "0.5rem 0 0", color: "var(--muted-foreground)", lineHeight: 1.7 }}>
+                {upgradePrompt.body}
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <TrackedLink
+                className="button button-primary"
+                href={buildPlanCheckoutPath({
+                  coupon: couponCatalog.LAUNCH20.code,
+                  campaign: upgradePrompt.reason
+                })}
+                userId={currentUser?.id}
+                analyticsEvent="checkout_initiated"
+                analyticsPath={`/app/practice/${upgradePrompt.reason}`}
+                onClick={() => {
+                  posthog.capture("checkout_initiated", {
+                    plan: "plus",
+                    source: upgradePrompt.reason,
+                    current_plan: currentUser?.plan
+                  });
+                  if (typeof window !== "undefined" && typeof window.gtag === "function") {
+                    window.gtag("event", "begin_checkout", {
+                      currency: "USD",
+                      value: 3.99,
+                      coupon: couponCatalog.LAUNCH20.code,
+                      items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: 3.99, quantity: 1 }]
+                    });
+                  }
+                }}
+              >
+                {tr ? "Tam geri bildirimi ac" : "Unlock full feedback"}
+              </TrackedLink>
+              <Link className="button button-secondary" href="/pricing">
+                {tr ? "Planlari gor" : "View plans"}
+              </Link>
+            </div>
+            <div className="practice-meta">
+              {tr ? "Launch teklifi: ilk checkout icin LAUNCH20 kuponunu kullanabilirsin." : "Launch note: you can use LAUNCH20 on your first checkout."}
             </div>
           </div>
         ) : null}

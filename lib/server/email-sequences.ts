@@ -239,17 +239,17 @@ function buildEmail4(name: string) {
     <h1 style="margin:0 0 8px;font-size:1.45em;color:#1b120d;font-weight:800">One week in — you're already ahead.</h1>
     <p style="margin:0 0 24px;color:#7a5c4a;font-size:0.9em">Most people quit before day 7. You didn't.</p>
 
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, a week of consistent practice is real momentum. If you're targeting Band 7 or higher, here's what SpeakAce Plus adds to your daily routine:</p>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, a week of consistent practice is real momentum. If you want to keep improving the same day instead of stopping at the free cap, here's what SpeakAce Plus adds:</p>
 
     <div style="margin:0 0 28px">
+      ${checkItem("<strong>Keep practicing today</strong> — do not stop when the free daily cap ends")}
       ${checkItem("<strong>35 minutes of daily speaking</strong> — vs 8 minutes on the free plan")}
-      ${checkItem("<strong>18 practice sessions per day</strong> — more variety, more reps, faster gains")}
-      ${checkItem("<strong>Deeper AI feedback</strong> — detailed analysis with stronger improvement suggestions")}
+      ${checkItem("<strong>Deeper AI feedback</strong> — better correction and stronger retry suggestions")}
       ${checkItem("<strong>Full score history</strong> — track your band score arc over weeks and months")}
     </div>
 
     <div style="margin:28px 0;display:flex;gap:12px;flex-wrap:wrap">
-      ${primaryBtn(CHECKOUT_URL, "Upgrade to Plus &rarr;")}
+      ${primaryBtn(CHECKOUT_URL, "Unlock full feedback &rarr;")}
       &nbsp;&nbsp;
       ${secondaryBtn(PRACTICE_URL, "Keep practicing free")}
     </div>
@@ -257,7 +257,7 @@ function buildEmail4(name: string) {
     <p style="margin:20px 0 0;color:#9a7060;font-size:0.85em;line-height:1.7">Either way — every session brings you closer to your target score. Keep going.</p>
   `);
   return {
-    subject: "You've been practicing for a week — here's what's next",
+    subject: "Keep practicing today, not tomorrow",
     html,
     text: `Hi ${greeting}, one week of practice! Upgrade to Plus for more daily volume: ${CHECKOUT_URL} — or keep going free: ${PRACTICE_URL}`
   };
@@ -267,7 +267,7 @@ function buildEmail5(name: string) {
   const greeting = name.trim() || "there";
   const html = layout(`
     <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 10</p>
-    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">The one habit that separates Band 6 from Band 7+</h1>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">The fastest way to turn practice into score movement</h1>
 
     <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, we looked at the data. The result is clear:</p>
 
@@ -278,17 +278,17 @@ function buildEmail5(name: string) {
     ${quote("I went from Band 6 to Band 7.5 in six weeks. I practiced on SpeakAce every morning before work — just 15 minutes.", "SpeakAce user, Almaty, Kazakhstan")}
     ${quote("The transcript feature showed me I was overusing 'basically'. Fixing that one word improved my lexical score.", "SpeakAce user, Jakarta, Indonesia")}
 
-    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">You're already showing up. SpeakAce Plus gives you the daily volume and detail to convert that effort into a higher band score.</p>
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">You're already showing up. SpeakAce Plus gives you the daily volume, full feedback, and retry loop that turns that effort into a higher band score.</p>
 
     <div style="margin:0 0 8px">
-      ${primaryBtn(CHECKOUT_URL, "Upgrade to Plus — $3.99/week &rarr;")}
+      ${primaryBtn(CHECKOUT_URL, "Continue today with Plus &rarr;")}
     </div>
     <p style="margin:12px 0 0;font-size:0.83em;color:#9a7060">
       <a href="${PRICING_URL}" style="color:#9a7060;text-decoration:underline">Compare all plans</a>
     </p>
   `);
   return {
-    subject: "The data on daily practice — and what it means for your score",
+    subject: "Why daily retries beat occasional long practice",
     html,
     text: `Hi ${greeting}, students who practice daily score 0.7 bands higher. Upgrade to Plus: ${CHECKOUT_URL}`
   };
@@ -306,10 +306,14 @@ function buildEmail6(name: string) {
 
     ${highlight("<strong>Today's challenge:</strong> Answer just one Part 1 question. It takes under 60 seconds. That's all — one question, one attempt, and you're back in the habit.")}
 
-    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">The candidates who reach Band 7+ aren't the ones who never miss a day — they're the ones who restart quickly when they do.</p>
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 20px">The candidates who reach Band 7+ aren't the ones who never miss a day — they're the ones who restart quickly when they do.</p>
 
-    <div style="margin:0 0 8px">
+    ${highlight("<strong>If you hit the free cap often:</strong> Plus keeps the same account and unlocks more same-day attempts, fuller correction, and a stronger retry loop.")}
+
+    <div style="margin:0 0 8px;display:flex;gap:12px;flex-wrap:wrap">
       ${primaryBtn(PRACTICE_URL, "Take the 60-second challenge &rarr;")}
+      &nbsp;&nbsp;
+      ${secondaryBtn(CHECKOUT_URL, "Unlock full feedback")}
     </div>
   `);
   return {

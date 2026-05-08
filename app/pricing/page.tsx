@@ -351,16 +351,16 @@ export default async function PricingPage() {
         <div className="marketing-grid">
           {[
             {
-              title: "Band score confidence without private lesson pricing",
-              body: "I liked seeing the score estimate first and then unlocking full feedback only when I wanted deeper review."
+              title: "See the score first, pay only when you want more reps",
+              body: "The free plan lets learners verify the scoring workflow before they decide to unlock the stronger daily practice loop."
             },
             {
-              title: "A simpler weekly plan for daily speaking practice",
-              body: "The weekly price feels easier to try than a larger upfront monthly commitment, especially for test preparation."
+              title: "One clear first upgrade instead of too many plan decisions",
+              body: "Plus is the plan for learners who want to keep practicing the same day, with deeper feedback and more retries."
             },
             {
-              title: "Useful if you want feedback between real lessons",
-              body: "The transcript plus retry loop gives enough structure to keep speaking active even outside tutoring sessions."
+              title: "Cheaper than relying only on private tutoring",
+              body: "SpeakAce works best when you need scored speaking practice between lessons and do not want each retry to cost tutor money."
             }
           ].map((item) => (
             <article key={item.title} className="card testimonial-card">
@@ -410,7 +410,7 @@ export default async function PricingPage() {
         <div className="stats-strip">
           <div className="card stat-strip-card">
             <div className="practice-meta">{copy.launchOffer}</div>
-            <strong>{couponCatalog.LAUNCH20.code}</strong>
+            <strong>{couponCatalog.LAUNCH20.code} for first checkout</strong>
           </div>
           <div className="card stat-strip-card">
             <div className="practice-meta">{copy.bestFor}</div>
@@ -496,29 +496,11 @@ export default async function PricingPage() {
 
         <PricingCards />
 
-        <div className="marketing-grid">
-          {Object.values(couponCatalog).map((coupon) => (
-            <article key={coupon.code} className="card feature-card">
-              <div className="pill" style={{ marginBottom: "0.8rem" }}>Launch coupon</div>
-              <h3>{coupon.label}</h3>
-              <p>{coupon.description}</p>
-              <TrackedLink
-                className="button button-secondary"
-                href={buildPlanCheckoutPath({ coupon: coupon.code, campaign: "pricing_coupon" })}
-                analyticsEvent="checkout_cta_click"
-                analyticsPath={`/pricing/coupon/${coupon.code}`}
-                gaEvent="begin_checkout"
-                gaParams={{
-                  currency: "USD",
-                  value: 3.99,
-                  coupon: coupon.code,
-                  items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: 3.99, quantity: 1 }]
-                }}
-              >
-                Use {coupon.code}
-              </TrackedLink>
-            </article>
-          ))}
+        <div className="card quick-pitch">
+          <h2 style={{ marginBottom: "0.6rem" }}>Why most first-time buyers should start with Plus</h2>
+          <p className="practice-copy">
+            Free is for validating the workflow. Plus is for the moment you want more daily speaking volume, deeper correction, and faster same-day retries without waiting for tomorrow.
+          </p>
         </div>
 
         <div className="marketing-grid">
@@ -547,24 +529,17 @@ export default async function PricingPage() {
         </div>
 
         <div className="card comparison-card">
-          <h2 style={{ marginBottom: "0.9rem" }}>Free vs Plus vs Pro</h2>
-          <div className="comparison-table" style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr" }}>
+          <h2 style={{ marginBottom: "0.9rem" }}>Free vs Plus</h2>
+          <div className="comparison-table" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
             <div className="comparison-head">Feature</div>
             <div className="comparison-head">Free</div>
             <div className="comparison-head">Plus</div>
-            <div className="comparison-head" style={{ color: "#b38600" }}>Pro</div>
             {comparison.map((item) => (
-              <>
+              <div key={item.label} style={{ display: "contents" }}>
                 <div key={`${item.label}-label`} className="comparison-cell comparison-label">{item.label}</div>
                 <div key={`${item.label}-free`} className="comparison-cell">{item.free}</div>
                 <div key={`${item.label}-plus`} className="comparison-cell">{item.plus}</div>
-                <div key={`${item.label}-pro`} className="comparison-cell" style={{ fontWeight: 600, color: "#b38600" }}>
-                  {item.label.toLowerCase().includes("session") ? "40" :
-                   item.label.toLowerCase().includes("minute") || item.label.toLowerCase().includes("speaking") ? "90 min" :
-                   item.label.toLowerCase().includes("feedback") ? "Advanced" :
-                   "Full + trends"}
-                </div>
-              </>
+              </div>
             ))}
           </div>
         </div>
@@ -613,7 +588,7 @@ export default async function PricingPage() {
             <TrackedLink
               className="button button-secondary"
               href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "pricing_bottom" })}
-              analyticsEvent="checkout_cta_click"
+              analyticsEvent="checkout_initiated"
               analyticsPath="/pricing/bottom/plus"
               gaEvent="begin_checkout"
               gaParams={{
@@ -623,22 +598,7 @@ export default async function PricingPage() {
                 items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: 3.99, quantity: 1 }]
               }}
             >
-              Buy Plus
-            </TrackedLink>
-            <TrackedLink
-              className="button button-secondary"
-              href={buildPlanCheckoutPath({ plan: "pro", campaign: "pricing_bottom_pro" })}
-              analyticsEvent="checkout_cta_click"
-              analyticsPath="/pricing/bottom/pro"
-              gaEvent="begin_checkout"
-              gaParams={{
-                currency: "USD",
-                value: 9.99,
-                items: [{ item_id: "pro_monthly", item_name: "SpeakAce Pro - Monthly", price: 9.99, quantity: 1 }]
-              }}
-              style={{ borderColor: "#c9a227", color: "#b38600" }}
-            >
-              Get Pro
+              Unlock full feedback
             </TrackedLink>
             <Link className="button button-secondary" href="/reviews">
               Read reviews

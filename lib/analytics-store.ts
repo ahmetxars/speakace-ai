@@ -2,7 +2,14 @@ import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 
 export type AnalyticsEventName =
   | "page_view"
+  | "pricing_view"
+  | "pricing_plus_click"
   | "practice_start"
+  | "practice_limit_hit"
+  | "upgrade_prompt_view"
+  | "checkout_initiated"
+  | "checkout_completed"
+  | "billing_success_seen"
   | "result_card_download"
   | "result_share_x"
   | "result_share_whatsapp"
