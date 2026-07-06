@@ -4,7 +4,7 @@ import { hasDatabaseUrl, getSql } from "@/lib/server/db";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
 const PRACTICE_URL = `${SITE_URL}/app/practice`;
 const PRICING_URL = `${SITE_URL}/pricing`;
-const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&campaign=onboarding_email`;
+const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&billing=annual&coupon=LAUNCH20&campaign=onboarding_email`;
 let emailSequenceSchemaEnsured = false;
 
 export const ONBOARDING_EMAIL_SCHEDULE: Array<{ dayOffset: number; emailNumber: number }> = [
@@ -366,12 +366,12 @@ function buildEmail8(name: string) {
       ${checkItem("Pick <strong>one weak area per week</strong> — fixing everything at once fixes nothing")}
     </div>
 
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 28px">On the free plan you get 4 sessions per day — enough for a solid daily habit. If you want more volume and deeper analysis, Plus is $3.99/week.</p>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 28px">On the free plan you get 4 sessions per day — enough for a solid daily habit. If you want more volume and deeper analysis, the strongest-value move is annual Plus at about $4.08/month with the launch code.</p>
 
     <div style="margin:0 0 8px;display:flex;gap:12px;flex-wrap:wrap">
       ${primaryBtn(PRACTICE_URL, "Practice today &rarr;")}
       &nbsp;&nbsp;
-      ${secondaryBtn(CHECKOUT_URL, "Upgrade to Plus")}
+      ${secondaryBtn(CHECKOUT_URL, "See annual Plus value")}
     </div>
   `);
   return {

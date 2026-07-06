@@ -19,6 +19,7 @@ import {
 import { useAppState } from "@/components/providers";
 import { motion } from "@/components/static-motion";
 import { TrackedLink } from "@/components/tracked-link";
+import { buildPlanCheckoutPath, commerceNumbers, couponCatalog, formatUsd, getAnnualMonthlyEquivalent } from "@/lib/commerce";
 import { buildFaqJsonLd, jsonLdToHtml } from "@/lib/structured-data";
 
 const MiniSpeakingDemo = dynamic(
@@ -457,6 +458,8 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
   const { language, currentUser } = useAppState();
   const t = sectionCopy[language === "tr" ? "tr" : "en"];
   const primaryHref = ctaHref as Route;
+  const annualHref = buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "homepage_annual" });
+  const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [activeDemo, setActiveDemo] = useState<(typeof t.demoTabs)[number]["id"]>(t.demoTabs[0].id);
   const selectedDemo = t.demoTabs.find((item) => item.id === activeDemo) ?? t.demoTabs[0];
@@ -607,8 +610,31 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                     color: "var(--foreground)"
                   }}
                 >
-                  {t.ctaMicrocopy}
+                  {t.ctaMicrocopy} · Plus annual {formatUsd(annualMonthlyEquivalent)}/month
                 </div>
+                <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                  <TrackedLink
+                    href={annualHref}
+                    userId={currentUser?.id}
+                    analyticsEvent="checkout_initiated"
+                    analyticsPath="/#hero-annual"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.75rem 1.2rem",
+                      fontSize: "0.9375rem",
+                      fontWeight: 700,
+                      color: "var(--foreground)",
+                      background: "color-mix(in oklch, var(--surface-strong) 45%, var(--card) 55%)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "10px",
+                      textDecoration: "none"
+                    }}
+                  >
+                    {language === "tr" ? "En iyi deger: Plus yillik" : "Best value: Plus annual"}
+                  </TrackedLink>
+                </motion.div>
                 <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
                   <TrackedLink
                     href="#how-it-works"
@@ -1551,32 +1577,57 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
           <p style={{ fontSize: "1.125rem", color: "oklch(1 0 0 / 0.8)", marginBottom: "2rem" }}>
             {t.ctaFinalBody}
           </p>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-            <TrackedLink
-              href={primaryHref}
-              userId={currentUser?.id}
-              analyticsEvent="marketing_cta_click"
-              analyticsPath="/#final-cta"
-              gaEvent="select_content"
-              gaParams={{ content_type: "cta", item_id: "final_cta_start_practice", destination: primaryHref }}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                padding: "0.875rem 2rem",
-                fontSize: "1rem",
-                fontWeight: 700,
-                color: "var(--primary)",
-                background: "white",
-                borderRadius: "12px",
-                textDecoration: "none",
-                boxShadow: "0 10px 40px oklch(0 0 0 / 0.25)"
-              }}
-            >
-              {t.ctaFinalButton}
-              <ArrowRight size={18} />
-            </TrackedLink>
-          </motion.div>
+          <div style={{ display: "flex", gap: "0.85rem", justifyContent: "center", flexWrap: "wrap" }}>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
+              <TrackedLink
+                href={primaryHref}
+                userId={currentUser?.id}
+                analyticsEvent="marketing_cta_click"
+                analyticsPath="/#final-cta"
+                gaEvent="select_content"
+                gaParams={{ content_type: "cta", item_id: "final_cta_start_practice", destination: primaryHref }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.875rem 2rem",
+                  fontSize: "1rem",
+                  fontWeight: 700,
+                  color: "var(--primary)",
+                  background: "white",
+                  borderRadius: "12px",
+                  textDecoration: "none",
+                  boxShadow: "0 10px 40px oklch(0 0 0 / 0.25)"
+                }}
+              >
+                {t.ctaFinalButton}
+                <ArrowRight size={18} />
+              </TrackedLink>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
+              <TrackedLink
+                href={annualHref}
+                userId={currentUser?.id}
+                analyticsEvent="checkout_initiated"
+                analyticsPath="/#final-annual"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  padding: "0.875rem 1.5rem",
+                  fontSize: "1rem",
+                  fontWeight: 700,
+                  color: "white",
+                  background: "transparent",
+                  borderRadius: "12px",
+                  textDecoration: "none",
+                  border: "1px solid oklch(1 0 0 / 0.32)"
+                }}
+              >
+                {language === "tr" ? `Plus yillik · ${formatUsd(annualMonthlyEquivalent)}/ay` : `Plus annual · ${formatUsd(annualMonthlyEquivalent)}/month`}
+              </TrackedLink>
+            </motion.div>
+          </div>
         </motion.div>
       </section>
 

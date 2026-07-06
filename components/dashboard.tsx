@@ -8,7 +8,13 @@ import { useRouter } from "next/navigation";
 import { useAppState } from "@/components/providers";
 import { TrackedLink } from "@/components/tracked-link";
 import { trackClientEvent } from "@/lib/analytics-client";
-import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
+import {
+  buildPlanCheckoutPath,
+  commerceNumbers,
+  couponCatalog,
+  formatUsd,
+  getAnnualMonthlyEquivalent
+} from "@/lib/commerce";
 import { resolveDashboardRole } from "@/lib/roles";
 import { AnnouncementItem, HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership, StudentProfile } from "@/lib/types";
 
@@ -54,6 +60,7 @@ export function Dashboard() {
   >([]);
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
 
   const dashboardRole = resolveDashboardRole(currentUser);
   const isSchoolMember = Boolean(signedIn && dashboardRole === "school");
@@ -864,17 +871,30 @@ export function Dashboard() {
           {shouldUpsellPlus ? (
             <section className="card db-upgrade-card">
               <span className="eyebrow">{tr ? "Upgrade" : "Upgrade"}</span>
-              <strong>{tr ? "Gunluk limiti kaldir" : "Remove the daily cap"}</strong>
-              <p>{tr ? "Plus: 35 dk/gun, 18 session, daha guclu feedback." : "Plus: 35 min/day, 18 sessions, deeper feedback."}</p>
+              <strong>{tr ? "Bugunku siniri kaldir ve ayni gun tekrar dene" : "Remove today's cap and retry the same day"}</strong>
+              <p>
+                {tr
+                  ? `Plus: 35 dk/gun, 18 session, daha guclu feedback. Yillik secenekte aylik maliyet ${formatUsd(plusAnnualMonthlyEquivalent)} seviyesine iner.`
+                  : `Plus: 35 min/day, 18 sessions, deeper feedback. On annual billing the monthly equivalent drops to about ${formatUsd(plusAnnualMonthlyEquivalent)}.`}
+              </p>
               <div className="dashboard-inline-actions">
                 <TrackedLink
                   className="button button-primary"
-                  href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "dashboard_secondary" })}
+                  href={buildPlanCheckoutPath({ billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "dashboard_annual" })}
                   userId={currentUser?.id}
                   analyticsEvent="checkout_initiated"
-                  analyticsPath="/app/dashboard/upgrade"
+                  analyticsPath="/app/dashboard/upgrade/annual"
                 >
-                  {tr ? "Plus'a gec" : "Upgrade to Plus"}
+                  {tr ? "En iyi deger: Plus yillik" : "Best value: Plus annual"}
+                </TrackedLink>
+                <TrackedLink
+                  className="button button-secondary"
+                  href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "dashboard_weekly" })}
+                  userId={currentUser?.id}
+                  analyticsEvent="checkout_initiated"
+                  analyticsPath="/app/dashboard/upgrade/weekly"
+                >
+                  {tr ? "Haftalik basla" : "Start weekly"}
                 </TrackedLink>
                 <Link className="button button-secondary" href="/pricing">
                   {tr ? "Planlar" : "Plans"}

@@ -43,6 +43,14 @@ export const commerceConfig = {
   launchOfferCopy: "Use LAUNCH20 for an early supporter discount."
 } as const;
 
+export const commerceNumbers = {
+  plusWeeklyPrice: 3.99,
+  plusAnnualPrice: 49,
+  proMonthlyPrice: 12,
+  proAnnualPrice: 99,
+  lifetimePrice: 149
+} as const;
+
 export const couponCatalog = {
   LAUNCH20: {
     code: "LAUNCH20",
@@ -55,6 +63,25 @@ export const couponCatalog = {
     description: "For visitors who want a smaller first step into Plus."
   }
 } as const;
+
+export function formatUsd(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: value % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2
+  }).format(value);
+}
+
+export function getAnnualMonthlyEquivalent(annualPrice: number) {
+  return Math.round((annualPrice / 12) * 100) / 100;
+}
+
+export function getAnnualSavingsPercentFromWeekly(weeklyPrice: number, annualPrice: number) {
+  const baseline = weeklyPrice * 52;
+  if (baseline <= 0) return 0;
+  return Math.max(0, Math.round((1 - annualPrice / baseline) * 100));
+}
 
 export function buildPlanCheckoutPath(input?: { plan?: "plus" | "pro" | "lifetime"; coupon?: string; campaign?: string; billing?: "weekly" | "annual" }) {
   const plan = input?.plan ?? "plus";

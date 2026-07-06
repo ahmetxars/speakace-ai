@@ -5,7 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
 import { TrackedLink } from "@/components/tracked-link";
-import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
+import {
+  buildPlanCheckoutPath,
+  commerceNumbers,
+  couponCatalog,
+  formatUsd,
+  getAnnualMonthlyEquivalent
+} from "@/lib/commerce";
 import { Difficulty, ExamType, ProgressSummary, SpeakingSession, TaskType } from "@/lib/types";
 import posthog from "posthog-js";
 import { trackClientEvent } from "@/lib/analytics-client";
@@ -128,6 +134,7 @@ export function PracticeConsole() {
     title: string;
     body: string;
   } | null>(null);
+  const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
 
   const sessionRef = useRef<SpeakingSession | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -1422,21 +1429,45 @@ export function PracticeConsole() {
                   if (typeof window !== "undefined" && typeof window.gtag === "function") {
                     window.gtag("event", "begin_checkout", {
                       currency: "USD",
-                      value: 3.99,
+                      value: commerceNumbers.plusWeeklyPrice,
                       coupon: couponCatalog.LAUNCH20.code,
-                      items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: 3.99, quantity: 1 }]
+                      items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: commerceNumbers.plusWeeklyPrice, quantity: 1 }]
                     });
                   }
                 }}
               >
                 {tr ? "Tam geri bildirimi ac" : "Unlock full feedback"}
               </TrackedLink>
+              <TrackedLink
+                className="button button-secondary"
+                href={buildPlanCheckoutPath({
+                  plan: "plus",
+                  billing: "annual",
+                  coupon: couponCatalog.LAUNCH20.code,
+                  campaign: `${upgradePrompt.reason}_annual`
+                })}
+                userId={currentUser?.id}
+                analyticsEvent="checkout_initiated"
+                analyticsPath={`/app/practice/${upgradePrompt.reason}/annual`}
+                onClick={() => {
+                  posthog.capture("checkout_initiated", {
+                    plan: "plus",
+                    billing: "annual",
+                    source: `${upgradePrompt.reason}_annual`,
+                    current_plan: currentUser?.plan
+                  });
+                }}
+              >
+                {tr ? "En iyi deger: yillik" : "Best value: annual"}
+              </TrackedLink>
               <Link className="button button-secondary" href="/pricing">
                 {tr ? "Planlari gor" : "View plans"}
               </Link>
             </div>
             <div className="practice-meta">
-              {tr ? "Launch teklifi: ilk checkout icin LAUNCH20 kuponunu kullanabilirsin." : "Launch note: you can use LAUNCH20 on your first checkout."}
+              {tr
+                ? `Launch teklifi: ilk checkout icin LAUNCH20 kullanabilirsin. Yillik planda aylik maliyet ${formatUsd(plusAnnualMonthlyEquivalent)} seviyesine iner.`
+                : `Launch note: you can use LAUNCH20 on your first checkout. On annual billing the monthly equivalent drops to about ${formatUsd(plusAnnualMonthlyEquivalent)}.`}
             </div>
           </div>
         ) : null}

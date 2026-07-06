@@ -6,7 +6,15 @@ import posthog from "posthog-js";
 import { TrackedLink } from "@/components/tracked-link";
 import { useAppState } from "@/components/providers";
 import { trackClientEvent } from "@/lib/analytics-client";
-import { buildPlanCheckoutPath, commerceConfig, couponCatalog } from "@/lib/commerce";
+import {
+  buildPlanCheckoutPath,
+  commerceConfig,
+  commerceNumbers,
+  couponCatalog,
+  formatUsd,
+  getAnnualMonthlyEquivalent,
+  getAnnualSavingsPercentFromWeekly
+} from "@/lib/commerce";
 
 declare global {
   interface Window {
@@ -18,6 +26,8 @@ export function PricingCards() {
   const [billing, setBilling] = useState<"weekly" | "annual">("weekly");
   const { currentUser } = useAppState();
   const isAnnual = billing === "annual";
+  const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
+  const annualSavings = getAnnualSavingsPercentFromWeekly(commerceNumbers.plusWeeklyPrice, commerceNumbers.plusAnnualPrice);
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -50,13 +60,13 @@ export function PricingCards() {
 
     window.gtag("event", "begin_checkout", {
       currency: "USD",
-      value: isAnnual ? 49 : 3.99,
+      value: isAnnual ? commerceNumbers.plusAnnualPrice : commerceNumbers.plusWeeklyPrice,
       coupon: couponCatalog.LAUNCH20.code,
       items: [
         {
           item_id: isAnnual ? "plus_annual" : "plus_weekly",
           item_name: isAnnual ? "SpeakAce Plus - Annual" : "SpeakAce Plus - Weekly",
-          price: isAnnual ? 49 : 3.99,
+          price: isAnnual ? commerceNumbers.plusAnnualPrice : commerceNumbers.plusWeeklyPrice,
           quantity: 1
         }
       ]
@@ -123,7 +133,7 @@ export function PricingCards() {
                   fontWeight: 700
                 }}
               >
-                Save 30%
+                Save {annualSavings}%
               </span>
             ) : null}
           </button>
@@ -150,7 +160,7 @@ export function PricingCards() {
 
         <article className="card pricing-card" data-featured="true">
           <div className="pill" style={{ marginBottom: "0.8rem", width: "fit-content" }}>
-            Best first upgrade
+            {isAnnual ? "Best value for serious prep" : "Best first upgrade"}
           </div>
           <h3>{commerceConfig.plusPlanName}</h3>
           <div className="price-tag">
@@ -174,7 +184,9 @@ export function PricingCards() {
             )}
           </div>
           <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
-            {isAnnual ? `${commerceConfig.plusAnnualPrice}/year = ~$4/month` : "$3.99/week = ~$16/month"}
+            {isAnnual
+              ? `${commerceConfig.plusAnnualPrice}/year = ${formatUsd(annualMonthlyEquivalent)}/month and ${annualSavings}% less than staying weekly`
+              : `${commerceConfig.plusMonthlyPrice}/week = ${formatUsd(commerceNumbers.plusWeeklyPrice * 4)}/month for a lower-friction first step`}
           </div>
           <ul>
             <li>Keep practicing the same day instead of waiting for tomorrow</li>
@@ -182,6 +194,7 @@ export function PricingCards() {
             <li>18 daily sessions and 35 speaking minutes</li>
             <li>Writing Task 2 scoring with corrected version</li>
             <li>Built for faster IELTS score improvement without private-lesson pricing</li>
+            {isAnnual ? <li>Best if your exam prep cycle will last more than a few weeks</li> : <li>Best if you want a lighter first purchase before committing longer-term</li>}
           </ul>
           <TrackedLink
             className="button button-primary"
@@ -199,10 +212,12 @@ export function PricingCards() {
               fireCheckoutGa();
             }}
           >
-            Unlock full feedback
+            {isAnnual ? "Get annual savings" : "Unlock full feedback"}
           </TrackedLink>
           <div className="practice-meta">Launch offer: use {couponCatalog.LAUNCH20.code} for your first checkout.</div>
-          <div className="practice-meta">Cancel anytime. Keep the same account after upgrade.</div>
+          <div className="practice-meta">
+            {isAnnual ? "Best for learners who already expect a full exam-prep cycle." : "Cancel anytime. Keep the same account after upgrade."}
+          </div>
         </article>
       </div>
 

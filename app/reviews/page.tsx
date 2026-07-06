@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdSenseUnit } from "@/components/adsense-unit";
+import { TrackedLink } from "@/components/tracked-link";
+import { buildPlanCheckoutPath, commerceNumbers, couponCatalog, formatUsd, getAnnualMonthlyEquivalent } from "@/lib/commerce";
 import { siteConfig } from "@/lib/site";
 
 const reviewGroups = [
@@ -74,6 +76,7 @@ export const metadata: Metadata = {
 };
 
 export default function ReviewsPage() {
+  const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
   const reviewJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -130,16 +133,20 @@ export default function ReviewsPage() {
             <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Try the same workflow on your own answers.</h2>
             <p className="practice-copy">
               Start with a free speaking session or unlock Plus to get more daily minutes, deeper
-              transcript review, and a cleaner improvement loop.
+              transcript review, and a cleaner improvement loop. The annual option brings the monthly
+              equivalent down to about {formatUsd(plusAnnualMonthlyEquivalent)}.
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
             <Link className="button button-secondary" href="/app/practice">
               Start free practice
             </Link>
-            <a className="button button-primary" href="/api/payments/lemon/checkout?plan=plus&coupon=LAUNCH20&campaign=reviews_page">
-              Unlock Plus
-            </a>
+            <TrackedLink className="button button-primary" href={buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "reviews_annual" })}>
+              Best value: Plus annual
+            </TrackedLink>
+            <TrackedLink className="button button-secondary" href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "reviews_weekly" })}>
+              Unlock Plus weekly
+            </TrackedLink>
           </div>
         </div>
 

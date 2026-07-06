@@ -4,7 +4,15 @@ import { CheckCircle2, Clock3, GraduationCap, School, TrendingUp } from "lucide-
 import { MarketingSchema } from "@/components/marketing-schema";
 import { PricingCards } from "@/components/pricing-cards";
 import { TrackedLink } from "@/components/tracked-link";
-import { buildPlanCheckoutPath, commerceConfig, couponCatalog, getPlanComparison } from "@/lib/commerce";
+import {
+  buildPlanCheckoutPath,
+  commerceConfig,
+  commerceNumbers,
+  couponCatalog,
+  formatUsd,
+  getAnnualMonthlyEquivalent,
+  getPlanComparison
+} from "@/lib/commerce";
 import type { Language } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
 import { buildFaqJsonLd, jsonLdToHtml } from "@/lib/structured-data";
@@ -320,6 +328,7 @@ export default async function PricingPage() {
   const language = await getServerLanguage();
   const copy = getPricingCopy(language);
   const comparison = getPlanComparison(language === "tr");
+  const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
   const faq = [
     {
       q: "How is Plus different from free?",
@@ -327,7 +336,7 @@ export default async function PricingPage() {
     },
     {
       q: "Is this a subscription?",
-      a: "Yes. SpeakAce Plus is a weekly plan built for learners who want more daily speaking practice and faster progress."
+      a: `Yes. You can start with weekly billing or choose the stronger-value annual option, which works out to about ${formatUsd(plusAnnualMonthlyEquivalent)} per month.`
     },
     {
       q: "Who should buy Plus?",
@@ -422,14 +431,14 @@ export default async function PricingPage() {
           </div>
           <div className="card stat-strip-card">
             <div className="practice-meta">{copy.price}</div>
-            <strong>{commerceConfig.plusMonthlyPrice}/week = ~$16/month</strong>
+            <strong>{commerceConfig.plusMonthlyPrice}/week or {commerceConfig.plusAnnualPrice}/year ({formatUsd(plusAnnualMonthlyEquivalent)}/month)</strong>
           </div>
         </div>
 
         <div className="card quick-pitch">
-          <h2 style={{ marginBottom: "0.6rem" }}>One private IELTS lesson = $30–80. SpeakAce Plus = $3.99/week.</h2>
+          <h2 style={{ marginBottom: "0.6rem" }}>One private IELTS lesson = $30–80. SpeakAce Plus annual = {commerceConfig.plusAnnualPrice}/year.</h2>
           <p className="practice-copy">
-            If you want more than one speaking attempt per week, a structured AI review loop is much cheaper than relying only on private tutoring.
+            If you want more than one speaking attempt per week, a structured AI review loop is much cheaper than relying only on private tutoring. Two private lessons can cost more than a full year of Plus.
           </p>
         </div>
 
@@ -495,6 +504,26 @@ export default async function PricingPage() {
         </div>
 
         <PricingCards />
+
+        <div className="card institution-cta">
+          <div>
+            <span className="eyebrow">Teacher and school revenue</span>
+            <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Selling to one student is good. Selling to one teacher cohort is better.</h2>
+            <p className="practice-copy">
+              SpeakAce already includes teacher and institution workflows. If a teacher brings 10 to 30
+              learners onto the platform, that usually outgrows individual sales much faster than waiting
+              for one-by-one upgrades.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <Link className="button button-primary" href="/for-schools">
+              Explore school plans
+            </Link>
+            <Link className="button button-secondary" href="/reviews">
+              See teacher proof
+            </Link>
+          </div>
+        </div>
 
         <div className="card quick-pitch">
           <h2 style={{ marginBottom: "0.6rem" }}>Why most first-time buyers should start with Plus</h2>
@@ -593,9 +622,9 @@ export default async function PricingPage() {
               gaEvent="begin_checkout"
               gaParams={{
                 currency: "USD",
-                value: 3.99,
+                value: commerceNumbers.plusWeeklyPrice,
                 coupon: couponCatalog.LAUNCH20.code,
-                items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: 3.99, quantity: 1 }]
+                items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: commerceNumbers.plusWeeklyPrice, quantity: 1 }]
               }}
             >
               Unlock full feedback

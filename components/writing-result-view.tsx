@@ -1,22 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import posthog from "posthog-js";
 import { useAppState } from "@/components/providers";
+import { TrackedLink } from "@/components/tracked-link";
 import { trackClientEvent } from "@/lib/analytics-client";
+import { buildPlanCheckoutPath, commerceNumbers, couponCatalog, formatUsd, getAnnualMonthlyEquivalent } from "@/lib/commerce";
 import { WritingSession, WritingSummary, WritingTaskType } from "@/lib/types";
 
 export function WritingResultView({ session, summary }: { session: WritingSession; summary: WritingSummary }) {
   const { currentUser, language } = useAppState();
   const tr = language === "tr";
   const canExport = Boolean(currentUser && currentUser.plan !== "free");
+  const showUpgradeCta = currentUser?.plan === "free";
   const previous = summary.recentSessions.find((item) => item.id !== session.id && item.prompt.id === session.prompt.id && item.report);
   const delta = previous?.report && session.report ? Number((session.report.overall - previous.report.overall).toFixed(1)) : null;
   const comparePairs = useMemo(() => buildParagraphPairs(session.draftText ?? "", session.report?.correctedVersion ?? ""), [session.draftText, session.report?.correctedVersion]);
+  const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
   const sentenceComments = useMemo(
     () => buildSentenceComments({ draft: session.draftText ?? "", corrected: session.report?.correctedVersion ?? "", taskType: session.taskType, tr }),
     [session.draftText, session.report?.correctedVersion, session.taskType, tr]
   );
+
+  useEffect(() => {
+    if (!showUpgradeCta || !currentUser?.id) return;
+
+    void trackClientEvent({
+      userId: currentUser.id,
+      event: "upgrade_prompt_view",
+      path: `/app/writing/results/${session.id}/free-cta`
+    });
+    posthog.capture("upgrade_prompt_view", {
+      source: "writing_result_free_cta",
+      plan: currentUser.plan
+    });
+  }, [currentUser?.id, currentUser?.plan, session.id, showUpgradeCta]);
 
   const taskLabel = session.taskType === "ielts-writing-task-1" ? "IELTS Writing Task 1" : "IELTS Writing Task 2";
   const retryPath = session.taskType === "ielts-writing-task-1" ? "/app/writing/task-1" : "/app/writing/task-2";
@@ -139,6 +158,70 @@ export function WritingResultView({ session, summary }: { session: WritingSessio
             </div>
           ))}
         </section>
+
+        {showUpgradeCta ? (
+          <section
+            className="card"
+            style={{
+              padding: "1.1rem",
+              display: "grid",
+              gap: "0.9rem",
+              border: "1px solid rgba(29, 111, 117, 0.18)",
+              background: "rgba(29, 111, 117, 0.08)"
+            }}
+          >
+            <div>
+              <span className="eyebrow">{tr ? "Bir sonraki adım" : "Next step"}</span>
+              <h2 style={{ margin: "0.4rem 0 0.55rem" }}>
+                {tr ? "Skoru gordun; simdi bunu duzenli ilerleme sistemine cevir" : "You have the score. Now turn it into a repeatable progress loop."}
+              </h2>
+              <p style={{ margin: 0, color: "var(--muted-foreground)", lineHeight: 1.7 }}>
+                {tr
+                  ? `Plus ile ayni hesapta daha fazla speaking hacmi, daha hizli retry dongusu ve ucretli planda acilan PDF rapor ciktilari elde edersin. Yillik secenekte aylik maliyet ${formatUsd(annualMonthlyEquivalent)} seviyesine iner.`
+                  : `Plus gives you more speaking volume on the same account, a faster retry loop, and paid-plan PDF reports. On annual billing the monthly equivalent drops to about ${formatUsd(annualMonthlyEquivalent)}.`}
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <TrackedLink
+                className="button button-primary"
+                href={buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "writing_result_annual" })}
+                userId={currentUser?.id}
+                analyticsEvent="checkout_initiated"
+                analyticsPath={`/app/writing/results/${session.id}/annual`}
+                onClick={() => {
+                  posthog.capture("checkout_initiated", {
+                    plan: "plus",
+                    billing: "annual",
+                    source: "writing_result_annual",
+                    current_plan: currentUser?.plan
+                  });
+                }}
+              >
+                {tr ? "En iyi deger: Plus yillik" : "Best value: Plus annual"}
+              </TrackedLink>
+              <TrackedLink
+                className="button button-secondary"
+                href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "writing_result_weekly" })}
+                userId={currentUser?.id}
+                analyticsEvent="checkout_initiated"
+                analyticsPath={`/app/writing/results/${session.id}/weekly`}
+                onClick={() => {
+                  posthog.capture("checkout_initiated", {
+                    plan: "plus",
+                    billing: "weekly",
+                    source: "writing_result_weekly",
+                    current_plan: currentUser?.plan
+                  });
+                }}
+              >
+                {tr ? "Daha hafif baslangic: haftalik" : "Lower-friction start: weekly"}
+              </TrackedLink>
+            </div>
+            <div className="practice-meta">
+              {tr ? `Ilk checkout icin ${couponCatalog.LAUNCH20.code} kullanabilirsin.` : `Use ${couponCatalog.LAUNCH20.code} on your first checkout.`}
+            </div>
+          </section>
+        ) : null}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
           <section className="card" style={{ padding: "1.1rem" }}>

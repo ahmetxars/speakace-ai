@@ -255,7 +255,7 @@ function planWeeklyValue(plan: SubscriptionPlan, memberType?: string, institutio
     return Number(institutionPrice);
   }
   if (plan === "plus") return 3.99;
-  if (plan === "pro") return 19.99;
+  if (plan === "pro") return 12;
   return 0;
 }
 
@@ -750,7 +750,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         case
           when users.member_type = 'school' then coalesce(institution_prices.monthly_price, 0)
           when users.plan = 'plus' and users.billing_status in ('active', 'on_trial') then 3.99
-          when users.plan = 'pro' and users.billing_status in ('active', 'on_trial') then 19.99
+          when users.plan = 'pro' and users.billing_status in ('active', 'on_trial') then 12
           else 0
         end
       ), 0)::numeric(10,2) as monthly_revenue_estimate
