@@ -17,7 +17,6 @@ export function evaluateWritingDraft(input: {
   const paragraphs = input.draftText.split(/\n\s*\n/).filter((item) => item.trim().length > 0).length;
   const sentenceCount = splitSentences(input.draftText).length;
   const avgSentenceLength = sentenceCount ? words / sentenceCount : 0;
-  const lowered = input.draftText.toLowerCase();
   const isTaskOne = input.prompt.taskType === "ielts-writing-task-1";
   const difficultyPenalty = input.difficulty === "Stretch" ? 0.2 : input.difficulty === "Target" ? 0.1 : 0;
 

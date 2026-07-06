@@ -368,6 +368,20 @@ export function AdminPanel(props: {
     };
   }, [props.overview.funnel7d.clickToPaidRate, props.overview.monetizationFunnel7d.checkoutToCompletionRate]);
 
+  const filteredMembers = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return props.members.filter((member) => {
+      if (memberTypeFilter !== "all" && member.memberType !== memberTypeFilter) return false;
+      if (planFilter !== "all" && member.plan !== planFilter) return false;
+      if (billingFilter !== "all" && member.billingStatus !== billingFilter) return false;
+      if (!query) return true;
+      return [member.name, member.email, member.organizationName ?? "", member.referralCodeUsed ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+      });
+  }, [billingFilter, memberTypeFilter, planFilter, props.members, search]);
+
   const topQuickActions = useMemo(
     () => [
       {
@@ -388,20 +402,6 @@ export function AdminPanel(props: {
     ],
     [filteredMembers.length, props.billingEvents.length, props.institutions.length]
   );
-
-  const filteredMembers = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return props.members.filter((member) => {
-      if (memberTypeFilter !== "all" && member.memberType !== memberTypeFilter) return false;
-      if (planFilter !== "all" && member.plan !== planFilter) return false;
-      if (billingFilter !== "all" && member.billingStatus !== billingFilter) return false;
-      if (!query) return true;
-      return [member.name, member.email, member.organizationName ?? "", member.referralCodeUsed ?? ""]
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
-    });
-  }, [billingFilter, memberTypeFilter, planFilter, props.members, search]);
 
   const logout = async () => {
     await fetch("/api/admin/auth/logout", { method: "POST" });

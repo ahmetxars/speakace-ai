@@ -205,11 +205,6 @@ async function getTeacherMember(teacherId: string) {
   return member;
 }
 
-async function getTeacherClassMap(teacherId: string) {
-  const classes = await listTeacherClasses(teacherId);
-  return new Map(classes.map((item) => [item.id, item]));
-}
-
 async function buildTeacherSummary(orgId: string, teacher: MemberProfile): Promise<SchoolTeacherSummary> {
   void orgId;
   const [classes, analytics, homework] = await Promise.all([
