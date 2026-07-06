@@ -10,14 +10,19 @@ import {
   FileText,
   Settings,
   Search,
-  Bell,
   TrendingUp,
   TrendingDown,
   ChevronLeft,
   ArrowUpRight,
   Tag,
   Building2,
-  ExternalLink
+  ExternalLink,
+  LogOut,
+  AlertTriangle,
+  Activity,
+  Rocket,
+  CircleDollarSign,
+  ShieldCheck
 } from "lucide-react";
 import {
   AdminAuthActivityRecord,
@@ -107,6 +112,46 @@ function AdmStatCard({
           <span>{trend} vs last month</span>
         </div>
       )}
+    </div>
+  );
+}
+
+function AdmHeroMetric({
+  label,
+  value,
+  hint
+}: {
+  label: string;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <div className="adm-hero-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{hint}</small>
+    </div>
+  );
+}
+
+function AdmSignalCard({
+  label,
+  value,
+  detail,
+  tone
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "success" | "warning" | "neutral";
+}) {
+  return (
+    <div className={`adm-signal-card adm-signal-${tone}`}>
+      <div>
+        <span className="adm-signal-label">{label}</span>
+        <strong>{value}</strong>
+      </div>
+      <p>{detail}</p>
     </div>
   );
 }
@@ -264,6 +309,84 @@ export function AdminPanel(props: {
   const topPageMax = useMemo(
     () => Math.max(1, ...props.overview.topCtaPages.map((item) => item.clicks)),
     [props.overview.topCtaPages]
+  );
+
+  const revenuePerPaidMember = useMemo(() => {
+    if (!props.overview.paidMembers) return 0;
+    return props.overview.monthlyRevenueEstimate / props.overview.paidMembers;
+  }, [props.overview.monthlyRevenueEstimate, props.overview.paidMembers]);
+
+  const monetizationBottleneck = useMemo(() => {
+    const candidates = [
+      {
+        key: "pricing",
+        label: "Pricing to checkout",
+        rate: props.overview.monetizationFunnel7d.pricingViewToCheckoutRate,
+        detail: "Visitors are seeing pricing, but too few are starting checkout."
+      },
+      {
+        key: "paywall",
+        label: "Paywall to checkout",
+        rate: props.overview.monetizationFunnel7d.limitHitToCheckoutRate,
+        detail: "Free users hit the cap, but the upgrade prompt is not converting hard enough."
+      },
+      {
+        key: "checkout",
+        label: "Checkout completion",
+        rate: props.overview.monetizationFunnel7d.checkoutToCompletionRate,
+        detail: "Intent exists, but buyers are falling off before payment completes."
+      }
+    ];
+    return [...candidates].sort((a, b) => a.rate - b.rate)[0];
+  }, [
+    props.overview.monetizationFunnel7d.checkoutToCompletionRate,
+    props.overview.monetizationFunnel7d.limitHitToCheckoutRate,
+    props.overview.monetizationFunnel7d.pricingViewToCheckoutRate
+  ]);
+
+  const adminHealth = useMemo(() => {
+    const paidRate = props.overview.funnel7d.clickToPaidRate;
+    const checkoutCompletion = props.overview.monetizationFunnel7d.checkoutToCompletionRate;
+    if (paidRate >= 4 && checkoutCompletion >= 45) {
+      return {
+        label: "Healthy",
+        tone: "success" as const,
+        summary: "Conversion engine is working and payment completion is holding up."
+      };
+    }
+    if (paidRate >= 2 && checkoutCompletion >= 25) {
+      return {
+        label: "Watch closely",
+        tone: "warning" as const,
+        summary: "Revenue flow is moving, but the funnel still has visible friction."
+      };
+    }
+    return {
+      label: "Needs attention",
+      tone: "neutral" as const,
+      summary: "The revenue funnel is active, but one or more core steps are underperforming."
+    };
+  }, [props.overview.funnel7d.clickToPaidRate, props.overview.monetizationFunnel7d.checkoutToCompletionRate]);
+
+  const topQuickActions = useMemo(
+    () => [
+      {
+        label: "Open members",
+        detail: `${filteredMembers.length} visible users`,
+        onClick: () => setActiveTab("members")
+      },
+      {
+        label: "Review billing",
+        detail: `${props.billingEvents.length} billing events`,
+        onClick: () => setActiveTab("billing")
+      },
+      {
+        label: "School pipeline",
+        detail: `${props.institutions.length} institutions`,
+        onClick: () => setActiveTab("institutions")
+      }
+    ],
+    [filteredMembers.length, props.billingEvents.length, props.institutions.length]
   );
 
   const filteredMembers = useMemo(() => {
@@ -451,17 +574,38 @@ export function AdminPanel(props: {
       <div className="adm-main">
         {/* Header */}
         <header className="adm-header">
-          <h1 className="adm-page-title">{tabTitles[activeTab]}</h1>
+          <div>
+            <h1 className="adm-page-title">{tabTitles[activeTab]}</h1>
+            <p className="adm-header-subtitle">
+              {activeTab === "overview"
+                ? "Revenue, conversion, product usage, and operations in one place."
+                : `Manage ${tabTitles[activeTab].toLowerCase()} without leaving the admin console.`}
+            </p>
+          </div>
           <div className="adm-header-right">
             <div className="adm-search-wrap">
               <Search size={15} className="adm-search-icon" />
-              <input className="adm-search-input" placeholder="Search..." />
+              <input
+                className="adm-search-input"
+                placeholder="Search members, orgs, referrals..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  if (activeTab !== "members") {
+                    setActiveTab("members");
+                  }
+                }}
+              />
+            </div>
+            <div className="adm-session-chip" title={props.sessionLabel}>
+              <ShieldCheck size={14} />
+              <span>{props.sessionLabel}</span>
             </div>
             <button type="button" className="adm-header-icon-btn" onClick={logout} title="Sign out">
-              <Bell size={18} />
+              <LogOut size={18} />
             </button>
             <div className="adm-user-avatar" title={props.sessionLabel}>
-              SA
+              {props.sessionLabel.slice(0, 2).toUpperCase()}
             </div>
           </div>
         </header>
@@ -472,6 +616,67 @@ export function AdminPanel(props: {
           {/* ── OVERVIEW TAB ─────────────────────── */}
           {activeTab === "overview" && (
             <>
+              <section className="adm-command-center">
+                <div className="adm-command-main">
+                  <div className="adm-command-kicker">
+                    <StatusBadge label={adminHealth.label} tone={adminHealth.tone} />
+                    <span>Revenue command center</span>
+                  </div>
+                  <h2>Know what changed, what is blocked, and where money is leaking.</h2>
+                  <p>{adminHealth.summary}</p>
+                  <div className="adm-command-actions">
+                    {topQuickActions.map((item) => (
+                      <button key={item.label} type="button" className="adm-secondary-btn" onClick={item.onClick}>
+                        {item.label}
+                        <span>{item.detail}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="adm-command-side">
+                  <AdmHeroMetric
+                    label="MRR estimate"
+                    value={formatMoney(props.overview.monthlyRevenueEstimate)}
+                    hint={`${props.overview.paidMembers} paying members`}
+                  />
+                  <AdmHeroMetric
+                    label="Paid conversion"
+                    value={formatPercent(props.overview.funnel7d.clickToPaidRate)}
+                    hint="click to paid in 7 days"
+                  />
+                  <AdmHeroMetric
+                    label="ARPPU"
+                    value={formatMoney(revenuePerPaidMember)}
+                    hint="avg monthly value per paid member"
+                  />
+                </div>
+              </section>
+
+              <div className="adm-signal-grid">
+                <AdmSignalCard
+                  label="Primary bottleneck"
+                  value={monetizationBottleneck.label}
+                  detail={`${formatPercent(monetizationBottleneck.rate)} in the last 7 days. ${monetizationBottleneck.detail}`}
+                  tone="warning"
+                />
+                <AdmSignalCard
+                  label="Best checkout source"
+                  value={props.overview.topCheckoutSources[0]?.path ? formatCtaLabel(props.overview.topCheckoutSources[0].path) : "No signal yet"}
+                  detail={
+                    props.overview.topCheckoutSources[0]
+                      ? `${formatPercent(props.overview.topCheckoutSources[0].completionRate)} completion rate from ${props.overview.topCheckoutSources[0].completed} completed checkouts.`
+                      : "Once checkout data accumulates, the strongest source will appear here."
+                  }
+                  tone="success"
+                />
+                <AdmSignalCard
+                  label="Growth pressure"
+                  value={`${props.overview.liveUsers5m} live · ${props.overview.recentSignIns24h} sign-ins`}
+                  detail={`Traffic is ${props.overview.pageViews1h} page views in the last hour, with ${props.overview.requests5m} recent requests.`}
+                  tone="neutral"
+                />
+              </div>
+
               {/* Stat Cards */}
               <div className="adm-stats-row">
                 <AdmStatCard
@@ -483,12 +688,12 @@ export function AdminPanel(props: {
                   icon={<Users size={20} color="#60a5fa" />}
                 />
                 <AdmStatCard
-                  label="Total Sessions"
+                  label="Auth Activity"
                   value={props.overview.activeSessions}
                   trend={`${props.overview.recentSignIns24h} sign-ins in last 24h`}
                   trendUp={props.overview.recentSignIns24h > 0}
                   iconBg="rgba(52,211,153,0.15)"
-                  icon={<Mic2 size={20} color="#34d399" />}
+                  icon={<Activity size={20} color="#34d399" />}
                 />
                 <AdmStatCard
                   label="Published Posts"
@@ -504,7 +709,29 @@ export function AdminPanel(props: {
                   trend={`${props.overview.paidMembers} paying subscribers`}
                   trendUp={props.overview.paidMembers > 0}
                   iconBg="rgba(52,211,153,0.15)"
-                  icon={<TrendingUp size={20} color="#34d399" />}
+                  icon={<CircleDollarSign size={20} color="#34d399" />}
+                />
+                <AdmStatCard
+                  label="Checkout Completion"
+                  value={formatPercent(props.overview.monetizationFunnel7d.checkoutToCompletionRate)}
+                  trend={`${props.overview.checkoutCompleted7d}/${props.overview.checkoutInitiated7d} completed in 7d`}
+                  trendUp={
+                    props.overview.monetizationFunnel7d.checkoutToCompletionRate >=
+                    props.overview.monetizationFunnel30d.checkoutToCompletionRate
+                  }
+                  iconBg="rgba(251,191,36,0.15)"
+                  icon={<Rocket size={20} color="#fbbf24" />}
+                />
+                <AdmStatCard
+                  label="Pricing → Checkout"
+                  value={formatPercent(props.overview.monetizationFunnel7d.pricingViewToCheckoutRate)}
+                  trend={`${props.overview.pricingViews7d} pricing views in 7d`}
+                  trendUp={
+                    props.overview.monetizationFunnel7d.pricingViewToCheckoutRate >=
+                    props.overview.monetizationFunnel30d.pricingViewToCheckoutRate
+                  }
+                  iconBg="rgba(248,113,113,0.15)"
+                  icon={<AlertTriangle size={20} color="#f87171" />}
                 />
               </div>
 
