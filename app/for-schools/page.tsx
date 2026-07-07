@@ -34,6 +34,7 @@ export default function SchoolsPage() {
         "Start with one pilot class and scale when ready",
         "Admin panel with usage data across all teachers and students",
         "No software to install — fully browser-based for any device",
+        "Institution plans start from $49/month for a small pilot cohort",
       ]}
       heroPreviewCards={[
         {
@@ -42,11 +43,11 @@ export default function SchoolsPage() {
         },
         {
           label: "For procurement",
-          body: "Browser-based, no install required, role-based access, and a pilot path that lets you test with one class before committing to a full rollout.",
+          body: "Browser-based, no install required, role-based access, and a pilot path that starts from $49/month before a wider rollout.",
         },
       ]}
-      primaryAction={{ label: "Request a demo", href: "#institution-demo" }}
-      secondaryAction={{ label: "View teacher demo", href: "/teacher-demo", variant: "secondary" }}
+      primaryAction={{ label: "Start institution pilot", href: "/auth/signin?redirect=/app/teacher/billing" }}
+      secondaryAction={{ label: "Request a demo", href: "#institution-demo", variant: "secondary" }}
       tertiaryAction={{ label: "See pricing", href: "/pricing", variant: "secondary" }}
       highlightsLabel="Institution fit"
       highlightsTitle="Built for schools that need a platform, not just a practice tool"
@@ -107,23 +108,23 @@ export default function SchoolsPage() {
       packages={[
         {
           title: "Pilot class",
-          subtitle: "For a small test group or one department",
-          points: ["Single-class rollout", "Teacher portal access", "Student practice tracking", "No commitment required"],
-          href: "/pricing",
-          cta: "See starter pricing",
+          subtitle: "Starts at $49/month for one serious pilot",
+          points: ["Up to 3 classes", "20 included students", "Teacher portal access", "Fastest way to test one cohort"],
+          href: "/auth/signin?redirect=/app/teacher/billing",
+          cta: "Start starter pilot",
         },
         {
           title: "Growing programme",
-          subtitle: "For schools adding multiple teachers and classes",
-          points: ["Multi-class coordination", "Admin visibility panel", "Homework and announcement tools", "Operational reporting"],
+          subtitle: "Team plan from $99/month for multi-class rollout",
+          points: ["Up to 8 classes", "80 included students", "Admin visibility panel", "Homework and announcement tools"],
           href: "#institution-demo",
           cta: "Discuss rollout",
           featured: true,
         },
         {
           title: "Full institution",
-          subtitle: "For universities and language centres",
-          points: ["School-wide deployment", "Coordinated onboarding support", "Institution analytics access", "Priority support channel"],
+          subtitle: "Campus plan from $249/month for wider adoption",
+          points: ["Up to 20 classes", "250 included students", "Institution analytics access", "Priority support channel"],
           href: "#institution-demo",
           cta: "Request institution demo",
         },
