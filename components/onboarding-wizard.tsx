@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
+import { TrackedLink } from "@/components/tracked-link";
 import { useAppState } from "@/components/providers";
+import {
+  buildPlanCheckoutPath,
+  commerceConfig,
+  commerceNumbers,
+  couponCatalog,
+  formatUsd,
+  getAnnualMonthlyEquivalent
+} from "@/lib/commerce";
 import type { StudentProfile as StudentProfileType } from "@/lib/types";
 
 const TOTAL_STEPS = 5;
@@ -54,7 +63,7 @@ function OptionCard({ value, label, desc, selected, onSelect, microcopy }: Optio
 
 export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
   const router = useRouter();
-  const { language } = useAppState();
+  const { currentUser, language } = useAppState();
   const tr = language === "tr";
 
   const [form, setForm] = useState<FormState>({
@@ -259,6 +268,16 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
     return Math.ceil(totalSessions / Math.max(1, sessionsPerWeek));
   }
 
+  useEffect(() => {
+    if (!planReady || currentUser?.plan !== "free" || !savedProfile) return;
+    posthog.capture("upgrade_prompt_view", {
+      source: "onboarding_plan_ready",
+      weekly_goal: savedProfile.weeklyGoal,
+      exam_type: savedProfile.preferredExamType,
+      target_score: savedProfile.targetScore
+    });
+  }, [currentUser?.plan, planReady, savedProfile]);
+
   function recommendedTask(examType: "IELTS" | "TOEFL", level: string) {
     const easy = ["A2", "B1"].includes(level);
     if (examType === "IELTS") return easy ? "IELTS Part 1 – Starter" : "IELTS Part 2 – Target";
@@ -282,6 +301,29 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
     const challengeFocus = p.biggestChallenge ? challengeToFocus[p.biggestChallenge] : null;
     const firstTask = recommendedTask(examType, p.estimatedLevel ?? "B1");
     const months = weeks ? (weeks >= 4 ? Math.round(weeks / 4.3) : null) : null;
+    const shouldRecommendAnnual = (weeks !== null && weeks >= 10) || p.weeklyGoal >= 4;
+    const recommendedBilling = shouldRecommendAnnual ? "annual" : "weekly";
+    const recommendedCheckoutPath = buildPlanCheckoutPath({
+      plan: "plus",
+      billing: recommendedBilling,
+      coupon: couponCatalog.LAUNCH20.code,
+      campaign: `onboarding_plan_ready_${recommendedBilling}`
+    });
+    const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
+    const recommendationTitle = tr
+      ? shouldRecommendAnnual
+        ? "Sana uygun sonraki adim: Plus yillik"
+        : "Sana uygun sonraki adim: Plus haftalik"
+      : shouldRecommendAnnual
+        ? "Best next step for you: Plus annual"
+        : "Best next step for you: Plus weekly";
+    const recommendationBody = tr
+      ? shouldRecommendAnnual
+        ? `Haftalik hedefin ve tahmini calisma suresi, birkac haftadan daha uzun bir hazirlik dongusu gosteriyor. Bu yuzden aylik maliyeti ${formatUsd(annualMonthlyEquivalent)} seviyesine indiren yillik plan daha mantikli.`
+        : `Ilk odemeyi kolaylastirmak icin en dusuk surtunmeli secenek haftalik Plus. Ayni gun daha fazla deneme ve tam geri bildirim acilir.`
+      : shouldRecommendAnnual
+        ? `Your weekly goal and estimated timeline point to a prep cycle longer than a few weeks. That makes annual Plus the cleaner value move at about ${formatUsd(annualMonthlyEquivalent)}/month.`
+        : `For a lower-friction first purchase, weekly Plus is the simplest step. It unlocks more same-day attempts and full feedback immediately.`;
     const timeStr = weeks === 0
       ? (tr ? "Hedefine çok yakınsın!" : "You're very close to your target!")
       : months
@@ -388,6 +430,72 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
             ))}
           </div>
         </section>
+
+        {currentUser?.plan === "free" ? (
+          <section
+            className="card"
+            style={{
+              padding: "1.2rem",
+              display: "grid",
+              gap: "0.85rem",
+              background: "linear-gradient(135deg, rgba(29,111,117,0.08) 0%, rgba(255,255,255,0.98) 100%)",
+              border: "1px solid rgba(29,111,117,0.16)"
+            }}
+          >
+            <span className="eyebrow">{tr ? "Kisisellestirilmis teklif" : "Personalized offer"}</span>
+            <strong>{recommendationTitle}</strong>
+            <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>{recommendationBody}</p>
+            <div style={{ display: "grid", gap: "0.55rem" }}>
+              <div style={{ padding: "0.7rem 0.85rem", borderRadius: 10, background: "rgba(255,255,255,0.75)" }}>
+                {shouldRecommendAnnual ? (
+                  <strong>{tr ? `${commerceConfig.plusAnnualPrice}/yil, yaklasik ${formatUsd(annualMonthlyEquivalent)}/ay` : `${commerceConfig.plusAnnualPrice}/year, about ${formatUsd(annualMonthlyEquivalent)}/month`}</strong>
+                ) : (
+                  <strong>{tr ? `${commerceConfig.plusMonthlyPrice}/hafta ile daha dusuk ilk odeme` : `${commerceConfig.plusMonthlyPrice}/week for a lower first payment`}</strong>
+                )}
+              </div>
+              <div style={{ padding: "0.7rem 0.85rem", borderRadius: 10, background: "rgba(255,255,255,0.75)" }}>
+                <span style={{ color: "var(--muted)" }}>
+                  {tr
+                    ? `Ilk checkout'ta ${couponCatalog.LAUNCH20.code} kuponu aktif.`
+                    : `${couponCatalog.LAUNCH20.code} is active on your first checkout.`}
+                </span>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+              <TrackedLink
+                className="button button-primary"
+                href={recommendedCheckoutPath}
+                userId={currentUser?.id}
+                analyticsEvent="checkout_initiated"
+                analyticsPath={`/app/onboarding/${recommendedBilling}`}
+                onClick={() => {
+                  posthog.capture("checkout_initiated", {
+                    source: "onboarding_plan_ready",
+                    plan: "plus",
+                    billing: recommendedBilling,
+                    weekly_goal: p.weeklyGoal,
+                    estimated_weeks_to_target: weeks
+                  });
+                }}
+              >
+                {tr
+                  ? shouldRecommendAnnual
+                    ? "Plani simdi yillik ac"
+                    : "Plus'u haftalik ac"
+                  : shouldRecommendAnnual
+                    ? "Unlock annual Plus now"
+                    : "Unlock weekly Plus"}
+              </TrackedLink>
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => router.push("/app/billing")}
+              >
+                {tr ? "Tum planlari incele" : "Review all plans"}
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
           <button
