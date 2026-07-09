@@ -3,7 +3,7 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { ArrowRight, BookOpenCheck, CheckCircle2, Flame, LayoutGrid, Mic, PenSquare, Sparkles, Target } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAppState } from "@/components/providers";
 import { TrackedLink } from "@/components/tracked-link";
@@ -61,6 +61,7 @@ export function Dashboard() {
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
+  const hasTrackedUpgradePromptRef = useRef(false);
 
   const dashboardRole = resolveDashboardRole(currentUser);
   const isSchoolMember = Boolean(signedIn && dashboardRole === "school");
@@ -437,6 +438,40 @@ export function Dashboard() {
   const shouldUpsellPlus = Boolean(
     signedIn && currentUser && !isTeacherMember && !isSchoolMember && currentUser.plan === "free"
   );
+  const isNearDailyLimit = summary.freeSessionsRemaining <= 1 || summary.remainingMinutesToday <= 2;
+  const highIntentPrep = (profile?.weeklyGoal ?? 0) >= 4 || (scoreGap ?? 0) >= (latestExamType === "IELTS" ? 1.2 : 0.8);
+  const recommendedUpsellBilling = highIntentPrep ? "annual" : "weekly";
+  const upsellHeadline = tr
+    ? isNearDailyLimit
+      ? "Bugunku limiti kaldir ve ivmeyi kaybetme"
+      : "Daha hizli ilerleme icin Plus'a gec"
+    : isNearDailyLimit
+      ? "Remove today's limit and keep the momentum"
+      : "Move to Plus for faster improvement";
+  const upsellBody = tr
+    ? isNearDailyLimit
+      ? `Bugun kalan hakkin ${summary.freeSessionsRemaining} session ve ${summary.remainingMinutesToday} dakika. Plus ile ayni gun daha fazla deneme yapip tam geri bildirim alirsin.`
+      : `Hedefin ve calisma ritmin, daha duzenli bir practice dongusu gerektiriyor. Plus; daha fazla speaking hacmi, tam feedback ve ayni gun retry imkani verir.`
+    : isNearDailyLimit
+      ? `You only have ${summary.freeSessionsRemaining} sessions and ${summary.remainingMinutesToday} minutes left today. Plus lets you keep practicing the same day with full feedback.`
+      : `Your target and study rhythm suggest a more consistent practice loop. Plus gives you more speaking volume, full feedback, and same-day retries.`;
+  const upsellRecommendation = tr
+    ? recommendedUpsellBilling === "annual"
+      ? `Sana daha uygun teklif: yillik Plus. Aylik maliyet yaklasik ${formatUsd(plusAnnualMonthlyEquivalent)} seviyesine iner.`
+      : `Sana daha uygun teklif: haftalik Plus. Ilk odemeyi daha dusuk surtunmeyle test edebilirsin.`
+    : recommendedUpsellBilling === "annual"
+      ? `Best fit for you: annual Plus. The monthly equivalent drops to about ${formatUsd(plusAnnualMonthlyEquivalent)}.`
+      : `Best fit for you: weekly Plus. It is the lower-friction way to test your first paid upgrade.`;
+
+  useEffect(() => {
+    if (!shouldUpsellPlus || hasTrackedUpgradePromptRef.current || !currentUser?.id) return;
+    hasTrackedUpgradePromptRef.current = true;
+    void trackClientEvent({
+      userId: currentUser.id,
+      event: "upgrade_prompt_view",
+      path: `/app/dashboard/upgrade/${recommendedUpsellBilling}`
+    });
+  }, [currentUser?.id, recommendedUpsellBilling, shouldUpsellPlus]);
 
   const joinClass = async () => {
     setJoinError("");
@@ -871,30 +906,50 @@ export function Dashboard() {
           {shouldUpsellPlus ? (
             <section className="card db-upgrade-card">
               <span className="eyebrow">{tr ? "Upgrade" : "Upgrade"}</span>
-              <strong>{tr ? "Bugunku siniri kaldir ve ayni gun tekrar dene" : "Remove today's cap and retry the same day"}</strong>
-              <p>
-                {tr
-                  ? `Plus: 35 dk/gun, 18 session, daha guclu feedback. Yillik secenekte aylik maliyet ${formatUsd(plusAnnualMonthlyEquivalent)} seviyesine iner.`
-                  : `Plus: 35 min/day, 18 sessions, deeper feedback. On annual billing the monthly equivalent drops to about ${formatUsd(plusAnnualMonthlyEquivalent)}.`}
-              </p>
+              <strong>{upsellHeadline}</strong>
+              <p>{upsellBody}</p>
+              <div className="card" style={{ padding: "0.85rem 1rem", background: "rgba(255,255,255,0.72)" }}>
+                <strong style={{ display: "block", marginBottom: "0.35rem" }}>{upsellRecommendation}</strong>
+                <span style={{ color: "var(--muted)", lineHeight: 1.6 }}>
+                  {tr
+                    ? `Plus: 35 dk/gun, 18 session ve tam feedback. Ilk checkout'ta ${couponCatalog.LAUNCH20.code} aktif.`
+                    : `Plus includes 35 min/day, 18 sessions, and full feedback. ${couponCatalog.LAUNCH20.code} is active on the first checkout.`}
+                </span>
+              </div>
               <div className="dashboard-inline-actions">
                 <TrackedLink
                   className="button button-primary"
-                  href={buildPlanCheckoutPath({ billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "dashboard_annual" })}
+                  href={buildPlanCheckoutPath({ billing: recommendedUpsellBilling, coupon: couponCatalog.LAUNCH20.code, campaign: `dashboard_${recommendedUpsellBilling}` })}
                   userId={currentUser?.id}
                   analyticsEvent="checkout_initiated"
-                  analyticsPath="/app/dashboard/upgrade/annual"
+                  analyticsPath={`/app/dashboard/upgrade/${recommendedUpsellBilling}`}
                 >
-                  {tr ? "En iyi deger: Plus yillik" : "Best value: Plus annual"}
+                  {tr
+                    ? recommendedUpsellBilling === "annual"
+                      ? "Onerilen: Plus yillik"
+                      : "Onerilen: Plus haftalik"
+                    : recommendedUpsellBilling === "annual"
+                      ? "Recommended: Plus annual"
+                      : "Recommended: Plus weekly"}
                 </TrackedLink>
                 <TrackedLink
                   className="button button-secondary"
-                  href={buildPlanCheckoutPath({ coupon: couponCatalog.LAUNCH20.code, campaign: "dashboard_weekly" })}
+                  href={buildPlanCheckoutPath({
+                    billing: recommendedUpsellBilling === "annual" ? "weekly" : "annual",
+                    coupon: couponCatalog.LAUNCH20.code,
+                    campaign: recommendedUpsellBilling === "annual" ? "dashboard_weekly" : "dashboard_annual"
+                  })}
                   userId={currentUser?.id}
                   analyticsEvent="checkout_initiated"
-                  analyticsPath="/app/dashboard/upgrade/weekly"
+                  analyticsPath={recommendedUpsellBilling === "annual" ? "/app/dashboard/upgrade/weekly" : "/app/dashboard/upgrade/annual"}
                 >
-                  {tr ? "Haftalik basla" : "Start weekly"}
+                  {tr
+                    ? recommendedUpsellBilling === "annual"
+                      ? "Daha hafif baslangic: haftalik"
+                      : "Daha iyi deger: yillik"
+                    : recommendedUpsellBilling === "annual"
+                      ? "Lower-friction start: weekly"
+                      : "Better long-term value: annual"}
                 </TrackedLink>
                 <Link className="button button-secondary" href="/pricing">
                   {tr ? "Planlar" : "Plans"}
