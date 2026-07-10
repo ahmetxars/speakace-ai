@@ -133,6 +133,8 @@ export function PracticeConsole() {
     reason: UpgradePromptReason;
     title: string;
     body: string;
+    recommendedBilling: "weekly" | "annual";
+    recommendation: string;
   } | null>(null);
   const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
 
@@ -643,6 +645,8 @@ export function PracticeConsole() {
       if (response.status === 403 && currentUser?.plan === "free") {
         const reason: UpgradePromptReason = mode === "done" ? "result_retry_locked" : "practice_limit_hit";
         const minutesLimited = (data.error ?? "").toLowerCase().includes("minute");
+        const shouldRecommendAnnual = summary.streakDays >= 3 || summary.totalSessions >= 6 || summary.averageScore >= 6 || targetScore === "7.0" || targetScore === "7.5" || targetScore === "8.0";
+        const recommendedBilling = shouldRecommendAnnual ? "annual" : "weekly";
         const title =
           reason === "result_retry_locked"
             ? tr
@@ -663,7 +667,15 @@ export function PracticeConsole() {
               : tr
                 ? "Bugunku session limiti doldu. Yarini beklemek yerine bugun devam etmek icin Plus ac."
                 : "You hit today's session cap. Unlock Plus to continue today instead of waiting for tomorrow.";
-        setUpgradePrompt({ reason, title, body });
+        const recommendation =
+          tr
+            ? recommendedBilling === "annual"
+              ? `Sana daha uygun secenek: yillik Plus. Su anki tempo, birkac haftadan uzun bir hazirlik dongusune isaret ediyor.`
+              : "Sana daha uygun secenek: haftalik Plus. Ilk odemeyi daha dusuk surtunmeyle acip bugun devam edebilirsin."
+            : recommendedBilling === "annual"
+              ? "Best fit for you: annual Plus. Your current pace suggests a prep cycle longer than just a few days."
+              : "Best fit for you: weekly Plus. It is the lower-friction way to unlock today and keep going.";
+        setUpgradePrompt({ reason, title, body, recommendedBilling, recommendation });
         if (currentUser.id) {
           void trackClientEvent({
             userId: currentUser.id,
@@ -1410,55 +1422,86 @@ export function PracticeConsole() {
                 {upgradePrompt.body}
               </p>
             </div>
+            <div
+              className="card"
+              style={{ padding: "0.8rem 0.95rem", background: "rgba(255,255,255,0.72)" }}
+            >
+              <strong style={{ display: "block", marginBottom: "0.3rem" }}>{upgradePrompt.recommendation}</strong>
+              <span style={{ color: "var(--muted-foreground)", lineHeight: 1.6 }}>
+                {tr
+                  ? `Launch teklifi: ilk checkout icin ${couponCatalog.LAUNCH20.code} kullanabilirsin.`
+                  : `Launch note: you can use ${couponCatalog.LAUNCH20.code} on your first checkout.`}
+              </span>
+            </div>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
               <TrackedLink
                 className="button button-primary"
                 href={buildPlanCheckoutPath({
+                  plan: "plus",
+                  billing: upgradePrompt.recommendedBilling,
                   coupon: couponCatalog.LAUNCH20.code,
-                  campaign: upgradePrompt.reason
+                  campaign: `${upgradePrompt.reason}_${upgradePrompt.recommendedBilling}`
                 })}
                 userId={currentUser?.id}
                 analyticsEvent="checkout_initiated"
-                analyticsPath={`/app/practice/${upgradePrompt.reason}`}
+                analyticsPath={`/app/practice/${upgradePrompt.reason}/${upgradePrompt.recommendedBilling}`}
                 onClick={() => {
                   posthog.capture("checkout_initiated", {
                     plan: "plus",
-                    source: upgradePrompt.reason,
+                    billing: upgradePrompt.recommendedBilling,
+                    source: `${upgradePrompt.reason}_${upgradePrompt.recommendedBilling}`,
                     current_plan: currentUser?.plan
                   });
                   if (typeof window !== "undefined" && typeof window.gtag === "function") {
                     window.gtag("event", "begin_checkout", {
                       currency: "USD",
-                      value: commerceNumbers.plusWeeklyPrice,
+                      value: upgradePrompt.recommendedBilling === "annual" ? commerceNumbers.plusAnnualPrice : commerceNumbers.plusWeeklyPrice,
                       coupon: couponCatalog.LAUNCH20.code,
-                      items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: commerceNumbers.plusWeeklyPrice, quantity: 1 }]
+                      items: [{
+                        item_id: upgradePrompt.recommendedBilling === "annual" ? "plus_annual" : "plus_weekly",
+                        item_name: upgradePrompt.recommendedBilling === "annual" ? "SpeakAce Plus - Annual" : "SpeakAce Plus - Weekly",
+                        price: upgradePrompt.recommendedBilling === "annual" ? commerceNumbers.plusAnnualPrice : commerceNumbers.plusWeeklyPrice,
+                        quantity: 1
+                      }]
                     });
                   }
                 }}
               >
-                {tr ? "Tam geri bildirimi ac" : "Unlock full feedback"}
+                {tr
+                  ? upgradePrompt.recommendedBilling === "annual"
+                    ? "Onerilen: Plus yillik"
+                    : "Onerilen: Plus haftalik"
+                  : upgradePrompt.recommendedBilling === "annual"
+                    ? "Recommended: Plus annual"
+                    : "Recommended: Plus weekly"}
               </TrackedLink>
               <TrackedLink
                 className="button button-secondary"
                 href={buildPlanCheckoutPath({
                   plan: "plus",
-                  billing: "annual",
+                  billing: upgradePrompt.recommendedBilling === "annual" ? "weekly" : "annual",
                   coupon: couponCatalog.LAUNCH20.code,
-                  campaign: `${upgradePrompt.reason}_annual`
+                  campaign: `${upgradePrompt.reason}_${upgradePrompt.recommendedBilling === "annual" ? "weekly" : "annual"}`
                 })}
                 userId={currentUser?.id}
                 analyticsEvent="checkout_initiated"
-                analyticsPath={`/app/practice/${upgradePrompt.reason}/annual`}
+                analyticsPath={`/app/practice/${upgradePrompt.reason}/${upgradePrompt.recommendedBilling === "annual" ? "weekly" : "annual"}`}
                 onClick={() => {
                   posthog.capture("checkout_initiated", {
                     plan: "plus",
-                    billing: "annual",
-                    source: `${upgradePrompt.reason}_annual`,
+                    billing: upgradePrompt.recommendedBilling === "annual" ? "weekly" : "annual",
+                    source: `${upgradePrompt.reason}_${upgradePrompt.recommendedBilling === "annual" ? "weekly" : "annual"}`,
                     current_plan: currentUser?.plan
                   });
                 }}
               >
-                {tr ? "En iyi deger: yillik" : "Best value: annual"}
+                {tr
+                  ? upgradePrompt.recommendedBilling === "annual"
+                    ? "Daha hafif baslangic: haftalik"
+                    : "Daha iyi deger: yillik"
+                  : upgradePrompt.recommendedBilling === "annual"
+                    ? "Lower-friction start: weekly"
+                    : "Better long-term value: annual"}
               </TrackedLink>
               <Link className="button button-secondary" href="/pricing">
                 {tr ? "Planlari gor" : "View plans"}
@@ -1466,8 +1509,8 @@ export function PracticeConsole() {
             </div>
             <div className="practice-meta">
               {tr
-                ? `Launch teklifi: ilk checkout icin LAUNCH20 kullanabilirsin. Yillik planda aylik maliyet ${formatUsd(plusAnnualMonthlyEquivalent)} seviyesine iner.`
-                : `Launch note: you can use LAUNCH20 on your first checkout. On annual billing the monthly equivalent drops to about ${formatUsd(plusAnnualMonthlyEquivalent)}.`}
+                ? `Yillik planda aylik maliyet ${formatUsd(plusAnnualMonthlyEquivalent)} seviyesine iner.`
+                : `On annual billing the monthly equivalent drops to about ${formatUsd(plusAnnualMonthlyEquivalent)}.`}
             </div>
           </div>
         ) : null}
