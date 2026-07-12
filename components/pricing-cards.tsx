@@ -26,6 +26,9 @@ export function PricingCards() {
   const [billing, setBilling] = useState<"weekly" | "annual">("weekly");
   const { currentUser } = useAppState();
   const isAnnual = billing === "annual";
+  const isSignedIn = Boolean(currentUser?.id);
+  const currentPlan = currentUser?.plan ?? "free";
+  const isPaidUser = currentPlan === "plus" || currentPlan === "pro" || currentPlan === "lifetime";
   const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
   const annualSavings = getAnnualSavingsPercentFromWeekly(commerceNumbers.plusWeeklyPrice, commerceNumbers.plusAnnualPrice);
 
@@ -72,6 +75,29 @@ export function PricingCards() {
       ]
     });
   };
+
+  const plusCtaHref = isPaidUser
+    ? "/app/billing"
+    : buildPlanCheckoutPath({
+        plan: "plus",
+        billing,
+        coupon: couponCatalog.LAUNCH20.code,
+        campaign: "pricing_primary"
+      });
+  const plusCtaLabel = isPaidUser
+    ? `Manage ${currentPlan === "lifetime" ? "Lifetime" : currentPlan === "pro" ? "Pro" : "Plus"}`
+    : isSignedIn
+      ? isAnnual
+        ? "Upgrade this account annually"
+        : "Upgrade this account weekly"
+      : isAnnual
+        ? "Get annual savings"
+        : "Unlock full feedback";
+  const plusSupportNote = isPaidUser
+    ? "Your current account is already paid. Use billing to manage or change plans."
+    : isSignedIn
+      ? "Checkout upgrades this same account. You can return and keep practicing right away."
+      : "Use your first checkout on the same account you plan to practice with.";
 
   return (
     <div style={{ display: "grid", gap: "1.2rem" }}>
@@ -198,25 +224,30 @@ export function PricingCards() {
           </ul>
           <TrackedLink
             className="button button-primary"
-            href={buildPlanCheckoutPath({
-              plan: "plus",
-              billing,
-              coupon: couponCatalog.LAUNCH20.code,
-              campaign: "pricing_primary"
-            })}
+            href={plusCtaHref}
             userId={currentUser?.id}
-            analyticsEvent="checkout_initiated"
-            analyticsPath={`/pricing/plus/${billing}`}
+            analyticsEvent={isPaidUser ? "pricing_plus_click" : "checkout_initiated"}
+            analyticsPath={isPaidUser ? "/pricing/manage-plan" : `/pricing/plus/${billing}`}
             onClick={() => {
+              if (isPaidUser) {
+                posthog.capture("pricing_manage_plan_click", {
+                  billing,
+                  current_plan: currentPlan
+                });
+                return;
+              }
               trackPlusIntent();
               fireCheckoutGa();
             }}
           >
-            {isAnnual ? "Get annual savings" : "Unlock full feedback"}
+            {plusCtaLabel}
           </TrackedLink>
           <div className="practice-meta">Launch offer: use {couponCatalog.LAUNCH20.code} for your first checkout.</div>
           <div className="practice-meta">
             {isAnnual ? "Best for learners who already expect a full exam-prep cycle." : "Cancel anytime. Keep the same account after upgrade."}
+          </div>
+          <div className="practice-meta">
+            {plusSupportNote}
           </div>
         </article>
       </div>
