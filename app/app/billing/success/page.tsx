@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { TrackedLink } from "@/components/tracked-link";
 import { useAppState } from "@/components/providers";
 import { trackClientEvent } from "@/lib/analytics-client";
 
@@ -145,6 +146,17 @@ export default function BillingSuccessPage() {
     : plan === "pro"
       ? "Pro"
       : "Plus";
+  const activationSteps = tr
+    ? [
+        "Bugun bir speaking oturumu ac ve yeni limiti hemen kullan.",
+        "Ayni gun retry yapip geri bildirimi cevaba uygula.",
+        "Bir arkadasini davet edip referral akisini da aktif et."
+      ]
+    : [
+        "Open one speaking session today and use the new limit immediately.",
+        "Retry the same day and apply the feedback to your answer.",
+        "Invite one friend and activate the referral loop as well."
+      ];
 
   return (
     <main className="page-shell section">
@@ -194,6 +206,53 @@ export default function BillingSuccessPage() {
                 ? `Bu checkout akisi ${attribution.ctaPath} CTA'si uzerinden basladi. Admin panelinde bu kaynagi artik dogrudan gorebilirsin.`
                 : `This checkout flow started from the ${attribution.ctaPath} CTA. You can now see that source directly in the admin panel.`}
             </p>
+          </div>
+        ) : null}
+        {status === "active" ? (
+          <div
+            className="card"
+            style={{
+              padding: "1rem",
+              display: "grid",
+              gap: "0.85rem",
+              background: "linear-gradient(135deg, rgba(29, 111, 117, 0.08) 0%, rgba(255,255,255,0.98) 100%)"
+            }}
+          >
+            <div>
+              <strong>{tr ? "Ilk 10 dakikada en iyi sonraki adimlar" : "Best next steps in the next 10 minutes"}</strong>
+              <p style={{ margin: "0.45rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>
+                {tr
+                  ? `${activePlanLabel} aktif oldugu anda en iyi sonuc, urunu hemen kullanip yeni davranisi ayni gun baslatmaktan gelir.`
+                  : `The best outcome after activating ${activePlanLabel} is to use the product right away and start the new habit the same day.`}
+              </p>
+            </div>
+            <div style={{ display: "grid", gap: "0.55rem" }}>
+              {activationSteps.map((step) => (
+                <div key={step} className="card" style={{ padding: "0.8rem 0.9rem", background: "rgba(255,255,255,0.78)" }}>
+                  {step}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+              <TrackedLink
+                className="button button-primary"
+                href="/app/practice"
+                userId={currentUser?.id}
+                analyticsEvent="marketing_cta_click"
+                analyticsPath="/app/billing/success/practice"
+              >
+                {tr ? "Hemen practice ac" : "Open practice now"}
+              </TrackedLink>
+              <TrackedLink
+                className="button button-secondary"
+                href="/app/referrals"
+                userId={currentUser?.id}
+                analyticsEvent="marketing_cta_click"
+                analyticsPath="/app/billing/success/referrals"
+              >
+                {tr ? "Referral akisini ac" : "Open referrals"}
+              </TrackedLink>
+            </div>
           </div>
         ) : null}
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
