@@ -24,6 +24,7 @@ export default function BillingPage() {
   const dashboardRole = resolveDashboardRole(currentUser);
   const comparison = getPlanComparison(tr);
   const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
+  const isPaidPlan = currentUser?.plan === "plus" || currentUser?.plan === "pro" || currentUser?.plan === "lifetime";
   const planOutcome = useMemo(
     () =>
       tr
@@ -36,6 +37,21 @@ export default function BillingPage() {
             "More daily speaking volume",
             "Stronger transcript and score insight",
             "Faster retry and improvement loops"
+          ],
+    [tr]
+  );
+  const growthLoopActions = useMemo(
+    () =>
+      tr
+        ? [
+            "Bugun bir speaking oturumu daha acip yeni limiti kullan.",
+            "Ayni gun retry yaparak geri bildirimi ikinci cevaba uygula.",
+            "Memnunsan bir arkadasini referral linkinle davet et."
+          ]
+        : [
+            "Open another speaking session today and use the new limit.",
+            "Retry on the same day and apply the feedback to a second answer.",
+            "If the product is working for you, invite one friend through your referral link."
           ],
     [tr]
   );
@@ -229,6 +245,54 @@ export default function BillingPage() {
             </article>
           ))}
         </div>
+
+        {isPaidPlan ? (
+          <div
+            className="card"
+            style={{
+              padding: "1rem",
+              display: "grid",
+              gap: "0.85rem",
+              background: "linear-gradient(135deg, rgba(29,111,117,0.08) 0%, rgba(255,255,255,0.98) 100%)"
+            }}
+          >
+            <div>
+              <strong>{tr ? "Bu plani gelir ve kullanim dongusune cevir" : "Turn this plan into a usage and growth loop"}</strong>
+              <p style={{ margin: "0.45rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>
+                {tr
+                  ? "Ucretli planda en iyi sonuc sadece satin alma degil; ayni gun kullanim aliskanligini oturtup memnun kaldigin noktada referral akisini da acmaktan gelir."
+                  : "The best outcome from a paid plan is not just the purchase itself. It is building same-day usage and then opening the referral loop once the product proves value."}
+              </p>
+            </div>
+            <div style={{ display: "grid", gap: "0.55rem" }}>
+              {growthLoopActions.map((item) => (
+                <div key={item} className="card" style={{ padding: "0.8rem 0.9rem", background: "rgba(255,255,255,0.78)" }}>
+                  {item}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+              <TrackedLink
+                className="button button-primary"
+                href="/app/practice"
+                userId={currentUser?.id}
+                analyticsEvent="marketing_cta_click"
+                analyticsPath="/app/billing/practice"
+              >
+                {tr ? "Practice ac" : "Open practice"}
+              </TrackedLink>
+              <TrackedLink
+                className="button button-secondary"
+                href="/app/referrals"
+                userId={currentUser?.id}
+                analyticsEvent="marketing_cta_click"
+                analyticsPath="/app/billing/referrals"
+              >
+                {tr ? "Referral merkezi" : "Referral center"}
+              </TrackedLink>
+            </div>
+          </div>
+        ) : null}
 
         {currentUser?.plan === "free" ? (
           <div className="card" style={{ padding: "1rem", background: "rgba(255, 248, 242, 0.9)", border: "1px solid rgba(217, 93, 57, 0.16)" }}>
