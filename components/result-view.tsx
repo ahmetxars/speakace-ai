@@ -4,8 +4,10 @@ import Link from "next/link";
 import { Download, Link2, MessageCircle, Share2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
+import { TrackedLink } from "@/components/tracked-link";
 import posthog from "posthog-js";
 import { trackClientEvent } from "@/lib/analytics-client";
+import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
 import { ProgressSummary, SpeakingSession } from "@/lib/types";
 import { readStudyFolders, readStudyItems, writeStudyFolders, writeStudyItems } from "@/lib/study-lists";
 
@@ -13,6 +15,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
   const { language, currentUser } = useAppState();
   const tr = language === "tr";
   const canExportReport = Boolean(currentUser && currentUser.plan !== "free");
+  const isFreePlan = currentUser?.plan === "free";
   const previousSession = summary.recentSessions.find((item) => item.id !== session.id && item.report);
   const delta = session.report && previousSession?.report ? Number((session.report.overall - previousSession.report.overall).toFixed(1)) : null;
   const qualityScore = session.transcriptQualityScore ?? 0;
@@ -36,6 +39,21 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
   const streakLabel = summary.streakDays > 0
     ? (tr ? `${summary.streakDays} günlük seri` : `${summary.streakDays}-day streak`)
     : (tr ? "İlk seriyi başlat" : "Start your first streak");
+  const resultLoopTitle = isFreePlan
+    ? tr
+      ? "Bu sonucu daha hizli gelisime cevir"
+      : "Turn this result into faster improvement"
+    : tr
+      ? "Bu sonucu ayni gun ikinci kazanca cevir"
+      : "Turn this result into a same-day second win";
+  const resultLoopBody = isFreePlan
+    ? tr
+      ? "Ayni gun retry, PDF raporu ve daha fazla speaking hacmi genelde ilk odemeyi en kolay bu ekranda aciyor."
+      : "Same-day retries, PDF export, and more speaking volume usually make this the easiest screen for a first upgrade."
+    : tr
+      ? "En iyi ilerleme, geri bildirimi hemen yeni cevaba uygulayip memnunsan referral akisini da acmaktan gelir."
+      : "The best progress comes from applying this feedback to a new answer right away, then opening the referral loop if the product is working for you."
+    ;
   const [avatarDataUrl, setAvatarDataUrl] = useState<string>("");
   const [publicShareUrl, setPublicShareUrl] = useState<string>("");
   const [audioSource, setAudioSource] = useState<string>("");
@@ -527,6 +545,68 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
           </div>
         </div>
       ) : null}
+
+      <div
+        className="card"
+        style={{
+          padding: "1rem",
+          display: "grid",
+          gap: "0.85rem",
+          background: "linear-gradient(135deg, rgba(29,111,117,0.08) 0%, rgba(255,255,255,0.98) 100%)"
+        }}
+      >
+        <div>
+          <strong>{resultLoopTitle}</strong>
+          <p style={{ margin: "0.45rem 0 0", color: "var(--muted-foreground)", lineHeight: 1.7 }}>
+            {resultLoopBody}
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          {isFreePlan ? (
+            <>
+              <TrackedLink
+                className="button button-primary"
+                href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "result_view_upgrade" })}
+                userId={currentUser?.id}
+                analyticsEvent="checkout_initiated"
+                analyticsPath="/app/results/upgrade"
+              >
+                {tr ? "Plus ile devam et" : "Continue with Plus"}
+              </TrackedLink>
+              <TrackedLink
+                className="button button-secondary"
+                href="/app/billing"
+                userId={currentUser?.id}
+                analyticsEvent="checkout_cta_click"
+                analyticsPath="/app/results/billing"
+              >
+                {tr ? "Planlari incele" : "Review plans"}
+              </TrackedLink>
+            </>
+          ) : (
+            <>
+              <TrackedLink
+                className="button button-primary"
+                href={retryHref}
+                userId={currentUser?.id}
+                analyticsEvent="marketing_cta_click"
+                analyticsPath="/app/results/retry"
+              >
+                {tr ? "Hemen tekrar dene" : "Retry now"}
+              </TrackedLink>
+              <TrackedLink
+                className="button button-secondary"
+                href="/app/referrals"
+                userId={currentUser?.id}
+                analyticsEvent="marketing_cta_click"
+                analyticsPath="/app/results/referrals"
+              >
+                {tr ? "Referral merkezi" : "Referral center"}
+              </TrackedLink>
+            </>
+          )}
+        </div>
+      </div>
 
       {/* ── SHARE MODAL ── */}
       {shareOpen ? (
