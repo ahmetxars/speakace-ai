@@ -49,10 +49,59 @@ export function ReferralCenter() {
     return tr ? "En hizli baslangic genelde 3-5 yakin study partner veya bir ogretmen toplulugu ile geliyor." : "The fastest start usually comes from 3-5 close study partners or one teacher-led group.";
   }, [summary, tr]);
 
+  const nextReferralMilestone = useMemo(() => {
+    const signups = summary?.signups ?? 0;
+    const nextTarget = signups < 3 ? 3 : signups < 10 ? 10 : signups + 5;
+    const remaining = Math.max(0, nextTarget - signups);
+    return tr
+      ? `${nextTarget} signup hedefi icin ${remaining} kisi daha gerekiyor.`
+      : `${remaining} more people needed to reach the next ${nextTarget}-signup milestone.`;
+  }, [summary?.signups, tr]);
+
+  const shareScripts = useMemo(
+    () =>
+      tr
+        ? [
+            {
+              label: "Yakın arkadaş",
+              text: `IELTS/TOEFL speaking pratiği için kullandigim uygulama bu. Ucretsiz bakmak istersen link: ${inviteLink}`
+            },
+            {
+              label: "Study grubu",
+              text: `Speaking pratiğini birlikte daha duzenli yapmak icin bunu acalim. Ben kullaniyorum, siz de su linkten girebilirsiniz: ${inviteLink}`
+            },
+            {
+              label: "Eski ogrenci / tanidik",
+              text: `IELTS/TOEFL speaking tarafinda yararli buldugum bir araci paylasiyorum. Ucretsiz denemek istersen: ${inviteLink}`
+            }
+          ]
+        : [
+            {
+              label: "Close friend",
+              text: `This is the app I use for IELTS/TOEFL speaking practice. If you want to try it free, here is the link: ${inviteLink}`
+            },
+            {
+              label: "Study group",
+              text: `Let’s use this to keep speaking practice more consistent. I’m already using it and you can join from this link: ${inviteLink}`
+            },
+            {
+              label: "Old classmate",
+              text: `Sharing a speaking tool I found useful for IELTS/TOEFL prep. If you want to try it free: ${inviteLink}`
+            }
+          ],
+    [inviteLink, tr]
+  );
+
   const copyLink = async () => {
     if (!inviteLink) return;
     await navigator.clipboard.writeText(inviteLink);
     setNotice(tr ? "Davet linki kopyalandı." : "Invite link copied.");
+  };
+
+  const copyScript = async (text: string) => {
+    if (!text) return;
+    await navigator.clipboard.writeText(text);
+    setNotice(tr ? "Paylasim metni kopyalandi." : "Share script copied.");
   };
 
   return (
@@ -117,17 +166,36 @@ export function ReferralCenter() {
           <strong>{tr ? "Bir sonraki gelir adimi" : "Next revenue step"}</strong>
           <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
             {tr
-              ? "Bireysel referral iyi bir baslangic. Daha buyuk carpani ise bir ogretmen veya okulun ayni urunu sinif bazli denemesi getirir."
-              : "Individual referrals are a good start. The larger multiplier comes when one teacher or school tests the same product with a class."}
+              ? "En hizli artis, kisa surede 3-5 yakin kisiyi bu linke yonlendirip ilk aktif trial veya paid donusumu gormekten geliyor."
+              : "The fastest lift usually comes from sending this link to 3-5 close contacts quickly and getting the first active trial or paid conversion."}
           </p>
+          <div className="card" style={{ padding: "0.85rem 0.95rem", background: "rgba(255,255,255,0.76)" }}>
+            <strong style={{ display: "block", marginBottom: "0.3rem" }}>{tr ? "Mini hedef" : "Mini target"}</strong>
+            <span style={{ color: "var(--muted)", lineHeight: 1.6 }}>{nextReferralMilestone}</span>
+          </div>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <TrackedLink className="button button-primary" href="/for-schools" userId={currentUser?.id} analyticsEvent="marketing_cta_click" analyticsPath="/app/referrals/for-schools">
-              {tr ? "Okul planlarini goster" : "Show school plans"}
+            <TrackedLink className="button button-primary" href="/app/practice" userId={currentUser?.id} analyticsEvent="marketing_cta_click" analyticsPath="/app/referrals/practice">
+              {tr ? "Practice'e don" : "Back to practice"}
             </TrackedLink>
-            <TrackedLink className="button button-secondary" href="/pricing" userId={currentUser?.id} analyticsEvent="pricing_view" analyticsPath="/app/referrals/pricing">
-              {tr ? "Bireysel planlari ac" : "Open individual pricing"}
+            <TrackedLink className="button button-secondary" href="/app/billing" userId={currentUser?.id} analyticsEvent="checkout_cta_click" analyticsPath="/app/referrals/billing">
+              {tr ? "Planlari ve odemeyi ac" : "Open billing and plans"}
             </TrackedLink>
           </div>
+        </div>
+      </section>
+
+      <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.85rem" }}>
+        <strong>{tr ? "Hazir paylasim metinleri" : "Ready-to-send share scripts"}</strong>
+        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "0.85rem" }}>
+          {shareScripts.map((script) => (
+            <div key={script.label} className="card" style={{ padding: "0.95rem", display: "grid", gap: "0.6rem", background: "var(--surface-strong)" }}>
+              <strong>{script.label}</strong>
+              <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65 }}>{script.text || (tr ? "Link hazirlaniyor..." : "Link is loading...")}</p>
+              <button type="button" className="button button-secondary" onClick={() => void copyScript(script.text)} disabled={!script.text}>
+                {tr ? "Metni kopyala" : "Copy script"}
+              </button>
+            </div>
+          ))}
         </div>
       </section>
     </main>
