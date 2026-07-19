@@ -368,6 +368,69 @@ export function AdminPanel(props: {
     };
   }, [props.overview.funnel7d.clickToPaidRate, props.overview.monetizationFunnel7d.checkoutToCompletionRate]);
 
+  const revenueActionPlan = useMemo(() => {
+    const bestCheckoutSource = props.overview.topCheckoutSources[0];
+    const winnerCta = props.overview.winnerCta7d;
+    const actions: Array<{ title: string; detail: string; tone: "success" | "warning" | "neutral" }> = [];
+
+    if (monetizationBottleneck.key === "pricing") {
+      actions.push({
+        title: "Tighten pricing CTA pressure",
+        detail: `${formatPercent(props.overview.monetizationFunnel7d.pricingViewToCheckoutRate)} pricing→checkout in 7d. Keep testing pricing copy, CTA clarity, and account-state messaging first.`,
+        tone: "warning"
+      });
+    } else if (monetizationBottleneck.key === "paywall") {
+      actions.push({
+        title: "Push harder on paywall recovery",
+        detail: `${formatPercent(props.overview.monetizationFunnel7d.limitHitToCheckoutRate)} limit-hit→checkout in 7d. Focus on practice/result retry walls because intent already exists there.`,
+        tone: "warning"
+      });
+    } else {
+      actions.push({
+        title: "Fix checkout completion leakage",
+        detail: `${formatPercent(props.overview.monetizationFunnel7d.checkoutToCompletionRate)} checkout completion in 7d. The next gains come from reducing drop-off between initiated and paid.`,
+        tone: "warning"
+      });
+    }
+
+    if (bestCheckoutSource) {
+      actions.push({
+        title: "Scale the best checkout source",
+        detail: `${formatCtaLabel(bestCheckoutSource.path)} is leading with ${formatPercent(bestCheckoutSource.completionRate)} completion from ${bestCheckoutSource.completed} paid checkouts.`,
+        tone: "success"
+      });
+    } else {
+      actions.push({
+        title: "Wait for stronger checkout signal",
+        detail: "There is not enough completed checkout attribution yet. Keep collecting source-level data before choosing a page winner.",
+        tone: "neutral"
+      });
+    }
+
+    if (winnerCta) {
+      actions.push({
+        title: "Reuse the strongest CTA language",
+        detail: `${formatCtaLabel(winnerCta.path)} is the current weekly CTA winner with ${formatPercent(winnerCta.clickToPaidRate)} click→paid.`,
+        tone: "success"
+      });
+    } else {
+      actions.push({
+        title: "Insufficient CTA attribution this week",
+        detail: "Weekly CTA attribution is still thin, so keep prioritizing high-intent surfaces instead of broad page experiments.",
+        tone: "neutral"
+      });
+    }
+
+    return actions;
+  }, [
+    monetizationBottleneck.key,
+    props.overview.monetizationFunnel7d.pricingViewToCheckoutRate,
+    props.overview.monetizationFunnel7d.limitHitToCheckoutRate,
+    props.overview.monetizationFunnel7d.checkoutToCompletionRate,
+    props.overview.topCheckoutSources,
+    props.overview.winnerCta7d
+  ]);
+
   const filteredMembers = useMemo(() => {
     const query = search.trim().toLowerCase();
     return props.members.filter((member) => {
@@ -675,6 +738,18 @@ export function AdminPanel(props: {
                   detail={`Traffic is ${props.overview.pageViews1h} page views in the last hour, with ${props.overview.requests5m} recent requests.`}
                   tone="neutral"
                 />
+              </div>
+
+              <div className="adm-panel-card" style={{ marginBottom: "1rem" }}>
+                <div className="adm-panel-card-head">
+                  <h3>Revenue Action Plan</h3>
+                  <p>The next three moves based on current conversion data, not guesswork.</p>
+                </div>
+                <div className="adm-signal-grid">
+                  {revenueActionPlan.map((item) => (
+                    <AdmSignalCard key={item.title} label={item.title} value={item.tone === "success" ? "Scale" : item.tone === "warning" ? "Fix" : "Watch"} detail={item.detail} tone={item.tone} />
+                  ))}
+                </div>
               </div>
 
               {/* Stat Cards */}
