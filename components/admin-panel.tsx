@@ -466,6 +466,80 @@ export function AdminPanel(props: {
     [filteredMembers.length, props.billingEvents.length, props.institutions.length]
   );
 
+  const billingOverview = useMemo(() => {
+    const statusCounts = props.billingEvents.reduce<Record<string, number>>((acc, event) => {
+      acc[event.billing_status] = (acc[event.billing_status] ?? 0) + 1;
+      return acc;
+    }, {});
+    const planCounts = props.billingEvents.reduce<Record<string, number>>((acc, event) => {
+      acc[event.plan] = (acc[event.plan] ?? 0) + 1;
+      return acc;
+    }, {});
+    const recentEvents = [...props.billingEvents]
+      .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
+      .slice(0, 6);
+
+    return {
+      activeCount: statusCounts.active ?? 0,
+      trialingCount: statusCounts.trialing ?? 0,
+      churnedCount: (statusCounts.cancelled ?? 0) + (statusCounts.expired ?? 0),
+      statusCounts,
+      planCounts,
+      recentEvents
+    };
+  }, [props.billingEvents]);
+
+  const billingActionQueue = useMemo(() => {
+    const droppedCheckouts = Math.max(
+      props.overview.monetizationFunnel7d.checkoutInitiated - props.overview.monetizationFunnel7d.checkoutCompleted,
+      0
+    );
+    const missingSuccessViews = Math.max(
+      props.overview.monetizationFunnel7d.checkoutCompleted - props.overview.monetizationFunnel7d.billingSuccessSeen,
+      0
+    );
+    const bestCheckoutSource = props.overview.topCheckoutSources[0];
+    const actions: Array<{ title: string; value: string; detail: string; tone: "success" | "warning" | "neutral" }> = [];
+
+    actions.push({
+      title: "Checkout leak to recover",
+      value: `${droppedCheckouts}`,
+      detail:
+        droppedCheckouts > 0
+          ? `${props.overview.monetizationFunnel7d.checkoutInitiated} initiated vs ${props.overview.monetizationFunnel7d.checkoutCompleted} completed in 7d. Prioritize payment-dropoff fixes first.`
+          : "No checkout drop-off was recorded in the last 7 days.",
+      tone: droppedCheckouts > 0 ? "warning" : "success"
+    });
+
+    actions.push({
+      title: "Post-payment follow-through",
+      value: `${missingSuccessViews}`,
+      detail:
+        missingSuccessViews > 0
+          ? `${props.overview.billingSuccessSeen7d} billing success views from ${props.overview.checkoutCompleted7d} completed checkouts. Tighten success-page delivery and onboarding continuity.`
+          : "Completed checkouts are reaching the success state cleanly.",
+      tone: missingSuccessViews > 0 ? "warning" : "success"
+    });
+
+    actions.push({
+      title: "Source worth scaling",
+      value: bestCheckoutSource ? formatCtaLabel(bestCheckoutSource.path) : "No signal yet",
+      detail: bestCheckoutSource
+        ? `${formatPercent(bestCheckoutSource.completionRate)} completion rate with ${bestCheckoutSource.completed} completed checkouts attributed to this path.`
+        : "Once more attributed checkout data lands, the strongest source will appear here.",
+      tone: bestCheckoutSource ? "success" : "neutral"
+    });
+
+    return actions;
+  }, [
+    props.overview.billingSuccessSeen7d,
+    props.overview.checkoutCompleted7d,
+    props.overview.topCheckoutSources,
+    props.overview.monetizationFunnel7d.billingSuccessSeen,
+    props.overview.monetizationFunnel7d.checkoutCompleted,
+    props.overview.monetizationFunnel7d.checkoutInitiated
+  ]);
+
   const logout = async () => {
     await fetch("/api/admin/auth/logout", { method: "POST" });
     router.push("/admin/login");
@@ -1865,36 +1939,140 @@ export function AdminPanel(props: {
 
           {/* ── BILLING TAB ──────────────────────── */}
           {activeTab === "billing" && (
-            <div className="adm-table-card" style={{ gridColumn: "1 / -1" }}>
-              <div className="adm-table-card-head">
-                <h3>Billing Events</h3>
-                <span className="adm-badge adm-badge-neutral">{props.billingEvents.length} total</span>
+            <div style={{ display: "grid", gap: "1rem", gridColumn: "1 / -1" }}>
+              <div className="adm-signal-grid">
+                <AdmSignalCard
+                  label="Active subscriptions"
+                  value={String(billingOverview.activeCount)}
+                  detail={`${billingOverview.trialingCount} trialing and ${billingOverview.churnedCount} churned billing records currently visible.`}
+                  tone={billingOverview.activeCount > billingOverview.churnedCount ? "success" : "warning"}
+                />
+                <AdmSignalCard
+                  label="Checkout completion"
+                  value={formatPercent(props.overview.monetizationFunnel7d.checkoutToCompletionRate)}
+                  detail={`${props.overview.checkoutCompleted7d}/${props.overview.checkoutInitiated7d} checkouts completed in the last 7 days.`}
+                  tone={
+                    props.overview.monetizationFunnel7d.checkoutToCompletionRate >= 40
+                      ? "success"
+                      : props.overview.monetizationFunnel7d.checkoutToCompletionRate >= 20
+                        ? "neutral"
+                        : "warning"
+                  }
+                />
+                <AdmSignalCard
+                  label="Success-page reach"
+                  value={`${props.overview.billingSuccessSeen7d}/${props.overview.checkoutCompleted7d}`}
+                  detail="How many completed buyers actually reached the billing success state in the last 7 days."
+                  tone={props.overview.billingSuccessSeen7d >= props.overview.checkoutCompleted7d ? "success" : "warning"}
+                />
+              </div>
+
+              <div className="adm-panel-card">
+                <div className="adm-panel-card-head">
+                  <h3>Billing Action Queue</h3>
+                  <p>Use this to decide where the next revenue lift will come from.</p>
+                </div>
+                <div className="adm-signal-grid">
+                  {billingActionQueue.map((item) => (
+                    <AdmSignalCard key={item.title} label={item.title} value={item.value} detail={item.detail} tone={item.tone} />
+                  ))}
+                </div>
+              </div>
+
+              <div className="adm-tables-row">
+                <div className="adm-table-card">
+                  <div className="adm-table-card-head">
+                    <h3>Billing Status Mix</h3>
+                    <span className="adm-badge adm-badge-neutral">{props.billingEvents.length} total</span>
+                  </div>
+                  <div className="adm-stack-list">
+                    {Object.keys(billingOverview.statusCounts).length === 0 ? (
+                      <p className="adm-muted">No billing events yet.</p>
+                    ) : (
+                      Object.entries(billingOverview.statusCounts)
+                        .sort((left, right) => right[1] - left[1])
+                        .map(([status, count]) => (
+                          <div key={status} className="adm-list-row">
+                            <div>
+                              <div className="adm-table-name">{status.replace(/_/g, " ")}</div>
+                              <div className="adm-table-email">{formatPercent(props.billingEvents.length ? (count / props.billingEvents.length) * 100 : 0)} of billing records</div>
+                            </div>
+                            <div className="adm-list-side">
+                              <StatusBadge
+                                label={`${count}`}
+                                tone={status === "active" ? "success" : status === "cancelled" || status === "expired" ? "warning" : "neutral"}
+                              />
+                            </div>
+                          </div>
+                        ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="adm-table-card">
+                  <div className="adm-table-card-head">
+                    <h3>Plan Mix</h3>
+                    <span className="adm-badge adm-badge-neutral">{Object.keys(billingOverview.planCounts).length} plans</span>
+                  </div>
+                  <div className="adm-stack-list">
+                    {Object.keys(billingOverview.planCounts).length === 0 ? (
+                      <p className="adm-muted">No plan signals yet.</p>
+                    ) : (
+                      Object.entries(billingOverview.planCounts)
+                        .sort((left, right) => right[1] - left[1])
+                        .map(([plan, count]) => (
+                          <div key={plan} className="adm-list-row">
+                            <div>
+                              <div className="adm-table-name">{plan}</div>
+                              <div className="adm-table-email">
+                                {formatPercent(props.billingEvents.length ? (count / props.billingEvents.length) * 100 : 0)} of billing records
+                              </div>
+                            </div>
+                            <div className="adm-list-side">
+                              <StatusBadge label={`${count} events`} tone={plan === "plus" || plan === "pro" ? "accent" : "neutral"} />
+                            </div>
+                          </div>
+                        ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="adm-table-card">
+                <div className="adm-table-card-head">
+                  <h3>Recent Billing Events</h3>
+                  <span className="adm-badge adm-badge-neutral">{billingOverview.recentEvents.length} latest</span>
+                </div>
               </div>
               {props.billingEvents.length === 0 ? (
-                <p className="adm-table-muted" style={{ padding: "1rem" }}>No billing events yet.</p>
+                <div className="adm-table-card">
+                  <p className="adm-table-muted" style={{ padding: "1rem" }}>No billing events yet.</p>
+                </div>
               ) : (
-                <table className="adm-table">
-                  <thead>
-                    <tr>
-                      <th>EVENT</th>
-                      <th>EMAIL</th>
-                      <th>PLAN</th>
-                      <th>STATUS</th>
-                      <th>DATE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {props.billingEvents.map((ev) => (
-                      <tr key={ev.id}>
-                        <td style={{ fontWeight: 600 }}>{ev.event_name.replace(/_/g, " ")}</td>
-                        <td className="adm-table-muted">{ev.user_email ?? "—"}</td>
-                        <td><StatusBadge label={ev.plan} tone={ev.plan === "pro" || ev.plan === "plus" ? "accent" : "neutral"} /></td>
-                        <td><StatusBadge label={ev.billing_status} tone={ev.billing_status === "active" ? "success" : ev.billing_status === "cancelled" || ev.billing_status === "expired" ? "warning" : "neutral"} /></td>
-                        <td className="adm-table-muted">{formatDate(ev.created_at)}</td>
+                <div className="adm-table-card">
+                  <table className="adm-table">
+                    <thead>
+                      <tr>
+                        <th>EVENT</th>
+                        <th>EMAIL</th>
+                        <th>PLAN</th>
+                        <th>STATUS</th>
+                        <th>DATE</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {billingOverview.recentEvents.map((ev) => (
+                        <tr key={ev.id}>
+                          <td style={{ fontWeight: 600 }}>{ev.event_name.replace(/_/g, " ")}</td>
+                          <td className="adm-table-muted">{ev.user_email ?? "—"}</td>
+                          <td><StatusBadge label={ev.plan} tone={ev.plan === "pro" || ev.plan === "plus" ? "accent" : "neutral"} /></td>
+                          <td><StatusBadge label={ev.billing_status} tone={ev.billing_status === "active" ? "success" : ev.billing_status === "cancelled" || ev.billing_status === "expired" ? "warning" : "neutral"} /></td>
+                          <td className="adm-table-muted">{formatDate(ev.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}
