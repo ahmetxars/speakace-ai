@@ -12,6 +12,7 @@ import {
   couponCatalog,
   formatUsd,
   getAnnualMonthlyEquivalent,
+  getAnnualSavingsPercentFromWeekly,
   getPlanComparison
 } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
@@ -24,6 +25,7 @@ export default function BillingPage() {
   const dashboardRole = resolveDashboardRole(currentUser);
   const comparison = getPlanComparison(tr);
   const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
+  const plusAnnualSavings = getAnnualSavingsPercentFromWeekly(commerceNumbers.plusWeeklyPrice, commerceNumbers.plusAnnualPrice);
   const isPaidPlan = currentUser?.plan === "plus" || currentUser?.plan === "pro" || currentUser?.plan === "lifetime";
   const planOutcome = useMemo(
     () =>
@@ -52,6 +54,60 @@ export default function BillingPage() {
             "Open another speaking session today and use the new limit.",
             "Retry on the same day and apply the feedback to a second answer.",
             "If the product is working for you, invite one friend through your referral link."
+          ],
+    [tr]
+  );
+  const purchaseDecisionGuide = useMemo(
+    () =>
+      currentUser?.plan === "free"
+        ? {
+            heading: tr ? "En net sonraki adim" : "Clearest next step",
+            title: tr ? "Ilk odeme icin Plus ile basla" : "Start with Plus for the first payment",
+            detail: tr
+              ? `Cogu ilk checkout once Plus ile daha kolay kapanir. Yillik secenekte haftalik plana gore yaklasik %${plusAnnualSavings} daha iyi fiyat yakalarsin, daha dusuk surtunme istiyorsan haftalik baslangic da var.`
+              : `Most first checkouts close more easily through Plus. The annual option lands at about ${plusAnnualSavings}% better value than paying weekly, and the weekly path is there if you want the lowest-friction start.`,
+            ctaLabel: tr ? "Plus yillik ile basla" : "Start with Plus annual",
+            ctaHref: buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_decision_annual" }),
+            secondaryLabel: tr ? "Daha hafif giris: haftalik" : "Lower-friction start: weekly",
+            secondaryHref: buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_decision_weekly" })
+          }
+        : currentUser?.plan === "plus"
+          ? {
+              heading: tr ? "Bir sonraki gelir adimi" : "Next revenue step",
+              title: tr ? "Pro sadece daha agir kullanimda mantikli" : "Pro makes sense only for heavier usage",
+              detail: tr
+                ? "Plus zaten acik. Daha yogun calisiyor ve daha fazla speaking hacmi istiyorsan Pro'ya gec; aksi halde once kullanim aliskanligini buyut."
+                : "Plus is already active. Upgrade to Pro only if you are pushing a heavier study routine and want more volume; otherwise keep compounding usage first.",
+              ctaLabel: tr ? "Pro'ya bak" : "View Pro upgrade",
+              ctaHref: buildPlanCheckoutPath({ plan: "pro", campaign: "billing_decision_pro" }),
+              secondaryLabel: tr ? "Once practice yap" : "Practice first",
+              secondaryHref: "/app/practice"
+            }
+          : {
+              heading: tr ? "Plan aktif" : "Plan active",
+              title: tr ? "Su an odak kullanimi buyutmek" : "The focus now is growing usage",
+              detail: tr
+                ? "Planin zaten acik. En iyi sonraki adim practice ve referral dongusunu calistirmak."
+                : "Your paid plan is already active. The best next move is to increase usage and activate the referral loop.",
+              ctaLabel: tr ? "Practice ac" : "Open practice",
+              ctaHref: "/app/practice",
+              secondaryLabel: tr ? "Referral merkezi" : "Referral center",
+              secondaryHref: "/app/referrals"
+            },
+    [currentUser?.plan, plusAnnualSavings, tr]
+  );
+  const purchaseConfidencePoints = useMemo(
+    () =>
+      tr
+        ? [
+            "Checkout ayni hesaba baglanir, yeni hesap acman gerekmez.",
+            "Odeme sonrasi success ekrani plani otomatik dogrular.",
+            "Ilk satin almada LAUNCH20 kodu ile daha yumusak giris yapabilirsin."
+          ]
+        : [
+            "Checkout stays on the same account, so you do not need a second login.",
+            "The success screen automatically checks whether the upgrade attached correctly.",
+            `For a softer first purchase, you can use ${couponCatalog.LAUNCH20.code}.`
           ],
     [tr]
   );
@@ -127,6 +183,85 @@ export default function BillingPage() {
                 <strong>{item.plus}</strong>
               </div>
             ))}
+          </div>
+        </div>
+        <div
+          className="card"
+          style={{
+            padding: "1rem",
+            display: "grid",
+            gap: "0.9rem",
+            background: "linear-gradient(135deg, rgba(29, 111, 117, 0.08) 0%, rgba(255, 255, 255, 0.98) 100%)"
+          }}
+        >
+          <div>
+            <span className="eyebrow" style={{ marginBottom: "0.45rem", display: "inline-flex" }}>{purchaseDecisionGuide.heading}</span>
+            <h2 style={{ margin: 0, fontSize: "1.25rem" }}>{purchaseDecisionGuide.title}</h2>
+            <p style={{ margin: "0.55rem 0 0", color: "var(--muted)", lineHeight: 1.7 }}>{purchaseDecisionGuide.detail}</p>
+          </div>
+          {currentUser?.plan === "free" ? (
+            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.8rem" }}>
+              <div className="card" style={{ padding: "0.95rem", background: "rgba(255,255,255,0.82)" }}>
+                <strong>{tr ? "Yillik fiyat avantaji" : "Annual value edge"}</strong>
+                <div style={{ fontSize: "1.35rem", fontWeight: 700, marginTop: "0.35rem" }}>%{plusAnnualSavings}</div>
+                <p style={{ margin: "0.35rem 0 0", color: "var(--muted)" }}>
+                  {tr ? "Haftalik odemeye gore yaklasik tasarruf" : "Approximate savings versus paying weekly"}
+                </p>
+              </div>
+              <div className="card" style={{ padding: "0.95rem", background: "rgba(255,255,255,0.82)" }}>
+                <strong>{tr ? "Aylik esit maliyet" : "Monthly equivalent"}</strong>
+                <div style={{ fontSize: "1.35rem", fontWeight: 700, marginTop: "0.35rem" }}>{formatUsd(plusAnnualMonthlyEquivalent)}</div>
+                <p style={{ margin: "0.35rem 0 0", color: "var(--muted)" }}>
+                  {tr ? "Plus yillik icin aylik ortalama" : "Average monthly cost on Plus annual"}
+                </p>
+              </div>
+              <div className="card" style={{ padding: "0.95rem", background: "rgba(255,255,255,0.82)" }}>
+                <strong>{tr ? "Kupon" : "Coupon"}</strong>
+                <div style={{ fontSize: "1.35rem", fontWeight: 700, marginTop: "0.35rem" }}>{couponCatalog.LAUNCH20.code}</div>
+                <p style={{ margin: "0.35rem 0 0", color: "var(--muted)" }}>
+                  {tr ? "Ilk checkout surtunmesini azaltmak icin" : "To soften the first checkout decision"}
+                </p>
+              </div>
+            </div>
+          ) : null}
+          <div style={{ display: "grid", gap: "0.55rem" }}>
+            {purchaseConfidencePoints.map((item) => (
+              <div key={item} className="card" style={{ padding: "0.8rem 0.9rem", background: "rgba(255,255,255,0.8)" }}>
+                {item}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <TrackedLink
+              className="button button-primary"
+              href={purchaseDecisionGuide.ctaHref}
+              userId={currentUser?.id}
+              analyticsEvent="checkout_initiated"
+              analyticsPath={purchaseDecisionGuide.ctaHref}
+              onClick={() => {
+                if (purchaseDecisionGuide.ctaHref.includes("plan=plus")) {
+                  posthog.capture("checkout_initiated", { plan: "plus", billing: "annual", current_plan: currentUser?.plan, campaign: "billing_decision_annual" });
+                } else if (purchaseDecisionGuide.ctaHref.includes("plan=pro")) {
+                  posthog.capture("checkout_initiated", { plan: "pro", current_plan: currentUser?.plan, campaign: "billing_decision_pro" });
+                }
+              }}
+            >
+              {purchaseDecisionGuide.ctaLabel}
+            </TrackedLink>
+            <TrackedLink
+              className="button button-secondary"
+              href={purchaseDecisionGuide.secondaryHref}
+              userId={currentUser?.id}
+              analyticsEvent={currentUser?.plan === "free" ? "checkout_initiated" : "marketing_cta_click"}
+              analyticsPath={purchaseDecisionGuide.secondaryHref}
+              onClick={() => {
+                if (currentUser?.plan === "free") {
+                  posthog.capture("checkout_initiated", { plan: "plus", billing: "weekly", current_plan: currentUser?.plan, campaign: "billing_decision_weekly" });
+                }
+              }}
+            >
+              {purchaseDecisionGuide.secondaryLabel}
+            </TrackedLink>
           </div>
         </div>
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
