@@ -528,9 +528,57 @@ export function Dashboard() {
     : tr
       ? "Bugun ilk denemeni atip dashboardu veriyle doldurmaya baslayabilirsin."
       : "Start your first attempt today and begin filling the dashboard with real data.";
+  const isPlusTrial = signedIn && currentUser?.plan === "plus" && currentUser.billingStatus === "on_trial";
+  const trialEndsAt = currentUser?.trialEndsAt ? new Date(currentUser.trialEndsAt) : null;
+  const hasValidTrialEnd = Boolean(trialEndsAt && !Number.isNaN(trialEndsAt.getTime()));
+  const trialHoursRemaining = hasValidTrialEnd
+    ? Math.max(0, Math.ceil((trialEndsAt!.getTime() - Date.now()) / (60 * 60 * 1000)))
+    : null;
+  const trialTimeLabel = trialHoursRemaining === null
+    ? (tr ? "3 gunluk deneme aktif" : "3-day trial active")
+    : trialHoursRemaining <= 24
+      ? tr
+        ? `${trialHoursRemaining} saat kaldi`
+        : `${trialHoursRemaining} hours left`
+      : tr
+        ? `${Math.ceil(trialHoursRemaining / 24)} gun kaldi`
+        : `${Math.ceil(trialHoursRemaining / 24)} days left`;
 
   return (
     <div className="page-shell section db-page">
+
+      {/* PLUS TRIAL ACTIVATION */}
+      {isPlusTrial ? (
+        <section className="db-banner card" style={{ background: "rgba(201,162,39,0.09)", border: "1.5px solid rgba(201,162,39,0.32)" }}>
+          <div className="db-banner-body">
+            <Sparkles size={15} />
+            <div>
+              <strong style={{ display: "block", marginBottom: "0.2rem" }}>
+                {tr ? `Plus denemen aktif · ${trialTimeLabel}` : `Your Plus trial is active · ${trialTimeLabel}`}
+              </strong>
+              <p style={{ margin: 0, fontSize: "0.87rem", color: "var(--muted)" }}>
+                {tr
+                  ? "Deneme bitmeden bir cevabi kaydet, tam AI feedback'i oku ve ayni prompt'u tekrar dene. Plus, deneme sonrasinda haftalik $3.99 ile devam eder."
+                  : "Before the trial ends, record one answer, read the full AI feedback, and retry the same prompt. Plus continues at $3.99/week after the trial."}
+              </p>
+            </div>
+          </div>
+          <div className="dashboard-inline-actions">
+            <TrackedLink
+              className="button button-primary"
+              href="/app/practice"
+              userId={currentUser?.id}
+              analyticsEvent="marketing_cta_click"
+              analyticsPath="/app/trial/activate-practice"
+            >
+              {tr ? "Trial hedefini tamamla →" : "Complete the trial goal →"}
+            </TrackedLink>
+            <Link className="button button-secondary" href="/app/billing">
+              {tr ? "Plan detaylari" : "Plan details"}
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       {/* ONBOARDING BANNER */}
       {needsOnboarding ? (

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getLemonCheckoutMetadata,
   getLemonPaymentDetails,
+  getLemonTrialEndsAt,
   resolveBillingStatusFromEvent
 } from "@/lib/server/lemon";
 
@@ -9,6 +10,20 @@ describe("Lemon billing helpers", () => {
   it("keeps successful subscription renewals active", () => {
     expect(resolveBillingStatusFromEvent("subscription_payment_success", {})).toBe("active");
     expect(resolveBillingStatusFromEvent("subscription_payment_recovered", {})).toBe("active");
+  });
+
+  it("preserves Lemon trial state and expiration", () => {
+    const payload = {
+      data: {
+        attributes: {
+          status: "on_trial",
+          trial_ends_at: "2026-07-25T12:00:00.000Z"
+        }
+      }
+    };
+
+    expect(resolveBillingStatusFromEvent("subscription_created", payload)).toBe("on_trial");
+    expect(getLemonTrialEndsAt(payload)).toBe("2026-07-25T12:00:00.000Z");
   });
 
   it("extracts real payment value and checkout attribution", () => {

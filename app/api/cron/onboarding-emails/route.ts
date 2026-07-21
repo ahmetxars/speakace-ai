@@ -4,7 +4,9 @@ import {
   getUsersDueForNextOnboardingEmail,
   sendOnboardingEmail,
   getUsersForDailyTip,
-  sendDailyTipEmail
+  sendDailyTipEmail,
+  getUsersDueForTrialLifecycleEmail,
+  sendTrialLifecycleEmail
 } from "@/lib/server/email-sequences";
 
 function isAuthorized(request: Request) {
@@ -90,6 +92,32 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── Trial activation and renewal transparency ─────────────────────────────
+  let trialSent = 0;
+  let trialSkipped = 0;
+  let trialFailed = 0;
+  const trialUsers = await getUsersDueForTrialLifecycleEmail(limit);
+
+  for (const user of trialUsers) {
+    try {
+      if (dryRun) {
+        trialSkipped++;
+        continue;
+      }
+
+      const result = await sendTrialLifecycleEmail(user.id, user.stage);
+      if (result.ok) {
+        trialSent++;
+      } else if (result.skipped) {
+        trialSkipped++;
+      } else {
+        trialFailed++;
+      }
+    } catch {
+      trialFailed++;
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     dryRun,
@@ -106,6 +134,16 @@ export async function GET(request: Request) {
     },
     dailyTip: skipTips
       ? { skipped: true }
-      : { sent: tipSent, skipped: tipSkipped, failed: tipFailed }
+      : { sent: tipSent, skipped: tipSkipped, failed: tipFailed },
+    trialLifecycle: {
+      queued: trialUsers.length,
+      sent: trialSent,
+      skipped: trialSkipped,
+      failed: trialFailed,
+      stages: trialUsers.reduce<Record<string, number>>((summary, user) => {
+        summary[user.stage] = (summary[user.stage] ?? 0) + 1;
+        return summary;
+      }, {})
+    }
   });
 }

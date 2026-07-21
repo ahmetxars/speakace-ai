@@ -822,13 +822,15 @@ export async function syncBillingStateForMember(member: MemberProfile) {
       billingStatus: BillingStatus;
       providerCustomerId: string | null;
       providerSubscriptionId: string | null;
+      trialEndsAt: string | null;
     }>
   >`
     select
       plan,
       billing_status as "billingStatus",
       provider_customer_id as "providerCustomerId",
-      provider_subscription_id as "providerSubscriptionId"
+      provider_subscription_id as "providerSubscriptionId",
+      nullif(payload_json #>> '{data,attributes,trial_ends_at}', '') as "trialEndsAt"
     from billing_events
     where (
       user_id = ${member.id}
@@ -846,7 +848,8 @@ export async function syncBillingStateForMember(member: MemberProfile) {
     latest.plan !== member.plan ||
     latest.billingStatus !== (member.billingStatus ?? "free") ||
     (latest.providerCustomerId ?? null) !== (member.lemonCustomerId ?? null) ||
-    (latest.providerSubscriptionId ?? null) !== (member.lemonSubscriptionId ?? null);
+    (latest.providerSubscriptionId ?? null) !== (member.lemonSubscriptionId ?? null) ||
+    (latest.trialEndsAt ?? null) !== (member.trialEndsAt ?? null);
 
   if (!hasChange) return member;
 
@@ -856,7 +859,8 @@ export async function syncBillingStateForMember(member: MemberProfile) {
       plan: latest.plan,
       billingStatus: latest.billingStatus,
       providerCustomerId: latest.providerCustomerId,
-      providerSubscriptionId: latest.providerSubscriptionId
+      providerSubscriptionId: latest.providerSubscriptionId,
+      trialEndsAt: latest.trialEndsAt
     })) ?? member
   );
 }
@@ -867,6 +871,7 @@ export async function applyBillingPlanByEmail(input: {
   billingStatus: BillingStatus;
   providerCustomerId?: string | null;
   providerSubscriptionId?: string | null;
+  trialEndsAt?: string | null;
 }) {
   const normalizedEmail = input.email.trim().toLowerCase();
   if (!normalizedEmail) return null;
@@ -879,7 +884,11 @@ export async function applyBillingPlanByEmail(input: {
         plan = ${input.plan},
         billing_status = ${input.billingStatus},
         lemon_customer_id = coalesce(${input.providerCustomerId ?? null}, lemon_customer_id),
-        lemon_subscription_id = coalesce(${input.providerSubscriptionId ?? null}, lemon_subscription_id)
+        lemon_subscription_id = coalesce(${input.providerSubscriptionId ?? null}, lemon_subscription_id),
+        trial_ends_at = case
+          when ${input.billingStatus} = 'on_trial' then coalesce(${input.trialEndsAt ?? null}::timestamptz, trial_ends_at)
+          else null
+        end
       where lower(email) = ${normalizedEmail}
       returning
         id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan,
@@ -898,7 +907,8 @@ export async function applyBillingPlanByEmail(input: {
     plan: input.plan,
     billingStatus: input.billingStatus,
     lemonCustomerId: input.providerCustomerId ?? member.lemonCustomerId ?? null,
-    lemonSubscriptionId: input.providerSubscriptionId ?? member.lemonSubscriptionId ?? null
+    lemonSubscriptionId: input.providerSubscriptionId ?? member.lemonSubscriptionId ?? null,
+    trialEndsAt: input.billingStatus === "on_trial" ? input.trialEndsAt ?? member.trialEndsAt ?? null : null
   });
 }
 
@@ -917,6 +927,7 @@ export async function applyBillingPlanByUserId(input: {
   billingStatus: BillingStatus;
   providerCustomerId?: string | null;
   providerSubscriptionId?: string | null;
+  trialEndsAt?: string | null;
 }) {
   const normalizedUserId = input.userId.trim();
   if (!normalizedUserId) return null;
@@ -929,7 +940,11 @@ export async function applyBillingPlanByUserId(input: {
         plan = ${input.plan},
         billing_status = ${input.billingStatus},
         lemon_customer_id = coalesce(${input.providerCustomerId ?? null}, lemon_customer_id),
-        lemon_subscription_id = coalesce(${input.providerSubscriptionId ?? null}, lemon_subscription_id)
+        lemon_subscription_id = coalesce(${input.providerSubscriptionId ?? null}, lemon_subscription_id),
+        trial_ends_at = case
+          when ${input.billingStatus} = 'on_trial' then coalesce(${input.trialEndsAt ?? null}::timestamptz, trial_ends_at)
+          else null
+        end
       where id = ${normalizedUserId}
       returning
         id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan,
@@ -948,7 +963,8 @@ export async function applyBillingPlanByUserId(input: {
     plan: input.plan,
     billingStatus: input.billingStatus,
     lemonCustomerId: input.providerCustomerId ?? member.lemonCustomerId ?? null,
-    lemonSubscriptionId: input.providerSubscriptionId ?? member.lemonSubscriptionId ?? null
+    lemonSubscriptionId: input.providerSubscriptionId ?? member.lemonSubscriptionId ?? null,
+    trialEndsAt: input.billingStatus === "on_trial" ? input.trialEndsAt ?? member.trialEndsAt ?? null : null
   });
 }
 

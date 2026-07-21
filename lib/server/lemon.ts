@@ -47,6 +47,15 @@ export function getLemonUserId(payload: LemonPayload) {
   return typeof userId === "string" || typeof userId === "number" ? String(userId) : null;
 }
 
+export function getLemonTrialEndsAt(payload: LemonPayload) {
+  const attributes = payload.data?.attributes ?? {};
+  const rawTrialEndsAt = attributes.trial_ends_at;
+  if (typeof rawTrialEndsAt !== "string" || !rawTrialEndsAt.trim()) return null;
+
+  const parsed = new Date(rawTrialEndsAt);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
 export function getLemonCheckoutMetadata(payload: LemonPayload) {
   const customData = payload.meta?.custom_data ?? {};
   const stringValue = (value: unknown) => typeof value === "string" && value.trim() ? value : null;
@@ -114,6 +123,7 @@ export function resolveBillingStatusFromEvent(eventName: string, payload: LemonP
   const statusValue = String(attributes.status ?? "").toLowerCase();
 
   if (["subscription_created", "subscription_resumed", "subscription_unpaused"].includes(eventName)) {
+    if (statusValue.includes("trial")) return "on_trial";
     return "active";
   }
   if (["subscription_payment_success", "subscription_payment_recovered"].includes(eventName)) {

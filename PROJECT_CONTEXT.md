@@ -963,6 +963,12 @@ Inspect only:
 - large global CSS surface in `app/globals.css`
 - cron jobs that may send emails or generate reminders
 
+### Production revenue operations
+
+- As verified in the live Lemon Squeezy dashboard on 2026-07-22, no webhook is configured for the store. Subscription events will not reach `app/api/payments/lemon/webhook/route.ts` until `https://speakace.org/api/payments/lemon/webhook` is registered and its signing secret is configured in production as `LEMON_SQUEEZY_WEBHOOK_SECRET`.
+- SpeakAce Plus currently uses a three-day Lemon Squeezy trial. Trial conversion and access depend on preserving the provider's `on_trial` status and `trial_ends_at` value through the webhook billing sync.
+- Live catalog values must be checked against site copy before changing pricing. On 2026-07-22, the Lemon product named Pro Monthly was configured with a weekly interval while the site described it as monthly.
+
 ### Assumptions
 
 - `npm` is the safest package manager default because `package-lock.json` is present.

@@ -14,6 +14,7 @@ import {
   getLemonEventName,
   getLemonPaymentDetails,
   getLemonSubscriptionId,
+  getLemonTrialEndsAt,
   getLemonUserId,
   resolveBillingStatusFromEvent,
   resolvePlanForStatus,
@@ -72,6 +73,7 @@ export async function POST(request: Request) {
   const userId = getLemonUserId(payload);
   const providerCustomerId = getLemonCustomerId(payload);
   const providerSubscriptionId = getLemonSubscriptionId(payload);
+  const trialEndsAt = getLemonTrialEndsAt(payload);
   const status = resolveBillingStatusFromEvent(eventName, payload);
   const basePlan = resolvePlanFromLemonPayload(payload);
   const nextPlan = resolvePlanForStatus(basePlan, status);
@@ -125,7 +127,8 @@ export async function POST(request: Request) {
             plan: nextPlan,
             billingStatus: status,
             providerCustomerId,
-            providerSubscriptionId
+            providerSubscriptionId,
+            trialEndsAt
           })
         : null;
 
@@ -135,7 +138,8 @@ export async function POST(request: Request) {
           plan: nextPlan,
           billingStatus: status,
           providerCustomerId,
-          providerSubscriptionId
+          providerSubscriptionId,
+          trialEndsAt
         });
       }
     }
@@ -152,7 +156,8 @@ export async function POST(request: Request) {
       billing_status: status,
       plan: nextPlan,
       provider: "lemonsqueezy",
-      institution_type: institutionType
+      institution_type: institutionType,
+      trial_ends_at: trialEndsAt
     }
   });
 

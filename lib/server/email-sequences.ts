@@ -4,6 +4,7 @@ import { hasDatabaseUrl, getSql } from "@/lib/server/db";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
 const PRACTICE_URL = `${SITE_URL}/app/practice`;
 const PRICING_URL = `${SITE_URL}/pricing`;
+const BILLING_URL = `${SITE_URL}/app/billing`;
 const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&billing=annual&coupon=LAUNCH20&campaign=onboarding_email`;
 let emailSequenceSchemaEnsured = false;
 
@@ -642,6 +643,7 @@ export async function getUsersDueForNextOnboardingEmail(limit = 100): Promise<
       u.created_at
     from users u
     where coalesce(u.onboarding_emails_sent, 0) < ${maxEmailNumber}
+      and u.billing_status not in ('active', 'on_trial')
     order by u.created_at asc
     limit ${Math.max(limit * 3, limit)}
   `;
@@ -700,6 +702,205 @@ export async function markOnboardingEmailSent(userId: string, emailNumber: numbe
     where id = ${userId}
       and coalesce(onboarding_emails_sent, 0) < ${emailNumber}
   `;
+}
+
+export type TrialLifecycleStage = "activation" | "ending";
+
+export function resolveTrialLifecycleStage(input: {
+  trialEndsAt: string | Date;
+  now?: Date;
+}): TrialLifecycleStage | null {
+  const now = input.now ?? new Date();
+  const trialEndsAt = input.trialEndsAt instanceof Date ? input.trialEndsAt : new Date(input.trialEndsAt);
+  const hoursRemaining = (trialEndsAt.getTime() - now.getTime()) / (60 * 60 * 1000);
+
+  if (!Number.isFinite(hoursRemaining) || hoursRemaining <= 0 || hoursRemaining > 72) return null;
+  return hoursRemaining <= 24 ? "ending" : "activation";
+}
+
+function buildTrialLifecycleEmail(name: string, trialEndsAt: string | Date, stage: TrialLifecycleStage) {
+  const greeting = name.trim() || "there";
+  const trialEndDate = trialEndsAt instanceof Date ? trialEndsAt : new Date(trialEndsAt);
+  const chargeDate = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "UTC",
+    timeZoneName: "short"
+  }).format(trialEndDate);
+
+  if (stage === "ending") {
+    const html = layout(`
+      <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Plus trial · final day</p>
+      <h1 style="margin:0 0 20px;font-size:1.45em;color:#1b120d;font-weight:800">Your Plus trial continues at $3.99/week after ${chargeDate}</h1>
+      <p style="color:#3a2218;line-height:1.75;margin:0 0 18px">Hi ${greeting}, use the final trial day to make a clear decision with real progress, not guesswork.</p>
+      ${highlight("Complete one speaking answer, read the AI feedback, then retry the same prompt. That two-attempt loop is the fastest way to feel the value of Plus.")}
+      <p style="color:#3a2218;line-height:1.75;margin:18px 0 24px">Your trial will continue automatically at <strong>$3.99 per week</strong>. You can review your plan before the trial ends from the billing page.</p>
+      <div style="margin:0 0 8px">
+        ${primaryBtn(PRACTICE_URL, "Run the two-attempt test &rarr;")}
+        &nbsp;&nbsp;
+        ${secondaryBtn(BILLING_URL, "Review billing")}
+      </div>
+    `);
+    return {
+      subject: "Your SpeakAce Plus trial ends within 24 hours",
+      html,
+      text: `Hi ${greeting}, your Plus trial continues at $3.99/week after ${chargeDate}. Complete one answer and retry it before deciding: ${PRACTICE_URL}. Review billing: ${BILLING_URL}`
+    };
+  }
+
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Plus trial · active</p>
+    <h1 style="margin:0 0 20px;font-size:1.45em;color:#1b120d;font-weight:800">Turn your 3-day trial into one measurable improvement</h1>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 18px">Hi ${greeting}, your Plus access is active until ${chargeDate}. The best test is not browsing every feature; it is improving one answer.</p>
+    <div style="margin:0 0 22px">
+      ${checkItem("Record one IELTS or TOEFL speaking answer")}
+      ${checkItem("Read the transcript and full AI feedback")}
+      ${checkItem("Retry the same prompt and compare the second score")}
+    </div>
+    ${highlight("Aim for two focused sessions before the trial ends. Users who reach the retry moment have a much clearer reason to keep Plus.")}
+    <div style="margin:24px 0 8px">
+      ${primaryBtn(PRACTICE_URL, "Start the first answer &rarr;")}
+    </div>
+  `);
+  return {
+    subject: "Your SpeakAce Plus trial is active — start here",
+    html,
+    text: `Hi ${greeting}, your Plus trial is active until ${chargeDate}. Record one answer, review the feedback, and retry the same prompt: ${PRACTICE_URL}`
+  };
+}
+
+export async function getUsersDueForTrialLifecycleEmail(limit = 100): Promise<
+  Array<{ id: string; email: string; name: string; trialEndsAt: string; stage: TrialLifecycleStage }>
+> {
+  if (!hasDatabaseUrl()) return [];
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  const rows = await sql<
+    Array<{
+      id: string;
+      email: string;
+      name: string;
+      trial_ends_at: string | Date;
+      activation_sent: boolean;
+      ending_sent: boolean;
+    }>
+  >`
+    select
+      u.id,
+      u.email,
+      u.name,
+      u.trial_ends_at,
+      exists (
+        select 1 from email_log el
+        where el.user_id = u.id and el.template = 'trial_activation' and el.status = 'sent'
+      ) as activation_sent,
+      exists (
+        select 1 from email_log el
+        where el.user_id = u.id and el.template = 'trial_ending' and el.status = 'sent'
+      ) as ending_sent
+    from users u
+    where u.plan = 'plus'
+      and u.billing_status = 'on_trial'
+      and u.trial_ends_at > now()
+      and u.trial_ends_at <= now() + interval '72 hours'
+      and u.email_opt_out = false
+    order by u.trial_ends_at asc
+    limit ${Math.max(limit * 3, limit)}
+  `;
+
+  return rows
+    .map((row) => {
+      const stage = resolveTrialLifecycleStage({ trialEndsAt: row.trial_ends_at });
+      if (!stage) return null;
+      if (stage === "activation" && row.activation_sent) return null;
+      if (stage === "ending" && row.ending_sent) return null;
+      const trialEndsAt = row.trial_ends_at instanceof Date
+        ? row.trial_ends_at.toISOString()
+        : new Date(row.trial_ends_at).toISOString();
+      return { id: row.id, email: row.email, name: row.name, trialEndsAt, stage };
+    })
+    .filter((row): row is NonNullable<typeof row> => Boolean(row))
+    .slice(0, limit);
+}
+
+export async function sendTrialLifecycleEmail(
+  userId: string,
+  stage: TrialLifecycleStage
+): Promise<{ ok: boolean; skipped?: boolean }> {
+  if (!hasDatabaseUrl()) return { ok: false, skipped: true };
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  const rows = await sql<
+    Array<{
+      email: string;
+      name: string;
+      plan: string;
+      email_opt_out: boolean;
+      billing_status: string;
+      trial_ends_at: string | Date | null;
+    }>
+  >`
+    select email, name, plan, email_opt_out, billing_status, trial_ends_at
+    from users
+    where id = ${userId}
+    limit 1
+  `;
+  const user = rows[0];
+  if (
+    !user ||
+    user.email_opt_out ||
+    user.plan !== "plus" ||
+    user.billing_status !== "on_trial" ||
+    !user.trial_ends_at
+  ) {
+    return { ok: false, skipped: true };
+  }
+
+  const currentStage = resolveTrialLifecycleStage({ trialEndsAt: user.trial_ends_at });
+  if (currentStage !== stage) return { ok: false, skipped: true };
+
+  const templateName = `trial_${stage}`;
+  const alreadySent = await sql<Array<{ exists: boolean }>>`
+    select exists (
+      select 1 from email_log
+      where user_id = ${userId} and template = ${templateName} and status = 'sent'
+    ) as exists
+  `;
+  if (alreadySent[0]?.exists) return { ok: false, skipped: true };
+
+  let emailContent = buildTrialLifecycleEmail(user.name, user.trial_ends_at, stage);
+  const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`;
+  emailContent = {
+    ...emailContent,
+    html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${unsubscribeUrl}"`)
+  };
+
+  try {
+    const result = await sendEmail({ to: user.email, ...emailContent });
+    await logEmail({
+      userId,
+      userEmail: user.email,
+      template: templateName,
+      subject: emailContent.subject,
+      status: result.ok ? "sent" : "failed",
+      errorMessage: result.ok ? undefined : "send skipped (no transport)"
+    });
+    return result;
+  } catch (err) {
+    await logEmail({
+      userId,
+      userEmail: user.email,
+      template: templateName,
+      subject: emailContent.subject,
+      status: "failed",
+      errorMessage: err instanceof Error ? err.message : "unknown error"
+    });
+    return { ok: false };
+  }
 }
 
 // ─── Daily Speaking Tips ───────────────────────────────────────────────────────
@@ -847,6 +1048,7 @@ export async function getUsersForDailyTip(limit = 200): Promise<Array<{ id: stri
     from users u
     where u.email_opt_out = false
       and u.role != 'guest'
+      and coalesce(u.billing_status, 'free') <> 'on_trial'
       and not exists (
         select 1 from email_log el
         where el.user_id = u.id
@@ -865,12 +1067,12 @@ export async function sendDailyTipEmail(userId: string): Promise<{ ok: boolean; 
 
   await ensureEmailSequenceSchema();
   const sql = getSql();
-  const rows = await sql<Array<{ email: string; name: string; email_opt_out: boolean }>>`
-    select email, name, email_opt_out from users where id = ${userId} limit 1
+  const rows = await sql<Array<{ email: string; name: string; email_opt_out: boolean; billing_status: string }>>`
+    select email, name, email_opt_out, billing_status from users where id = ${userId} limit 1
   `;
   const user = rows[0];
   if (!user) return { ok: false };
-  if (user.email_opt_out) return { ok: false, skipped: true };
+  if (user.email_opt_out || user.billing_status === "on_trial") return { ok: false, skipped: true };
 
   const tip = getTodaysTip();
   let emailContent = buildDailyTipEmail(user.name, tip);
