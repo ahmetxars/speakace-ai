@@ -47,6 +47,34 @@ export function getLemonUserId(payload: LemonPayload) {
   return typeof userId === "string" || typeof userId === "number" ? String(userId) : null;
 }
 
+export function getLemonCheckoutMetadata(payload: LemonPayload) {
+  const customData = payload.meta?.custom_data ?? {};
+  const stringValue = (value: unknown) => typeof value === "string" && value.trim() ? value : null;
+
+  return {
+    checkoutId: stringValue(customData.checkout_id),
+    campaign: stringValue(customData.campaign),
+    ctaPath: stringValue(customData.cta_path),
+    ctaEvent: stringValue(customData.cta_event)
+  };
+}
+
+export function getLemonPaymentDetails(payload: LemonPayload) {
+  const attributes = payload.data?.attributes ?? {};
+  const rawTotal = attributes.total;
+  const totalInCents = typeof rawTotal === "number" ? rawTotal : typeof rawTotal === "string" ? Number(rawTotal) : NaN;
+  const rawCurrency = attributes.currency;
+  const currency = typeof rawCurrency === "string" && rawCurrency.trim() ? rawCurrency.toUpperCase() : null;
+  const rawOrderId = attributes.identifier ?? attributes.order_id ?? payload.data?.id;
+  const orderId = typeof rawOrderId === "string" || typeof rawOrderId === "number" ? String(rawOrderId) : null;
+
+  return {
+    orderId,
+    value: Number.isFinite(totalInCents) ? Number((totalInCents / 100).toFixed(2)) : null,
+    currency
+  };
+}
+
 export function getLemonCustomerId(payload: LemonPayload) {
   const attributes = (payload.data?.attributes ?? {}) as Record<string, unknown>;
   const firstOrderItem =
@@ -86,6 +114,9 @@ export function resolveBillingStatusFromEvent(eventName: string, payload: LemonP
   const statusValue = String(attributes.status ?? "").toLowerCase();
 
   if (["subscription_created", "subscription_resumed", "subscription_unpaused"].includes(eventName)) {
+    return "active";
+  }
+  if (["subscription_payment_success", "subscription_payment_recovered"].includes(eventName)) {
     return "active";
   }
   if (eventName === "subscription_updated") {

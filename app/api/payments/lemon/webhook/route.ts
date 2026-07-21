@@ -8,9 +8,11 @@ import {
   recordBillingEvent
 } from "@/lib/store";
 import {
+  getLemonCheckoutMetadata,
   getLemonCustomerId,
   getLemonEmail,
   getLemonEventName,
+  getLemonPaymentDetails,
   getLemonSubscriptionId,
   getLemonUserId,
   resolveBillingStatusFromEvent,
@@ -74,6 +76,8 @@ export async function POST(request: Request) {
   const basePlan = resolvePlanFromLemonPayload(payload);
   const nextPlan = resolvePlanForStatus(basePlan, status);
   const institutionType = getInstitutionType(payload);
+  const checkoutMetadata = getLemonCheckoutMetadata(payload);
+  const paymentDetails = getLemonPaymentDetails(payload);
   const posthog = getPostHogClient();
   const distinctId = userId ?? email ?? providerCustomerId ?? providerSubscriptionId ?? `billing:${eventName}`;
 
@@ -152,7 +156,9 @@ export async function POST(request: Request) {
     }
   });
 
-  if (["order_created", "subscription_created", "subscription_resumed", "subscription_unpaused"].includes(eventName)) {
+  // Lemon sends order_created alongside subscription_created for the same initial sale.
+  // Count only the order event so revenue and checkout conversion are not duplicated.
+  if (eventName === "order_created") {
     posthog.capture({
       distinctId,
       event: "checkout_completed",
@@ -160,7 +166,31 @@ export async function POST(request: Request) {
         plan: nextPlan,
         billing_status: status,
         provider: "lemonsqueezy",
-        institution_type: institutionType
+        institution_type: institutionType,
+        order_id: paymentDetails.orderId,
+        checkout_id: checkoutMetadata.checkoutId,
+        revenue: paymentDetails.value,
+        value: paymentDetails.value,
+        currency: paymentDetails.currency,
+        campaign: checkoutMetadata.campaign,
+        cta_path: checkoutMetadata.ctaPath,
+        cta_event: checkoutMetadata.ctaEvent
+      }
+    });
+  }
+
+  if (["subscription_payment_success", "subscription_payment_recovered"].includes(eventName)) {
+    posthog.capture({
+      distinctId,
+      event: "subscription_revenue_received",
+      properties: {
+        plan: nextPlan,
+        provider: "lemonsqueezy",
+        invoice_id: paymentDetails.orderId,
+        revenue: paymentDetails.value,
+        value: paymentDetails.value,
+        currency: paymentDetails.currency,
+        billing_reason: payload.data?.attributes?.billing_reason ?? null
       }
     });
   }

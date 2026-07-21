@@ -13,6 +13,7 @@ export async function GET(request: Request) {
   const campaign = searchParams.get("campaign") ?? undefined;
   const ctaPath = searchParams.get("cta") ?? undefined;
   const ctaEvent = searchParams.get("cta_event") ?? undefined;
+  const checkoutId = crypto.randomUUID();
   const cookieStore = await cookies();
   const token = cookieStore.get(getSessionCookieName())?.value;
   const profile = await getAuthenticatedUser(token);
@@ -28,9 +29,10 @@ export async function GET(request: Request) {
           coupon,
           campaign,
           ctaPath,
-          ctaEvent
+          ctaEvent,
+          checkoutId
         }
-      : { plan, billing, coupon, campaign, ctaPath, ctaEvent }
+      : { plan, billing, coupon, campaign, ctaPath, ctaEvent, checkoutId }
   );
 
   const response = NextResponse.redirect(checkoutUrl || commerceConfig.plusMonthlyCheckout);
@@ -42,7 +44,8 @@ export async function GET(request: Request) {
         ctaEvent: ctaEvent ?? null,
         campaign: campaign ?? null,
         plan,
-        billing
+        billing,
+        checkoutId
       }),
       {
         httpOnly: false,

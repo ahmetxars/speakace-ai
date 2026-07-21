@@ -17,6 +17,7 @@ type CheckoutAttribution = {
   campaign?: string | null;
   plan?: "plus" | "pro" | "lifetime" | null;
   billing?: "weekly" | "annual" | null;
+  checkoutId?: string | null;
 };
 
 const PLAN_PURCHASE_META = {
@@ -114,7 +115,7 @@ export default function BillingSuccessPage() {
       });
     }
 
-    if (hasTrackedPurchaseRef.current) {
+    if (hasTrackedPurchaseRef.current || !attribution?.checkoutId) {
       return;
     }
 
@@ -126,7 +127,7 @@ export default function BillingSuccessPage() {
 
     if (typeof window !== "undefined" && typeof window.gtag === "function") {
       window.gtag("event", "purchase", {
-        transaction_id: Date.now().toString(),
+        transaction_id: attribution.checkoutId,
         value: purchaseMeta.value,
         currency: "USD",
         items: [
@@ -139,7 +140,7 @@ export default function BillingSuccessPage() {
         ]
       });
     }
-  }, [attribution?.billing, attribution?.ctaPath, attribution?.plan, currentUser?.id, status]);
+  }, [attribution?.billing, attribution?.checkoutId, attribution?.ctaPath, attribution?.plan, currentUser?.id, status]);
 
   const activePlanLabel = plan === "lifetime"
     ? "Lifetime"

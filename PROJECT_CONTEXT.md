@@ -222,6 +222,7 @@ This is the project-wide “where things live” map.
   - `lib/store.ts`
   - `lib/commerce.ts`
   - `app/api/account/plan/route.ts` is also the signed-in billing-state sync endpoint used by client refresh flows.
+  - learner checkouts carry a generated `checkout_id` through the Lemon custom payload and attribution cookie so GA4 purchases can use a stable transaction ID.
 
 ### Analytics product
 
@@ -237,6 +238,8 @@ This is the project-wide “where things live” map.
   - `instrumentation-client.ts`
   - `lib/posthog-server.ts`
   - first-payment funnel events include `pricing_view`, `pricing_plus_click`, `practice_limit_hit`, `upgrade_prompt_view`, `checkout_initiated`, `checkout_completed`, and `billing_success_seen`
+  - `checkout_completed` is emitted server-side only for Lemon `order_created`; `subscription_created` arrives for the same initial sale and must not be counted as a second conversion.
+  - successful or recovered subscription payments emit `subscription_revenue_received` with Lemon invoice value and currency.
 
 ### Email and lifecycle product
 
@@ -563,6 +566,7 @@ Role routing starts in `lib/roles.ts`, while capability enforcement is split acr
   - Lemon webhook verification and billing-plan mapping
 - `app/api/payments/lemon/webhook/route.ts`
   - webhook ingestion, billing event recording, plan updates, PostHog events
+  - successful and recovered subscription payment events map to active billing state; initial checkout conversion is counted from `order_created` only
 
 Important caution:
 

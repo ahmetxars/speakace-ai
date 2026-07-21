@@ -108,6 +108,7 @@ export function buildLemonCheckoutUrl(input?: {
   campaign?: string;
   ctaPath?: string;
   ctaEvent?: string;
+  checkoutId?: string;
 }) {
   let baseCheckout: string;
   if (input?.plan === "lifetime") {
@@ -139,6 +140,9 @@ export function buildLemonCheckoutUrl(input?: {
   }
   if (input?.ctaEvent) {
     url.searchParams.set("checkout[custom][cta_event]", input.ctaEvent);
+  }
+  if (input?.checkoutId) {
+    url.searchParams.set("checkout[custom][checkout_id]", input.checkoutId);
   }
   return url.toString();
 }
