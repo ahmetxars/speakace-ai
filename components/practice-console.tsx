@@ -4,14 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
-import { TrackedLink } from "@/components/tracked-link";
-import {
-  buildPlanCheckoutPath,
-  commerceNumbers,
-  couponCatalog,
-  formatUsd,
-  getAnnualMonthlyEquivalent
-} from "@/lib/commerce";
+import { PracticeUpgradeDialog } from "@/components/practice-upgrade-dialog";
 import { Difficulty, ExamType, ProgressSummary, SpeakingSession, TaskType } from "@/lib/types";
 import posthog from "posthog-js";
 import { trackClientEvent } from "@/lib/analytics-client";
@@ -131,18 +124,14 @@ export function PracticeConsole() {
   const [showAllTopics, setShowAllTopics] = useState(false);
   const [upgradePrompt, setUpgradePrompt] = useState<{
     reason: UpgradePromptReason;
-    title: string;
-    body: string;
-    recommendedBilling: "weekly" | "annual";
-    recommendation: string;
   } | null>(null);
-  const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
 
   const sessionRef = useRef<SpeakingSession | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const autoStartedRef = useRef(false);
+  const dismissUpgradePrompt = useCallback(() => setUpgradePrompt(null), []);
 
   const capturePracticeEvent = useCallback((event: string, properties: Record<string, unknown>) => {
     posthog.capture(event, {
@@ -217,12 +206,13 @@ export function PracticeConsole() {
     void trackClientEvent({
       userId: currentUser.id,
       event: "upgrade_prompt_view",
-      path: `/app/practice/${upgradePrompt.reason}`
+      path: `/app/practice/${upgradePrompt.reason}/trial_dialog`
     });
 
     posthog.capture("upgrade_prompt_view", {
       source: upgradePrompt.reason,
-      plan: currentUser.plan
+      plan: currentUser.plan,
+      placement: "practice_trial_dialog"
     });
   }, [currentUser?.id, currentUser?.plan, upgradePrompt]);
 
@@ -645,48 +635,19 @@ export function PracticeConsole() {
       if (response.status === 403 && currentUser?.plan === "free") {
         const reason: UpgradePromptReason = mode === "done" ? "result_retry_locked" : "practice_limit_hit";
         const minutesLimited = (data.error ?? "").toLowerCase().includes("minute");
-        const shouldRecommendAnnual = summary.streakDays >= 3 || summary.totalSessions >= 6 || summary.averageScore >= 6 || targetScore === "7.0" || targetScore === "7.5" || targetScore === "8.0";
-        const recommendedBilling = shouldRecommendAnnual ? "annual" : "weekly";
-        const title =
-          reason === "result_retry_locked"
-            ? tr
-              ? "Ayni prompt'u bugun devam ettirmek icin Plus ac"
-              : "Unlock Plus to continue this prompt today"
-            : tr
-              ? "Bugunku ucretsiz speaking hakkini kullandin"
-              : "You used today's free speaking limit";
-        const body =
-          reason === "result_retry_locked"
-            ? tr
-              ? "Skorunu gordun. Simdi ayni prompt'u tekrar deneyip daha iyi bir cevap uretmek icin beklemek yerine bugun devam edebilirsin."
-              : "You already saw your score. Unlock Plus to retry the same prompt now instead of waiting for tomorrow."
-            : minutesLimited
-              ? tr
-                ? "Bugunku speaking dakikan doldu. Plus ile daha fazla speaking suresi, tam geri bildirim ve daha hizli retry dongusu acilir."
-                : "You hit today's speaking-minute cap. Plus unlocks more speaking time, full feedback, and a faster retry loop."
-              : tr
-                ? "Bugunku session limiti doldu. Yarini beklemek yerine bugun devam etmek icin Plus ac."
-                : "You hit today's session cap. Unlock Plus to continue today instead of waiting for tomorrow.";
-        const recommendation =
-          tr
-            ? recommendedBilling === "annual"
-              ? `Sana daha uygun secenek: yillik Plus. Su anki tempo, birkac haftadan uzun bir hazirlik dongusune isaret ediyor.`
-              : "Sana daha uygun secenek: haftalik Plus. Ilk odemeyi daha dusuk surtunmeyle acip bugun devam edebilirsin."
-            : recommendedBilling === "annual"
-              ? "Best fit for you: annual Plus. Your current pace suggests a prep cycle longer than just a few days."
-              : "Best fit for you: weekly Plus. It is the lower-friction way to unlock today and keep going.";
-        setUpgradePrompt({ reason, title, body, recommendedBilling, recommendation });
+        setUpgradePrompt({ reason });
         if (currentUser.id) {
           void trackClientEvent({
             userId: currentUser.id,
             event: "practice_limit_hit",
-            path: `/app/practice/${reason}`
+            path: `/app/practice/${reason}/trial_dialog`
           });
         }
         posthog.capture("practice_limit_hit", {
           source: reason,
           limit_type: minutesLimited ? "minutes" : "sessions",
-          plan: currentUser.plan
+          plan: currentUser.plan,
+          placement: "practice_trial_dialog"
         });
         void fetch("/api/progress/summary", { cache: "no-store" })
           .then((summaryResponse) => summaryResponse.json())
@@ -1405,114 +1366,13 @@ export function PracticeConsole() {
         ) : null}
 
         {upgradePrompt ? (
-          <div
-            style={{
-              padding: "1.15rem",
-              borderRadius: 14,
-              border: "1px solid rgba(29, 111, 117, 0.18)",
-              background: "rgba(29, 111, 117, 0.08)",
-              display: "grid",
-              gap: "0.85rem"
-            }}
-          >
-            <div>
-              <span className="eyebrow">{tr ? "Continue today" : "Continue today"}</span>
-              <strong style={{ display: "block", marginTop: "0.35rem", fontSize: "1.05rem" }}>{upgradePrompt.title}</strong>
-              <p style={{ margin: "0.5rem 0 0", color: "var(--muted-foreground)", lineHeight: 1.7 }}>
-                {upgradePrompt.body}
-              </p>
-            </div>
-            <div
-              className="card"
-              style={{ padding: "0.8rem 0.95rem", background: "rgba(255,255,255,0.72)" }}
-            >
-              <strong style={{ display: "block", marginBottom: "0.3rem" }}>{upgradePrompt.recommendation}</strong>
-              <span style={{ color: "var(--muted-foreground)", lineHeight: 1.6 }}>
-                {tr
-                  ? `Launch teklifi: ilk checkout icin ${couponCatalog.LAUNCH20.code} kullanabilirsin.`
-                  : `Launch note: you can use ${couponCatalog.LAUNCH20.code} on your first checkout.`}
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-              <TrackedLink
-                className="button button-primary"
-                href={buildPlanCheckoutPath({
-                  plan: "plus",
-                  billing: upgradePrompt.recommendedBilling,
-                  coupon: couponCatalog.LAUNCH20.code,
-                  campaign: `${upgradePrompt.reason}_${upgradePrompt.recommendedBilling}`
-                })}
-                userId={currentUser?.id}
-                analyticsEvent="checkout_initiated"
-                analyticsPath={`/app/practice/${upgradePrompt.reason}/${upgradePrompt.recommendedBilling}`}
-                onClick={() => {
-                  posthog.capture("checkout_initiated", {
-                    plan: "plus",
-                    billing: upgradePrompt.recommendedBilling,
-                    source: `${upgradePrompt.reason}_${upgradePrompt.recommendedBilling}`,
-                    current_plan: currentUser?.plan
-                  });
-                  if (typeof window !== "undefined" && typeof window.gtag === "function") {
-                    window.gtag("event", "begin_checkout", {
-                      currency: "USD",
-                      value: upgradePrompt.recommendedBilling === "annual" ? commerceNumbers.plusAnnualPrice : commerceNumbers.plusWeeklyPrice,
-                      coupon: couponCatalog.LAUNCH20.code,
-                      items: [{
-                        item_id: upgradePrompt.recommendedBilling === "annual" ? "plus_annual" : "plus_weekly",
-                        item_name: upgradePrompt.recommendedBilling === "annual" ? "SpeakAce Plus - Annual" : "SpeakAce Plus - Weekly",
-                        price: upgradePrompt.recommendedBilling === "annual" ? commerceNumbers.plusAnnualPrice : commerceNumbers.plusWeeklyPrice,
-                        quantity: 1
-                      }]
-                    });
-                  }
-                }}
-              >
-                {tr
-                  ? upgradePrompt.recommendedBilling === "annual"
-                    ? "Onerilen: Plus yillik"
-                    : "Onerilen: Plus haftalik"
-                  : upgradePrompt.recommendedBilling === "annual"
-                    ? "Recommended: Plus annual"
-                    : "Recommended: Plus weekly"}
-              </TrackedLink>
-              <TrackedLink
-                className="button button-secondary"
-                href={buildPlanCheckoutPath({
-                  plan: "plus",
-                  billing: upgradePrompt.recommendedBilling === "annual" ? "weekly" : "annual",
-                  coupon: couponCatalog.LAUNCH20.code,
-                  campaign: `${upgradePrompt.reason}_${upgradePrompt.recommendedBilling === "annual" ? "weekly" : "annual"}`
-                })}
-                userId={currentUser?.id}
-                analyticsEvent="checkout_initiated"
-                analyticsPath={`/app/practice/${upgradePrompt.reason}/${upgradePrompt.recommendedBilling === "annual" ? "weekly" : "annual"}`}
-                onClick={() => {
-                  posthog.capture("checkout_initiated", {
-                    plan: "plus",
-                    billing: upgradePrompt.recommendedBilling === "annual" ? "weekly" : "annual",
-                    source: `${upgradePrompt.reason}_${upgradePrompt.recommendedBilling === "annual" ? "weekly" : "annual"}`,
-                    current_plan: currentUser?.plan
-                  });
-                }}
-              >
-                {tr
-                  ? upgradePrompt.recommendedBilling === "annual"
-                    ? "Daha hafif baslangic: haftalik"
-                    : "Daha iyi deger: yillik"
-                  : upgradePrompt.recommendedBilling === "annual"
-                    ? "Lower-friction start: weekly"
-                    : "Better long-term value: annual"}
-              </TrackedLink>
-              <Link className="button button-secondary" href="/pricing">
-                {tr ? "Planlari gor" : "View plans"}
-              </Link>
-            </div>
-            <div className="practice-meta">
-              {tr
-                ? `Yillik planda aylik maliyet ${formatUsd(plusAnnualMonthlyEquivalent)} seviyesine iner.`
-                : `On annual billing the monthly equivalent drops to about ${formatUsd(plusAnnualMonthlyEquivalent)}.`}
-            </div>
-          </div>
+          <PracticeUpgradeDialog
+            reason={upgradePrompt.reason}
+            language={language}
+            userId={currentUser?.id}
+            currentPlan={currentUser?.plan}
+            onDismiss={dismissUpgradePrompt}
+          />
         ) : null}
 
         {/* ERROR */}

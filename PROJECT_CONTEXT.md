@@ -144,6 +144,7 @@ This is the project-wide “where things live” map.
 
 - UI:
   - `components/practice-console.tsx`
+  - `components/practice-upgrade-dialog.tsx` owns the localized, high-intent Plus trial offer shown after free practice limits.
   - `components/result-view.tsx`
   - `components/review-mistakes.tsx`
   - `components/mock-exam-launchpad.tsx`
