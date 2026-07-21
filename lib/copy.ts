@@ -14,8 +14,18 @@ export const localeOptions = [
   { code: "ko", flag: "🇰🇷", label: "Korean", nativeLabel: "한국어", dir: "ltr" }
 ] as const;
 
+// Keep the public selector focused on the five locales with complete core UI coverage.
+export const publicLocaleOptions = [
+  { code: "en", label: "English", nativeLabel: "English", dir: "ltr" },
+  { code: "tr", label: "Turkish", nativeLabel: "Türkçe", dir: "ltr" },
+  { code: "de", label: "German", nativeLabel: "Deutsch", dir: "ltr" },
+  { code: "es", label: "Spanish", nativeLabel: "Español", dir: "ltr" },
+  { code: "fr", label: "French", nativeLabel: "Français", dir: "ltr" }
+] as const;
+
 export type Language = (typeof localeOptions)[number]["code"];
 export type LocaleMeta = (typeof localeOptions)[number];
+export type PublicLanguage = (typeof publicLocaleOptions)[number]["code"];
 
 type CopyShape = {
   brand: string;
@@ -204,12 +214,21 @@ const copyMap: Record<Language, CopyShape> = {
 };
 
 export const copy = copyMap;
-export const defaultLanguage: Language = "en";
+export const defaultLanguage: PublicLanguage = "en";
 export const languageMeta = Object.fromEntries(localeOptions.map((item) => [item.code, item])) as Record<Language, LocaleMeta>;
 
 export function isSupportedLanguage(value: string | null | undefined): value is Language {
   if (!value) return false;
   return localeOptions.some((item) => item.code === value);
+}
+
+export function isPublicLanguage(value: string | null | undefined): value is PublicLanguage {
+  if (!value) return false;
+  return publicLocaleOptions.some((item) => item.code === value);
+}
+
+export function normalizePublicLanguage(language: Language): PublicLanguage {
+  return isPublicLanguage(language) ? language : defaultLanguage;
 }
 
 export function getLanguageDirection(language: Language) {

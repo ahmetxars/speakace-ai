@@ -1,23 +1,33 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { buildPlanCheckoutPath, commerceNumbers, couponCatalog, formatUsd, getAnnualMonthlyEquivalent } from "@/lib/commerce";
+import { useEffect, useState } from "react";
+import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
 
 export function MarketingStickyCta() {
   const pathname = usePathname();
   const { currentUser, signedIn, language } = useAppState();
   const tr = language === "tr";
-  const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const updateVisibility = () => setVisible(window.scrollY > 520);
+    updateVisibility();
+    window.addEventListener("scroll", updateVisibility, { passive: true });
+    return () => window.removeEventListener("scroll", updateVisibility);
+  }, [pathname]);
 
   if (!pathname) return null;
   if (pathname.startsWith("/app") || pathname.startsWith("/auth") || pathname.startsWith("/admin")) return null;
+  if (pathname.startsWith("/for-") || pathname === "/teacher-demo") return null;
   if (pathname === "/maintenance") return null;
   if (signedIn && currentUser?.plan && currentUser.plan !== "free") return null;
+  if (!visible) return null;
   const isPricingPage = pathname === "/pricing";
   const isBlogPage = pathname.startsWith("/blog");
   const ctaHref = isPricingPage
-    ? buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "sticky_pricing_annual" })
+    ? buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "sticky_pricing_weekly" })
     : "/free-ielts-speaking-test";
 
   return (
@@ -26,8 +36,8 @@ export function MarketingStickyCta() {
         <strong>
           {isPricingPage
             ? tr
-              ? "En iyi deger: Plus yillik"
-              : "Best value: Plus annual"
+              ? "3 gunluk Plus denemesini baslat"
+              : "Start the 3-day Plus trial"
             : tr
               ? "Ücretsiz speaking testi ile başla"
               : "Start with a free speaking test"}
@@ -35,8 +45,8 @@ export function MarketingStickyCta() {
         <span>
           {isPricingPage
             ? tr
-              ? `${couponCatalog.LAUNCH20.code} ile yillik Plus'in aylik maliyeti ${formatUsd(annualMonthlyEquivalent)} seviyesine iner`
-              : `Use ${couponCatalog.LAUNCH20.code} and bring annual Plus down to about ${formatUsd(annualMonthlyEquivalent)}/month`
+              ? `Deneme sonrasinda haftalik $3.99; ilk checkout icin ${couponCatalog.LAUNCH20.code} kullanabilirsin`
+              : `Then $3.99/week; use ${couponCatalog.LAUNCH20.code} on your first checkout`
             : isBlogPage
               ? tr
                 ? "Okuduğun konuyu hemen practice ile dene"
@@ -50,7 +60,7 @@ export function MarketingStickyCta() {
         className="button button-primary"
         href={ctaHref}
       >
-        {isPricingPage ? (tr ? "Yillik Plus'i ac" : "Unlock annual Plus") : (tr ? "Start Free Test" : "Start Free Test")}
+        {isPricingPage ? (tr ? "Denemeyi baslat" : "Start trial") : (tr ? "Ucretsiz testi baslat" : "Start Free Test")}
       </a>
     </div>
   );

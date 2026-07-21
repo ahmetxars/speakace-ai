@@ -4,8 +4,73 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import posthog from "posthog-js";
+import { ChevronDown, GraduationCap, LockKeyhole, School, Sparkles, UserRound } from "lucide-react";
 import { useAppState } from "@/components/providers";
+import { normalizePublicLanguage, type PublicLanguage } from "@/lib/copy";
 import { clearShareAttribution, getShareAttributionFromStorage } from "@/lib/share-growth";
+
+type AuthUi = {
+  secure: string;
+  signupTitle: string;
+  signinTitle: string;
+  resetTitle: string;
+  signupBody: string;
+  signinBody: string;
+  resetBody: string;
+  features: [string, string, string];
+  access: string;
+  create: string;
+  signIn: string;
+  reset: string;
+  createHint: string;
+  signInHint: string;
+  resetHint: string;
+  google: string;
+  emailDivider: string;
+  chooseRole: string;
+  roleHint: string;
+  roles: Array<{ key: "student" | "teacher" | "school"; label: string; description: string }>;
+  name: string;
+  namePlaceholder: string;
+  password: string;
+  passwordPlaceholder: string;
+  passwordHint: string;
+  optionalOpen: string;
+  optionalClose: string;
+  classCode: string;
+  classPlaceholder: string;
+  schoolCode: string;
+  schoolPlaceholder: string;
+  organization: string;
+  organizationPlaceholder: string;
+  referral: string;
+  referralPlaceholder: string;
+  guest: string;
+};
+
+const authUi: Record<PublicLanguage, AuthUi> = {
+  en: {
+    secure: "Protected account access", signupTitle: "Create the account. Start the practice.", signinTitle: "Welcome back to your practice.", resetTitle: "Choose a new password.", signupBody: "Start with the essentials. Class, school, and referral details stay optional and out of your way.", signinBody: "Sign in and continue from your latest score, draft, or assigned practice.", resetBody: "Set a new password and return to your account securely.",
+    features: ["Your speaking and writing history stays together", "Student, teacher, and school workspaces stay separate", "Secure server-side session protection"], access: "Account access", create: "Create account", signIn: "Sign in", reset: "Reset password", createHint: "Only the essentials are required.", signInHint: "Use your email and password to continue.", resetHint: "Enter a new password to regain access.", google: "Continue with Google", emailDivider: "or use email", chooseRole: "I am joining as", roleHint: "This sets up the right workspace after signup.",
+    roles: [{ key: "student", label: "Student", description: "Practise and track progress" }, { key: "teacher", label: "Teacher", description: "Run classes and assignments" }, { key: "school", label: "School", description: "Coordinate a programme" }],
+    name: "Full name", namePlaceholder: "Your name", password: "Password", passwordPlaceholder: "At least 8 characters and 1 number", passwordHint: "Use at least 8 characters and include 1 number.", optionalOpen: "Have a class, school, or referral code?", optionalClose: "Hide optional details", classCode: "Class code", classPlaceholder: "Code from your teacher", schoolCode: "School invite code", schoolPlaceholder: "Code from your school admin", organization: "School or organization", organizationPlaceholder: "Example: SpeakAce Academy", referral: "Referral code", referralPlaceholder: "Add your code", guest: "Continue as guest"
+  },
+  tr: {
+    secure: "Korumalı hesap erişimi", signupTitle: "Hesabı oluştur. Pratiğe başla.", signinTitle: "Pratiğine tekrar hoş geldin.", resetTitle: "Yeni şifreni belirle.", signupBody: "Yalnız gerekli bilgilerle başla. Sınıf, okul ve referans detayları opsiyonel kalır.", signinBody: "Giriş yap; son skorundan, taslağından veya ödevinden devam et.", resetBody: "Yeni şifreni belirle ve hesabına güvenle dön.",
+    features: ["Konuşma ve yazma geçmişin birlikte kalır", "Öğrenci, öğretmen ve kurum alanları ayrıdır", "Güvenli sunucu tarafı oturum koruması"], access: "Hesap erişimi", create: "Hesap oluştur", signIn: "Giriş yap", reset: "Şifreyi yenile", createHint: "Yalnız gerekli bilgiler zorunlu.", signInHint: "Devam etmek için e-posta ve şifreni kullan.", resetHint: "Erişimini geri almak için yeni şifreni gir.", google: "Google ile devam et", emailDivider: "veya e-posta kullan", chooseRole: "Katılım türüm", roleHint: "Kayıttan sonra doğru çalışma alanı hazırlanır.",
+    roles: [{ key: "student", label: "Öğrenci", description: "Pratik yap ve ilerlemeni izle" }, { key: "teacher", label: "Öğretmen", description: "Sınıf ve ödev yönet" }, { key: "school", label: "Kurum", description: "Programı koordine et" }],
+    name: "Ad soyad", namePlaceholder: "Adın soyadın", password: "Şifre", passwordPlaceholder: "En az 8 karakter ve 1 sayı", passwordHint: "En az 8 karakter ve 1 sayı kullan.", optionalOpen: "Sınıf, okul veya referans kodun var mı?", optionalClose: "Opsiyonel detayları gizle", classCode: "Sınıf kodu", classPlaceholder: "Öğretmeninden aldığın kod", schoolCode: "Okul davet kodu", schoolPlaceholder: "Okul yöneticinden aldığın kod", organization: "Okul veya kurum", organizationPlaceholder: "Örn. SpeakAce Academy", referral: "Referans kodu", referralPlaceholder: "Kodunu ekle", guest: "Misafir olarak devam et"
+  },
+  de: {
+    secure: "Geschützter Kontozugang", signupTitle: "Konto erstellen. Übung starten.", signinTitle: "Willkommen zurück beim Training.", resetTitle: "Neues Passwort wählen.", signupBody: "Beginne mit dem Nötigsten. Klassen-, Schul- und Empfehlungscodes bleiben optional.", signinBody: "Anmelden und beim letzten Ergebnis, Entwurf oder Auftrag weitermachen.", resetBody: "Lege ein neues Passwort fest und kehre sicher zurück.", features: ["Sprech- und Schreibverlauf bleiben zusammen", "Getrennte Bereiche für Lernende, Lehrkräfte und Schulen", "Sichere serverseitige Sitzung"], access: "Kontozugang", create: "Konto erstellen", signIn: "Anmelden", reset: "Passwort zurücksetzen", createHint: "Nur das Nötigste ist Pflicht.", signInHint: "Mit E-Mail und Passwort fortfahren.", resetHint: "Neues Passwort eingeben.", google: "Mit Google fortfahren", emailDivider: "oder E-Mail nutzen", chooseRole: "Ich bin", roleHint: "Damit wird der richtige Bereich eingerichtet.", roles: [{ key: "student", label: "Lernende", description: "Üben und Fortschritt sehen" }, { key: "teacher", label: "Lehrkraft", description: "Klassen und Aufgaben führen" }, { key: "school", label: "Schule", description: "Programm koordinieren" }], name: "Vollständiger Name", namePlaceholder: "Dein Name", password: "Passwort", passwordPlaceholder: "Mindestens 8 Zeichen und 1 Zahl", passwordHint: "Mindestens 8 Zeichen und eine Zahl verwenden.", optionalOpen: "Hast du einen Klassen-, Schul- oder Empfehlungscode?", optionalClose: "Optionale Angaben ausblenden", classCode: "Klassencode", classPlaceholder: "Code der Lehrkraft", schoolCode: "Schul-Einladungscode", schoolPlaceholder: "Code der Schulverwaltung", organization: "Schule oder Organisation", organizationPlaceholder: "Beispiel: SpeakAce Academy", referral: "Empfehlungscode", referralPlaceholder: "Code hinzufügen", guest: "Als Gast fortfahren"
+  },
+  es: {
+    secure: "Acceso protegido", signupTitle: "Crea la cuenta. Empieza a practicar.", signinTitle: "Bienvenido de nuevo a tu práctica.", resetTitle: "Elige una nueva contraseña.", signupBody: "Empieza con lo esencial. Los códigos de clase, escuela y referido son opcionales.", signinBody: "Entra y continúa desde tu última puntuación, borrador o tarea.", resetBody: "Define una nueva contraseña y vuelve a tu cuenta de forma segura.", features: ["Tu historial de speaking y writing permanece unido", "Espacios separados para alumno, profesor y escuela", "Sesión segura en el servidor"], access: "Acceso a la cuenta", create: "Crear cuenta", signIn: "Entrar", reset: "Restablecer contraseña", createHint: "Solo pedimos lo esencial.", signInHint: "Usa tu email y contraseña para continuar.", resetHint: "Introduce una nueva contraseña.", google: "Continuar con Google", emailDivider: "o usar email", chooseRole: "Me uno como", roleHint: "Prepararemos el espacio correcto.", roles: [{ key: "student", label: "Estudiante", description: "Practicar y ver progreso" }, { key: "teacher", label: "Profesor", description: "Gestionar clases y tareas" }, { key: "school", label: "Escuela", description: "Coordinar un programa" }], name: "Nombre completo", namePlaceholder: "Tu nombre", password: "Contraseña", passwordPlaceholder: "Mínimo 8 caracteres y 1 número", passwordHint: "Usa al menos 8 caracteres e incluye 1 número.", optionalOpen: "¿Tienes código de clase, escuela o referido?", optionalClose: "Ocultar datos opcionales", classCode: "Código de clase", classPlaceholder: "Código de tu profesor", schoolCode: "Código de invitación", schoolPlaceholder: "Código de la escuela", organization: "Escuela u organización", organizationPlaceholder: "Ejemplo: SpeakAce Academy", referral: "Código de referido", referralPlaceholder: "Añade tu código", guest: "Continuar como invitado"
+  },
+  fr: {
+    secure: "Accès protégé", signupTitle: "Crée le compte. Commence la pratique.", signinTitle: "Bienvenue dans ta pratique.", resetTitle: "Choisis un nouveau mot de passe.", signupBody: "Commence par l’essentiel. Les codes classe, école et parrainage restent facultatifs.", signinBody: "Connecte-toi et reprends depuis ton dernier score, brouillon ou devoir.", resetBody: "Définis un nouveau mot de passe et retrouve ton compte en sécurité.", features: ["L’historique oral et écrit reste réuni", "Espaces séparés pour élève, enseignant et école", "Session sécurisée côté serveur"], access: "Accès au compte", create: "Créer un compte", signIn: "Connexion", reset: "Réinitialiser", createHint: "Seul l’essentiel est obligatoire.", signInHint: "Utilise ton e-mail et ton mot de passe.", resetHint: "Saisis un nouveau mot de passe.", google: "Continuer avec Google", emailDivider: "ou utiliser l’e-mail", chooseRole: "Je rejoins comme", roleHint: "Nous préparerons le bon espace.", roles: [{ key: "student", label: "Élève", description: "Pratiquer et suivre ses progrès" }, { key: "teacher", label: "Enseignant", description: "Gérer classes et devoirs" }, { key: "school", label: "École", description: "Coordonner un programme" }], name: "Nom complet", namePlaceholder: "Ton nom", password: "Mot de passe", passwordPlaceholder: "8 caractères et 1 chiffre minimum", passwordHint: "Utilise au moins 8 caractères et un chiffre.", optionalOpen: "Tu as un code classe, école ou parrainage ?", optionalClose: "Masquer les détails facultatifs", classCode: "Code classe", classPlaceholder: "Code de ton enseignant", schoolCode: "Code d’invitation école", schoolPlaceholder: "Code de l’administration", organization: "École ou organisation", organizationPlaceholder: "Exemple : SpeakAce Academy", referral: "Code de parrainage", referralPlaceholder: "Ajouter le code", guest: "Continuer en invité"
+  }
+};
 
 export default function AuthPage() {
   return (
@@ -19,9 +84,10 @@ function AuthPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { refreshSession, language } = useAppState();
+  const ui = authUi[normalizePublicLanguage(language)];
   const tr = language === "tr";
   const authError = searchParams.get("error");
-  const [mode, setMode] = useState<"signin" | "signup">("signup");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +104,7 @@ function AuthPageInner() {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [storedAttributionPath, setStoredAttributionPath] = useState<string | null>(null);
+  const [showOptionalFields, setShowOptionalFields] = useState(false);
   const inviteReferrerId = searchParams.get("invite");
 
   useEffect(() => {
@@ -48,6 +115,7 @@ function AuthPageInner() {
     const requestedReferral = searchParams.get("ref");
     if (requestedReferral) {
       setReferralCode(requestedReferral.toUpperCase());
+      setShowOptionalFields(true);
     }
   }, [searchParams]);
 
@@ -268,88 +336,27 @@ function AuthPageInner() {
                   : "An unexpected error occurred during Google sign-in."
                 : "";
 
-  const featureItems = tr
-    ? [
-        "2 dakikada hesap oluştur, hemen konuşma pratiğine başla",
-        "İlerleme, sonuçlar ve çalışma planın tek yerde toplansın",
-        "Öğrenci, öğretmen ve kurum için ayrı onboarding akışı"
-      ]
-    : [
-        "Create your account in 2 minutes and start practicing right away",
-        "Keep your progress, results, and study plan in one place",
-        "Tailored onboarding for students, teachers, and schools"
-      ];
-  const accountTypeOptions = [
-    {
-      key: "student",
-      label: tr ? "Öğrenci" : "Student",
-      description: tr ? "Sınıfa katıl, ödevleri ve skorları takip et." : "Join a class and track homework and scores."
-    },
-    {
-      key: "teacher",
-      label: tr ? "Öğretmen" : "Teacher",
-      description: tr ? "Öğrenci takibi ve sınıf yönetimi için." : "For student tracking and class management."
-    },
-    {
-      key: "school",
-      label: tr ? "Kurum" : "School",
-      description: tr ? "Kurum genelinde kullanım ve ekip erişimi." : "For institution-wide usage and team access."
-    }
-  ] as const;
+  const roleIcons = { student: UserRound, teacher: GraduationCap, school: School } as const;
 
   return (
-    <main className="page-shell section auth-shell">
+    <main className="auth-shell" data-mode={isSignup ? "signup" : isResetMode ? "reset" : "signin"}>
       <div className="auth-layout">
         <section className="auth-showcase">
-          <span className="eyebrow auth-eyebrow">{tr ? "Güvenli giriş" : "Secure auth"}</span>
-          <h1>
-            {isResetMode
-              ? tr
-                ? "Yeni şifreni belirle"
-                : "Set your new password"
-              : isSignup
-                ? tr
-                  ? "Dağınık değil, net bir başlangıç"
-                  : "A cleaner way to get started"
-                : tr
-                  ? "Tekrar hoş geldin"
-                  : "Welcome back"}
-          </h1>
+          <span className="auth-brand-chip"><LockKeyhole size={14} />{ui.secure}</span>
+          <h1>{isResetMode ? ui.resetTitle : isSignup ? ui.signupTitle : ui.signinTitle}</h1>
           <p className="auth-showcase-copy">
-            {isResetMode
-              ? tr
-                ? "Bu ekranda sadece gerekli adımı gösteriyoruz: yeni şifreni belirle ve hesabına güvenle geri dön."
-                : "This screen only shows what you need right now: set a new password and get back into your account securely."
-              : isSignup
-              ? tr
-                ? "SpeakAce hesabını gereksiz kalabalık olmadan oluştur. Önce ana hesabını aç, sonra sana uygun akışla devam et."
-                : "Create your SpeakAce account without the clutter. Start with the essentials, then continue with the flow that fits you."
-              : tr
-                ? "Hesabına geri dön, çalışmalarını kaldığın yerden sürdür. Oturum bilgisi güvenli çerezlerle sunucuda korunur."
-                : "Get back to your account and continue where you left off. Session state is protected on the server with secure cookies."}
+            {isResetMode ? ui.resetBody : isSignup ? ui.signupBody : ui.signinBody}
           </p>
 
           <div className="auth-feature-list">
-            {featureItems.map((item) => (
+            {ui.features.map((item) => (
               <div key={item} className="auth-feature-item">
-                <span className="auth-feature-check" aria-hidden="true">
-                  ✓
-                </span>
+                <span className="auth-feature-check" aria-hidden="true"><Sparkles size={13} /></span>
                 <span>{item}</span>
               </div>
             ))}
           </div>
-
-          <div className="auth-metrics">
-            <div className="auth-metric-card">
-              <strong>{tr ? "Tek ekran" : "One focused screen"}</strong>
-              <span>{tr ? "Karar yorgunluğunu azaltan sade akış" : "A stripped-back flow with less decision fatigue"}</span>
-            </div>
-            <div className="auth-metric-card">
-              <strong>{tr ? "Rol bazlı giriş" : "Role-based setup"}</strong>
-              <span>{tr ? "Öğrenci, öğretmen veya kurum için net ayrım" : "Clear setup for student, teacher, or school"}</span>
-            </div>
-          </div>
+          <div className="auth-showcase-monogram" aria-hidden="true"><span>SA</span><i /></div>
         </section>
 
         <section className="card auth-panel">
@@ -393,50 +400,26 @@ function AuthPageInner() {
 
           <div className="auth-panel-head">
             <div>
-              <span className="auth-mini-label">{tr ? "Hesap erişimi" : "Account access"}</span>
-              <h2>
-                {isResetMode
-                  ? tr
-                    ? "Şifre yenile"
-                    : "Reset password"
-                  : isSignup
-                    ? tr
-                      ? "Hesap oluştur"
-                      : "Create account"
-                    : tr
-                      ? "Giriş yap"
-                      : "Sign in"}
-              </h2>
-              <p>
-                {isResetMode
-                  ? tr
-                    ? "Yeni şifreni gir ve hesabına erişimini geri kazan."
-                    : "Enter a new password to regain access to your account."
-                  : isSignup
-                  ? tr
-                    ? "İlk adımda sadece gerekli bilgileri alıyoruz."
-                    : "We only ask for the essentials in the first step."
-                  : tr
-                    ? "E-posta ve şifrenle hesabına güvenle geri dön."
-                    : "Use your email and password to get back in securely."}
-              </p>
+              <span className="auth-mini-label">{ui.access}</span>
+              <h2>{isResetMode ? ui.reset : isSignup ? ui.create : ui.signIn}</h2>
+              <p>{isResetMode ? ui.resetHint : isSignup ? ui.createHint : ui.signInHint}</p>
             </div>
 
             {!resetToken ? (
-              <div className="auth-mode-switch" role="tablist" aria-label={tr ? "Giriş modu" : "Auth mode"}>
+              <div className="auth-mode-switch" role="tablist" aria-label={ui.access}>
                 <button
                   className={`auth-mode-tab ${isSignup ? "is-active" : ""}`}
                   type="button"
                   onClick={() => setMode("signup")}
                 >
-                  {tr ? "Kayıt ol" : "Sign up"}
+                  {ui.create}
                 </button>
                 <button
                   className={`auth-mode-tab ${!isSignup ? "is-active" : ""}`}
                   type="button"
                   onClick={() => setMode("signin")}
                 >
-                  {tr ? "Giriş yap" : "Sign in"}
+                  {ui.signIn}
                 </button>
               </div>
             ) : null}
@@ -454,11 +437,11 @@ function AuthPageInner() {
                   <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                   <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 </svg>
-                <span>{tr ? "Google ile devam et" : "Continue with Google"}</span>
+                <span>{ui.google}</span>
               </a>
 
               <div className="auth-divider">
-                <span>{tr ? "veya e-posta ile devam et" : "or continue with email"}</span>
+                <span>{ui.emailDivider}</span>
               </div>
             </>
           ) : null}
@@ -468,32 +451,36 @@ function AuthPageInner() {
               <>
                 <div className="auth-form-section">
                   <div className="auth-section-head">
-                    <strong>{tr ? "Hesap türünü seç" : "Choose your account type"}</strong>
-                    <span>{tr ? "Sonraki deneyimi buna göre hazırlayalım." : "We'll tailor the next steps based on this."}</span>
+                    <strong>{ui.chooseRole}</strong>
+                    <span>{ui.roleHint}</span>
                   </div>
                   <div className="auth-account-grid">
-                    {accountTypeOptions.map((item) => (
-                      <button
-                        key={item.key}
-                        type="button"
-                        className={`auth-account-card ${memberType === item.key ? "is-active" : ""}`}
-                        onClick={() => setMemberType(item.key)}
-                      >
-                        <strong>{item.label}</strong>
-                        <span>{item.description}</span>
-                      </button>
-                    ))}
+                    {ui.roles.map((item) => {
+                      const Icon = roleIcons[item.key];
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          className={`auth-account-card ${memberType === item.key ? "is-active" : ""}`}
+                          onClick={() => setMemberType(item.key)}
+                        >
+                          <Icon size={16} />
+                          <strong>{item.label}</strong>
+                          <span>{item.description}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 <div className="auth-input-grid auth-input-grid-double">
                   <label className="auth-field">
-                    <span>{tr ? "İsim" : "Name"}</span>
+                    <span>{ui.name}</span>
                     <input
                       type="text"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
-                      placeholder={tr ? "Adın soyadın" : "Your full name"}
+                      placeholder={ui.namePlaceholder}
                     />
                   </label>
 
@@ -508,66 +495,48 @@ function AuthPageInner() {
                   </label>
                 </div>
 
-                {memberType === "student" ? (
-                  <label className="auth-field">
-                    <span>{tr ? "Sınıf kodu" : "Class code"}</span>
-                    <input
-                      type="text"
-                      value={classCode}
-                      onChange={(event) => setClassCode(event.target.value)}
-                      placeholder={tr ? "Varsa öğretmeninden aldığın kod" : "Add the code your teacher shared, if you have one"}
-                    />
-                    <small>
-                      {tr
-                        ? "Opsiyonel. Eklersen hesabın kayıt sonrası doğrudan sınıfa bağlanır."
-                        : "Optional. If you add one, your account will connect to the class right after signup."}
-                    </small>
-                  </label>
-                ) : null}
-
-                {memberType === "teacher" ? (
-                  <label className="auth-field">
-                    <span>{tr ? "Okul davet kodu" : "School invite code"}</span>
-                    <input
-                      type="text"
-                      value={schoolInviteCode}
-                      onChange={(event) => setSchoolInviteCode(event.target.value.toUpperCase())}
-                      placeholder={tr ? "Okulunuzdan aldığınız kod (opsiyonel)" : "Code from your school admin (optional)"}
-                    />
-                    <small>
-                      {tr
-                        ? "Opsiyonel. Girerseniz hesabınız okul bünyesine otomatik eklenir."
-                        : "Optional. If entered, your account will automatically join the school."}
-                    </small>
-                  </label>
-                ) : null}
-
                 {memberType === "school" ? (
                   <label className="auth-field">
-                    <span>{tr ? "Kurum adı" : "School or organization name"}</span>
+                    <span>{ui.organization}</span>
                     <input
                       type="text"
                       value={organizationName}
                       onChange={(event) => setOrganizationName(event.target.value)}
-                      placeholder={tr ? "Örn. SpeakAce Academy" : "Example: SpeakAce Academy"}
+                      placeholder={ui.organizationPlaceholder}
                     />
                   </label>
                 ) : null}
 
-                <label className="auth-field">
-                  <span>{tr ? "Referans kodu" : "Referral code"}</span>
-                  <input
-                    type="text"
-                    value={referralCode}
-                    onChange={(event) => setReferralCode(event.target.value.toUpperCase())}
-                    placeholder={tr ? "Opsiyonelse boş bırakabilirsin" : "Leave blank if you don't have one"}
-                  />
-                  <small>
-                    {tr
-                      ? "Opsiyonel. Uygun bir kampanya varsa otomatik uygulanır."
-                      : "Optional. Any eligible promotion will be applied automatically."}
-                  </small>
-                </label>
+                <button
+                  className="auth-optional-toggle"
+                  type="button"
+                  aria-expanded={showOptionalFields}
+                  onClick={() => setShowOptionalFields((current) => !current)}
+                >
+                  <span>{showOptionalFields ? ui.optionalClose : ui.optionalOpen}</span>
+                  <ChevronDown size={16} />
+                </button>
+
+                {showOptionalFields ? (
+                  <div className="auth-optional-fields">
+                    {memberType === "student" ? (
+                      <label className="auth-field">
+                        <span>{ui.classCode}</span>
+                        <input type="text" value={classCode} onChange={(event) => setClassCode(event.target.value)} placeholder={ui.classPlaceholder} />
+                      </label>
+                    ) : null}
+                    {memberType === "teacher" ? (
+                      <label className="auth-field">
+                        <span>{ui.schoolCode}</span>
+                        <input type="text" value={schoolInviteCode} onChange={(event) => setSchoolInviteCode(event.target.value.toUpperCase())} placeholder={ui.schoolPlaceholder} />
+                      </label>
+                    ) : null}
+                    <label className="auth-field">
+                      <span>{ui.referral}</span>
+                      <input type="text" value={referralCode} onChange={(event) => setReferralCode(event.target.value.toUpperCase())} placeholder={ui.referralPlaceholder} />
+                    </label>
+                  </div>
+                ) : null}
               </>
             ) : !isResetMode ? (
               <label className="auth-field">
@@ -582,17 +551,15 @@ function AuthPageInner() {
             ) : null}
 
             <label className="auth-field">
-              <span>{tr ? "Şifre" : "Password"}</span>
+              <span>{ui.password}</span>
               <input
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder={tr ? "En az 8 karakter ve 1 sayı" : "At least 8 characters and 1 number"}
+                placeholder={ui.passwordPlaceholder}
               />
               <small>
-                {tr
-                  ? "Şifren en az 8 karakter olmalı ve en az 1 sayı içermeli."
-                  : "Your password must be at least 8 characters long and include at least 1 number."}
+                {ui.passwordHint}
               </small>
             </label>
 
@@ -620,15 +587,15 @@ function AuthPageInner() {
             <div className="auth-actions">
               {resetToken ? (
                 <button className="button button-primary auth-submit" type="button" onClick={resetPassword}>
-                  {tr ? "Şifreyi yenile" : "Reset password"}
+                  {ui.reset}
                 </button>
               ) : (
                 <button className="button button-primary auth-submit" type="button" onClick={submit}>
-                  {isSignup ? (tr ? "Hesap oluştur" : "Create account") : tr ? "Giriş yap" : "Sign in"}
+                  {isSignup ? ui.create : ui.signIn}
                 </button>
               )}
               <Link className="button button-secondary auth-guest" href="/app/practice">
-                {tr ? "Misafir olarak devam et" : "Continue as guest"}
+                {ui.guest}
               </Link>
             </div>
           </div>

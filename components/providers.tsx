@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { defaultLanguage, isSupportedLanguage, Language } from "@/lib/copy";
+import { defaultLanguage, isPublicLanguage, Language } from "@/lib/copy";
 import { createGuestProfile } from "@/lib/membership";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { MemberProfile, SubscriptionPlan } from "@/lib/types";
@@ -26,9 +26,11 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-export function Providers({ children }: { children: ReactNode }) {
+export function Providers({ children, initialLanguage = defaultLanguage }: { children: ReactNode; initialLanguage?: Language }) {
   const pathname = usePathname();
-  const [language, setLanguageState] = useState<Language>("en");
+  const [language, setLanguageState] = useState<Language>(
+    isPublicLanguage(initialLanguage) ? initialLanguage : defaultLanguage
+  );
   const [theme, setThemeState] = useState<ThemeMode>("light");
   const [signedIn, setSignedInState] = useState(false);
   const [currentUser, setCurrentUser] = useState<MemberProfile | null>(null);
@@ -48,11 +50,12 @@ export function Providers({ children }: { children: ReactNode }) {
   }, []);
 
   const setLanguage = (nextLanguage: Language) => {
-    setLanguageState(nextLanguage);
-    window.localStorage.setItem("speakace-language", nextLanguage);
-    document.cookie = `speakace-language=${nextLanguage}; path=/; max-age=31536000; samesite=lax`;
-    document.documentElement.lang = nextLanguage;
-    document.documentElement.dir = nextLanguage === "ar" ? "rtl" : "ltr";
+    const publicLanguage = isPublicLanguage(nextLanguage) ? nextLanguage : defaultLanguage;
+    setLanguageState(publicLanguage);
+    window.localStorage.setItem("speakace-language", publicLanguage);
+    document.cookie = `speakace-language=${publicLanguage}; path=/; max-age=31536000; samesite=lax`;
+    document.documentElement.lang = publicLanguage;
+    document.documentElement.dir = "ltr";
     window.setTimeout(() => {
       window.location.reload();
     }, 10);
@@ -105,11 +108,14 @@ export function Providers({ children }: { children: ReactNode }) {
     const storedUser = window.localStorage.getItem("speakace-user");
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-    if (isSupportedLanguage(storedLanguage)) {
+    if (isPublicLanguage(storedLanguage)) {
       setLanguageState(storedLanguage);
       document.cookie = `speakace-language=${storedLanguage}; path=/; max-age=31536000; samesite=lax`;
     } else {
-      document.cookie = `speakace-language=${defaultLanguage}; path=/; max-age=31536000; samesite=lax`;
+      const publicLanguage = isPublicLanguage(initialLanguage) ? initialLanguage : defaultLanguage;
+      setLanguageState(publicLanguage);
+      window.localStorage.setItem("speakace-language", publicLanguage);
+      document.cookie = `speakace-language=${publicLanguage}; path=/; max-age=31536000; samesite=lax`;
     }
 
     if (storedTheme === "light" || storedTheme === "dark") {
@@ -122,7 +128,7 @@ export function Providers({ children }: { children: ReactNode }) {
     }
 
     void initializeUser(storedUser);
-  }, [initializeUser]);
+  }, [initialLanguage, initializeUser]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");

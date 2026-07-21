@@ -5,11 +5,34 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Moon, Sun, ChevronDown } from "lucide-react";
+import { Moon, Sun, ChevronDown, Globe } from "lucide-react";
 import { useAppState } from "@/components/providers";
+import { normalizePublicLanguage, publicLocaleOptions, type PublicLanguage } from "@/lib/copy";
 import { resolveDashboardRole } from "@/lib/roles";
 
-const labels = {
+type AppHeaderLabels = {
+  profile: string;
+  billing: string;
+  settings: string;
+  signOut: string;
+  account: string;
+  dashboard: string;
+  speaking: string;
+  writing: string;
+  review: string;
+  signIn: string;
+  signUp: string;
+  home: string;
+  pricing: string;
+  schools: string;
+  teaching: string;
+  compare: string;
+  admin: string;
+  lightTheme: string;
+  darkTheme: string;
+};
+
+const labels: Record<PublicLanguage, AppHeaderLabels> = {
   en: {
     profile: "Profile",
     billing: "Billing",
@@ -22,6 +45,14 @@ const labels = {
     review: "Review",
     signIn: "Sign in",
     signUp: "Sign up",
+    home: "Home",
+    pricing: "Pricing",
+    schools: "Schools",
+    teaching: "Teaching",
+    compare: "Compare",
+    admin: "Admin",
+    lightTheme: "Switch to light theme",
+    darkTheme: "Switch to dark theme"
   },
   tr: {
     profile: "Profil",
@@ -35,15 +66,86 @@ const labels = {
     review: "İnceleme",
     signIn: "Giriş yap",
     signUp: "Kayıt ol",
+    home: "Ana sayfa",
+    pricing: "Fiyatlar",
+    schools: "Kurumlar",
+    teaching: "Sınıf",
+    compare: "Karşılaştır",
+    admin: "Kurum",
+    lightTheme: "Aydınlık temaya geç",
+    darkTheme: "Koyu temaya geç"
+  },
+  de: {
+    profile: "Profil",
+    billing: "Abrechnung",
+    settings: "Einstellungen",
+    signOut: "Abmelden",
+    account: "Konto",
+    dashboard: "Übersicht",
+    speaking: "Sprechen",
+    writing: "Schreiben",
+    review: "Wiederholen",
+    signIn: "Anmelden",
+    signUp: "Registrieren",
+    home: "Start",
+    pricing: "Preise",
+    schools: "Schulen",
+    teaching: "Klassen",
+    compare: "Vergleichen",
+    admin: "Verwaltung",
+    lightTheme: "Zum hellen Modus",
+    darkTheme: "Zum dunklen Modus"
+  },
+  es: {
+    profile: "Perfil",
+    billing: "Pagos",
+    settings: "Ajustes",
+    signOut: "Salir",
+    account: "Cuenta",
+    dashboard: "Panel",
+    speaking: "Speaking",
+    writing: "Writing",
+    review: "Repaso",
+    signIn: "Entrar",
+    signUp: "Crear cuenta",
+    home: "Inicio",
+    pricing: "Precios",
+    schools: "Escuelas",
+    teaching: "Clases",
+    compare: "Comparar",
+    admin: "Administración",
+    lightTheme: "Cambiar a tema claro",
+    darkTheme: "Cambiar a tema oscuro"
+  },
+  fr: {
+    profile: "Profil",
+    billing: "Paiement",
+    settings: "Réglages",
+    signOut: "Déconnexion",
+    account: "Compte",
+    dashboard: "Tableau",
+    speaking: "Oral",
+    writing: "Écrit",
+    review: "Révision",
+    signIn: "Connexion",
+    signUp: "Créer un compte",
+    home: "Accueil",
+    pricing: "Tarifs",
+    schools: "Écoles",
+    teaching: "Classes",
+    compare: "Comparer",
+    admin: "Administration",
+    lightTheme: "Passer au thème clair",
+    darkTheme: "Passer au thème sombre"
   },
 };
 
 export function AppHeader() {
   const router = useRouter();
   const pathname = usePathname() ?? "/app";
-  const { language, theme, setTheme, signedIn, signOut, currentUser } = useAppState();
-  const tr = language === "tr";
-  const l = tr ? labels.tr : labels.en;
+  const { language, setLanguage, theme, setTheme, signedIn, signOut, currentUser } = useAppState();
+  const publicLanguage = normalizePublicLanguage(language);
+  const l = labels[publicLanguage];
   const dashboardRole = resolveDashboardRole(currentUser);
 
   const [scrolled, setScrolled] = useState(false);
@@ -73,9 +175,7 @@ export function AppHeader() {
   }, [accountOpen]);
 
   const isDark = theme === "dark";
-  const themeLabel = isDark
-    ? (tr ? "Aydınlık temaya geç" : "Switch to light theme")
-    : (tr ? "Koyu temaya geç" : "Switch to dark theme");
+  const themeLabel = isDark ? l.lightTheme : l.darkTheme;
 
   const logoHref: Route = !signedIn
     ? "/"
@@ -88,19 +188,19 @@ export function AppHeader() {
   const desktopNavItems: Array<{ href: Route; label: string; active: boolean }> =
     !signedIn
       ? [
-          { href: "/", label: tr ? "Ana sayfa" : "Home", active: pathname === "/" },
-          { href: "/pricing", label: tr ? "Fiyatlar" : "Pricing", active: pathname.startsWith("/pricing") },
-          { href: "/for-schools", label: tr ? "Kurumlar" : "Schools", active: pathname.startsWith("/for-schools") },
+          { href: "/", label: l.home, active: pathname === "/" },
+          { href: "/pricing", label: l.pricing, active: pathname.startsWith("/pricing") },
+          { href: "/for-schools", label: l.schools, active: pathname.startsWith("/for-schools") },
         ]
       : dashboardRole === "teacher"
         ? [
-            { href: "/app/teacher", label: tr ? "Sınıf" : "Teaching", active: pathname.startsWith("/app/teacher") && !pathname.startsWith("/app/teacher/compare") },
-            { href: "/app/teacher/compare", label: tr ? "Karşılaştır" : "Compare", active: pathname.startsWith("/app/teacher/compare") },
+            { href: "/app/teacher", label: l.teaching, active: pathname.startsWith("/app/teacher") && !pathname.startsWith("/app/teacher/compare") },
+            { href: "/app/teacher/compare", label: l.compare, active: pathname.startsWith("/app/teacher/compare") },
             { href: "/app/settings", label: l.settings, active: pathname.startsWith("/app/settings") },
           ]
         : dashboardRole === "school"
           ? [
-              { href: "/app/institution-admin", label: tr ? "Kurum" : "Admin", active: pathname.startsWith("/app/institution-admin") },
+              { href: "/app/institution-admin", label: l.admin, active: pathname.startsWith("/app/institution-admin") },
               { href: "/app/billing", label: l.billing, active: pathname.startsWith("/app/billing") || pathname.startsWith("/app/teacher/billing") },
               { href: "/app/settings", label: l.settings, active: pathname.startsWith("/app/settings") },
             ]
@@ -114,13 +214,13 @@ export function AppHeader() {
   const accountItems =
     dashboardRole === "school"
       ? [
-          { href: "/app/institution-admin", label: tr ? "Kurum" : "Admin" },
+          { href: "/app/institution-admin", label: l.admin },
           { href: "/app/billing", label: l.billing },
           { href: "/app/settings", label: l.settings },
         ]
       : dashboardRole === "teacher"
         ? [
-            { href: "/app/teacher", label: tr ? "Sınıf" : "Teaching" },
+            { href: "/app/teacher", label: l.teaching },
             { href: "/app/teacher/billing", label: l.billing },
             { href: "/app/settings", label: l.settings },
           ]
@@ -161,6 +261,19 @@ export function AppHeader() {
         </nav>
 
         <div className="app-header-actions">
+          <label className="app-header-language" aria-label="Language">
+            <Globe size={14} strokeWidth={2} aria-hidden="true" />
+            <select
+              value={publicLanguage}
+              onChange={(event) => setLanguage(event.target.value as PublicLanguage)}
+              aria-label="Language"
+            >
+              {publicLocaleOptions.map((item) => (
+                <option key={item.code} value={item.code}>{item.code.toUpperCase()}</option>
+              ))}
+            </select>
+          </label>
+
           <button
             type="button"
             className="app-header-icon-btn desktop-nav"

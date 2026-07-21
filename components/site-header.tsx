@@ -6,9 +6,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Globe, Menu, X, ChevronDown } from "lucide-react";
-import { copy, languageMeta, localeOptions, type Language } from "@/lib/copy";
+import { copy, languageMeta, publicLocaleOptions, type Language } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
-import { buildPlanCheckoutPath } from "@/lib/commerce";
 
 type HeaderLabels = {
   practice: string;
@@ -922,7 +921,7 @@ export function SiteHeader() {
                   gap: "0.125rem"
                 }}
               >
-                {localeOptions.map((item) => (
+                {publicLocaleOptions.map((item) => (
                   <button
                     key={item.code}
                     type="button"
@@ -943,7 +942,7 @@ export function SiteHeader() {
                       transition: "background 0.15s"
                     }}
                   >
-                    <span>{item.flag}</span>
+                    <span className="sa-locale-code">{item.code.toUpperCase()}</span>
                     <span>{item.nativeLabel}</span>
                   </button>
                 ))}
@@ -1083,7 +1082,7 @@ export function SiteHeader() {
             Language
           </strong>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.25rem" }}>
-            {localeOptions.map((item) => (
+            {publicLocaleOptions.map((item) => (
               <button
                 key={item.code}
                 type="button"
@@ -1102,7 +1101,7 @@ export function SiteHeader() {
                   transition: "all 0.15s"
                 }}
               >
-                <span>{item.flag}</span>
+                <span className="sa-locale-code">{item.code.toUpperCase()}</span>
                 <span>{item.nativeLabel}</span>
               </button>
             ))}

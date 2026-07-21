@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
-import { defaultLanguage, getLanguageDirection, isSupportedLanguage, Language } from "@/lib/copy";
+import { defaultLanguage, getLanguageDirection, isPublicLanguage, Language } from "@/lib/copy";
 
 export async function getServerLanguage() {
   const cookieStore = await cookies();
   const cookieLanguage = cookieStore.get("speakace-language")?.value;
-  return isSupportedLanguage(cookieLanguage) ? cookieLanguage : defaultLanguage;
+  return isPublicLanguage(cookieLanguage) ? cookieLanguage : defaultLanguage;
 }
 
 export async function getServerDirection() {
@@ -13,5 +13,5 @@ export async function getServerDirection() {
 }
 
 export function normalizeLanguage(value: string | null | undefined): Language {
-  return isSupportedLanguage(value) ? value : defaultLanguage;
+  return isPublicLanguage(value) ? value : defaultLanguage;
 }

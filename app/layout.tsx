@@ -119,7 +119,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             __html: `(function(){try{var t=localStorage.getItem('speakace-theme');if(t==='dark'||t==='light'){document.body.dataset.theme=t;}else{document.body.dataset.theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}}catch(e){}})();`
           }}
         />
-        <Providers>
+        <Providers initialLanguage={language}>
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{

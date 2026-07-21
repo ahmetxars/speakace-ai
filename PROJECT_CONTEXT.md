@@ -458,6 +458,9 @@ Styling note:
   - dashboard: `.dashboard-*`, `.db-*`
   - admin: `.admin-*`, `.adm-*`
   - marketing: `.sa-*`
+  - audience programmes: `.program-*`
+  - teacher demo: `.demo-*`
+  - writing hub: `.writing-*`
 
 ### Providers and client state
 
@@ -474,6 +477,10 @@ Important implication:
 
 - if a bug is about session state, theme mode, language mode, or client bootstrapping, start with `components/providers.tsx`
 - do not start with DB or API routes unless the UI state is clearly correct but server data is wrong
+- the public language selector is intentionally limited to the five core locales with complete conversion-page coverage: English, Turkish, German, Spanish, and French
+- `app/layout.tsx` passes the server-resolved language into `components/providers.tsx`; keep this server/client initialization aligned to avoid a language flash or stale unsupported locale
+- `components/audience-page.tsx` owns the localized student, teacher, and school programme experiences; the three `app/for-*` routes should stay thin metadata wrappers
+- `components/teacher-demo-page.tsx` owns the localized interactive teacher demo rendered by `app/teacher-demo/page.tsx`
 
 ### Persistence and store layer
 
