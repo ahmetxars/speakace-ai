@@ -575,6 +575,7 @@ Role routing starts in `lib/roles.ts`, while capability enforcement is split acr
 - `app/api/payments/lemon/webhook/route.ts`
   - webhook ingestion, billing event recording, plan updates, PostHog events
   - successful and recovered subscription payment events map to active billing state; initial checkout conversion is counted from `order_created` only
+  - subscription invoice payloads do not carry product names, so plan resolution must preserve the current paid plan or recover it from trusted custom metadata and undiscounted USD subtotal values; never default an unknown paid invoice to Free
 
 Important caution:
 
@@ -693,8 +694,8 @@ Fast debugging split:
 
 1. Checkout and webhook routes live under `app/api/payments/lemon/**`.
 2. Webhook route verifies HMAC signature via `lib/server/lemon.ts`.
-3. Billing events are recorded.
-4. User or institution billing state is updated in the store layer.
+3. User or institution billing state is updated in the store layer before audit logging so an audit-table outage cannot withhold paid access.
+4. Billing events are recorded.
 5. PostHog captures billing lifecycle events.
 
 ### Cron flow

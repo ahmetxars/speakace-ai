@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { BillingStatus, SubscriptionPlan } from "@/lib/types";
+import { commerceNumbers } from "@/lib/commerce";
+import type { BillingStatus, SubscriptionPlan } from "@/lib/types";
 
 type LemonPayload = {
   meta?: {
@@ -7,6 +8,7 @@ type LemonPayload = {
     custom_data?: Record<string, unknown>;
   };
   data?: {
+    type?: string;
     id?: string;
     attributes?: Record<string, unknown>;
   };
@@ -95,17 +97,30 @@ export function getLemonCustomerId(payload: LemonPayload) {
 }
 
 export function getLemonSubscriptionId(payload: LemonPayload) {
+  const attributes = payload.data?.attributes ?? {};
+  const subscriptionId = attributes.subscription_id;
+  if (typeof subscriptionId === "string" || typeof subscriptionId === "number") {
+    return String(subscriptionId);
+  }
+
+  if (payload.data?.type !== "subscriptions") return null;
   const dataId = payload.data?.id;
   return typeof dataId === "string" || typeof dataId === "number" ? String(dataId) : null;
 }
 
-export function resolvePlanFromLemonPayload(payload: LemonPayload): SubscriptionPlan {
+export function resolvePlanFromLemonPayload(payload: LemonPayload): Exclude<SubscriptionPlan, "free"> | null {
   const attributes = payload.data?.attributes ?? {};
   const customData = payload.meta?.custom_data ?? {};
+  const firstOrderItem =
+    attributes.first_order_item && typeof attributes.first_order_item === "object"
+      ? (attributes.first_order_item as Record<string, unknown>)
+      : null;
   const sourceText = [
     attributes.variant_name,
     attributes.product_name,
     attributes.order_item_name,
+    firstOrderItem?.variant_name,
+    firstOrderItem?.product_name,
     customData.plan
   ]
     .filter(Boolean)
@@ -115,10 +130,44 @@ export function resolvePlanFromLemonPayload(payload: LemonPayload): Subscription
   if (sourceText.includes("lifetime")) return "lifetime";
   if (sourceText.includes("pro")) return "pro";
   if (sourceText.includes("plus")) return "plus";
-  return "free";
+
+  const rawSubtotalUsd = attributes.subtotal_usd;
+  const rawSubtotal = attributes.subtotal;
+  const currency = typeof attributes.currency === "string" ? attributes.currency.toUpperCase() : null;
+  const subtotalInCents =
+    typeof rawSubtotalUsd === "number"
+      ? rawSubtotalUsd
+      : typeof rawSubtotalUsd === "string"
+        ? Number(rawSubtotalUsd)
+        : currency === "USD" && typeof rawSubtotal === "number"
+          ? rawSubtotal
+          : currency === "USD" && typeof rawSubtotal === "string"
+            ? Number(rawSubtotal)
+            : NaN;
+
+  if (Number.isFinite(subtotalInCents)) {
+    const roundedSubtotal = Math.round(subtotalInCents);
+    if (
+      roundedSubtotal === Math.round(commerceNumbers.plusWeeklyPrice * 100) ||
+      roundedSubtotal === Math.round(commerceNumbers.plusAnnualPrice * 100)
+    ) {
+      return "plus";
+    }
+    if (
+      roundedSubtotal === Math.round(commerceNumbers.proMonthlyPrice * 100) ||
+      roundedSubtotal === Math.round(commerceNumbers.proAnnualPrice * 100)
+    ) {
+      return "pro";
+    }
+    if (roundedSubtotal === Math.round(commerceNumbers.lifetimePrice * 100)) {
+      return "lifetime";
+    }
+  }
+
+  return null;
 }
 
-export function resolveBillingStatusFromEvent(eventName: string, payload: LemonPayload): BillingStatus {
+export function resolveBillingStatusFromEvent(eventName: string, payload: LemonPayload): BillingStatus | null {
   const attributes = payload.data?.attributes ?? {};
   const statusValue = String(attributes.status ?? "").toLowerCase();
 
@@ -141,9 +190,9 @@ export function resolveBillingStatusFromEvent(eventName: string, payload: LemonP
   if (eventName === "subscription_paused") return "paused";
   if (eventName === "subscription_expired") return "expired";
   if (eventName === "subscription_payment_failed") return "past_due";
-  if (eventName === "order_refunded" || eventName === "subscription_refunded") return "refunded";
+  if (["order_refunded", "subscription_refunded", "subscription_payment_refunded"].includes(eventName)) return "refunded";
   if (eventName === "order_created") return "active";
-  return "free";
+  return null;
 }
 
 export function resolvePlanForStatus(plan: SubscriptionPlan, status: BillingStatus): SubscriptionPlan {

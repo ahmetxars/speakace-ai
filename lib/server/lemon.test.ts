@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   getLemonCheckoutMetadata,
   getLemonPaymentDetails,
+  getLemonSubscriptionId,
   getLemonTrialEndsAt,
-  resolveBillingStatusFromEvent
+  resolveBillingStatusFromEvent,
+  resolvePlanFromLemonPayload
 } from "@/lib/server/lemon";
 
 describe("Lemon billing helpers", () => {
@@ -56,5 +58,60 @@ describe("Lemon billing helpers", () => {
       value: 3.36,
       currency: "USD"
     });
+  });
+
+  it("resolves the purchased plan from an order's nested first item", () => {
+    const payload = {
+      data: {
+        type: "orders",
+        id: "order-1",
+        attributes: {
+          first_order_item: {
+            product_name: "SpeakAce Plus",
+            variant_name: "Weekly"
+          }
+        }
+      }
+    };
+
+    expect(resolvePlanFromLemonPayload(payload)).toBe("plus");
+    expect(getLemonSubscriptionId(payload)).toBeNull();
+  });
+
+  it("never invents a Free plan for planless subscription invoices", () => {
+    const payload = {
+      data: {
+        type: "subscription-invoices",
+        id: "invoice-1",
+        attributes: {
+          subscription_id: 42,
+          status: "paid"
+        }
+      }
+    };
+
+    expect(resolvePlanFromLemonPayload(payload)).toBeNull();
+    expect(getLemonSubscriptionId(payload)).toBe("42");
+    expect(resolveBillingStatusFromEvent("subscription_payment_success", payload)).toBe("active");
+  });
+
+  it("recovers legacy subscription plans from their undiscounted USD subtotal", () => {
+    expect(resolvePlanFromLemonPayload({
+      data: {
+        type: "subscription-invoices",
+        attributes: { subtotal_usd: 399, total: 319, currency: "USD" }
+      }
+    })).toBe("plus");
+
+    expect(resolvePlanFromLemonPayload({
+      data: {
+        type: "subscription-invoices",
+        attributes: { subtotal: "1200", currency: "usd" }
+      }
+    })).toBe("pro");
+  });
+
+  it("ignores webhook event types that cannot change billing state", () => {
+    expect(resolveBillingStatusFromEvent("customer_updated", {})).toBeNull();
   });
 });

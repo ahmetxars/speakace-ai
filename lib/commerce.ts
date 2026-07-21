@@ -110,15 +110,19 @@ export function buildLemonCheckoutUrl(input?: {
   ctaEvent?: string;
   checkoutId?: string;
 }) {
+  const selectedPlan = input?.plan ?? "plus";
+  const selectedBilling = input?.billing ?? "weekly";
   let baseCheckout: string;
-  if (input?.plan === "lifetime") {
+  if (selectedPlan === "lifetime") {
     baseCheckout = commerceConfig.lifetimeCheckout;
-  } else if (input?.plan === "pro") {
-    baseCheckout = input.billing === "annual" ? commerceConfig.proAnnualCheckout : commerceConfig.proMonthlyCheckout;
+  } else if (selectedPlan === "pro") {
+    baseCheckout = selectedBilling === "annual" ? commerceConfig.proAnnualCheckout : commerceConfig.proMonthlyCheckout;
   } else {
-    baseCheckout = input?.billing === "annual" ? commerceConfig.plusAnnualCheckout : commerceConfig.plusMonthlyCheckout;
+    baseCheckout = selectedBilling === "annual" ? commerceConfig.plusAnnualCheckout : commerceConfig.plusMonthlyCheckout;
   }
   const url = new URL(baseCheckout);
+  url.searchParams.set("checkout[custom][plan]", selectedPlan);
+  url.searchParams.set("checkout[custom][billing]", selectedBilling);
   if (input?.email) {
     url.searchParams.set("checkout[email]", input.email);
   }

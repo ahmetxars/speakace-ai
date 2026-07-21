@@ -4,6 +4,8 @@ import {
   applyBillingPlanByEmail,
   applyBillingPlanByUserId,
   applyInstitutionBillingByUserId,
+  getMember,
+  getMemberByEmail,
   getMemberEmailById,
   recordBillingEvent
 } from "@/lib/store";
@@ -76,41 +78,47 @@ export async function POST(request: Request) {
   const trialEndsAt = getLemonTrialEndsAt(payload);
   const status = resolveBillingStatusFromEvent(eventName, payload);
   const basePlan = resolvePlanFromLemonPayload(payload);
-  const nextPlan = resolvePlanForStatus(basePlan, status);
   const institutionType = getInstitutionType(payload);
   const checkoutMetadata = getLemonCheckoutMetadata(payload);
   const paymentDetails = getLemonPaymentDetails(payload);
   const posthog = getPostHogClient();
-  const distinctId = userId ?? email ?? providerCustomerId ?? providerSubscriptionId ?? `billing:${eventName}`;
+
+  if (!status) {
+    return NextResponse.json({ received: true, ignored: true });
+  }
 
   // Cross-check: if both userId and email are present, confirm they belong to the same account
-  if (userId && email) {
+  let matchedUserId = userId;
+  if (userId) {
     const storedEmail = await getMemberEmailById(userId).catch(() => null);
-    if (storedEmail && storedEmail !== email) {
+    if (!storedEmail) {
+      matchedUserId = null;
+    } else if (email && storedEmail.trim().toLowerCase() !== email.trim().toLowerCase()) {
       console.error(`Lemon webhook userId/email mismatch: userId=${userId} payload_email=${email} stored_email=${storedEmail}`);
       return NextResponse.json({ error: "User identity mismatch." }, { status: 400 });
     }
   }
 
-  try {
-    await recordBillingEvent({
-      provider: "lemonsqueezy",
-      eventName,
-      userEmail: email,
-      userId,
-      plan: nextPlan,
-      billingStatus: status,
-      providerCustomerId,
-      providerSubscriptionId,
-      payloadJson: payload
-    });
+  const existingMember = basePlan
+    ? null
+    : matchedUserId
+      ? await getMember(matchedUserId).catch(() => null)
+      : email
+        ? await getMemberByEmail(email).catch(() => null)
+        : null;
+  const retainedPlan = existingMember?.plan && existingMember.plan !== "free" ? existingMember.plan : null;
+  const resolvedPlan = basePlan ?? retainedPlan;
+  const nextPlan = resolvedPlan ? resolvePlanForStatus(resolvedPlan, status) : null;
+  const eventPlan = nextPlan ?? retainedPlan ?? "free";
+  const distinctId = matchedUserId ?? email ?? providerCustomerId ?? providerSubscriptionId ?? `billing:${eventName}`;
 
-    if (institutionType === "institution" && userId) {
+  try {
+    if (institutionType === "institution" && matchedUserId) {
       // Institution subscription — update institution_billing table instead of user plan
       const institutionPlan = getInstitutionPlan(payload);
       if (institutionPlan) {
         await applyInstitutionBillingByUserId({
-          userId,
+          userId: matchedUserId,
           plan: institutionPlan,
           billingStatus: status,
           providerCustomerId,
@@ -118,12 +126,12 @@ export async function POST(request: Request) {
           seatCount: getInstitutionSeatCount(payload)
         });
       }
-    } else {
+    } else if (nextPlan) {
       // Individual subscription — prefer the authenticated user id captured at checkout,
       // then fall back to email to support older checkout links.
-      const updatedByUserId = userId
+      const updatedByUserId = matchedUserId
         ? await applyBillingPlanByUserId({
-            userId,
+            userId: matchedUserId,
             plan: nextPlan,
             billingStatus: status,
             providerCustomerId,
@@ -143,6 +151,19 @@ export async function POST(request: Request) {
         });
       }
     }
+
+    // Entitlements are applied first so an audit-table outage never leaves a paying user on Free.
+    await recordBillingEvent({
+      provider: "lemonsqueezy",
+      eventName,
+      userEmail: email,
+      userId: matchedUserId,
+      plan: eventPlan,
+      billingStatus: status,
+      providerCustomerId,
+      providerSubscriptionId,
+      payloadJson: payload
+    });
   } catch (err) {
     console.error("Lemon webhook DB error:", err);
     return NextResponse.json({ error: "Internal error processing webhook." }, { status: 500 });
@@ -154,7 +175,7 @@ export async function POST(request: Request) {
     properties: {
       event_name: eventName,
       billing_status: status,
-      plan: nextPlan,
+      plan: eventPlan,
       provider: "lemonsqueezy",
       institution_type: institutionType,
       trial_ends_at: trialEndsAt
@@ -168,7 +189,7 @@ export async function POST(request: Request) {
       distinctId,
       event: "checkout_completed",
       properties: {
-        plan: nextPlan,
+        plan: eventPlan,
         billing_status: status,
         provider: "lemonsqueezy",
         institution_type: institutionType,
@@ -189,7 +210,7 @@ export async function POST(request: Request) {
       distinctId,
       event: "subscription_revenue_received",
       properties: {
-        plan: nextPlan,
+        plan: eventPlan,
         provider: "lemonsqueezy",
         invoice_id: paymentDetails.orderId,
         revenue: paymentDetails.value,
@@ -205,7 +226,7 @@ export async function POST(request: Request) {
       distinctId,
       event: "payment_failed",
       properties: {
-        plan: nextPlan,
+        plan: eventPlan,
         billing_status: status,
         provider: "lemonsqueezy",
         institution_type: institutionType

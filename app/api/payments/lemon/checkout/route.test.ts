@@ -42,7 +42,10 @@ describe("Lemon checkout redirect", () => {
     );
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toContain("speakace.lemonsqueezy.com/checkout/buy/");
+    const checkoutUrl = new URL(response.headers.get("location") ?? "");
+    expect(checkoutUrl.href).toContain("speakace.lemonsqueezy.com/checkout/buy/");
+    expect(checkoutUrl.searchParams.get("checkout[custom][plan]")).toBe("plus");
+    expect(checkoutUrl.searchParams.get("checkout[custom][billing]")).toBe("weekly");
     expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith({
       userId: "user-1",
       event: "checkout_initiated",
