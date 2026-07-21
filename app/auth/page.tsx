@@ -214,16 +214,22 @@ function AuthPageInner() {
     setSuccessToast("");
     fetch(`/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`)
       .then(async (response) => {
-        const data = (await response.json()) as { error?: string };
+        const data = (await response.json()) as { error?: string; authenticated?: boolean };
         if (!response.ok) {
           setError(data.error ?? (tr ? "Doğrulama işlemi başarısız oldu." : "Verification failed."));
+          return;
+        }
+        if (data.authenticated) {
+          await refreshSession();
+          posthog.capture("signup_activated", { source: "email_verification" });
+          router.replace("/app/practice?quickStart=1&runMode=interview&activation=verified_signup");
           return;
         }
         setSuccessToast(tr ? "E-posta adresin doğrulandı. Artık giriş yapabilirsin." : "Your email address has been verified. You can now sign in.");
         setMode("signin");
       })
       .finally(() => setVerifying(false));
-  }, [handledVerifyToken, searchParams, tr, verifying]);
+  }, [handledVerifyToken, refreshSession, router, searchParams, tr, verifying]);
 
   const resendVerification = async () => {
     if (!email || resendingVerification) return;

@@ -1,6 +1,12 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getRequestIp, checkRateLimit } from "@/lib/server/rate-limit";
-import { verifyEmailToken } from "@/lib/server/auth";
+import {
+  createAuthSession,
+  getSessionCookieName,
+  getSessionCookieOptions,
+  verifyEmailToken
+} from "@/lib/server/auth";
 import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function GET(request: Request) {
@@ -26,13 +32,16 @@ export async function GET(request: Request) {
 
   try {
     const token = new URL(request.url).searchParams.get("token") ?? "";
-    await verifyEmailToken(token);
+    const verification = await verifyEmailToken(token);
+    const session = await createAuthSession(verification.userId);
+    const cookieStore = await cookies();
+    cookieStore.set(getSessionCookieName(), session.token, getSessionCookieOptions(session.expiresAt));
     posthog.capture({
-      distinctId: `email-verification:${ip}`,
+      distinctId: verification.userId,
       event: "email_verification_completed",
-      properties: { token_present: Boolean(token) }
+      properties: { token_present: Boolean(token), session_created: true }
     });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, authenticated: true });
   } catch (error) {
     posthog.capture({
       distinctId: `email-verification:${ip}`,

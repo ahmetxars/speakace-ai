@@ -145,15 +145,11 @@ export function Dashboard() {
     fetch("/api/profile", { signal: ctrl.signal })
       .then((r) => r.json())
       .then((data: { profile?: StudentProfile }) => {
-        const p = data.profile ?? null;
-        setProfile(p);
-        if (p && !p.onboardingComplete && dashboardRole === "student") {
-          router.replace("/app/onboarding");
-        }
+        setProfile(data.profile ?? null);
       })
       .catch(() => setProfile(null));
     return () => ctrl.abort();
-  }, [currentUserId, signedIn, router, dashboardRole]);
+  }, [currentUserId, signedIn]);
 
   const scoredSessions = useMemo(
     () => summary.recentSessions.filter((s) => s.report),
@@ -587,18 +583,29 @@ export function Dashboard() {
             <Sparkles size={15} />
             <div>
               <strong style={{ display: "block", marginBottom: "0.2rem" }}>
-                {tr ? "Sana özel programını oluştur — 2 dakika yeter" : "Create your personalized plan — takes just 2 minutes"}
+                {tr ? "İlk ücretsiz AI speaking skorunu al" : "Get your first free AI speaking score"}
               </strong>
               <p style={{ margin: 0, fontSize: "0.87rem", color: "var(--muted)" }}>
                 {tr
-                  ? "Seviyeni, zorluklarını ve öğrenme stilini öğrenelim. Dashboard önerileri ve yol haritası sana göre şekillensin."
-                  : "Tell us your level, challenges, and learning style. Your dashboard recommendations and roadmap will be tailored just for you."}
+                  ? "Yaklaşık 5 dakikada ilk cevabını kaydet ve gelişim alanlarını gör. Kişisel programını daha sonra tamamlayabilirsin."
+                  : "Record your first answer and see what to improve in about 5 minutes. You can personalize your plan afterwards."}
               </p>
             </div>
           </div>
-          <Link className="button button-primary" href="/app/onboarding">
-            {tr ? "Programımı oluştur →" : "Build my plan →"}
-          </Link>
+          <div className="dashboard-inline-actions">
+            <TrackedLink
+              className="button button-primary"
+              href="/app/practice?quickStart=1&runMode=interview"
+              userId={currentUser?.id}
+              analyticsEvent="marketing_cta_click"
+              analyticsPath="/app/activation/first-score"
+            >
+              {tr ? "İlk skorumu al →" : "Get my first score →"}
+            </TrackedLink>
+            <Link className="button button-secondary" href="/app/onboarding">
+              {tr ? "Önce programı kişiselleştir" : "Personalize my plan first"}
+            </Link>
+          </div>
         </section>
       ) : null}
 

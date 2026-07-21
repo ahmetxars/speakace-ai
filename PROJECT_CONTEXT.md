@@ -363,6 +363,11 @@ Core logic:
 - `lib/teacher.ts`
 - `lib/roles.ts`
 
+Activation behavior:
+
+- A successful one-time email verification creates the normal server-side session cookie and the auth page sends a newly verified learner to `/app/practice?quickStart=1&runMode=interview`; do not reintroduce a second password step after verification.
+- Student onboarding is optional personalization, not an access gate. Incomplete profiles remain on the dashboard with first-score practice as the primary action and onboarding as the secondary action.
+
 ### Learner profile, progress, speaking, writing
 
 - `app/api/profile/route.ts`

@@ -696,7 +696,7 @@ export async function verifyEmailToken(token: string) {
     }
   }
 
-  return { ok: true as const };
+  return { ok: true as const, userId };
 }
 
 export async function createPasswordResetFlow(email: string) {
