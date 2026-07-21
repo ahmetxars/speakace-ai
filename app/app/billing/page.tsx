@@ -61,15 +61,15 @@ export default function BillingPage() {
     () =>
       currentUser?.plan === "free"
         ? {
-            heading: tr ? "En net sonraki adim" : "Clearest next step",
-            title: tr ? "Ilk odeme icin Plus ile basla" : "Start with Plus for the first payment",
+            heading: tr ? "En dusuk surtunmeli baslangic" : "Lowest-friction start",
+            title: tr ? "3 gunluk Plus denemesini haftalik planla baslat" : "Start the 3-day Plus trial on the weekly plan",
             detail: tr
-              ? `Cogu ilk checkout once Plus ile daha kolay kapanir. Yillik secenekte haftalik plana gore yaklasik %${plusAnnualSavings} daha iyi fiyat yakalarsin, daha dusuk surtunme istiyorsan haftalik baslangic da var.`
-              : `Most first checkouts close more easily through Plus. The annual option lands at about ${plusAnnualSavings}% better value than paying weekly, and the weekly path is there if you want the lowest-friction start.`,
-            ctaLabel: tr ? "Plus yillik ile basla" : "Start with Plus annual",
-            ctaHref: buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_decision_annual" }),
-            secondaryLabel: tr ? "Daha hafif giris: haftalik" : "Lower-friction start: weekly",
-            secondaryHref: buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_decision_weekly" })
+              ? `Once 3 gun boyunca tam geri bildirim ve retry dongusunu dene. Deneme sonrasinda Plus haftalik $3.99 ile devam eder; uzun hazirlik yapacaksan yillik secenek yaklasik %${plusAnnualSavings} tasarruf saglar.`
+              : `Try the full feedback and retry loop for 3 days first. Plus then continues at $3.99/week; if you already expect a longer prep cycle, annual saves about ${plusAnnualSavings}%.`,
+            ctaLabel: tr ? "3 gunluk Plus denemesini baslat" : "Start the 3-day Plus trial",
+            ctaHref: buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_decision_weekly" }),
+            secondaryLabel: tr ? "Uzun hazirlik: yillik" : "Longer prep: annual",
+            secondaryHref: buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_decision_annual" })
           }
         : currentUser?.plan === "plus"
           ? {
@@ -101,12 +101,12 @@ export default function BillingPage() {
       tr
         ? [
             "Checkout ayni hesaba baglanir, yeni hesap acman gerekmez.",
-            "Odeme sonrasi success ekrani plani otomatik dogrular.",
+            "3 gunluk deneme sonrasinda plan haftalik $3.99 ile devam eder; billing sayfasindan yonetebilirsin.",
             "Ilk satin almada LAUNCH20 kodu ile daha yumusak giris yapabilirsin."
           ]
         : [
             "Checkout stays on the same account, so you do not need a second login.",
-            "The success screen automatically checks whether the upgrade attached correctly.",
+            "After the 3-day trial, the plan continues at $3.99/week and can be managed from billing.",
             `For a softer first purchase, you can use ${couponCatalog.LAUNCH20.code}.`
           ],
     [tr]
@@ -236,11 +236,20 @@ export default function BillingPage() {
               className="button button-primary"
               href={purchaseDecisionGuide.ctaHref}
               userId={currentUser?.id}
-              analyticsEvent="checkout_initiated"
-              analyticsPath={purchaseDecisionGuide.ctaHref}
+              analyticsEvent={purchaseDecisionGuide.ctaHref.startsWith("/api/payments/lemon/checkout") ? "checkout_initiated" : "marketing_cta_click"}
+              analyticsPath={
+                currentUser?.plan === "free"
+                  ? purchaseDecisionGuide.ctaHref.includes("billing=annual")
+                    ? "/app/billing/decision/plus/annual"
+                    : "/app/billing/decision/plus/weekly"
+                  : currentUser?.plan === "plus"
+                    ? "/app/billing/decision/pro"
+                    : "/app/billing/decision/practice"
+              }
               onClick={() => {
                 if (purchaseDecisionGuide.ctaHref.includes("plan=plus")) {
-                  posthog.capture("checkout_initiated", { plan: "plus", billing: "annual", current_plan: currentUser?.plan, campaign: "billing_decision_annual" });
+                  const billing = purchaseDecisionGuide.ctaHref.includes("billing=annual") ? "annual" : "weekly";
+                  posthog.capture("checkout_initiated", { plan: "plus", billing, current_plan: currentUser?.plan, campaign: `billing_decision_${billing}` });
                 } else if (purchaseDecisionGuide.ctaHref.includes("plan=pro")) {
                   posthog.capture("checkout_initiated", { plan: "pro", current_plan: currentUser?.plan, campaign: "billing_decision_pro" });
                 }
@@ -253,10 +262,19 @@ export default function BillingPage() {
               href={purchaseDecisionGuide.secondaryHref}
               userId={currentUser?.id}
               analyticsEvent={currentUser?.plan === "free" ? "checkout_initiated" : "marketing_cta_click"}
-              analyticsPath={purchaseDecisionGuide.secondaryHref}
+              analyticsPath={
+                currentUser?.plan === "free"
+                  ? purchaseDecisionGuide.secondaryHref.includes("billing=annual")
+                    ? "/app/billing/decision/plus/annual"
+                    : "/app/billing/decision/plus/weekly"
+                  : currentUser?.plan === "plus"
+                    ? "/app/billing/decision/practice"
+                    : "/app/billing/decision/referrals"
+              }
               onClick={() => {
                 if (currentUser?.plan === "free") {
-                  posthog.capture("checkout_initiated", { plan: "plus", billing: "weekly", current_plan: currentUser?.plan, campaign: "billing_decision_weekly" });
+                  const billing = purchaseDecisionGuide.secondaryHref.includes("billing=annual") ? "annual" : "weekly";
+                  posthog.capture("checkout_initiated", { plan: "plus", billing, current_plan: currentUser?.plan, campaign: `billing_decision_${billing}` });
                 }
               }}
             >
@@ -269,26 +287,6 @@ export default function BillingPage() {
             <>
               <TrackedLink
                 className="button button-primary"
-                href={buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_buy_plus_annual" })}
-                userId={currentUser?.id}
-                analyticsEvent="checkout_initiated"
-                analyticsPath="/app/billing/plus/annual"
-                onClick={() => {
-                  posthog.capture("checkout_initiated", { plan: "plus", billing: "annual", current_plan: currentUser?.plan, campaign: "billing_buy_plus_annual" });
-                  if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
-                    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
-                      currency: 'USD',
-                      value: commerceNumbers.plusAnnualPrice,
-                      coupon: couponCatalog.LAUNCH20.code,
-                      items: [{ item_id: 'plus_annual', item_name: 'SpeakAce Plus - Annual', price: commerceNumbers.plusAnnualPrice, quantity: 1 }]
-                    });
-                  }
-                }}
-              >
-                {tr ? "En iyi deger: Plus yillik" : "Best value: Plus annual"}
-              </TrackedLink>
-              <TrackedLink
-                className="button button-secondary"
                 href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_buy_plus_weekly" })}
                 userId={currentUser?.id}
                 analyticsEvent="checkout_initiated"
@@ -305,7 +303,27 @@ export default function BillingPage() {
                   }
                 }}
               >
-                {tr ? "Daha hafif baslangic: Plus haftalik" : "Lower-friction start: Plus weekly"}
+                {tr ? "3 gunluk denemeyi baslat" : "Start the 3-day trial"}
+              </TrackedLink>
+              <TrackedLink
+                className="button button-secondary"
+                href={buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_buy_plus_annual" })}
+                userId={currentUser?.id}
+                analyticsEvent="checkout_initiated"
+                analyticsPath="/app/billing/plus/annual"
+                onClick={() => {
+                  posthog.capture("checkout_initiated", { plan: "plus", billing: "annual", current_plan: currentUser?.plan, campaign: "billing_buy_plus_annual" });
+                  if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
+                    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
+                      currency: 'USD',
+                      value: commerceNumbers.plusAnnualPrice,
+                      coupon: couponCatalog.LAUNCH20.code,
+                      items: [{ item_id: 'plus_annual', item_name: 'SpeakAce Plus - Annual', price: commerceNumbers.plusAnnualPrice, quantity: 1 }]
+                    });
+                  }
+                }}
+              >
+                {tr ? "Uzun hazirlik: Plus yillik" : "Longer prep: Plus annual"}
               </TrackedLink>
               <a
                 className="button button-secondary"

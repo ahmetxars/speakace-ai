@@ -80,10 +80,16 @@ export function TrackedLink({
 }: TrackedLinkProps) {
   const resolvedHref =
     typeof href === "string" ? buildAttributedHref(href, analyticsEvent, analyticsPath) : href;
+  const isServerTrackedCheckout =
+    analyticsEvent === "checkout_initiated" &&
+    typeof resolvedHref === "string" &&
+    resolvedHref.startsWith("/api/payments/lemon/checkout");
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     onClick?.(event);
-    void (analyticsEvent ? trackClientEvent({ userId, event: analyticsEvent, path: analyticsPath ?? String(href) }) : Promise.resolve());
+    void (analyticsEvent && !isServerTrackedCheckout
+      ? trackClientEvent({ userId, event: analyticsEvent, path: analyticsPath ?? String(href) })
+      : Promise.resolve());
     trackGaEvent(gaEvent, gaParams);
   };
 

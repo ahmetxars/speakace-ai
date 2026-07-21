@@ -8,6 +8,7 @@ export async function trackClientEvent(input: { userId?: string | null; event: A
     await fetch("/api/analytics/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      keepalive: true,
       body: JSON.stringify({
         event: input.event,
         path: input.path

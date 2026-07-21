@@ -968,6 +968,7 @@ Inspect only:
 - As verified in the live Lemon Squeezy dashboard on 2026-07-22, no webhook is configured for the store. Subscription events will not reach `app/api/payments/lemon/webhook/route.ts` until `https://speakace.org/api/payments/lemon/webhook` is registered and its signing secret is configured in production as `LEMON_SQUEEZY_WEBHOOK_SECRET`.
 - SpeakAce Plus currently uses a three-day Lemon Squeezy trial. Trial conversion and access depend on preserving the provider's `on_trial` status and `trial_ends_at` value through the webhook billing sync.
 - Live catalog values must be checked against site copy before changing pricing. On 2026-07-22, the Lemon product named Pro Monthly was configured with a weekly interval while the site described it as monthly.
+- Authenticated learner checkout initiation is recorded server-side in `app/api/payments/lemon/checkout/route.ts`. Keep the database event there so navigation cannot drop it, and do not add a second client-side `checkout_initiated` write for links targeting that route.
 
 ### Assumptions
 
