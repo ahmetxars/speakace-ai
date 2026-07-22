@@ -12,6 +12,7 @@ const ALLOWED_EVENTS = new Set<AnalyticsEventName>([
   "checkout_initiated",
   "checkout_completed",
   "billing_success_seen",
+  "billing_sync_pending",
   "result_card_download",
   "result_share_x",
   "result_share_whatsapp",

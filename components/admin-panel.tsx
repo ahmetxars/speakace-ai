@@ -522,6 +522,16 @@ export function AdminPanel(props: {
     });
 
     actions.push({
+      title: "Paid access sync pending",
+      value: `${props.overview.billingSyncPending7d}`,
+      detail:
+        props.overview.billingSyncPending7d > 0
+          ? `${props.overview.billingSyncPending7d} distinct buyer account(s) returned from checkout but still had free access after repeated sync checks in 7d. Review payment delivery before asking anyone to purchase again.`
+          : "No buyer reached the payment-return page with access still unsynced in the last 7 days.",
+      tone: props.overview.billingSyncPending7d > 0 ? "warning" : "success"
+    });
+
+    actions.push({
       title: "Source worth scaling",
       value: bestCheckoutSource ? formatCtaLabel(bestCheckoutSource.path) : "No signal yet",
       detail: bestCheckoutSource
@@ -533,6 +543,7 @@ export function AdminPanel(props: {
     return actions;
   }, [
     props.overview.billingSuccessSeen7d,
+    props.overview.billingSyncPending7d,
     props.overview.checkoutCompleted7d,
     props.overview.topCheckoutSources,
     props.overview.monetizationFunnel7d.billingSuccessSeen,
@@ -1148,7 +1159,8 @@ export function AdminPanel(props: {
                   { label: "Limit hits (7d)", value: props.overview.practiceLimitHits7d },
                   { label: "Upgrade prompts (7d)", value: props.overview.upgradePromptViews7d },
                   { label: "Checkout initiated (7d)", value: props.overview.checkoutInitiated7d },
-                  { label: "Checkout completed (7d)", value: props.overview.checkoutCompleted7d }
+                  { label: "Checkout completed (7d)", value: props.overview.checkoutCompleted7d },
+                  { label: "Access sync pending (7d)", value: props.overview.billingSyncPending7d }
                 ].map(({ label, value }) => (
                   <div key={label} className="adm-mini-stat">
                     <strong>{value}</strong>
@@ -1258,6 +1270,10 @@ export function AdminPanel(props: {
                     <div className="adm-overview-item">
                       <strong>{props.overview.billingSuccessSeen7d}</strong>
                       <span>Billing success screens seen in the last 7 days</span>
+                    </div>
+                    <div className="adm-overview-item">
+                      <strong>{props.overview.billingSyncPending7d}</strong>
+                      <span>Distinct buyers still waiting for paid access in 7d (30d: {props.overview.billingSyncPending30d})</span>
                     </div>
                   </div>
                 </div>
@@ -1964,6 +1980,12 @@ export function AdminPanel(props: {
                   value={`${props.overview.billingSuccessSeen7d}/${props.overview.checkoutCompleted7d}`}
                   detail="How many completed buyers actually reached the billing success state in the last 7 days."
                   tone={props.overview.billingSuccessSeen7d >= props.overview.checkoutCompleted7d ? "success" : "warning"}
+                />
+                <AdmSignalCard
+                  label="Access sync pending"
+                  value={String(props.overview.billingSyncPending7d)}
+                  detail={`${props.overview.billingSyncPending30d} distinct buyer account(s) reached a pending access state in the last 30 days.`}
+                  tone={props.overview.billingSyncPending7d > 0 ? "warning" : "success"}
                 />
               </div>
 

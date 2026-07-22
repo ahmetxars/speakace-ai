@@ -528,6 +528,8 @@ export interface AdminOverview {
   checkoutCompleted30d: number;
   billingSuccessSeen7d: number;
   billingSuccessSeen30d: number;
+  billingSyncPending7d: number;
+  billingSyncPending30d: number;
   interviewStarts7d: number;
   interviewStarts30d: number;
   interviewFollowUps7d: number;

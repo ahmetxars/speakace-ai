@@ -238,8 +238,9 @@ This is the project-wide “where things live” map.
 - External tracking:
   - `instrumentation-client.ts`
   - `lib/posthog-server.ts`
-  - first-payment funnel events include `pricing_view`, `pricing_plus_click`, `practice_limit_hit`, `upgrade_prompt_view`, `checkout_initiated`, `checkout_completed`, and `billing_success_seen`
+  - first-payment funnel events include `pricing_view`, `pricing_plus_click`, `practice_limit_hit`, `upgrade_prompt_view`, `checkout_initiated`, `checkout_completed`, `billing_success_seen`, and `billing_sync_pending`
   - `checkout_completed` is emitted server-side only for Lemon `order_created`; `subscription_created` arrives for the same initial sale and must not be counted as a second conversion.
+  - `billing_sync_pending` is emitted from the signed-in billing success page only after repeated secure plan-sync checks still return free access; admin reporting counts distinct affected accounts over 7 and 30 days.
   - successful or recovered subscription payments emit `subscription_revenue_received` with Lemon invoice value and currency.
 
 ### Email and lifecycle product
@@ -710,6 +711,7 @@ Fast debugging split:
 3. User or institution billing state is updated in the store layer before audit logging so an audit-table outage cannot withhold paid access.
 4. Billing events are recorded.
 5. PostHog captures billing lifecycle events.
+6. The learner billing success page retries the signed-in server sync, warns against a duplicate purchase when access remains pending, and directs the buyer to support; it must never grant entitlement from client-side checkout attribution.
 
 ### Cron flow
 

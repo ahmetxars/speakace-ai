@@ -294,6 +294,8 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       checkoutCompleted30d: 0,
       billingSuccessSeen7d: 0,
       billingSuccessSeen30d: 0,
+      billingSyncPending7d: 0,
+      billingSyncPending30d: 0,
       interviewStarts7d: 0,
       interviewStarts30d: 0,
       interviewFollowUps7d: 0,
@@ -411,6 +413,8 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       checkout_completed_30d: number;
       billing_success_seen_7d: number;
       billing_success_seen_30d: number;
+      billing_sync_pending_7d: number;
+      billing_sync_pending_30d: number;
       interview_starts_7d: number;
       interview_starts_30d: number;
       interview_followups_7d: number;
@@ -584,6 +588,18 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         where event = 'billing_success_seen'
           and created_at > now() - interval '30 days'
       ) as billing_success_seen_30d,
+      (
+        select count(distinct user_id)::int
+        from recent_analytics
+        where event = 'billing_sync_pending'
+          and created_at > now() - interval '7 days'
+      ) as billing_sync_pending_7d,
+      (
+        select count(distinct user_id)::int
+        from recent_analytics
+        where event = 'billing_sync_pending'
+          and created_at > now() - interval '30 days'
+      ) as billing_sync_pending_30d,
       (
         select count(*)::int
         from recent_analytics
@@ -1261,6 +1277,8 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     checkoutCompleted30d: row?.checkout_completed_30d ?? 0,
     billingSuccessSeen7d: row?.billing_success_seen_7d ?? 0,
     billingSuccessSeen30d: row?.billing_success_seen_30d ?? 0,
+    billingSyncPending7d: row?.billing_sync_pending_7d ?? 0,
+    billingSyncPending30d: row?.billing_sync_pending_30d ?? 0,
     interviewStarts7d: row?.interview_starts_7d ?? 0,
     interviewStarts30d: row?.interview_starts_30d ?? 0,
     interviewFollowUps7d: row?.interview_followups_7d ?? 0,

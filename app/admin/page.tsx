@@ -75,6 +75,8 @@ export default async function AdminPage() {
             checkoutCompleted30d: 0,
             billingSuccessSeen7d: 0,
             billingSuccessSeen30d: 0,
+            billingSyncPending7d: 0,
+            billingSyncPending30d: 0,
             interviewStarts7d: 0,
             interviewStarts30d: 0,
             interviewFollowUps7d: 0,
