@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -174,36 +175,48 @@ const demoUnits: Record<PublicLanguage, { attempts: string; priorities: string; 
   fr: { attempts: "essais", priorities: "priorités", urgent: "urgents" }
 };
 
+type DemoView = "overview" | "students" | "assignments" | "announcements";
+
 export function TeacherDemoPage() {
   const { language } = useAppState();
   const publicLanguage = normalizePublicLanguage(language);
   const copy = demoCopy[publicLanguage];
   const units = demoUnits[publicLanguage];
+  const [activeView, setActiveView] = useState<DemoView>("overview");
+  const views: Array<{ key: DemoView; label: string; icon: typeof LayoutDashboard }> = [
+    { key: "overview", label: copy.overview, icon: LayoutDashboard },
+    { key: "students", label: copy.students, icon: UsersRound },
+    { key: "assignments", label: copy.assignments, icon: BookOpenCheck },
+    { key: "announcements", label: copy.announcements, icon: BellRing }
+  ];
+  const showActivity = activeView === "overview" || activeView === "assignments";
+  const showRoster = activeView === "overview" || activeView === "students";
+  const panelTitle = views.find((view) => view.key === activeView)?.label ?? copy.overview;
 
   return (
-    <main className="demo-class-page">
-      <section className="demo-class-hero page-shell">
-        <div>
-          <span className="program-kicker">{copy.eyebrow}</span>
+    <main className="teacher-demo-page">
+      <section className="teacher-demo-hero page-shell">
+        <div className="teacher-demo-hero-copy">
+          <span className="teacher-demo-kicker">{copy.eyebrow}</span>
           <h1>{copy.title}</h1>
           <p>{copy.body}</p>
-          <div className="program-actions">
+          <div className="teacher-demo-actions">
             <Link className="button button-primary" href="/auth?mode=signup&cta=teacher_demo">{copy.primary}<ArrowRight size={16} /></Link>
             <Link className="button button-secondary" href="/for-teachers">{copy.secondary}</Link>
           </div>
-          <span className="demo-class-note"><CheckCircle2 size={14} />{copy.demoNote}</span>
+          <span className="teacher-demo-note"><CheckCircle2 size={14} />{copy.demoNote}</span>
         </div>
-        <aside className="demo-hero-pulse" aria-label={copy.overview}>
-          <div className="demo-hero-pulse-head">
-            <span className="demo-hero-pulse-icon"><LayoutDashboard size={19} /></span>
+        <aside className="teacher-demo-snapshot" aria-label={copy.overview}>
+          <div className="teacher-demo-snapshot-head">
+            <span className="teacher-demo-snapshot-icon"><LayoutDashboard size={19} /></span>
             <div><small>{copy.overview}</small><strong>{copy.className}</strong></div>
-            <span className="demo-hero-live"><i />{copy.week}</span>
+            <span className="teacher-demo-live"><i />{copy.week}</span>
           </div>
-          <div className="demo-hero-metrics">
+          <div className="teacher-demo-snapshot-metrics">
             <article><UsersRound size={17} /><span>{copy.students}</span><strong>18</strong></article>
             <article><BookOpenCheck size={17} /><span>{copy.completion}</span><strong>78%</strong></article>
           </div>
-          <div className="demo-hero-priority">
+          <div className="teacher-demo-priority">
             <span><CircleAlert size={17} />{copy.attention}</span>
             <strong>4</strong>
             <small>2 {units.urgent}</small>
@@ -211,82 +224,95 @@ export function TeacherDemoPage() {
         </aside>
       </section>
 
-      <section className="demo-workspace page-shell" aria-label={copy.overview}>
-        <aside className="demo-workspace-nav">
-          <div className="demo-workspace-brand">SA</div>
-          <nav>
-            <span className="is-active"><LayoutDashboard size={17} />{copy.overview}</span>
-            <span><UsersRound size={17} />{copy.students}</span>
-            <span><BookOpenCheck size={17} />{copy.assignments}</span>
-            <span><BellRing size={17} />{copy.announcements}</span>
+      <section className="teacher-demo-browser page-shell" aria-label={copy.overview}>
+        <aside className="teacher-demo-sidebar">
+          <div className="teacher-demo-brand">SA</div>
+          <nav role="tablist" aria-label={copy.overview}>
+            {views.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={activeView === key}
+                className={activeView === key ? "is-active" : ""}
+                onClick={() => setActiveView(key)}
+              >
+                <Icon size={17} />
+                <span>{label}</span>
+              </button>
+            ))}
           </nav>
-          <button type="button"><Plus size={16} />{copy.assignments}</button>
+          <Link href="/auth?mode=signup&cta=teacher_demo_sidebar"><Plus size={16} /><span>{copy.primary}</span></Link>
         </aside>
 
-        <div className="demo-workspace-main">
-          <header className="demo-workspace-header">
-            <div><span>{copy.overview}</span><h2>{copy.className}</h2></div>
+        <div className="teacher-demo-main" role="tabpanel">
+          <header className="teacher-demo-main-head">
+            <div><span>{panelTitle}</span><h2>{copy.className}</h2></div>
             <span>{copy.week}</span>
           </header>
 
-          <div className="demo-kpis">
+          <div className="teacher-demo-kpis">
             <article><span>{copy.classAverage}</span><strong>6.4</strong><small>+0.3</small></article>
             <article><span>{copy.weeklyAttempts}</span><strong>62</strong><small>+18%</small></article>
             <article><span>{copy.completion}</span><strong>78%</strong><small>14 / 18</small></article>
             <article className="is-alert"><span>{copy.attention}</span><strong>4</strong><small><CircleAlert size={13} />2 {units.urgent}</small></article>
           </div>
 
-          <div className="demo-workspace-grid">
-            <article className="demo-activity-panel">
-              <div className="demo-panel-head"><div><span>{copy.activity}</span><strong>62 {units.attempts}</strong></div><BarChart3 size={18} /></div>
-              <div className="demo-chart" aria-hidden="true">
-                {bars.map((height, index) => <span key={`${height}-${index}`} style={{ height: `${height}%` }} />)}
-              </div>
-              <div className="demo-chart-labels"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
-            </article>
+          <div className={`teacher-demo-panels${showActivity ? " has-chart" : ""}`}>
+            {showActivity ? (
+              <article className="teacher-demo-panel teacher-demo-activity">
+                <div className="teacher-demo-panel-head"><div><span>{copy.activity}</span><strong>62 {units.attempts}</strong></div><BarChart3 size={18} /></div>
+                <div className="teacher-demo-chart" aria-hidden="true">
+                  {bars.map((height, index) => <span key={`${height}-${index}`} style={{ height: `${height}%` }} />)}
+                </div>
+                <div className="teacher-demo-chart-labels"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+              </article>
+            ) : null}
 
-            <article className="demo-action-panel">
-              <div className="demo-panel-head"><div><span>{copy.actionQueue}</span><strong>3 {units.priorities}</strong></div><CircleAlert size={18} /></div>
-              <div className="demo-action-list">
+            <article className="teacher-demo-panel teacher-demo-actions-panel">
+              <div className="teacher-demo-panel-head"><div><span>{activeView === "announcements" ? copy.announcements : copy.actionQueue}</span><strong>3 {units.priorities}</strong></div><CircleAlert size={18} /></div>
+              <div className="teacher-demo-action-list">
                 {copy.actions.map((action, index) => <div key={action}><span>0{index + 1}</span><p>{action}</p><ChevronRight size={15} /></div>)}
               </div>
               <button type="button">{copy.openQueue}<ArrowRight size={15} /></button>
             </article>
           </div>
 
-          <article className="demo-roster-panel">
-            <div className="demo-panel-head"><div><span>{copy.roster}</span><strong>18 {copy.students.toLowerCase()}</strong></div><UsersRound size={18} /></div>
-            <div className="demo-roster-table">
-              <div className="demo-roster-head"><span>{copy.learner}</span><span>{copy.latest}</span><span>{copy.focus}</span><span>{copy.status}</span></div>
-              {copy.rows.map((row, index) => (
-                <div className="demo-roster-row" key={row.learner}>
-                  <span><i>{String(index + 4).padStart(2, "0")}</i>{row.learner}</span>
-                  <strong>{row.score}</strong>
-                  <span>{row.focus}</span>
-                  <span data-status={index === 1 || index === 3 ? "attention" : "good"}>{row.status}</span>
-                </div>
-              ))}
-            </div>
-            <button type="button" className="demo-roster-link">{copy.viewAll}<ArrowRight size={15} /></button>
-          </article>
+          {showRoster ? (
+            <article className="teacher-demo-panel teacher-demo-roster">
+              <div className="teacher-demo-panel-head"><div><span>{copy.roster}</span><strong>18 {copy.students.toLowerCase()}</strong></div><UsersRound size={18} /></div>
+              <div className="teacher-demo-roster-table">
+                <div className="teacher-demo-roster-head"><span>{copy.learner}</span><span>{copy.latest}</span><span>{copy.focus}</span><span>{copy.status}</span></div>
+                {copy.rows.map((row, index) => (
+                  <div className="teacher-demo-roster-row" key={row.learner}>
+                    <span><i>{String(index + 4).padStart(2, "0")}</i><b>{row.learner}</b></span>
+                    <strong>{row.score}</strong>
+                    <span>{row.focus}</span>
+                    <span data-status={index === 1 || index === 3 ? "attention" : "good"}>{row.status}</span>
+                  </div>
+                ))}
+              </div>
+              <button type="button" className="teacher-demo-roster-link">{copy.viewAll}<ArrowRight size={15} /></button>
+            </article>
+          ) : null}
         </div>
       </section>
 
-      <section className="demo-decision page-shell">
-        <div className="program-section-intro">
-          <span className="program-kicker">{copy.sectionEyebrow}</span>
+      <section className="teacher-demo-decisions page-shell">
+        <div className="teacher-demo-section-intro">
+          <span className="teacher-demo-kicker">{copy.sectionEyebrow}</span>
           <h2>{copy.sectionTitle}</h2>
           <p>{copy.sectionBody}</p>
         </div>
-        <div className="demo-decision-list">
+        <div className="teacher-demo-decision-list">
           {copy.features.map((feature, index) => (
             <article key={feature.title}><span>0{index + 1}</span><div><h3>{feature.title}</h3><p>{feature.body}</p></div></article>
           ))}
         </div>
       </section>
 
-      <section className="demo-closing page-shell">
-        <div><span className="program-kicker">{copy.closingEyebrow}</span><h2>{copy.closingTitle}</h2><p>{copy.closingBody}</p></div>
+      <section className="teacher-demo-closing page-shell">
+        <div><span className="teacher-demo-kicker">{copy.closingEyebrow}</span><h2>{copy.closingTitle}</h2><p>{copy.closingBody}</p></div>
         <Link className="button button-primary" href="/auth?mode=signup&cta=teacher_demo_bottom">{copy.primary}<ArrowRight size={16} /></Link>
       </section>
     </main>

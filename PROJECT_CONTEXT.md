@@ -469,9 +469,10 @@ Styling note:
   - dashboard: `.dashboard-*`, `.db-*`
   - admin: `.admin-*`, `.adm-*`
   - marketing: `.sa-*`
-  - audience programmes: `.program-*`
-  - teacher demo: `.demo-*`
-  - writing hub: `.writing-*`
+  - audience programmes: `.programme-*`
+  - teacher demo: `.teacher-demo-*`
+  - writing hub and task studio: `.writing-*`, `.writing-studio-*`
+  - account access: `.auth-entry-*`
 
 ### Providers and client state
 
@@ -495,7 +496,10 @@ Important implication:
 - `components/audience-page.tsx` owns the localized student, teacher, and school programme experiences; the three `app/for-*` routes should stay thin metadata wrappers
 - the audience programme pages share an active, localized student/teacher/school path switcher; preserve `aria-current` and the audience-specific accent when changing that navigation
 - `components/teacher-demo-page.tsx` owns the localized interactive teacher demo rendered by `app/teacher-demo/page.tsx`
-- the teacher demo hero surfaces a real class-pulse summary and deliberately reveals the larger dashboard preview within the first desktop viewport; avoid replacing it with a decorative-only illustration
+- the teacher demo hero surfaces a real class-pulse summary and deliberately reveals the larger dashboard preview within the first desktop viewport; its overview, students, assignments, and announcements tabs are interactive client-side views, not decorative navigation
+- `components/writing-console.tsx` owns the five-language Task 1/Task 2 studio; keep the mobile prompt carousel, desktop sticky prompt library, and editor in the `.writing-studio-*` namespace
+- `/auth` uses the viewport-contained `.auth-entry-*` shell in `app/auth/page.tsx`; sign-in and compact sign-up should fit without forced scrolling on common laptop and mobile viewports
+- `components/app-header.tsx` owns both language and theme controls for `/app`; do not reintroduce a floating mobile theme button over learner content
 
 ### Persistence and store layer
 

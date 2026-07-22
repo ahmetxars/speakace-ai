@@ -269,14 +269,14 @@ export function AppHeader() {
               aria-label="Language"
             >
               {publicLocaleOptions.map((item) => (
-                <option key={item.code} value={item.code}>{item.code.toUpperCase()}</option>
+                <option key={item.code} value={item.code}>{item.nativeLabel}</option>
               ))}
             </select>
           </label>
 
           <button
             type="button"
-            className="app-header-icon-btn desktop-nav"
+            className="app-header-icon-btn"
             onClick={() => setTheme(isDark ? "light" : "dark")}
             aria-label={themeLabel}
             title={themeLabel}

@@ -352,27 +352,27 @@ function AuthPageInner() {
   const roleIcons = { student: UserRound, teacher: GraduationCap, school: School } as const;
 
   return (
-    <main className="auth-shell" data-mode={isSignup ? "signup" : isResetMode ? "reset" : "signin"}>
-      <div className="auth-layout">
-        <section className="auth-showcase">
-          <span className="auth-brand-chip"><LockKeyhole size={14} />{ui.secure}</span>
+    <main className="auth-entry" data-mode={isSignup ? "signup" : isResetMode ? "reset" : "signin"}>
+      <div className="auth-entry-frame">
+        <section className="auth-entry-story">
+          <span className="auth-entry-chip"><LockKeyhole size={14} />{ui.secure}</span>
           <h1>{isResetMode ? ui.resetTitle : isSignup ? ui.signupTitle : ui.signinTitle}</h1>
-          <p className="auth-showcase-copy">
+          <p className="auth-entry-story-copy">
             {isResetMode ? ui.resetBody : isSignup ? ui.signupBody : ui.signinBody}
           </p>
 
-          <div className="auth-feature-list">
+          <div className="auth-entry-benefits">
             {ui.features.map((item) => (
-              <div key={item} className="auth-feature-item">
-                <span className="auth-feature-check" aria-hidden="true"><Sparkles size={13} /></span>
+              <div key={item}>
+                <span aria-hidden="true"><Sparkles size={13} /></span>
                 <span>{item}</span>
               </div>
             ))}
           </div>
-          <div className="auth-showcase-monogram" aria-hidden="true"><span>SA</span><i /></div>
+          <div className="auth-entry-monogram" aria-hidden="true"><span>SA</span><i /></div>
         </section>
 
-        <section className="card auth-panel">
+        <section className="auth-entry-panel">
           {successToast ? (
             <div className="auth-alert auth-alert-success">
               <span className="auth-alert-icon" aria-hidden="true">
@@ -411,7 +411,7 @@ function AuthPageInner() {
             </div>
           ) : null}
 
-          <div className="auth-panel-head">
+          <div className="auth-entry-panel-head">
             <div>
               <span className="auth-mini-label">{ui.access}</span>
               <h2>{isResetMode ? ui.reset : isSignup ? ui.create : ui.signIn}</h2>

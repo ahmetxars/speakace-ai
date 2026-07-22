@@ -445,25 +445,28 @@ function ProgramPreview({ audience, copy, updatedLabel }: { audience: ProgramAud
   const PreviewIcon = audience === "students" ? PlayCircle : audience === "teachers" ? UsersRound : School;
 
   return (
-    <div className="program-preview" data-audience={audience}>
-      <div className="program-preview-topline">
+    <div className="programme-preview" data-audience={audience}>
+      <div className="programme-preview-topline">
         <span>{copy.previewLabel}</span>
-        <span className="program-live-dot"><i /> {copy.previewBadge}</span>
+        <span className="programme-live-dot"><i /> {copy.previewBadge}</span>
       </div>
-      <div className="program-preview-title">
-        <span className="program-preview-icon"><PreviewIcon size={18} /></span>
-        <strong>{copy.previewTitle}</strong>
+      <div className="programme-preview-title">
+        <span className="programme-preview-icon"><PreviewIcon size={18} /></span>
+        <div>
+          <small>{copy.previewLabel}</small>
+          <strong>{copy.previewTitle}</strong>
+        </div>
       </div>
-      <div className="program-preview-rows">
+      <div className="programme-preview-rows">
         {copy.previewRows.map((row, index) => (
-          <div className="program-preview-row" key={row.label}>
-            <span className="program-row-index">0{index + 1}</span>
+          <div className="programme-preview-row" key={row.label}>
+            <span className="programme-row-index">0{index + 1}</span>
             <div><strong>{row.label}</strong><small>{row.note}</small></div>
             <b>{row.value}</b>
           </div>
         ))}
       </div>
-      <div className="program-preview-footer">
+      <div className="programme-preview-footer">
         <span><Clock3 size={14} /> {updatedLabel}</span>
         <span>{copy.previewAction} <ArrowRight size={14} /></span>
       </div>
@@ -480,53 +483,56 @@ export function AudiencePage({ audience }: { audience: ProgramAudience }) {
   const navigation = programNavigation[publicLanguage];
 
   return (
-    <main className="program-page" data-audience={audience}>
-      <nav className="program-audience-nav page-shell" aria-label={navigation.label}>
-        <span>{navigation.label}</span>
-        <div>
-          {programAudienceLinks.map(({ key, href, icon: Icon }) => (
-            <Link key={key} href={href} aria-current={key === audience ? "page" : undefined}>
-              <Icon size={16} />{navigation[key]}
-            </Link>
-          ))}
-        </div>
-      </nav>
+    <main className="programme-page" data-audience={audience}>
+      <div className="programme-intro page-shell">
+        <nav className="programme-switcher" aria-label={navigation.label}>
+          <span>{navigation.label}</span>
+          <div>
+            {programAudienceLinks.map(({ key, href, icon: Icon }) => (
+              <Link key={key} href={href} aria-current={key === audience ? "page" : undefined}>
+                <Icon size={16} />
+                <span>{navigation[key]}</span>
+              </Link>
+            ))}
+          </div>
+        </nav>
 
-      <section className="program-hero page-shell">
-        <div className="program-hero-copy">
-          <span className="program-kicker"><Sparkles size={15} /> {copy.eyebrow}</span>
+        <section className="programme-hero">
+          <div className="programme-hero-copy">
+          <span className="programme-kicker"><Sparkles size={15} /> {copy.eyebrow}</span>
           <h1>{copy.title}</h1>
           <p>{copy.body}</p>
-          <div className="program-actions">
+          <div className="programme-actions">
             <Link className="button button-primary" href={audienceRoutes.primary}>{copy.primary}<ArrowRight size={16} /></Link>
             <Link className="button button-secondary" href={audienceRoutes.secondary}>{copy.secondary}</Link>
           </div>
-          <div className="program-signals">
+          <div className="programme-signals">
             {copy.signals.map((signal) => <span key={signal}><Check size={14} />{signal}</span>)}
           </div>
-        </div>
-        <ProgramPreview audience={audience} copy={copy} updatedLabel={previewUpdatedLabel[publicLanguage]} />
-      </section>
+          </div>
+          <ProgramPreview audience={audience} copy={copy} updatedLabel={previewUpdatedLabel[publicLanguage]} />
+        </section>
 
-      <div className="program-metric-rail page-shell" aria-label="Program highlights">
-        {copy.metrics.map((metric) => (
-          <div key={metric.label}><strong>{metric.value}</strong><span>{metric.label}</span></div>
-        ))}
+        <div className="programme-proof" aria-label="Program highlights">
+          {copy.metrics.map((metric) => (
+            <div key={metric.label}><strong>{metric.value}</strong><span>{metric.label}</span></div>
+          ))}
+        </div>
       </div>
 
-      <section className="program-outcomes page-shell">
-        <div className="program-section-intro">
-          <span className="program-kicker">{copy.outcomesEyebrow}</span>
+      <section className="programme-outcomes page-shell">
+        <div className="programme-section-intro">
+          <span className="programme-kicker">{copy.outcomesEyebrow}</span>
           <h2>{copy.outcomesTitle}</h2>
           <p>{copy.outcomesBody}</p>
         </div>
-        <div className="program-outcome-list">
+        <div className="programme-outcome-list">
           {copy.outcomes.map((outcome, index) => {
             const Icon = icons[index];
             return (
               <article key={outcome.title}>
-                <span className="program-outcome-number">0{index + 1}</span>
-                <span className="program-outcome-icon"><Icon size={19} /></span>
+                <span className="programme-outcome-number">0{index + 1}</span>
+                <span className="programme-outcome-icon"><Icon size={19} /></span>
                 <div><h3>{outcome.title}</h3><p>{outcome.body}</p></div>
               </article>
             );
@@ -534,13 +540,13 @@ export function AudiencePage({ audience }: { audience: ProgramAudience }) {
         </div>
       </section>
 
-      <section className="program-workflow-wrap">
-        <div className="program-workflow page-shell">
-          <div className="program-section-intro">
-            <span className="program-kicker">{copy.workflowEyebrow}</span>
+      <section className="programme-workflow-wrap">
+        <div className="programme-workflow page-shell">
+          <div className="programme-section-intro">
+            <span className="programme-kicker">{copy.workflowEyebrow}</span>
             <h2>{copy.workflowTitle}</h2>
           </div>
-          <div className="program-workflow-steps">
+          <div className="programme-workflow-steps">
             {copy.workflow.map((step, index) => (
               <article key={step.title}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
@@ -552,24 +558,21 @@ export function AudiencePage({ audience }: { audience: ProgramAudience }) {
         </div>
       </section>
 
-      <section id="program-contact" className="program-contact page-shell">
-        <div className="program-contact-copy">
-          <span className="program-kicker">{copy.leadEyebrow}</span>
-          <h2>{copy.leadTitle}</h2>
-          <p>{copy.leadBody}</p>
-        </div>
-        <LeadCaptureForm source={audienceRoutes.leadSource} />
-      </section>
-
-      <section className="program-closing page-shell">
-        <div>
-          <span className="program-kicker">{copy.closingEyebrow}</span>
+      <section id="program-contact" className="programme-conversion page-shell">
+        <div className="programme-conversion-copy">
+          <span className="programme-kicker">{copy.closingEyebrow}</span>
           <h2>{copy.closingTitle}</h2>
           <p>{copy.closingBody}</p>
+          <div className="programme-actions">
+            <Link className="button button-primary" href={audienceRoutes.primary}>{copy.closingPrimary}<ArrowRight size={16} /></Link>
+            <Link className="button button-secondary" href={audienceRoutes.secondary}>{copy.closingSecondary}</Link>
+          </div>
         </div>
-        <div className="program-actions">
-          <Link className="button button-primary" href={audienceRoutes.primary}>{copy.closingPrimary}<ArrowRight size={16} /></Link>
-          <Link className="button button-secondary" href={audienceRoutes.secondary}>{copy.closingSecondary}</Link>
+        <div className="programme-lead-card">
+          <span className="programme-kicker">{copy.leadEyebrow}</span>
+          <h3>{copy.leadTitle}</h3>
+          <p>{copy.leadBody}</p>
+          <LeadCaptureForm source={audienceRoutes.leadSource} />
         </div>
       </section>
     </main>
