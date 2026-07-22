@@ -3,6 +3,7 @@ import { hasDatabaseUrl, getSql } from "@/lib/server/db";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
 const PRACTICE_URL = `${SITE_URL}/app/practice`;
+const FIRST_SCORE_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interview&activation=email_first_score`;
 const PRICING_URL = `${SITE_URL}/pricing`;
 const BILLING_URL = `${SITE_URL}/app/billing`;
 const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&billing=annual&coupon=LAUNCH20&campaign=onboarding_email`;
@@ -128,18 +129,6 @@ const secondaryBtn = (href: string, label: string) =>
 const highlight = (text: string) =>
   `<div style="background:#fff3ec;border-left:4px solid #d95d39;border-radius:0 10px 10px 0;padding:14px 18px;margin:20px 0;color:#4a2c1a;font-size:0.95em;line-height:1.7">${text}</div>`;
 
-const quote = (text: string, attribution: string) =>
-  `<div style="background:#f9f4f0;border-radius:12px;padding:20px 24px;margin:20px 0">
-    <p style="margin:0 0 12px;color:#5a3e32;font-size:0.95em;line-height:1.7;font-style:italic">"${text}"</p>
-    <p style="margin:0;color:#9a7060;font-size:0.83em;font-weight:600">— ${attribution}</p>
-  </div>`;
-
-const statBox = (stat: string, label: string) =>
-  `<div style="background:#fff3ec;border-radius:12px;padding:16px 20px;margin:8px 0;display:flex;align-items:baseline;gap:10px">
-    <span style="font-size:1.6em;font-weight:900;color:#d95d39">${stat}</span>
-    <span style="color:#5a3e32;font-size:0.9em">${label}</span>
-  </div>`;
-
 const checkItem = (text: string) =>
   `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid #f5ece6">
     <span style="color:#d95d39;font-size:1.1em;margin-top:1px;flex-shrink:0">✓</span>
@@ -152,7 +141,7 @@ function buildEmail1(name: string) {
     <h1 style="margin:0 0 8px;font-size:1.5em;color:#1b120d;font-weight:800">Welcome to SpeakAce, ${greeting}!</h1>
     <p style="margin:0 0 24px;color:#7a5c4a;font-size:0.9em">Your IELTS speaking practice starts right now</p>
 
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">You've just joined thousands of IELTS candidates using SpeakAce to sharpen their speaking and hit their target band score. Here's how to get the most out of it from day one:</p>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Your account is ready. Here is how to turn the first answer into a useful baseline from day one:</p>
 
     <div style="margin:0 0 28px">
       ${checkItem("<strong>Practice daily</strong> — even 10 minutes a day compounds fast")}
@@ -162,7 +151,7 @@ function buildEmail1(name: string) {
     </div>
 
     <div style="margin:28px 0">
-      ${primaryBtn(PRACTICE_URL, "Start your first practice &rarr;")}
+      ${primaryBtn(FIRST_SCORE_URL, "Get your first AI score &rarr;")}
     </div>
 
     <p style="margin:24px 0 0;color:#9a7060;font-size:0.85em;line-height:1.7">Over the next few days we'll send you targeted tips to accelerate your progress. Keep an eye on your inbox.</p>
@@ -170,7 +159,7 @@ function buildEmail1(name: string) {
   return {
     subject: "Welcome to SpeakAce — let's get your band score moving",
     html,
-    text: `Hi ${greeting}, welcome to SpeakAce! Start your first practice here: ${PRACTICE_URL}`
+    text: `Hi ${greeting}, welcome to SpeakAce! Record one answer and get your first AI score here: ${FIRST_SCORE_URL}`
   };
 }
 
@@ -194,13 +183,13 @@ function buildEmail2(name: string) {
     <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">Open SpeakAce, pick any Part 1 question, and apply this structure. It only takes a few minutes.</p>
 
     <div style="margin:0 0 8px">
-      ${primaryBtn(PRACTICE_URL, "Practice now &rarr;")}
+      ${primaryBtn(FIRST_SCORE_URL, "Try it and get your first score &rarr;")}
     </div>
   `);
   return {
     subject: "IELTS tip that moves your score — try it today",
     html,
-    text: `Hi ${greeting}, day 2! Use the answer-reason-example formula in your IELTS Part 1. Practice here: ${PRACTICE_URL}`
+    text: `Hi ${greeting}, day 2! Use the answer-reason-example formula in your IELTS Part 1. Get your first score here: ${FIRST_SCORE_URL}`
   };
 }
 
@@ -210,7 +199,7 @@ function buildEmail3(name: string) {
     <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 5</p>
     <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">Your Week 1 IELTS Speaking Checklist</h1>
 
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, tick these five off by the end of the week and you'll be ahead of 80% of IELTS test-takers.</p>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, use these five steps to build a complete feedback loop during your first week.</p>
 
     <div style="margin:0 0 28px">
       ${checkItem("<strong>Answer at least one Part 1 prompt</strong> — familiar topics, natural speech")}
@@ -223,13 +212,44 @@ function buildEmail3(name: string) {
     ${highlight("Progress tip: you don't need to be perfect. Each attempt is data. The candidates who improve fastest are the ones who keep going even when they stumble.")}
 
     <div style="margin:28px 0 8px">
-      ${primaryBtn(PRACTICE_URL, "Open SpeakAce &rarr;")}
+      ${primaryBtn(FIRST_SCORE_URL, "Start the first-score session &rarr;")}
     </div>
   `);
   return {
     subject: "5-item checklist for your first week of IELTS practice",
     html,
-    text: `Hi ${greeting}, your Week 1 checklist: 1) Part 1 prompt 2) Listen back 3) Part 2 long turn 4) Read AI feedback 5) Retry same prompt. Practice: ${PRACTICE_URL}`
+    text: `Hi ${greeting}, your Week 1 checklist starts with one answer and one AI score. Begin here: ${FIRST_SCORE_URL}`
+  };
+}
+
+function buildFirstScoreRecoveryEmail(name: string, emailNumber: number) {
+  const greeting = name.trim() || "there";
+  const dayLabel = emailNumber === 4 ? "Day 7" : "Day 10";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">${dayLabel} · Your first score</p>
+    <h1 style="margin:0 0 12px;font-size:1.45em;color:#1b120d;font-weight:800">Your free AI speaking score is still waiting.</h1>
+    <p style="margin:0 0 24px;color:#7a5c4a;font-size:0.9em">One answer is enough to reveal your first improvement target.</p>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, you do not need a study plan or a perfect answer to begin. SpeakAce will open a short IELTS-style prompt, then show the patterns to work on next.</p>
+
+    ${highlight(`
+      <strong style="display:block;margin-bottom:8px;color:#d95d39">Your 5-minute first-score path</strong>
+      <span style="display:block;margin-bottom:5px">1. Open the ready-made prompt</span>
+      <span style="display:block;margin-bottom:5px">2. Record one natural answer</span>
+      <span style="display:block">3. Read your score and first correction</span>
+    `)}
+
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">The first session is free. There is no upgrade decision to make before you see your result.</p>
+
+    <div style="margin:0 0 8px">
+      ${primaryBtn(FIRST_SCORE_URL, "Get my first score &rarr;")}
+    </div>
+  `);
+
+  return {
+    subject: emailNumber === 4 ? "Your first SpeakAce score takes one answer" : "Still no score? Start with this 5-minute session",
+    html,
+    text: `Hi ${greeting}, your first SpeakAce score takes one answer and about 5 minutes. Start free: ${FIRST_SCORE_URL}`
   };
 }
 
@@ -268,18 +288,17 @@ function buildEmail5(name: string) {
   const greeting = name.trim() || "there";
   const html = layout(`
     <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 10</p>
-    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">The fastest way to turn practice into score movement</h1>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">Turn one practice into a useful retry loop</h1>
 
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, we looked at the data. The result is clear:</p>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, you have already completed at least one speaking session. The next useful step is not a random new question — it is applying one correction and trying again.</p>
 
-    ${statBox("+0.7", "average band score improvement for candidates who practice daily vs. weekly")}
+    <div style="margin:0 0 28px">
+      ${checkItem("<strong>Open your latest feedback</strong> — choose one improvement, not all of them")}
+      ${checkItem("<strong>Retry the same prompt</strong> — keep the topic constant while changing the answer")}
+      ${checkItem("<strong>Compare one category</strong> — fluency, vocabulary, grammar, or delivery")}
+    </div>
 
-    <p style="color:#3a2218;line-height:1.75;margin:20px 0 20px">The difference isn't talent. It's repetition. Here's what daily practice actually sounds like:</p>
-
-    ${quote("I went from Band 6 to Band 7.5 in six weeks. I practiced on SpeakAce every morning before work — just 15 minutes.", "SpeakAce user, Almaty, Kazakhstan")}
-    ${quote("The transcript feature showed me I was overusing 'basically'. Fixing that one word improved my lexical score.", "SpeakAce user, Jakarta, Indonesia")}
-
-    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">You're already showing up. SpeakAce Plus gives you the daily volume, full feedback, and retry loop that turns that effort into a higher band score.</p>
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">SpeakAce Plus adds more same-day practice time and deeper feedback when the free limit interrupts that loop.</p>
 
     <div style="margin:0 0 8px">
       ${primaryBtn(CHECKOUT_URL, "Continue today with Plus &rarr;")}
@@ -289,9 +308,9 @@ function buildEmail5(name: string) {
     </p>
   `);
   return {
-    subject: "Why daily retries beat occasional long practice",
+    subject: "Use your last correction in the next answer",
     html,
-    text: `Hi ${greeting}, students who practice daily score 0.7 bands higher. Upgrade to Plus: ${CHECKOUT_URL}`
+    text: `Hi ${greeting}, open your latest feedback, choose one correction, and retry the same prompt. Continue with Plus if the free limit interrupts the loop: ${CHECKOUT_URL}`
   };
 }
 
@@ -328,9 +347,9 @@ function buildEmail7(name: string) {
   const greeting = name.trim() || "there";
   const html = layout(`
     <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 21</p>
-    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">The #1 reason scores get stuck at Band 5.5</h1>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">A common reason IELTS answers sound underdeveloped</h1>
 
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, after analysing thousands of IELTS speaking responses, one pattern appears again and again in candidates who can't break through Band 6:</p>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, one common pattern keeps IELTS answers from sounding complete:</p>
 
     ${highlight("<strong>They answer the question — but they don't develop the answer.</strong>")}
 
@@ -347,9 +366,9 @@ function buildEmail7(name: string) {
     </div>
   `);
   return {
-    subject: "Why IELTS speaking scores stall at 5.5 — and the fix",
+    subject: "Why some IELTS answers sound underdeveloped",
     html,
-    text: `Hi ${greeting}, the #1 IELTS mistake is not developing answers. Learn the fix: ${PRACTICE_URL}`
+    text: `Hi ${greeting}, a common IELTS issue is answering without developing the idea. Practise the fix: ${PRACTICE_URL}`
   };
 }
 
@@ -357,14 +376,14 @@ function buildEmail8(name: string) {
   const greeting = name.trim() || "there";
   const html = layout(`
     <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 30 Milestone</p>
-    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">One month with SpeakAce — what the top improvers do</h1>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">One month with SpeakAce — build a repeatable practice loop</h1>
 
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, you've had your account for 30 days. Here's what we've observed about candidates who improve the most in their first month:</p>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, you've had your account for 30 days. Here is a simple rhythm you can use for the next month:</p>
 
     <div style="margin:0 0 28px">
-      ${checkItem("Practice at least <strong>4 days per week</strong> — consistency beats session length")}
-      ${checkItem("<strong>Retry the same question</strong> after reading feedback — that second attempt is where the growth happens")}
-      ${checkItem("Pick <strong>one weak area per week</strong> — fixing everything at once fixes nothing")}
+      ${checkItem("Choose <strong>4 short practice days</strong> — a schedule is easier to follow than waiting for spare time")}
+      ${checkItem("<strong>Retry the same question</strong> after reading feedback — use the second attempt to apply one correction")}
+      ${checkItem("Pick <strong>one focus area per week</strong> — keep the next action clear and manageable")}
     </div>
 
     <p style="color:#3a2218;line-height:1.75;margin:0 0 28px">On the free plan you get 4 sessions per day — enough for a solid daily habit. If you want more volume and deeper analysis, the strongest-value move is annual Plus at about $4.08/month with the launch code.</p>
@@ -376,9 +395,9 @@ function buildEmail8(name: string) {
     </div>
   `);
   return {
-    subject: "What the top IELTS improvers do differently (30-day data)",
+    subject: "A simple practice rhythm for your second month",
     html,
-    text: `Hi ${greeting}, one month in. Top habit: practice 4 days/week and retry after feedback. ${PRACTICE_URL}`
+    text: `Hi ${greeting}, choose four short practice days, retry after feedback, and focus on one area at a time: ${PRACTICE_URL}`
   };
 }
 
@@ -386,24 +405,20 @@ function buildEmail9(name: string) {
   const greeting = name.trim() || "there";
   const html = layout(`
     <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 45</p>
-    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">From Band 5.5 to 7.0 in 6 weeks — a real story</h1>
+    <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">Use your transcript to find one repeated habit</h1>
 
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting},</p>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, your transcript is most useful when you look for one repeatable pattern instead of trying to rewrite every sentence.</p>
 
-    ${quote("I had taken IELTS twice and stuck at 5.5 both times. I started using SpeakAce for 15 minutes every morning before work. After six weeks I retook the test and scored 7.0. The transcript review was the feature that changed everything — I could see exactly which words I overused and cut them out one by one.", "SpeakAce user, Almaty, Kazakhstan")}
-
-    <p style="color:#3a2218;line-height:1.75;margin:20px 0 20px">The insight here: it wasn't more hours of practice. It was <strong>reading the transcript</strong> and fixing one specific habit per week.</p>
-
-    ${highlight("Your transcript is available after every session. Open it after your next practice and look for one word or phrase you use too often — then eliminate it.")}
+    ${highlight("<strong>Try this:</strong> open one completed answer, find a filler or phrase you repeated, then record a new answer while replacing only that habit.")}
 
     <div style="margin:28px 0 8px">
       ${primaryBtn(PRACTICE_URL, "Record and review your transcript &rarr;")}
     </div>
   `);
   return {
-    subject: "How one candidate went from 5.5 to 7.0 in 6 weeks",
+    subject: "Find one repeated habit in your transcript",
     html,
-    text: `Hi ${greeting}, a SpeakAce user went from band 5.5 to 7.0 in 6 weeks by reviewing transcripts. Try it: ${PRACTICE_URL}`
+    text: `Hi ${greeting}, open one completed answer, find a phrase you repeated, and replace that one habit in your next recording: ${PRACTICE_URL}`
   };
 }
 
@@ -522,6 +537,32 @@ async function logEmail(params: {
   `.catch(() => { /* non-blocking */ });
 }
 
+type LifecycleEmailContent = { subject: string; html: string; text: string };
+
+export function buildOnboardingEmailContent(input: {
+  name: string;
+  emailNumber: number;
+  speakingSessionCount: number;
+}): LifecycleEmailContent | null {
+  if (input.speakingSessionCount === 0 && (input.emailNumber === 4 || input.emailNumber === 5)) {
+    return buildFirstScoreRecoveryEmail(input.name, input.emailNumber);
+  }
+
+  if (input.emailNumber === 1) return buildEmail1(input.name);
+  if (input.emailNumber === 2) return buildEmail2(input.name);
+  if (input.emailNumber === 3) return buildEmail3(input.name);
+  if (input.emailNumber === 4) return buildEmail4(input.name);
+  if (input.emailNumber === 5) return buildEmail5(input.name);
+  if (input.emailNumber === 6) return buildEmail6(input.name);
+  if (input.emailNumber === 7) return buildEmail7(input.name);
+  if (input.emailNumber === 8) return buildEmail8(input.name);
+  if (input.emailNumber === 9) return buildEmail9(input.name);
+  if (input.emailNumber === 10) return buildEmail10(input.name);
+  if (input.emailNumber === 11) return buildEmail11(input.name);
+  if (input.emailNumber === 12) return buildEmail12(input.name);
+  return null;
+}
+
 export async function sendOnboardingEmail(
   userId: string,
   emailNumber: number
@@ -532,27 +573,33 @@ export async function sendOnboardingEmail(
 
   await ensureEmailSequenceSchema();
   const sql = getSql();
-  const rows = await sql<Array<{ email: string; name: string; email_opt_out: boolean }>>`
-    select email, name, email_opt_out from users where id = ${userId} limit 1
+  const rows = await sql<Array<{
+    email: string;
+    name: string;
+    email_opt_out: boolean;
+    email_verified: boolean;
+    speaking_session_count: number;
+  }>>`
+    select
+      u.email,
+      u.name,
+      u.email_opt_out,
+      u.email_verified,
+      (select count(*)::int from speaking_sessions s where s.user_id = u.id) as speaking_session_count
+    from users u
+    where u.id = ${userId}
+    limit 1
   `;
   const user = rows[0];
   if (!user) return { ok: false };
-  if (user.email_opt_out) return { ok: false, skipped: true };
+  if (user.email_opt_out || !user.email_verified) return { ok: false, skipped: true };
 
-  let emailContent: { subject: string; html: string; text: string };
-  if (emailNumber === 1) emailContent = buildEmail1(user.name);
-  else if (emailNumber === 2) emailContent = buildEmail2(user.name);
-  else if (emailNumber === 3) emailContent = buildEmail3(user.name);
-  else if (emailNumber === 4) emailContent = buildEmail4(user.name);
-  else if (emailNumber === 5) emailContent = buildEmail5(user.name);
-  else if (emailNumber === 6) emailContent = buildEmail6(user.name);
-  else if (emailNumber === 7) emailContent = buildEmail7(user.name);
-  else if (emailNumber === 8) emailContent = buildEmail8(user.name);
-  else if (emailNumber === 9) emailContent = buildEmail9(user.name);
-  else if (emailNumber === 10) emailContent = buildEmail10(user.name);
-  else if (emailNumber === 11) emailContent = buildEmail11(user.name);
-  else if (emailNumber === 12) emailContent = buildEmail12(user.name);
-  else return { ok: false };
+  let emailContent = buildOnboardingEmailContent({
+    name: user.name,
+    emailNumber,
+    speakingSessionCount: user.speaking_session_count
+  });
+  if (!emailContent) return { ok: false };
 
   // Inject user-specific unsubscribe link
   const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`;
@@ -597,6 +644,7 @@ export async function getUsersForOnboardingEmail(dayOffset: number): Promise<Arr
     from users u
     where u.created_at >= now() - (${dayOffset} || ' days')::interval - interval '12 hours'
       and u.created_at <  now() - (${dayOffset} || ' days')::interval + interval '12 hours'
+      and u.email_verified = true
   `;
 
   return rows.map((row) => ({
@@ -643,6 +691,7 @@ export async function getUsersDueForNextOnboardingEmail(limit = 100): Promise<
       u.created_at
     from users u
     where coalesce(u.onboarding_emails_sent, 0) < ${maxEmailNumber}
+      and u.email_verified = true
       and u.billing_status not in ('active', 'on_trial')
     order by u.created_at asc
     limit ${Math.max(limit * 3, limit)}
@@ -1039,23 +1088,33 @@ export async function getUsersForDailyTip(limit = 200): Promise<Array<{ id: stri
   await ensureEmailSequenceSchema();
   const sql = getSql();
 
-  // Exclude users who already received today's tip
-  const todayStart = new Date();
-  todayStart.setUTCHours(0, 0, 0, 0);
-
   const rows = await sql<Array<{ id: string; email: string; name: string }>>`
     select u.id, u.email, u.name
     from users u
     where u.email_opt_out = false
+      and u.email_verified = true
       and u.role != 'guest'
       and coalesce(u.billing_status, 'free') <> 'on_trial'
+      and exists (
+        select 1 from speaking_sessions s
+        where s.user_id = u.id
+          and s.created_at >= now() - interval '30 days'
+      )
       and not exists (
         select 1 from email_log el
         where el.user_id = u.id
           and el.template = 'daily_tip'
-          and el.sent_at >= ${todayStart.toISOString()}
+          and el.sent_at >= now() - interval '7 days'
       )
-    order by u.created_at asc
+      and not exists (
+        select 1 from email_log el
+        where el.user_id = u.id
+          and el.template like 'onboarding_%'
+          and el.sent_at >= now() - interval '24 hours'
+      )
+    order by (
+      select max(s.created_at) from speaking_sessions s where s.user_id = u.id
+    ) desc
     limit ${limit}
   `;
 

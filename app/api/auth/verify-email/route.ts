@@ -7,6 +7,7 @@ import {
   getSessionCookieOptions,
   verifyEmailToken
 } from "@/lib/server/auth";
+import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function GET(request: Request) {
@@ -36,6 +37,14 @@ export async function GET(request: Request) {
     const session = await createAuthSession(verification.userId);
     const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), session.token, getSessionCookieOptions(session.expiresAt));
+    try {
+      const result = await sendOnboardingEmail(verification.userId, 1);
+      if (result.ok) {
+        await markOnboardingEmailSent(verification.userId, 1);
+      }
+    } catch {
+      // Email delivery must never block account activation.
+    }
     posthog.capture({
       distinctId: verification.userId,
       event: "email_verification_completed",

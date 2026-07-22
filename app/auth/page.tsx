@@ -1,11 +1,13 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import posthog from "posthog-js";
 import { ChevronDown, GraduationCap, LockKeyhole, School, Sparkles, UserRound } from "lucide-react";
 import { useAppState } from "@/components/providers";
+import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
 import { normalizePublicLanguage, type PublicLanguage } from "@/lib/copy";
 import { clearShareAttribution, getShareAttributionFromStorage } from "@/lib/share-growth";
 
@@ -200,7 +202,8 @@ function AuthPageInner() {
       posthog.capture("user_signed_in", { email });
     }
     await refreshSession();
-    router.push(mode === "signup" && memberType === "student" ? "/app/onboarding" : "/app");
+    const requestedNext = mode === "signin" ? resolveSafeAppRedirect(searchParams.get("next")) : null;
+    router.push((requestedNext ?? (mode === "signup" && memberType === "student" ? "/app/onboarding" : "/app")) as Route);
   };
 
   useEffect(() => {
@@ -288,8 +291,12 @@ function AuthPageInner() {
   const resetToken = searchParams.get("reset");
   const isResetMode = Boolean(resetToken);
   const isSignup = !isResetMode && mode === "signup";
+  const safeNext = resolveSafeAppRedirect(searchParams.get("next"));
   const googleParams = new URLSearchParams();
   googleParams.set("mode", mode);
+  if (safeNext) {
+    googleParams.set("next", safeNext);
+  }
   if (cta) {
     googleParams.set("cta", cta);
   }

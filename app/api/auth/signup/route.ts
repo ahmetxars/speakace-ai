@@ -10,7 +10,6 @@ import { joinTeacherClassByCode } from "@/lib/classroom-store";
 import { addOrgMember, getOrganizationByJoinCode } from "@/lib/server/org-store";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
-import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { isAdminEmail } from "@/lib/admin";
 import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
 import { getPostHogClient } from "@/lib/posthog-server";
@@ -88,14 +87,6 @@ export async function POST(request: Request) {
     posthog.capture({ distinctId: profile.id, event: "user_signed_up", properties: { email: profile.email, member_type: profile.memberType, has_referral_code: Boolean(body.referralCode), has_class_code: Boolean(body.classCode) } });
 
     const verification = await createEmailVerificationFlow(profile.email);
-    try {
-      const result = await sendOnboardingEmail(profile.id, 1);
-      if (result.ok) {
-        await markOnboardingEmailSent(profile.id, 1);
-      }
-    } catch {
-      // non-blocking
-    }
     const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), "", getSessionCookieOptions(new Date(0)));
     return NextResponse.json({

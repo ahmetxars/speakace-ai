@@ -96,6 +96,10 @@ export function PracticeConsole() {
   const searchParams = useSearchParams();
   const { currentUser, language } = useAppState();
   const tr = language === "tr";
+  const rawActivationSource = searchParams.get("activation");
+  const activationSource = rawActivationSource && /^[a-z0-9_-]{1,80}$/i.test(rawActivationSource)
+    ? rawActivationSource.toLowerCase()
+    : null;
   const canPractice = Boolean(currentUser && currentUser.role !== "guest");
 
   const [examType, setExamType] = useState<ExamType>("IELTS");
@@ -695,12 +699,17 @@ export function PracticeConsole() {
     });
 
     if (currentUser?.id) {
-      void trackClientEvent({ userId: currentUser.id, event: "practice_start", path: "/app/practice" });
+      void trackClientEvent({
+        userId: currentUser.id,
+        event: "practice_start",
+        path: activationSource ? `/app/practice/${activationSource}` : "/app/practice"
+      });
       posthog.capture("practice_session_started", {
         run_mode: runMode,
         exam_type: examType,
         task_type: taskType,
-        difficulty
+        difficulty,
+        activation_source: activationSource
       });
     }
 

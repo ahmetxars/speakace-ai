@@ -248,6 +248,10 @@ This is the project-wide “where things live” map.
   - `lib/server/email.ts`
 - Sequences:
   - `lib/server/email-sequences.ts`
+  - password signups receive onboarding only after successful email verification; unverified accounts are excluded from lifecycle marketing
+  - learners with no speaking sessions receive first-score activation content instead of checkout pressure on day 7/10
+  - the legacy `daily_tip` template is limited to verified learners active in the last 30 days, at most once per 7 days, and never within 24 hours of an onboarding email
+  - email quick-start links retain their attributed `/app/practice` destination through both password and Google sign-in using `lib/auth-redirect.ts`
 - Cron:
   - `app/api/cron/onboarding-emails/route.ts`
   - `app/api/cron/study-task-reminders/route.ts`
@@ -983,6 +987,7 @@ Inspect only:
 - SpeakAce Plus currently uses a three-day Lemon Squeezy trial. Trial conversion and access depend on preserving the provider's `on_trial` status and `trial_ends_at` value through the webhook billing sync.
 - Live catalog values must be checked against site copy before changing pricing. On 2026-07-22, the Lemon product named Pro Monthly was configured with a weekly interval while the site described it as monthly.
 - Authenticated learner checkout initiation is recorded server-side in `app/api/payments/lemon/checkout/route.ts`. Keep the database event there so navigation cannot drop it, and do not add a second client-side `checkout_initiated` write for links targeting that route.
+- Lifecycle baseline before frequency controls on 2026-07-22: 520 daily-tip emails reached 180 recipients in 7 days, while only 43 users had practiced in 30 days; 71 emails reached 23 unverified accounts. Use these as reduction baselines and do not restore all-user daily sends.
 
 ### Assumptions
 

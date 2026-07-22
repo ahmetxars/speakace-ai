@@ -1,5 +1,6 @@
 import { createHmac, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
+import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
 
 /**
  * Google OAuth initiation route.
@@ -44,6 +45,7 @@ export async function GET(request: Request) {
   const organizationName = searchParams.get("organizationName");
   const referralCode = searchParams.get("referralCode");
   const schoolInviteCode = searchParams.get("schoolInviteCode");
+  const next = resolveSafeAppRedirect(searchParams.get("next"));
   const nonce = randomBytes(24).toString("base64url");
   const payload = Buffer.from(
     JSON.stringify({
@@ -56,7 +58,8 @@ export async function GET(request: Request) {
       classCode: classCode?.trim() || null,
       organizationName: organizationName?.trim() || null,
       referralCode: referralCode?.trim().toUpperCase() || null,
-      schoolInviteCode: schoolInviteCode?.trim().toUpperCase() || null
+      schoolInviteCode: schoolInviteCode?.trim().toUpperCase() || null,
+      next
     }),
     "utf8"
   ).toString("base64url");

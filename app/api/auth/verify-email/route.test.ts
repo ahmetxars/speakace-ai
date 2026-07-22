@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   getSessionCookieName: vi.fn(),
   getSessionCookieOptions: vi.fn(),
   verifyEmailToken: vi.fn(),
+  markOnboardingEmailSent: vi.fn(),
+  sendOnboardingEmail: vi.fn(),
   checkRateLimit: vi.fn(),
   getRequestIp: vi.fn(),
   posthogCapture: vi.fn()
@@ -26,6 +28,11 @@ vi.mock("@/lib/server/auth", () => ({
 vi.mock("@/lib/server/rate-limit", () => ({
   checkRateLimit: mocks.checkRateLimit,
   getRequestIp: mocks.getRequestIp
+}));
+
+vi.mock("@/lib/server/email-sequences", () => ({
+  markOnboardingEmailSent: mocks.markOnboardingEmailSent,
+  sendOnboardingEmail: mocks.sendOnboardingEmail
 }));
 
 vi.mock("@/lib/posthog-server", () => ({
@@ -54,6 +61,8 @@ describe("email verification activation", () => {
       token: "session-token",
       expiresAt: new Date("2026-08-01T00:00:00.000Z")
     });
+    mocks.sendOnboardingEmail.mockResolvedValue({ ok: true });
+    mocks.markOnboardingEmailSent.mockResolvedValue(undefined);
   });
 
   it("creates a signed-in session immediately after a valid verification", async () => {
@@ -68,6 +77,8 @@ describe("email verification activation", () => {
       "session-token",
       expect.objectContaining({ httpOnly: true, secure: true, sameSite: "strict" })
     );
+    expect(mocks.sendOnboardingEmail).toHaveBeenCalledWith("user-1", 1);
+    expect(mocks.markOnboardingEmailSent).toHaveBeenCalledWith("user-1", 1);
     expect(mocks.posthogCapture).toHaveBeenCalledWith({
       distinctId: "user-1",
       event: "email_verification_completed",
@@ -84,5 +95,6 @@ describe("email verification activation", () => {
     await expect(response.json()).resolves.toEqual({ error: "Verification link is invalid or expired." });
     expect(mocks.createAuthSession).not.toHaveBeenCalled();
     expect(mocks.cookieSet).not.toHaveBeenCalled();
+    expect(mocks.sendOnboardingEmail).not.toHaveBeenCalled();
   });
 });

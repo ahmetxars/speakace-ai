@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { withAdminPrivileges } from "@/lib/admin";
+import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import type { AnalyticsEventName } from "@/lib/analytics-store";
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
@@ -246,6 +246,7 @@ export async function GET(request: Request) {
       organizationName?: string | null;
       referralCode?: string | null;
       schoolInviteCode?: string | null;
+      next?: string | null;
     };
 
     if (parsedState.nonce !== expectedNonce) {
@@ -325,7 +326,8 @@ export async function GET(request: Request) {
     await recordAuthActivity({ userId: profile.id, eventType: "signin", meta: { source: "google" } });
     const session = await createAuthSession(profile.id);
 
-    const response = NextResponse.redirect(`${siteUrl}/app`);
+    const nextPath = resolveSafeAppRedirect(parsedState.next) ?? "/app";
+    const response = NextResponse.redirect(new URL(nextPath, siteUrl));
     response.cookies.set(getSessionCookieName(), session.token, getSessionCookieOptions(session.expiresAt));
     return clearGoogleOAuthStateCookie(response);
   } catch (err) {
