@@ -188,9 +188,9 @@ export function AppHeader() {
   const desktopNavItems: Array<{ href: Route; label: string; active: boolean }> =
     !signedIn
       ? [
-          { href: "/", label: l.home, active: pathname === "/" },
+          { href: "/app/practice", label: l.speaking, active: pathname.startsWith("/app/practice") },
+          { href: "/app/writing", label: l.writing, active: pathname.startsWith("/app/writing") },
           { href: "/pricing", label: l.pricing, active: pathname.startsWith("/pricing") },
-          { href: "/for-schools", label: l.schools, active: pathname.startsWith("/for-schools") },
         ]
       : dashboardRole === "teacher"
         ? [

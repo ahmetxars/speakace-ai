@@ -427,6 +427,20 @@ const previewUpdatedLabel: Record<PublicLanguage, string> = {
   fr: "Mis à jour"
 };
 
+const programNavigation: Record<PublicLanguage, { label: string; students: string; teachers: string; schools: string }> = {
+  en: { label: "Choose your path", students: "For students", teachers: "For teachers", schools: "For schools" },
+  tr: { label: "Yolunu seç", students: "Öğrenciler için", teachers: "Öğretmenler için", schools: "Kurumlar için" },
+  de: { label: "Wähle deinen Weg", students: "Für Lernende", teachers: "Für Lehrkräfte", schools: "Für Schulen" },
+  es: { label: "Elige tu ruta", students: "Para estudiantes", teachers: "Para profesores", schools: "Para escuelas" },
+  fr: { label: "Choisissez votre parcours", students: "Pour les étudiants", teachers: "Pour les enseignants", schools: "Pour les écoles" }
+};
+
+const programAudienceLinks: Array<{ key: ProgramAudience; href: "/for-students" | "/for-teachers" | "/for-schools"; icon: LucideIcon }> = [
+  { key: "students", href: "/for-students", icon: GraduationCap },
+  { key: "teachers", href: "/for-teachers", icon: UsersRound },
+  { key: "schools", href: "/for-schools", icon: School }
+];
+
 function ProgramPreview({ audience, copy, updatedLabel }: { audience: ProgramAudience; copy: ProgramCopy; updatedLabel: string }) {
   const PreviewIcon = audience === "students" ? PlayCircle : audience === "teachers" ? UsersRound : School;
 
@@ -463,9 +477,21 @@ export function AudiencePage({ audience }: { audience: ProgramAudience }) {
   const copy = content[publicLanguage][audience];
   const audienceRoutes = routes[audience];
   const icons = outcomeIcons[audience];
+  const navigation = programNavigation[publicLanguage];
 
   return (
     <main className="program-page" data-audience={audience}>
+      <nav className="program-audience-nav page-shell" aria-label={navigation.label}>
+        <span>{navigation.label}</span>
+        <div>
+          {programAudienceLinks.map(({ key, href, icon: Icon }) => (
+            <Link key={key} href={href} aria-current={key === audience ? "page" : undefined}>
+              <Icon size={16} />{navigation[key]}
+            </Link>
+          ))}
+        </div>
+      </nav>
+
       <section className="program-hero page-shell">
         <div className="program-hero-copy">
           <span className="program-kicker"><Sparkles size={15} /> {copy.eyebrow}</span>

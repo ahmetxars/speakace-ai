@@ -5,8 +5,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Globe, Menu, X, ChevronDown } from "lucide-react";
-import { copy, languageMeta, publicLocaleOptions, type Language } from "@/lib/copy";
+import { ArrowLeft, ChevronDown, Globe, LockKeyhole, Menu, X } from "lucide-react";
+import {
+  copy,
+  languageMeta,
+  normalizePublicLanguage,
+  publicLocaleOptions,
+  type Language,
+  type PublicLanguage
+} from "@/lib/copy";
 import { useAppState } from "@/components/providers";
 
 type HeaderLabels = {
@@ -462,12 +469,22 @@ const navGroups = (labels: HeaderLabels) => [
   }
 ];
 
+const authHeaderLabels: Record<PublicLanguage, { back: string; secure: string; language: string }> = {
+  en: { back: "Back home", secure: "Secure account access", language: "Language" },
+  tr: { back: "Ana sayfaya dön", secure: "Güvenli hesap erişimi", language: "Dil" },
+  de: { back: "Zur Startseite", secure: "Sicherer Kontozugang", language: "Sprache" },
+  es: { back: "Volver al inicio", secure: "Acceso seguro a tu cuenta", language: "Idioma" },
+  fr: { back: "Retour à l’accueil", secure: "Accès sécurisé au compte", language: "Langue" }
+};
+
 export function SiteHeader() {
   const pathname = usePathname() ?? "/";
   const { language, setLanguage, signedIn, signOut } = useAppState();
   const content = copy[language];
   const labels = headerLabels[language];
   const locale = languageMeta[language];
+  const publicLanguage = normalizePublicLanguage(language);
+  const authLabels = authHeaderLabels[publicLanguage];
   const groups = useMemo(() => navGroups(labels), [labels]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
@@ -539,6 +556,44 @@ export function SiteHeader() {
 
   if (hideHeader) {
     return null;
+  }
+
+  if (pathname.startsWith("/auth")) {
+    return (
+      <header className="auth-site-header">
+        <div className="auth-site-header-inner">
+          <Link href="/" className="auth-site-brand" aria-label="SpeakAce home">
+            <span className="auth-site-brand-mark" aria-hidden="true">SA</span>
+            <Image
+              src="/brand/speakace-logo.webp"
+              alt="SpeakAce"
+              width={120}
+              height={41}
+              priority
+              className="nav-logo-img"
+            />
+          </Link>
+
+          <span className="auth-site-trust"><LockKeyhole size={14} />{authLabels.secure}</span>
+
+          <div className="auth-site-actions">
+            <label className="auth-site-locale" aria-label={authLabels.language}>
+              <Globe size={15} aria-hidden="true" />
+              <select
+                value={publicLanguage}
+                onChange={(event) => setLanguage(event.target.value as Language)}
+                aria-label={authLabels.language}
+              >
+                {publicLocaleOptions.map((item) => (
+                  <option key={item.code} value={item.code}>{item.nativeLabel}</option>
+                ))}
+              </select>
+            </label>
+            <Link href="/" className="auth-site-back"><ArrowLeft size={15} />{authLabels.back}</Link>
+          </div>
+        </div>
+      </header>
+    );
   }
 
   return (

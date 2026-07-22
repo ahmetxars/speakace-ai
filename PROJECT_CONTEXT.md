@@ -489,8 +489,12 @@ Important implication:
 - do not start with DB or API routes unless the UI state is clearly correct but server data is wrong
 - the public language selector is intentionally limited to the five core locales with complete conversion-page coverage: English, Turkish, German, Spanish, and French
 - `app/layout.tsx` passes the server-resolved language into `components/providers.tsx`; keep this server/client initialization aligned to avoid a language flash or stale unsupported locale
+- `/auth` uses the compact, five-language branch in `components/site-header.tsx`; `components/site-footer.tsx` and `components/floating-theme-toggle.tsx` intentionally stay hidden there so account access remains a viewport-contained task instead of a marketing page
+- `components/site-footer.tsx` carries shared public navigation and newsletter copy for all five public locales; do not fall back to English for German, Spanish, or French footer chrome
 - `components/audience-page.tsx` owns the localized student, teacher, and school programme experiences; the three `app/for-*` routes should stay thin metadata wrappers
+- the audience programme pages share an active, localized student/teacher/school path switcher; preserve `aria-current` and the audience-specific accent when changing that navigation
 - `components/teacher-demo-page.tsx` owns the localized interactive teacher demo rendered by `app/teacher-demo/page.tsx`
+- the teacher demo hero surfaces a real class-pulse summary and deliberately reveals the larger dashboard preview within the first desktop viewport; avoid replacing it with a decorative-only illustration
 
 ### Persistence and store layer
 

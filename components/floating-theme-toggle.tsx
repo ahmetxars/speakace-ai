@@ -9,7 +9,7 @@ export function FloatingThemeToggle() {
   const { theme, setTheme, language } = useAppState();
   const tr = language === "tr";
 
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/app")) {
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/app") || pathname?.startsWith("/auth")) {
     return null;
   }
 

@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleAlert,
-  ClipboardCheck,
   LayoutDashboard,
   Plus,
   UsersRound
@@ -57,7 +56,7 @@ type DemoCopy = {
 const demoCopy: Record<PublicLanguage, DemoCopy> = {
   en: {
     eyebrow: "Interactive teacher preview",
-    title: "Walk into class already knowing what needs attention.",
+    title: "Know what needs attention before class starts.",
     body: "This demo shows the teacher side of SpeakAce: one calm view for practice activity, homework follow-up, learner risk, and the next lesson decision.",
     primary: "Create your first class",
     secondary: "See teacher programme",
@@ -102,7 +101,7 @@ const demoCopy: Record<PublicLanguage, DemoCopy> = {
   },
   tr: {
     eyebrow: "Etkileşimli öğretmen önizlemesi",
-    title: "Derse, neye odaklanman gerektiğini bilerek gir.",
+    title: "Derse girmeden neye odaklanacağını gör.",
     body: "Bu demo SpeakAce'in öğretmen tarafını gösterir: pratik aktivitesi, ödev takibi, öğrenci riski ve sonraki ders kararı için sakin tek görünüm.",
     primary: "İlk sınıfını oluştur",
     secondary: "Öğretmen programını gör",
@@ -146,19 +145,19 @@ const demoCopy: Record<PublicLanguage, DemoCopy> = {
     closingBody: "Öğretmen alanını ücretsiz keşfedebilirsin; ilk sınıfı başlatmak için kısa bir katılım kodu yeterli."
   },
   de: {
-    eyebrow: "Interaktive Lehrervorschau", title: "Starte den Unterricht und weiß bereits, was Aufmerksamkeit braucht.", body: "Diese Demo zeigt die Lehrerseite von SpeakAce: Aktivität, Aufgaben, Risiken und nächste Entscheidungen in einer ruhigen Ansicht.", primary: "Erste Klasse erstellen", secondary: "Lehrerprogramm ansehen", demoNote: "Beispieldaten · keine Anmeldung nötig",
+    eyebrow: "Interaktive Lehrervorschau", title: "Sieh vor dem Unterricht, was Aufmerksamkeit braucht.", body: "Diese Demo zeigt die Lehrerseite von SpeakAce: Aktivität, Aufgaben, Risiken und nächste Entscheidungen in einer ruhigen Ansicht.", primary: "Erste Klasse erstellen", secondary: "Lehrerprogramm ansehen", demoNote: "Beispieldaten · keine Anmeldung nötig",
     className: "IELTS Abend · B2", week: "Diese Woche", overview: "Übersicht", students: "Lernende", assignments: "Aufgaben", announcements: "Mitteilungen", classAverage: "Klassenschnitt", weeklyAttempts: "Versuche diese Woche", completion: "Aufgaben erledigt", attention: "Brauchen Hilfe", activity: "Übungsaktivität", actionQueue: "Aktionsliste", actions: ["2 Lernende verpassten die Frist", "Aussprache ist Klassenfokus", "6 Versuche warten auf Prüfung"], openQueue: "Prioritäten prüfen", roster: "Lernendenpuls", learner: "Lernende", latest: "Letztes Band", focus: "Aktueller Fokus", status: "Status",
     rows: [{ learner: "Lernende 04", score: "6.5", focus: "Flüssigkeit", status: "Verbessert sich" }, { learner: "Lernende 11", score: "5.5", focus: "Aussprache", status: "Nachfassen" }, { learner: "Lernende 16", score: "7.0", focus: "Entwicklung", status: "Im Plan" }, { learner: "Lernende 18", score: "6.0", focus: "Wortschatz", status: "Aufgabe fällig" }], viewAll: "Ganze Liste öffnen",
     sectionEyebrow: "Für die nächste Stunde", sectionTitle: "Das Dashboard berichtet nicht nur. Es hilft entscheiden.", sectionBody: "Jeder Bereich beantwortet eine echte Lehrerfrage und führt vom Signal zur Aktion.", features: [{ title: "Wem helfe ich zuerst?", body: "Risiken und Fristen priorisieren die richtigen Lernenden." }, { title: "Was soll die Klasse üben?", body: "Fähigkeitsmuster zeigen den besten gemeinsamen Fokus." }, { title: "Hat die Aufgabe funktioniert?", body: "Erledigung, Versuche und Ergebnisse bleiben verbunden." }], closingEyebrow: "Echten Ablauf testen", closingTitle: "Eine Klasse erstellen, Lernende einladen, mit echter Aktivität bewerten.", closingBody: "Der Lehrerbereich ist kostenlos zu erkunden; ein kurzer Code startet die Klasse."
   },
   es: {
-    eyebrow: "Vista docente interactiva", title: "Llega a clase sabiendo qué necesita atención.", body: "Esta demo muestra el lado docente de SpeakAce: actividad, tareas, riesgo y decisiones para la próxima lección en una sola vista.", primary: "Crear primera clase", secondary: "Ver programa docente", demoNote: "Datos ilustrativos · sin iniciar sesión",
+    eyebrow: "Vista docente interactiva", title: "Ve qué necesita atención antes de empezar la clase.", body: "Esta demo muestra el lado docente de SpeakAce: actividad, tareas, riesgo y decisiones para la próxima lección en una sola vista.", primary: "Crear primera clase", secondary: "Ver programa docente", demoNote: "Datos ilustrativos · sin iniciar sesión",
     className: "IELTS tarde · B2", week: "Esta semana", overview: "Resumen", students: "Estudiantes", assignments: "Tareas", announcements: "Avisos", classAverage: "Media de clase", weeklyAttempts: "Intentos semanales", completion: "Tareas completas", attention: "Necesitan atención", activity: "Actividad", actionQueue: "Acciones", actions: ["2 alumnos pasaron la fecha", "Pronunciación es el foco común", "6 intentos listos para revisar"], openQueue: "Revisar prioridades", roster: "Pulso de alumnos", learner: "Estudiante", latest: "Último band", focus: "Foco actual", status: "Estado",
     rows: [{ learner: "Estudiante 04", score: "6.5", focus: "Fluidez", status: "Mejorando" }, { learner: "Estudiante 11", score: "5.5", focus: "Pronunciación", status: "Seguimiento" }, { learner: "Estudiante 16", score: "7.0", focus: "Desarrollo", status: "En línea" }, { learner: "Estudiante 18", score: "6.0", focus: "Vocabulario", status: "Tarea pendiente" }], viewAll: "Abrir lista completa",
     sectionEyebrow: "Construido para la próxima clase", sectionTitle: "El panel no solo informa. Ayuda a decidir.", sectionBody: "Cada área responde una pregunta docente real para pasar de señal a acción.", features: [{ title: "¿A quién ayudo primero?", body: "Riesgo y fechas ponen arriba a los alumnos correctos." }, { title: "¿Qué debe practicar la clase?", body: "Los patrones muestran el mejor foco compartido." }, { title: "¿Funcionó la tarea?", body: "Finalización, intentos y resultados siguen conectados." }], closingEyebrow: "Prueba el flujo real", closingTitle: "Crea una clase, invita alumnos y evalúa con actividad real.", closingBody: "Puedes explorar gratis; un código corto basta para empezar."
   },
   fr: {
-    eyebrow: "Aperçu enseignant interactif", title: "Entrez en cours en sachant déjà quoi prioriser.", body: "Cette démo montre l’espace enseignant SpeakAce : activité, devoirs, risques et décisions du prochain cours dans une vue calme.", primary: "Créer ma première classe", secondary: "Voir le programme enseignant", demoNote: "Données illustratives · sans connexion",
+    eyebrow: "Aperçu enseignant interactif", title: "Voyez quoi prioriser avant le début du cours.", body: "Cette démo montre l’espace enseignant SpeakAce : activité, devoirs, risques et décisions du prochain cours dans une vue calme.", primary: "Créer ma première classe", secondary: "Voir le programme enseignant", demoNote: "Données illustratives · sans connexion",
     className: "IELTS soir · B2", week: "Cette semaine", overview: "Aperçu", students: "Élèves", assignments: "Devoirs", announcements: "Annonces", classAverage: "Moyenne de classe", weeklyAttempts: "Essais cette semaine", completion: "Devoirs terminés", attention: "À suivre", activity: "Activité", actionQueue: "Actions", actions: ["2 élèves ont dépassé l’échéance", "La prononciation est le focus commun", "6 essais sont à revoir"], openQueue: "Voir les priorités", roster: "Pouls des élèves", learner: "Élève", latest: "Dernier band", focus: "Focus actuel", status: "Statut",
     rows: [{ learner: "Élève 04", score: "6.5", focus: "Fluidité", status: "En progrès" }, { learner: "Élève 11", score: "5.5", focus: "Prononciation", status: "À relancer" }, { learner: "Élève 16", score: "7.0", focus: "Développement", status: "Dans le rythme" }, { learner: "Élève 18", score: "6.0", focus: "Vocabulaire", status: "Devoir attendu" }], viewAll: "Ouvrir la liste complète",
     sectionEyebrow: "Pensé pour le prochain cours", sectionTitle: "Le tableau ne fait pas que rapporter. Il aide à décider.", sectionBody: "Chaque zone répond à une vraie question pédagogique et mène du signal à l’action.", features: [{ title: "Qui aider en premier ?", body: "Risques et échéances font remonter les bons élèves." }, { title: "Que doit travailler la classe ?", body: "Les tendances indiquent le meilleur focus commun." }, { title: "Le devoir a-t-il fonctionné ?", body: "Achèvement, essais et résultats restent reliés." }], closingEyebrow: "Tester le vrai flux", closingTitle: "Créez une classe, invitez quelques élèves et jugez sur l’activité réelle.", closingBody: "L’espace enseignant est gratuit à explorer; un code court suffit pour démarrer."
@@ -194,12 +193,22 @@ export function TeacherDemoPage() {
           </div>
           <span className="demo-class-note"><CheckCircle2 size={14} />{copy.demoNote}</span>
         </div>
-        <div className="demo-class-orbit" aria-hidden="true">
-          <span><UsersRound size={21} /></span>
-          <span><ClipboardCheck size={21} /></span>
-          <span><BarChart3 size={21} /></span>
-          <div><strong>18</strong><small>{copy.students}</small></div>
-        </div>
+        <aside className="demo-hero-pulse" aria-label={copy.overview}>
+          <div className="demo-hero-pulse-head">
+            <span className="demo-hero-pulse-icon"><LayoutDashboard size={19} /></span>
+            <div><small>{copy.overview}</small><strong>{copy.className}</strong></div>
+            <span className="demo-hero-live"><i />{copy.week}</span>
+          </div>
+          <div className="demo-hero-metrics">
+            <article><UsersRound size={17} /><span>{copy.students}</span><strong>18</strong></article>
+            <article><BookOpenCheck size={17} /><span>{copy.completion}</span><strong>78%</strong></article>
+          </div>
+          <div className="demo-hero-priority">
+            <span><CircleAlert size={17} />{copy.attention}</span>
+            <strong>4</strong>
+            <small>2 {units.urgent}</small>
+          </div>
+        </aside>
       </section>
 
       <section className="demo-workspace page-shell" aria-label={copy.overview}>
