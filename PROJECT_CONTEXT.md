@@ -994,6 +994,7 @@ Inspect only:
 - Live catalog values must be checked against site copy before changing pricing. On 2026-07-22, the Lemon product named Pro Monthly was configured with a weekly interval while the site described it as monthly.
 - Authenticated learner checkout initiation is recorded server-side in `app/api/payments/lemon/checkout/route.ts`. Keep the database event there so navigation cannot drop it, and do not add a second client-side `checkout_initiated` write for links targeting that route.
 - Lifecycle baseline before frequency controls on 2026-07-22: 520 daily-tip emails reached 180 recipients in 7 days, while only 43 users had practiced in 30 days; 71 emails reached 23 unverified accounts. Use these as reduction baselines and do not restore all-user daily sends.
+- High-intent practice-limit recovery emails are implemented behind `ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS=true`. Keep the flag off until the live Lemon webhook is configured and signed delivery is verified; the sequence excludes recent checkout starters, enforces a 14-day recovery cooldown, and avoids any user sent another email in the prior 24 hours.
 
 ### Assumptions
 

@@ -288,6 +288,11 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       practiceLimitHits30d: 0,
       upgradePromptViews7d: 0,
       upgradePromptViews30d: 0,
+      practiceLimitRecoveryEnabled: process.env.ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS === "true",
+      practiceLimitRecoverySent7d: 0,
+      practiceLimitRecoverySent30d: 0,
+      practiceLimitRecoveryCheckoutStarts7d: 0,
+      practiceLimitRecoveryCheckoutStarts30d: 0,
       checkoutInitiated7d: 0,
       checkoutInitiated30d: 0,
       checkoutCompleted7d: 0,
@@ -407,6 +412,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       practice_limit_hits_30d: number;
       upgrade_prompt_views_7d: number;
       upgrade_prompt_views_30d: number;
+      practice_limit_recovery_sent_7d: number;
+      practice_limit_recovery_sent_30d: number;
+      practice_limit_recovery_checkout_starts_7d: number;
+      practice_limit_recovery_checkout_starts_30d: number;
       checkout_initiated_7d: number;
       checkout_initiated_30d: number;
       checkout_completed_7d: number;
@@ -552,6 +561,34 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         where event = 'upgrade_prompt_view'
           and created_at > now() - interval '30 days'
       ) as upgrade_prompt_views_30d,
+      (
+        select count(*)::int
+        from email_log
+        where template = 'practice_limit_recovery'
+          and status = 'sent'
+          and sent_at > now() - interval '7 days'
+      ) as practice_limit_recovery_sent_7d,
+      (
+        select count(*)::int
+        from email_log
+        where template = 'practice_limit_recovery'
+          and status = 'sent'
+          and sent_at > now() - interval '30 days'
+      ) as practice_limit_recovery_sent_30d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'checkout_initiated'
+          and path like '/email/practice_limit_recovery/%'
+          and created_at > now() - interval '7 days'
+      ) as practice_limit_recovery_checkout_starts_7d,
+      (
+        select count(*)::int
+        from recent_analytics
+        where event = 'checkout_initiated'
+          and path like '/email/practice_limit_recovery/%'
+          and created_at > now() - interval '30 days'
+      ) as practice_limit_recovery_checkout_starts_30d,
       (
         select count(*)::int
         from recent_analytics
@@ -1271,6 +1308,11 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     practiceLimitHits30d: row?.practice_limit_hits_30d ?? 0,
     upgradePromptViews7d: row?.upgrade_prompt_views_7d ?? 0,
     upgradePromptViews30d: row?.upgrade_prompt_views_30d ?? 0,
+    practiceLimitRecoveryEnabled: process.env.ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS === "true",
+    practiceLimitRecoverySent7d: row?.practice_limit_recovery_sent_7d ?? 0,
+    practiceLimitRecoverySent30d: row?.practice_limit_recovery_sent_30d ?? 0,
+    practiceLimitRecoveryCheckoutStarts7d: row?.practice_limit_recovery_checkout_starts_7d ?? 0,
+    practiceLimitRecoveryCheckoutStarts30d: row?.practice_limit_recovery_checkout_starts_30d ?? 0,
     checkoutInitiated7d: row?.checkout_initiated_7d ?? 0,
     checkoutInitiated30d: row?.checkout_initiated_30d ?? 0,
     checkoutCompleted7d: row?.checkout_completed_7d ?? 0,

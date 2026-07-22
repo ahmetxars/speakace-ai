@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildPracticeLimitRecoveryEmailContent,
   buildOnboardingEmailContent,
+  resolvePracticeLimitRecoveryReason,
   resolveTrialLifecycleStage
 } from "@/lib/server/email-sequences";
 
@@ -76,5 +78,40 @@ describe("trial lifecycle scheduling", () => {
   it("does not schedule messages outside the live trial window", () => {
     expect(resolveTrialLifecycleStage({ trialEndsAt: "2026-07-25T18:00:01.000Z", now })).toBeNull();
     expect(resolveTrialLifecycleStage({ trialEndsAt: "2026-07-22T05:59:59.000Z", now })).toBeNull();
+  });
+});
+
+describe("practice limit recovery", () => {
+  it("sends limit-hit learners directly to an attributed weekly trial checkout", () => {
+    const email = buildPracticeLimitRecoveryEmailContent({
+      name: "Learner",
+      reason: "practice_limit_hit"
+    });
+
+    expect(email.subject).toContain("practice you started");
+    expect(email.html).toContain("plan=plus");
+    expect(email.html).toContain("billing=weekly");
+    expect(email.html).toContain("campaign=practice_limit_recovery_practice_limit_hit");
+    expect(email.html).toContain("cta_event=checkout_initiated");
+    expect(email.html).toContain("$0 today");
+    expect(email.html).toContain("$3.99/week");
+    expect(email.html).not.toContain("unlimited practice");
+  });
+
+  it("uses the fresh-feedback retry message for result locks", () => {
+    const email = buildPracticeLimitRecoveryEmailContent({
+      name: "Learner",
+      reason: "result_retry_locked"
+    });
+
+    expect(email.subject).toContain("answer you just improved");
+    expect(email.html).toContain("stronger second answer");
+    expect(email.html).toContain("practice_limit_recovery_result_retry_locked");
+  });
+
+  it("resolves a safe reason from persisted analytics paths", () => {
+    expect(resolvePracticeLimitRecoveryReason("/app/practice/result_retry_locked/trial_dialog")).toBe("result_retry_locked");
+    expect(resolvePracticeLimitRecoveryReason("/app/practice/practice_limit_hit/trial_dialog")).toBe("practice_limit_hit");
+    expect(resolvePracticeLimitRecoveryReason(null)).toBe("practice_limit_hit");
   });
 });

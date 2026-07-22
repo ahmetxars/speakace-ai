@@ -532,6 +532,23 @@ export function AdminPanel(props: {
     });
 
     actions.push({
+      title: "Practice-limit recovery",
+      value: props.overview.practiceLimitRecoveryEnabled
+        ? `${props.overview.practiceLimitRecoveryCheckoutStarts7d}/${props.overview.practiceLimitRecoverySent7d}`
+        : "Off",
+      detail: !props.overview.practiceLimitRecoveryEnabled
+        ? "Safely staged. Keep this off until the live Lemon webhook is configured and signed delivery is verified."
+        : props.overview.practiceLimitRecoverySent7d > 0
+          ? `${props.overview.practiceLimitRecoverySent7d} recovery email(s) sent and ${props.overview.practiceLimitRecoveryCheckoutStarts7d} authenticated checkout(s) started in 7d.`
+          : "Recovery is enabled, but no eligible high-intent learner has been emailed in the last 7 days.",
+      tone: !props.overview.practiceLimitRecoveryEnabled
+        ? "neutral"
+        : props.overview.practiceLimitRecoveryCheckoutStarts7d > 0
+          ? "success"
+          : "neutral"
+    });
+
+    actions.push({
       title: "Source worth scaling",
       value: bestCheckoutSource ? formatCtaLabel(bestCheckoutSource.path) : "No signal yet",
       detail: bestCheckoutSource
@@ -545,6 +562,9 @@ export function AdminPanel(props: {
     props.overview.billingSuccessSeen7d,
     props.overview.billingSyncPending7d,
     props.overview.checkoutCompleted7d,
+    props.overview.practiceLimitRecoveryCheckoutStarts7d,
+    props.overview.practiceLimitRecoveryEnabled,
+    props.overview.practiceLimitRecoverySent7d,
     props.overview.topCheckoutSources,
     props.overview.monetizationFunnel7d.billingSuccessSeen,
     props.overview.monetizationFunnel7d.checkoutCompleted,
@@ -1158,6 +1178,8 @@ export function AdminPanel(props: {
                   { label: "Pricing Plus clicks (7d)", value: props.overview.pricingPlusClicks7d },
                   { label: "Limit hits (7d)", value: props.overview.practiceLimitHits7d },
                   { label: "Upgrade prompts (7d)", value: props.overview.upgradePromptViews7d },
+                  { label: "Recovery emails (7d)", value: props.overview.practiceLimitRecoverySent7d },
+                  { label: "Recovery checkouts (7d)", value: props.overview.practiceLimitRecoveryCheckoutStarts7d },
                   { label: "Checkout initiated (7d)", value: props.overview.checkoutInitiated7d },
                   { label: "Checkout completed (7d)", value: props.overview.checkoutCompleted7d },
                   { label: "Access sync pending (7d)", value: props.overview.billingSyncPending7d }
@@ -1986,6 +2008,20 @@ export function AdminPanel(props: {
                   value={String(props.overview.billingSyncPending7d)}
                   detail={`${props.overview.billingSyncPending30d} distinct buyer account(s) reached a pending access state in the last 30 days.`}
                   tone={props.overview.billingSyncPending7d > 0 ? "warning" : "success"}
+                />
+                <AdmSignalCard
+                  label="Limit-recovery email"
+                  value={
+                    props.overview.practiceLimitRecoveryEnabled
+                      ? `${props.overview.practiceLimitRecoveryCheckoutStarts7d}/${props.overview.practiceLimitRecoverySent7d}`
+                      : "Off"
+                  }
+                  detail={
+                    props.overview.practiceLimitRecoveryEnabled
+                      ? `${props.overview.practiceLimitRecoverySent30d} sent and ${props.overview.practiceLimitRecoveryCheckoutStarts30d} authenticated checkout(s) started in 30d.`
+                      : "Waiting for verified Lemon webhook delivery before activation."
+                  }
+                  tone={props.overview.practiceLimitRecoveryCheckoutStarts7d > 0 ? "success" : "neutral"}
                 />
               </div>
 

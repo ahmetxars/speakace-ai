@@ -1,5 +1,6 @@
 import { sendEmail } from "@/lib/server/email";
 import { hasDatabaseUrl, getSql } from "@/lib/server/db";
+import { couponCatalog } from "@/lib/commerce";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
 const PRACTICE_URL = `${SITE_URL}/app/practice`;
@@ -8,6 +9,8 @@ const PRICING_URL = `${SITE_URL}/pricing`;
 const BILLING_URL = `${SITE_URL}/app/billing`;
 const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&billing=annual&coupon=LAUNCH20&campaign=onboarding_email`;
 let emailSequenceSchemaEnsured = false;
+
+export type PracticeLimitRecoveryReason = "practice_limit_hit" | "result_retry_locked";
 
 export const ONBOARDING_EMAIL_SCHEDULE: Array<{ dayOffset: number; emailNumber: number }> = [
   { dayOffset: 0, emailNumber: 1 },
@@ -753,6 +756,232 @@ export async function markOnboardingEmailSent(userId: string, emailNumber: numbe
   `;
 }
 
+export function resolvePracticeLimitRecoveryReason(path: string | null | undefined): PracticeLimitRecoveryReason {
+  return path?.includes("result_retry_locked") ? "result_retry_locked" : "practice_limit_hit";
+}
+
+function buildPracticeLimitRecoveryCheckoutUrl(reason: PracticeLimitRecoveryReason) {
+  const params = new URLSearchParams({
+    plan: "plus",
+    billing: "weekly",
+    coupon: couponCatalog.LAUNCH20.code,
+    campaign: `practice_limit_recovery_${reason}`,
+    cta: `/email/practice_limit_recovery/${reason}`,
+    cta_event: "checkout_initiated"
+  });
+  return `${SITE_URL}/api/payments/lemon/checkout?${params.toString()}`;
+}
+
+export function buildPracticeLimitRecoveryEmailContent(input: {
+  name: string;
+  reason: PracticeLimitRecoveryReason;
+}): LifecycleEmailContent {
+  const greeting = input.name.trim() || "there";
+  const checkoutUrl = buildPracticeLimitRecoveryCheckoutUrl(input.reason);
+  const retryLocked = input.reason === "result_retry_locked";
+  const heading = retryLocked
+    ? "Turn the feedback you just received into a stronger second answer"
+    : "Keep practising while today's momentum is still fresh";
+  const context = retryLocked
+    ? "You reached the most useful part of practice: applying fresh feedback to the same prompt. Plus lets you make that second attempt today instead of restarting the learning loop tomorrow."
+    : "You reached today's free practice limit after doing the hard part: showing up and speaking. Plus reopens practice now so you can keep the same focused session moving.";
+
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#d95d39;font-size:0.82em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em">Your SpeakAce practice</p>
+    <h1 style="margin:0 0 20px;font-size:1.45em;color:#1b120d;font-weight:800">${heading}</h1>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 18px">Hi ${greeting}, ${context}</p>
+
+    <div style="margin:0 0 22px">
+      ${checkItem("Continue speaking today with up to <strong>35 daily minutes</strong>")}
+      ${checkItem("Use up to <strong>18 daily sessions</strong> for focused retries")}
+      ${checkItem("Keep the full transcript and AI feedback loop moving")}
+    </div>
+
+    ${highlight("<strong>3-day Plus trial: $0 today.</strong> The base price is $3.99/week after the trial, and the launch discount is already attached. Checkout shows the exact renewal amount before you confirm.")}
+
+    <div style="margin:24px 0 10px">
+      ${primaryBtn(checkoutUrl, "Continue now for $0 today &rarr;")}
+    </div>
+    <p style="margin:12px 0 0;color:#7a5c4a;font-size:0.86em;line-height:1.65">Prefer to stay free? No problem — your free practice resets automatically. You can return from the <a href="${PRACTICE_URL}" style="color:#1d6f75;font-weight:700">practice page</a>.</p>
+  `);
+
+  return {
+    subject: retryLocked
+      ? "Continue the answer you just improved"
+      : "Continue the practice you started today",
+    html,
+    text: `Hi ${greeting}, ${context} Start a 3-day Plus trial for $0 today; the base price is $3.99/week after the trial and the launch discount is attached. Checkout shows the exact renewal amount before confirmation: ${checkoutUrl}. Prefer free? Return when your limit resets: ${PRACTICE_URL}`
+  };
+}
+
+export async function getUsersDueForPracticeLimitRecoveryEmail(limit = 50): Promise<
+  Array<{ id: string; email: string; name: string; reason: PracticeLimitRecoveryReason; limitHitAt: string }>
+> {
+  if (!hasDatabaseUrl()) return [];
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  const rows = await sql<
+    Array<{ id: string; email: string; name: string; path: string | null; limit_hit_at: string | Date }>
+  >`
+    with latest_limit as (
+      select distinct on (ae.user_id)
+        ae.user_id,
+        ae.path,
+        ae.created_at
+      from analytics_events ae
+      where ae.event = 'practice_limit_hit'
+        and ae.created_at >= now() - interval '36 hours'
+        and ae.created_at <= now() - interval '20 minutes'
+      order by ae.user_id, ae.created_at desc
+    )
+    select
+      u.id,
+      u.email,
+      u.name,
+      latest_limit.path,
+      latest_limit.created_at as limit_hit_at
+    from latest_limit
+    join users u on u.id = latest_limit.user_id
+    where u.plan = 'free'
+      and coalesce(u.billing_status, 'free') not in ('active', 'on_trial')
+      and u.email_verified = true
+      and u.email_opt_out = false
+      and u.role <> 'guest'
+      and not exists (
+        select 1 from analytics_events checkout_event
+        where checkout_event.user_id = u.id
+          and checkout_event.event = 'checkout_initiated'
+          and checkout_event.created_at >= now() - interval '14 days'
+      )
+      and not exists (
+        select 1 from email_log recovery_log
+        where recovery_log.user_id = u.id
+          and recovery_log.template = 'practice_limit_recovery'
+          and recovery_log.status = 'sent'
+          and recovery_log.sent_at >= now() - interval '14 days'
+      )
+      and not exists (
+        select 1 from email_log recent_email
+        where recent_email.user_id = u.id
+          and recent_email.status = 'sent'
+          and recent_email.sent_at >= now() - interval '24 hours'
+      )
+    order by latest_limit.created_at desc
+    limit ${Math.min(Math.max(limit, 1), 50)}
+  `;
+
+  return rows.map((row) => ({
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    reason: resolvePracticeLimitRecoveryReason(row.path),
+    limitHitAt: row.limit_hit_at instanceof Date
+      ? row.limit_hit_at.toISOString()
+      : new Date(row.limit_hit_at).toISOString()
+  }));
+}
+
+export async function sendPracticeLimitRecoveryEmail(
+  userId: string
+): Promise<{ ok: boolean; skipped?: boolean }> {
+  if (!hasDatabaseUrl()) return { ok: false, skipped: true };
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  const rows = await sql<
+    Array<{
+      email: string;
+      name: string;
+      path: string | null;
+      email_opt_out: boolean;
+      email_verified: boolean;
+      plan: string;
+      billing_status: string;
+      recent_checkout: boolean;
+      recently_sent: boolean;
+    }>
+  >`
+    select
+      u.email,
+      u.name,
+      latest_limit.path,
+      u.email_opt_out,
+      u.email_verified,
+      u.plan,
+      u.billing_status,
+      exists (
+        select 1 from analytics_events checkout_event
+        where checkout_event.user_id = u.id
+          and checkout_event.event = 'checkout_initiated'
+          and checkout_event.created_at >= now() - interval '14 days'
+      ) as recent_checkout,
+      exists (
+        select 1 from email_log recovery_log
+        where recovery_log.user_id = u.id
+          and recovery_log.template = 'practice_limit_recovery'
+          and recovery_log.status = 'sent'
+          and recovery_log.sent_at >= now() - interval '14 days'
+      ) as recently_sent
+    from users u
+    join lateral (
+      select ae.path
+      from analytics_events ae
+      where ae.user_id = u.id
+        and ae.event = 'practice_limit_hit'
+        and ae.created_at >= now() - interval '36 hours'
+        and ae.created_at <= now() - interval '20 minutes'
+      order by ae.created_at desc
+      limit 1
+    ) latest_limit on true
+    where u.id = ${userId}
+    limit 1
+  `;
+  const user = rows[0];
+  if (
+    !user ||
+    user.email_opt_out ||
+    !user.email_verified ||
+    user.plan !== "free" ||
+    ["active", "on_trial"].includes(user.billing_status) ||
+    user.recent_checkout ||
+    user.recently_sent
+  ) {
+    return { ok: false, skipped: true };
+  }
+
+  const reason = resolvePracticeLimitRecoveryReason(user.path);
+  let emailContent = buildPracticeLimitRecoveryEmailContent({ name: user.name, reason });
+  const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`;
+  emailContent = {
+    ...emailContent,
+    html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${unsubscribeUrl}"`)
+  };
+
+  try {
+    const result = await sendEmail({ to: user.email, ...emailContent });
+    await logEmail({
+      userId,
+      userEmail: user.email,
+      template: "practice_limit_recovery",
+      subject: emailContent.subject,
+      status: result.ok ? "sent" : "failed",
+      errorMessage: result.ok ? undefined : "send skipped (no transport)"
+    });
+    return result;
+  } catch (err) {
+    await logEmail({
+      userId,
+      userEmail: user.email,
+      template: "practice_limit_recovery",
+      subject: emailContent.subject,
+      status: "failed",
+      errorMessage: err instanceof Error ? err.message : "unknown error"
+    });
+    return { ok: false };
+  }
+}
+
 export type TrialLifecycleStage = "activation" | "ending";
 
 export function resolveTrialLifecycleStage(input: {
@@ -1109,7 +1338,7 @@ export async function getUsersForDailyTip(limit = 200): Promise<Array<{ id: stri
       and not exists (
         select 1 from email_log el
         where el.user_id = u.id
-          and el.template like 'onboarding_%'
+          and el.status = 'sent'
           and el.sent_at >= now() - interval '24 hours'
       )
     order by (

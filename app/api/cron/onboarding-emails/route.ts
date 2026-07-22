@@ -5,6 +5,8 @@ import {
   sendOnboardingEmail,
   getUsersForDailyTip,
   sendDailyTipEmail,
+  getUsersDueForPracticeLimitRecoveryEmail,
+  sendPracticeLimitRecoveryEmail,
   getUsersDueForTrialLifecycleEmail,
   sendTrialLifecycleEmail
 } from "@/lib/server/email-sequences";
@@ -34,6 +36,8 @@ export async function GET(request: Request) {
   const limitParam = Number(url.searchParams.get("limit") ?? "100");
   const dryRun = url.searchParams.get("dryRun") === "1";
   const skipTips = url.searchParams.get("skipTips") === "1";
+  const skipRecovery = url.searchParams.get("skipRecovery") === "1";
+  const recoveryEnabled = process.env.ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS === "true";
   const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 250) : 100;
 
   // ── Onboarding emails ──────────────────────────────────────────────────────
@@ -60,6 +64,34 @@ export async function GET(request: Request) {
       }
     } catch {
       onboardingFailed++;
+    }
+  }
+
+  // ── High-intent practice limit recovery ─────────────────────────────────────
+  let recoverySent = 0;
+  let recoverySkipped = 0;
+  let recoveryFailed = 0;
+  const recoveryUsers = skipRecovery || !recoveryEnabled
+    ? []
+    : await getUsersDueForPracticeLimitRecoveryEmail(Math.min(limit, 50));
+
+  for (const user of recoveryUsers) {
+    try {
+      if (dryRun) {
+        recoverySkipped++;
+        continue;
+      }
+
+      const result = await sendPracticeLimitRecoveryEmail(user.id);
+      if (result.ok) {
+        recoverySent++;
+      } else if (result.skipped) {
+        recoverySkipped++;
+      } else {
+        recoveryFailed++;
+      }
+    } catch {
+      recoveryFailed++;
     }
   }
 
@@ -132,6 +164,19 @@ export async function GET(request: Request) {
         nextEmailNumber: u.nextEmailNumber
       }))
     },
+    practiceLimitRecovery: skipRecovery || !recoveryEnabled
+      ? { skipped: true, enabled: recoveryEnabled }
+      : {
+          enabled: true,
+          queued: recoveryUsers.length,
+          sent: recoverySent,
+          skipped: recoverySkipped,
+          failed: recoveryFailed,
+          reasons: recoveryUsers.reduce<Record<string, number>>((summary, user) => {
+            summary[user.reason] = (summary[user.reason] ?? 0) + 1;
+            return summary;
+          }, {})
+        },
     dailyTip: skipTips
       ? { skipped: true }
       : { sent: tipSent, skipped: tipSkipped, failed: tipFailed },

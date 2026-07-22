@@ -522,6 +522,11 @@ export interface AdminOverview {
   practiceLimitHits30d: number;
   upgradePromptViews7d: number;
   upgradePromptViews30d: number;
+  practiceLimitRecoveryEnabled: boolean;
+  practiceLimitRecoverySent7d: number;
+  practiceLimitRecoverySent30d: number;
+  practiceLimitRecoveryCheckoutStarts7d: number;
+  practiceLimitRecoveryCheckoutStarts30d: number;
   checkoutInitiated7d: number;
   checkoutInitiated30d: number;
   checkoutCompleted7d: number;
