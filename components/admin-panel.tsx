@@ -532,6 +532,15 @@ export function AdminPanel(props: {
     });
 
     actions.push({
+      title: "Lifecycle delivery",
+      value: props.overview.emailQuotaBlocked ? "Blocked" : `${props.overview.emailSent24h} sent`,
+      detail: props.overview.emailQuotaBlocked
+        ? `Email provider quota is blocking lifecycle delivery; ${props.overview.emailFailed24h} failed attempt(s) were logged in 24h. The cron circuit breaker prevents another retry storm until the quota resets or an override is configured.`
+        : `${props.overview.emailSent24h} lifecycle email(s) sent and ${props.overview.emailFailed24h} failed in 24h. ${props.overview.dayOneReturnStarts30d} learner(s) returned through the day-one path in 30d.`,
+      tone: props.overview.emailQuotaBlocked || props.overview.emailFailed24h > 0 ? "warning" : "success"
+    });
+
+    actions.push({
       title: "Practice-limit recovery",
       value: props.overview.practiceLimitRecoveryEnabled
         ? `${props.overview.practiceLimitRecoveryCheckoutStarts7d}/${props.overview.practiceLimitRecoverySent7d}`
@@ -562,6 +571,10 @@ export function AdminPanel(props: {
     props.overview.billingSuccessSeen7d,
     props.overview.billingSyncPending7d,
     props.overview.checkoutCompleted7d,
+    props.overview.dayOneReturnStarts30d,
+    props.overview.emailFailed24h,
+    props.overview.emailQuotaBlocked,
+    props.overview.emailSent24h,
     props.overview.practiceLimitRecoveryCheckoutStarts7d,
     props.overview.practiceLimitRecoveryEnabled,
     props.overview.practiceLimitRecoverySent7d,
@@ -1180,6 +1193,9 @@ export function AdminPanel(props: {
                   { label: "Upgrade prompts (7d)", value: props.overview.upgradePromptViews7d },
                   { label: "Recovery emails (7d)", value: props.overview.practiceLimitRecoverySent7d },
                   { label: "Recovery checkouts (7d)", value: props.overview.practiceLimitRecoveryCheckoutStarts7d },
+                  { label: "Email sent (24h)", value: props.overview.emailSent24h },
+                  { label: "Email failed (24h)", value: props.overview.emailFailed24h },
+                  { label: "Day-one returns (30d)", value: props.overview.dayOneReturnStarts30d },
                   { label: "Checkout initiated (7d)", value: props.overview.checkoutInitiated7d },
                   { label: "Checkout completed (7d)", value: props.overview.checkoutCompleted7d },
                   { label: "Access sync pending (7d)", value: props.overview.billingSyncPending7d }
@@ -1780,7 +1796,7 @@ export function AdminPanel(props: {
                               {member.emailLog.map((log) => {
                                 const templateLabels: Record<string, string> = {
                                   onboarding_1: "Welcome",
-                                  onboarding_2: "Day 2 tip",
+                                  onboarding_2: "Day 1 return",
                                   onboarding_3: "Week 1 checklist",
                                   onboarding_4: "1-week milestone",
                                   onboarding_5: "Daily practice"

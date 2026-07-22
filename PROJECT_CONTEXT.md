@@ -258,8 +258,11 @@ This is the project-wide “where things live” map.
 - Sequences:
   - `lib/server/email-sequences.ts`
   - password signups receive onboarding only after successful email verification; unverified accounts are excluded from lifecycle marketing
+  - onboarding email #2 is sent after one day; activated learners receive a checkout-free, attributed `email_day_one_return` practice link while non-activated learners keep the first-score prompt
   - learners with no speaking sessions receive first-score activation content instead of checkout pressure on day 7/10
   - the legacy `daily_tip` template is limited to verified learners active in the last 30 days, at most once per 7 days, and never within 24 hours of an onboarding email
+  - the lifecycle cron suppresses all provider sends when a current Resend daily/monthly quota failure is present; `IGNORE_EMAIL_QUOTA_BLOCK=true` is the explicit operational override after a quota upgrade
+  - Admin reports 24-hour email delivery/failure health, active quota blocking, and attributed day-one practice returns over 30 days
   - email quick-start links retain their attributed `/app/practice` destination through both password and Google sign-in using `lib/auth-redirect.ts`
 - Cron:
   - `app/api/cron/onboarding-emails/route.ts`
@@ -1007,6 +1010,8 @@ Inspect only:
 - Live catalog values must be checked against site copy before changing pricing. On 2026-07-22, the Lemon product named Pro Monthly was configured with a weekly interval while the site described it as monthly.
 - Authenticated learner checkout initiation is recorded server-side in `app/api/payments/lemon/checkout/route.ts`. Keep the database event there so navigation cannot drop it, and do not add a second client-side `checkout_initiated` write for links targeting that route.
 - Lifecycle baseline before frequency controls on 2026-07-22: 520 daily-tip emails reached 180 recipients in 7 days, while only 43 users had practiced in 30 days; 71 emails reached 23 unverified accounts. Use these as reduction baselines and do not restore all-user daily sends.
+- Retention baseline on 2026-07-22: 34 of 45 recently verified learners uploaded a speaking attempt, but only 5 returned on another day. Prioritize measured day-one return activation before adding more broad acquisition or checkout pressure.
+- Resend's monthly quota was exhausted in production on 2026-07-18. The lifecycle cron now uses `email_log` as a quota circuit breaker to avoid repeated failed sends until the quota resets or `IGNORE_EMAIL_QUOTA_BLOCK=true` is intentionally configured after an account upgrade.
 - High-intent practice-limit recovery emails are implemented behind `ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS=true`. Keep the flag off until the live Lemon webhook is configured and signed delivery is verified; the sequence excludes recent checkout starters, enforces a 14-day recovery cooldown, and avoids any user sent another email in the prior 24 hours.
 
 ### Assumptions

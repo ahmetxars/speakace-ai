@@ -510,6 +510,10 @@ export interface AdminOverview {
   requests5m: number;
   pageViews1h: number;
   lastRequestAt?: string | null;
+  emailSent24h: number;
+  emailFailed24h: number;
+  emailQuotaBlocked: boolean;
+  dayOneReturnStarts30d: number;
   ctaClicks7d: number;
   ctaClicks30d: number;
   checkoutClicks7d: number;

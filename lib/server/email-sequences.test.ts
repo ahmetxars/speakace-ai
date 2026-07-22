@@ -2,11 +2,43 @@ import { describe, expect, it } from "vitest";
 import {
   buildPracticeLimitRecoveryEmailContent,
   buildOnboardingEmailContent,
+  ONBOARDING_EMAIL_SCHEDULE,
+  resolveEmailQuotaKind,
   resolvePracticeLimitRecoveryReason,
   resolveTrialLifecycleStage
 } from "@/lib/server/email-sequences";
 
 describe("onboarding lifecycle segmentation", () => {
+  it("schedules the first retention follow-up one day after signup", () => {
+    expect(ONBOARDING_EMAIL_SCHEDULE.find((step) => step.emailNumber === 2)?.dayOffset).toBe(1);
+  });
+
+  it("sends activated learners into an attributed day-one return session", () => {
+    const email = buildOnboardingEmailContent({
+      name: "Learner",
+      emailNumber: 2,
+      speakingSessionCount: 1
+    });
+
+    expect(email?.subject).toContain("second-day speaking round");
+    expect(email?.html).toContain("quickStart=1");
+    expect(email?.html).toContain("activation=email_day_one_return");
+    expect(email?.html).toContain("no plan change or checkout step");
+    expect(email?.html).not.toContain("api/payments/lemon/checkout");
+  });
+
+  it("keeps first-score guidance for learners who have not activated", () => {
+    const email = buildOnboardingEmailContent({
+      name: "Learner",
+      emailNumber: 2,
+      speakingSessionCount: 0
+    });
+
+    expect(email?.subject).toContain("IELTS tip");
+    expect(email?.html).toContain("activation=email_first_score");
+    expect(email?.html).not.toContain("email_day_one_return");
+  });
+
   it("sends a first-score activation instead of a checkout pitch before any practice", () => {
     const email = buildOnboardingEmailContent({
       name: "Learner",
@@ -61,6 +93,15 @@ describe("onboarding lifecycle segmentation", () => {
     expect(dayTen?.html).not.toContain("SpeakAce user");
     expect(dayFortyFive?.html).not.toContain("real story");
     expect(dayFortyFive?.html).not.toContain("SpeakAce user");
+  });
+});
+
+describe("email quota protection", () => {
+  it("recognizes provider daily and monthly quota failures", () => {
+    expect(resolveEmailQuotaKind('{"name":"daily_quota_exceeded"}')).toBe("daily");
+    expect(resolveEmailQuotaKind('{"name":"monthly_quota_exceeded"}')).toBe("monthly");
+    expect(resolveEmailQuotaKind("network unavailable")).toBeNull();
+    expect(resolveEmailQuotaKind(null)).toBeNull();
   });
 });
 

@@ -276,6 +276,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       requests5m: 0,
       pageViews1h: 0,
       lastRequestAt: null,
+      emailSent24h: 0,
+      emailFailed24h: 0,
+      emailQuotaBlocked: false,
+      dayOneReturnStarts30d: 0,
       ctaClicks7d: 0,
       ctaClicks30d: 0,
       checkoutClicks7d: 0,
@@ -400,6 +404,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       requests_5m: number;
       page_views_1h: number;
       last_request_at: string | null;
+      email_sent_24h: number;
+      email_failed_24h: number;
+      email_quota_blocked: boolean;
+      day_one_return_starts_30d: number;
       cta_clicks_7d: number;
       cta_clicks_30d: number;
       checkout_clicks_7d: number;
@@ -489,6 +497,38 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         from recent_analytics
         where event = 'page_view' and created_at > now() - interval '1 hour'
       ) as page_views_1h,
+      (
+        select count(*)::int
+        from email_log
+        where status = 'sent' and sent_at > now() - interval '24 hours'
+      ) as email_sent_24h,
+      (
+        select count(*)::int
+        from email_log
+        where status = 'failed' and sent_at > now() - interval '24 hours'
+      ) as email_failed_24h,
+      exists (
+        select 1
+        from email_log
+        where status = 'failed'
+          and (
+            (
+              error_message like '%monthly_quota_exceeded%'
+              and sent_at >= date_trunc('month', now())
+            )
+            or (
+              error_message like '%daily_quota_exceeded%'
+              and sent_at >= date_trunc('day', now())
+            )
+          )
+      ) as email_quota_blocked,
+      (
+        select count(distinct user_id)::int
+        from recent_analytics
+        where event = 'practice_start'
+          and path = '/app/practice/email_day_one_return'
+          and created_at > now() - interval '30 days'
+      ) as day_one_return_starts_30d,
       (
         select count(*)::int
         from recent_analytics
@@ -1296,6 +1336,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     requests5m: row?.requests_5m ?? 0,
     pageViews1h: row?.page_views_1h ?? 0,
     lastRequestAt: row?.last_request_at ?? null,
+    emailSent24h: row?.email_sent_24h ?? 0,
+    emailFailed24h: row?.email_failed_24h ?? 0,
+    emailQuotaBlocked: row?.email_quota_blocked ?? false,
+    dayOneReturnStarts30d: row?.day_one_return_starts_30d ?? 0,
     ctaClicks7d: row?.cta_clicks_7d ?? 0,
     ctaClicks30d: row?.cta_clicks_30d ?? 0,
     checkoutClicks7d: row?.checkout_clicks_7d ?? 0,

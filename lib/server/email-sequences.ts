@@ -5,16 +5,18 @@ import { couponCatalog } from "@/lib/commerce";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
 const PRACTICE_URL = `${SITE_URL}/app/practice`;
 const FIRST_SCORE_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interview&activation=email_first_score`;
+const DAY_ONE_RETURN_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interview&activation=email_day_one_return`;
 const PRICING_URL = `${SITE_URL}/pricing`;
 const BILLING_URL = `${SITE_URL}/app/billing`;
 const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&billing=annual&coupon=LAUNCH20&campaign=onboarding_email`;
 let emailSequenceSchemaEnsured = false;
 
 export type PracticeLimitRecoveryReason = "practice_limit_hit" | "result_retry_locked";
+export type EmailQuotaKind = "daily" | "monthly";
 
 export const ONBOARDING_EMAIL_SCHEDULE: Array<{ dayOffset: number; emailNumber: number }> = [
   { dayOffset: 0, emailNumber: 1 },
-  { dayOffset: 2, emailNumber: 2 },
+  { dayOffset: 1, emailNumber: 2 },
   { dayOffset: 5, emailNumber: 3 },
   { dayOffset: 7, emailNumber: 4 },
   { dayOffset: 10, emailNumber: 5 },
@@ -26,6 +28,12 @@ export const ONBOARDING_EMAIL_SCHEDULE: Array<{ dayOffset: number; emailNumber: 
   { dayOffset: 75, emailNumber: 11 },
   { dayOffset: 90, emailNumber: 12 }
 ];
+
+export function resolveEmailQuotaKind(errorMessage: string | null | undefined): EmailQuotaKind | null {
+  if (errorMessage?.includes("monthly_quota_exceeded")) return "monthly";
+  if (errorMessage?.includes("daily_quota_exceeded")) return "daily";
+  return null;
+}
 
 async function ensureEmailSequenceSchema() {
   if (!hasDatabaseUrl() || emailSequenceSchemaEnsured) return;
@@ -84,6 +92,43 @@ async function ensureEmailSequenceSchema() {
   }
 
   emailSequenceSchemaEnsured = true;
+}
+
+export async function getCurrentEmailQuotaBlock(): Promise<{
+  kind: EmailQuotaKind;
+  detectedAt: string;
+} | null> {
+  if (!hasDatabaseUrl() || process.env.IGNORE_EMAIL_QUOTA_BLOCK === "true") return null;
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  const rows = await sql<Array<{ error_message: string | null; sent_at: string | Date }>>`
+    select error_message, sent_at
+    from email_log
+    where status = 'failed'
+      and (
+        (
+          error_message like '%monthly_quota_exceeded%'
+          and sent_at >= date_trunc('month', now())
+        )
+        or (
+          error_message like '%daily_quota_exceeded%'
+          and sent_at >= date_trunc('day', now())
+        )
+      )
+    order by
+      case when error_message like '%monthly_quota_exceeded%' then 0 else 1 end,
+      sent_at desc
+    limit 1
+  `;
+  const row = rows[0];
+  const kind = resolveEmailQuotaKind(row?.error_message);
+  if (!row || !kind) return null;
+
+  return {
+    kind,
+    detectedAt: row.sent_at instanceof Date ? row.sent_at.toISOString() : new Date(row.sent_at).toISOString()
+  };
 }
 
 // ─── Email layout helper ───────────────────────────────────────────────────────
@@ -169,7 +214,7 @@ function buildEmail1(name: string) {
 function buildEmail2(name: string) {
   const greeting = name.trim() || "there";
   const html = layout(`
-    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 2</p>
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 1</p>
     <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">Have you tried your first practice yet?</h1>
 
     <p style="color:#3a2218;line-height:1.75;margin:0 0 16px">Hi ${greeting}, the best IELTS candidates don't wait until they feel ready. They practice, listen back, and improve one sentence at a time.</p>
@@ -193,6 +238,36 @@ function buildEmail2(name: string) {
     subject: "IELTS tip that moves your score — try it today",
     html,
     text: `Hi ${greeting}, day 2! Use the answer-reason-example formula in your IELTS Part 1. Get your first score here: ${FIRST_SCORE_URL}`
+  };
+}
+
+function buildDayOneReturnEmail(name: string) {
+  const greeting = name.trim() || "there";
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#1d6f75;font-size:0.82em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em">Day 1 · Keep the loop alive</p>
+    <h1 style="margin:0 0 12px;font-size:1.45em;color:#1b120d;font-weight:800">Your second-day speaking round is ready.</h1>
+    <p style="margin:0 0 24px;color:#7a5c4a;font-size:0.9em">Return while yesterday's feedback is still easy to apply.</p>
+
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, you already completed the hardest step: giving SpeakAce a real answer to work with. A short return today helps turn that first result into a repeatable habit.</p>
+
+    ${highlight(`
+      <strong style="display:block;margin-bottom:8px;color:#d95d39">Your 5-minute day-two loop</strong>
+      <span style="display:block;margin-bottom:5px">1. Open the ready-made interview prompt</span>
+      <span style="display:block;margin-bottom:5px">2. Apply one correction from your last result</span>
+      <span style="display:block">3. Finish one natural answer and stop</span>
+    `)}
+
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">One focused answer today is enough. There is no plan change or checkout step in this return session.</p>
+
+    <div style="margin:0 0 8px">
+      ${secondaryBtn(DAY_ONE_RETURN_URL, "Start my 5-minute return &rarr;")}
+    </div>
+  `);
+
+  return {
+    subject: "Your second-day speaking round is ready",
+    html,
+    text: `Hi ${greeting}, keep yesterday's feedback moving with one 5-minute return session. No checkout step: ${DAY_ONE_RETURN_URL}`
   };
 }
 
@@ -547,6 +622,10 @@ export function buildOnboardingEmailContent(input: {
   emailNumber: number;
   speakingSessionCount: number;
 }): LifecycleEmailContent | null {
+  if (input.emailNumber === 2 && input.speakingSessionCount > 0) {
+    return buildDayOneReturnEmail(input.name);
+  }
+
   if (input.speakingSessionCount === 0 && (input.emailNumber === 4 || input.emailNumber === 5)) {
     return buildFirstScoreRecoveryEmail(input.name, input.emailNumber);
   }

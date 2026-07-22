@@ -8,7 +8,8 @@ import {
   getUsersDueForPracticeLimitRecoveryEmail,
   sendPracticeLimitRecoveryEmail,
   getUsersDueForTrialLifecycleEmail,
-  sendTrialLifecycleEmail
+  sendTrialLifecycleEmail,
+  getCurrentEmailQuotaBlock
 } from "@/lib/server/email-sequences";
 
 function isAuthorized(request: Request) {
@@ -39,6 +40,8 @@ export async function GET(request: Request) {
   const skipRecovery = url.searchParams.get("skipRecovery") === "1";
   const recoveryEnabled = process.env.ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS === "true";
   const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 250) : 100;
+  const quotaBlock = await getCurrentEmailQuotaBlock();
+  const sendingSuppressed = dryRun || Boolean(quotaBlock);
 
   // ── Onboarding emails ──────────────────────────────────────────────────────
   let onboardingSent = 0;
@@ -48,7 +51,7 @@ export async function GET(request: Request) {
 
   for (const user of onboardingUsers) {
     try {
-      if (dryRun) {
+      if (sendingSuppressed) {
         onboardingSkipped++;
         continue;
       }
@@ -77,7 +80,7 @@ export async function GET(request: Request) {
 
   for (const user of recoveryUsers) {
     try {
-      if (dryRun) {
+      if (sendingSuppressed) {
         recoverySkipped++;
         continue;
       }
@@ -105,7 +108,7 @@ export async function GET(request: Request) {
 
     for (const user of tipUsers) {
       try {
-        if (dryRun) {
+        if (sendingSuppressed) {
           tipSkipped++;
           continue;
         }
@@ -132,7 +135,7 @@ export async function GET(request: Request) {
 
   for (const user of trialUsers) {
     try {
-      if (dryRun) {
+      if (sendingSuppressed) {
         trialSkipped++;
         continue;
       }
@@ -153,6 +156,9 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     dryRun,
+    emailQuota: quotaBlock
+      ? { blocked: true, kind: quotaBlock.kind, detectedAt: quotaBlock.detectedAt }
+      : { blocked: false },
     onboarding: {
       queued: onboardingUsers.length,
       sent: onboardingSent,
