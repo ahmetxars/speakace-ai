@@ -1,8 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
+import { ArrowRight, BookOpenText, Compass, Library } from "lucide-react";
 import { AdSenseUnit } from "@/components/adsense-unit";
+import { BlogLibrary, type BlogLibraryPost } from "@/components/blog-library";
 import { getBlogChromeCopy, getFeaturedBlogPosts } from "@/lib/blog-content";
 import { getBlogPublicDescription, getBlogPublicTitle } from "@/lib/blog-seo";
+import { normalizePublicLanguage, type PublicLanguage } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
 import { listPublishedCustomBlogPosts } from "@/lib/server/custom-blog";
 import { siteConfig } from "@/lib/site";
@@ -64,6 +67,134 @@ const blogIndexMeta = {
   }
 } as const;
 
+const blogIndexUi: Record<PublicLanguage, {
+  eyebrow: string;
+  title: string;
+  description: string;
+  countLabel: string;
+  featuredEyebrow: string;
+  featuredNote: string;
+  readLabel: string;
+  tracksEyebrow: string;
+  tracksTitle: string;
+  firstTrack: string;
+  secondTrack: string;
+  libraryEyebrow: string;
+  libraryTitle: string;
+  libraryDescription: string;
+  tabLabel: string;
+  searchPlaceholder: string;
+  emptyLabel: string;
+  showMoreLabel: string;
+  categories: Record<"all" | "ielts" | "toefl" | "skills" | "strategy", string>;
+}> = {
+  en: {
+    eyebrow: "SpeakAce field notes",
+    title: "Build a better answer, one focused guide at a time.",
+    description: "Practical IELTS and TOEFL speaking articles for the moment you know you need to improve, but need a clearer next move.",
+    countLabel: "published guides",
+    featuredEyebrow: "Start here",
+    featuredNote: "A useful first read with a practical move you can apply in your next answer.",
+    readLabel: "Read guide",
+    tracksEyebrow: "Guided reading",
+    tracksTitle: "Choose a short path instead of opening ten tabs",
+    firstTrack: "Build the foundation",
+    secondTrack: "Raise the score",
+    libraryEyebrow: "Full archive",
+    libraryTitle: "Find the guide that matches today’s problem",
+    libraryDescription: "Filter the archive by exam, scoring skill, or strategy. Search for a specific topic when you already know it.",
+    tabLabel: "Filter blog articles",
+    searchPlaceholder: "Search the guide archive",
+    emptyLabel: "No guide matches this search yet.",
+    showMoreLabel: "Show more guides",
+    categories: { all: "All guides", ielts: "IELTS", toefl: "TOEFL", skills: "Scoring skills", strategy: "Strategy" },
+  },
+  tr: {
+    eyebrow: "SpeakAce saha notları",
+    title: "Her seferinde tek bir odaklı rehberle daha iyi cevap kur.",
+    description: "Gelişmen gerektiğini bildiğin ama sıradaki adımı netleştirmek istediğin anlar için pratik IELTS ve TOEFL speaking yazıları.",
+    countLabel: "yayınlanmış rehber",
+    featuredEyebrow: "Buradan başla",
+    featuredNote: "Sıradaki cevabında uygulayabileceğin net bir hamle sunan faydalı bir ilk okuma.",
+    readLabel: "Rehberi oku",
+    tracksEyebrow: "Yönlendirilmiş okuma",
+    tracksTitle: "On sekme açmak yerine kısa bir yol seç",
+    firstTrack: "Temeli kur",
+    secondTrack: "Skoru yükselt",
+    libraryEyebrow: "Tüm arşiv",
+    libraryTitle: "Bugünkü problemine uyan rehberi bul",
+    libraryDescription: "Arşivi sınav, puanlama becerisi veya stratejiye göre filtrele. Konuyu biliyorsan doğrudan ara.",
+    tabLabel: "Blog yazılarını filtrele",
+    searchPlaceholder: "Rehber arşivinde ara",
+    emptyLabel: "Bu aramayla eşleşen bir rehber henüz yok.",
+    showMoreLabel: "Daha fazla rehber göster",
+    categories: { all: "Tüm rehberler", ielts: "IELTS", toefl: "TOEFL", skills: "Puanlama becerileri", strategy: "Strateji" },
+  },
+  de: {
+    eyebrow: "SpeakAce Praxisnotizen",
+    title: "Baue mit jedem fokussierten Leitfaden eine bessere Antwort.",
+    description: "Praktische IELTS- und TOEFL-Speaking-Artikel für den Moment, in dem du einen klaren nächsten Schritt brauchst.",
+    countLabel: "veröffentlichte Leitfäden",
+    featuredEyebrow: "Hier beginnen",
+    featuredNote: "Ein sinnvoller erster Artikel mit einer Idee für deine nächste Antwort.",
+    readLabel: "Leitfaden lesen",
+    tracksEyebrow: "Geführtes Lesen",
+    tracksTitle: "Wähle einen kurzen Pfad statt zehn Tabs",
+    firstTrack: "Grundlage aufbauen",
+    secondTrack: "Score steigern",
+    libraryEyebrow: "Gesamtes Archiv",
+    libraryTitle: "Finde den Leitfaden für dein heutiges Problem",
+    libraryDescription: "Filtere nach Prüfung, Bewertungsfähigkeit oder Strategie und suche direkt nach einem Thema.",
+    tabLabel: "Blogartikel filtern",
+    searchPlaceholder: "Leitfäden durchsuchen",
+    emptyLabel: "Noch kein Leitfaden passt zu dieser Suche.",
+    showMoreLabel: "Mehr Leitfäden anzeigen",
+    categories: { all: "Alle Leitfäden", ielts: "IELTS", toefl: "TOEFL", skills: "Bewertungsfähigkeiten", strategy: "Strategie" },
+  },
+  es: {
+    eyebrow: "Notas prácticas de SpeakAce",
+    title: "Construye una respuesta mejor con cada guía enfocada.",
+    description: "Artículos prácticos de IELTS y TOEFL speaking para cuando sabes que debes mejorar y necesitas un siguiente paso claro.",
+    countLabel: "guías publicadas",
+    featuredEyebrow: "Empieza aquí",
+    featuredNote: "Una primera lectura útil con una mejora que puedes aplicar en tu próxima respuesta.",
+    readLabel: "Leer guía",
+    tracksEyebrow: "Lectura guiada",
+    tracksTitle: "Elige una ruta corta en lugar de abrir diez pestañas",
+    firstTrack: "Construir la base",
+    secondTrack: "Subir la puntuación",
+    libraryEyebrow: "Archivo completo",
+    libraryTitle: "Encuentra la guía para el problema de hoy",
+    libraryDescription: "Filtra por examen, habilidad de puntuación o estrategia. Busca un tema concreto cuando ya lo conoces.",
+    tabLabel: "Filtrar artículos",
+    searchPlaceholder: "Buscar en el archivo",
+    emptyLabel: "Todavía no hay una guía para esta búsqueda.",
+    showMoreLabel: "Mostrar más guías",
+    categories: { all: "Todas las guías", ielts: "IELTS", toefl: "TOEFL", skills: "Habilidades de puntuación", strategy: "Estrategia" },
+  },
+  fr: {
+    eyebrow: "Notes pratiques SpeakAce",
+    title: "Construisez une meilleure réponse, un guide ciblé à la fois.",
+    description: "Des articles pratiques IELTS et TOEFL speaking pour le moment où vous avez besoin d’une prochaine étape claire.",
+    countLabel: "guides publiés",
+    featuredEyebrow: "Commencer ici",
+    featuredNote: "Une première lecture utile avec une amélioration à appliquer dans votre prochaine réponse.",
+    readLabel: "Lire le guide",
+    tracksEyebrow: "Lecture guidée",
+    tracksTitle: "Choisissez un parcours court plutôt que dix onglets",
+    firstTrack: "Construire la base",
+    secondTrack: "Augmenter le score",
+    libraryEyebrow: "Archives complètes",
+    libraryTitle: "Trouvez le guide adapté au problème du jour",
+    libraryDescription: "Filtrez par examen, compétence de score ou stratégie, puis recherchez un sujet précis.",
+    tabLabel: "Filtrer les articles",
+    searchPlaceholder: "Rechercher dans les guides",
+    emptyLabel: "Aucun guide ne correspond encore à cette recherche.",
+    showMoreLabel: "Afficher plus de guides",
+    categories: { all: "Tous les guides", ielts: "IELTS", toefl: "TOEFL", skills: "Compétences de score", strategy: "Stratégie" },
+  },
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const language = await getServerLanguage();
   const meta = blogIndexMeta[language] ?? blogIndexMeta.en;
@@ -87,26 +218,20 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function BlogIndexPage() {
   const language = await getServerLanguage();
   const chrome = getBlogChromeCopy(language);
+  const ui = blogIndexUi[normalizePublicLanguage(language)];
   const { featured, firstPath, secondPath, all } = getFeaturedBlogPosts(language);
   const customPosts = await listPublishedCustomBlogPosts(language);
   const featuredTitle = getBlogPublicTitle(featured.slug, featured.title);
   const featuredDescription = getBlogPublicDescription(featured.slug, featured.description);
-  const combinedPosts = [...customPosts, ...all];
-  const pageLabels = {
-    en: { count: "articles", latestIntro: "Read structured IELTS and TOEFL guides by topic, exam section, and study goal." },
-    tr: { count: "yazı", latestIntro: "Konulara, sınav bölümlerine ve çalışma hedeflerine göre düzenlenmiş IELTS ve TOEFL yazılarını incele." },
-    de: { count: "Artikel", latestIntro: "Lies strukturierte IELTS- und TOEFL-Leitfäden nach Thema, Prüfungsteil und Lernziel." },
-    es: { count: "artículos", latestIntro: "Lee guías estructuradas de IELTS y TOEFL por tema, sección del examen y objetivo de estudio." },
-    fr: { count: "articles", latestIntro: "Lisez des guides IELTS et TOEFL organisés par sujet, partie de l’examen et objectif d’étude." },
-    it: { count: "articoli", latestIntro: "Leggi guide IELTS e TOEFL organizzate per argomento, sezione d’esame e obiettivo di studio." },
-    pt: { count: "artigos", latestIntro: "Leia guias de IELTS e TOEFL organizados por tema, parte da prova e objetivo de estudo." },
-    nl: { count: "artikelen", latestIntro: "Lees gestructureerde IELTS- en TOEFL-gidsen per onderwerp, examendeel en studiedoel." },
-    pl: { count: "artykułów", latestIntro: "Czytaj uporządkowane materiały IELTS i TOEFL według tematu, części egzaminu i celu nauki." },
-    ru: { count: "статей", latestIntro: "Читайте структурированные материалы по IELTS и TOEFL по теме, части экзамена и учебной цели." },
-    ar: { count: "مقالًا", latestIntro: "اقرأ مقالات IELTS وTOEFL المرتبة حسب الموضوع وجزء الاختبار وهدف الدراسة." },
-    ja: { count: "記事", latestIntro: "テーマ、試験パート、学習目的ごとに整理されたIELTS・TOEFLガイドを読めます。" },
-    ko: { count: "개 글", latestIntro: "주제, 시험 파트, 학습 목표별로 정리된 IELTS·TOEFL 가이드를 읽어보세요." }
-  }[language];
+  const combinedPosts = [...customPosts, ...all].filter(
+    (post, index, posts) => posts.findIndex((candidate) => candidate.slug === post.slug) === index
+  );
+  const libraryPosts: BlogLibraryPost[] = combinedPosts.map((post) => ({
+    slug: post.slug,
+    title: getBlogPublicTitle(post.slug, post.title),
+    description: getBlogPublicDescription(post.slug, post.description),
+    keywords: post.keywords,
+  }));
 
   const blogJsonLd = {
     "@context": "https://schema.org",
@@ -122,88 +247,80 @@ export default async function BlogIndexPage() {
   };
 
   return (
-    <>
-      <main className="page-shell section">
-        <div className="section-head">
-          <span className="eyebrow">{chrome.cta.blog}</span>
-          <h1 style={{ fontSize: "clamp(2.6rem, 6vw, 4.8rem)", lineHeight: 0.96 }}>
-            {chrome.labels.blogTitle}
-          </h1>
-          <p>{chrome.labels.blogDescription}</p>
+    <main className="blog-index">
+      <section className="blog-index-hero">
+        <div>
+          <span className="content-kicker"><Compass size={14} />{ui.eyebrow}</span>
+          <h1>{ui.title}</h1>
+          <p>{ui.description}</p>
         </div>
+        <aside className="blog-index-count" aria-label={`${combinedPosts.length} ${ui.countLabel}`}>
+          <Library size={22} aria-hidden="true" />
+          <strong>{combinedPosts.length}</strong>
+          <span>{ui.countLabel}</span>
+          <i />
+        </aside>
+      </section>
 
-        <section className="section" style={{ paddingBottom: 0 }}>
-          <div className="card institution-cta">
+      <section className="blog-index-feature">
+        <article className="blog-index-feature-main">
+          <span className="content-kicker">{ui.featuredEyebrow}</span>
+          <div className="blog-index-feature-number" aria-hidden="true">01</div>
+          <h2>{featuredTitle}</h2>
+          <p>{featuredDescription || ui.featuredNote}</p>
+          <Link className="button button-primary" href={`/blog/${featured.slug}` as Route}>
+            {ui.readLabel}<ArrowRight size={16} />
+          </Link>
+        </article>
+
+        <aside className="blog-index-tracks">
+          <div className="blog-index-tracks-head">
             <div>
-              <span className="eyebrow">{chrome.cta.featured}</span>
-              <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{featuredTitle}</h2>
-              <p className="practice-copy">{featuredDescription}</p>
+              <span className="content-kicker">{ui.tracksEyebrow}</span>
+              <h2>{ui.tracksTitle}</h2>
             </div>
-            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-              <Link className="button button-primary" href={`/blog/${featured.slug}`}>
-                {chrome.cta.read}
-              </Link>
-            </div>
+            <BookOpenText size={23} aria-hidden="true" />
           </div>
-        </section>
-
-        <section className="section" style={{ paddingBottom: 0 }}>
-          <div className="section-head">
-            <span className="eyebrow">{chrome.cta.readingTracks}</span>
-            <h2>{chrome.labels.latestDescription}</h2>
-            <p>{pageLabels.latestIntro}</p>
-          </div>
-          <div className="marketing-grid">
-            <article className="card feature-card">
-              <div className="pill" style={{ marginBottom: "0.8rem" }}>{chrome.labels.startPath}</div>
-              <h3 style={{ fontSize: "1.4rem" }}>{firstPath[0] ? getBlogPublicTitle(firstPath[0].slug, firstPath[0].title) : ""}</h3>
-              <p>{chrome.labels.featuredDescription}</p>
-              <div className="blog-reading-list">
-                {firstPath.map((post) => (
-                  <Link key={post.slug} href={`/blog/${post.slug}`} className="blog-reading-link">
-                    <strong>{getBlogPublicTitle(post.slug, post.title)}</strong>
-                  </Link>
-                ))}
-              </div>
-            </article>
-            <article className="card feature-card">
-              <div className="pill" style={{ marginBottom: "0.8rem" }}>{chrome.labels.advancedPath}</div>
-              <h3 style={{ fontSize: "1.4rem" }}>{secondPath[0] ? getBlogPublicTitle(secondPath[0].slug, secondPath[0].title) : ""}</h3>
-              <p>{chrome.labels.latestDescription}</p>
-              <div className="blog-reading-list">
-                {secondPath.map((post) => (
-                  <Link key={post.slug} href={`/blog/${post.slug}`} className="blog-reading-link">
-                    <strong>{getBlogPublicTitle(post.slug, post.title)}</strong>
-                  </Link>
-                ))}
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <AdSenseUnit />
-
-        <section className="section" style={{ paddingBottom: 0 }}>
-          <div className="section-head">
-            <span className="eyebrow">{chrome.cta.latest}</span>
-            <h2>{combinedPosts.length} {pageLabels.count}</h2>
-          </div>
-          <div className="marketing-grid">
-            {combinedPosts.map((post) => (
-              <article key={post.slug} className="card feature-card">
-                <div className="pill" style={{ marginBottom: "0.8rem" }}>{post.keywords[0]}</div>
-                <h2 style={{ fontSize: "1.45rem", marginBottom: "0.7rem" }}>{getBlogPublicTitle(post.slug, post.title)}</h2>
-                <p>{getBlogPublicDescription(post.slug, post.description)}</p>
-                <Link href={`/blog/${post.slug}`} className="button button-primary" style={{ marginTop: "0.7rem" }}>
-                  {chrome.cta.readMore}
+          <div className="blog-index-track-columns">
+            <div>
+              <span>{ui.firstTrack}</span>
+              {firstPath.slice(0, 3).map((post, index) => (
+                <Link key={post.slug} href={`/blog/${post.slug}` as Route}>
+                  <small>{String(index + 1).padStart(2, "0")}</small>
+                  <strong>{getBlogPublicTitle(post.slug, post.title)}</strong>
                 </Link>
-              </article>
-            ))}
+              ))}
+            </div>
+            <div>
+              <span>{ui.secondTrack}</span>
+              {secondPath.slice(0, 3).map((post, index) => (
+                <Link key={post.slug} href={`/blog/${post.slug}` as Route}>
+                  <small>{String(index + 1).padStart(2, "0")}</small>
+                  <strong>{getBlogPublicTitle(post.slug, post.title)}</strong>
+                </Link>
+              ))}
+            </div>
           </div>
-        </section>
+        </aside>
+      </section>
 
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }} />
-      </main>
-    </>
+      <AdSenseUnit />
+
+      <BlogLibrary
+        eyebrow={ui.libraryEyebrow}
+        title={ui.libraryTitle}
+        description={ui.libraryDescription}
+        tabLabel={ui.tabLabel}
+        searchPlaceholder={ui.searchPlaceholder}
+        resultLabel={ui.countLabel}
+        emptyLabel={ui.emptyLabel}
+        readLabel={chrome.cta.readMore}
+        showMoreLabel={ui.showMoreLabel}
+        categories={ui.categories}
+        posts={libraryPosts}
+      />
+
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }} />
+    </main>
   );
 }

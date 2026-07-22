@@ -113,6 +113,9 @@ This is the project-wide “where things live” map.
   - `components/site-header.tsx`
   - `components/site-footer.tsx`
   - `components/marketing-sticky-cta.tsx`
+  - `components/resource-library.tsx` owns the filterable, progressively revealed Resources archive.
+  - `components/blog-library.tsx` owns Blog archive filtering, search, and progressive loading.
+  - `components/blog-reading-enhancements.tsx` owns article reading progress and the delayed, dismissible practice reminder.
 - Content:
   - `lib/marketing-content.ts`
   - `lib/blog-content.ts`
@@ -122,6 +125,11 @@ This is the project-wide “where things live” map.
   - `lib/blog-seo.ts`
   - `lib/seo-growth.ts`
   - `lib/seo-topics.ts`
+- Content-route styling:
+  - Resources uses `.resource-hub-*` and `.resource-library-*`.
+  - Blog index/detail use `.blog-index-*`, `.blog-library-*`, and `.blog-article-*`.
+  - About uses `.about-story-*` and avoids unverified usage or geography claims.
+  - Resources, Blog chrome, and About have full public UI copy for EN/TR/DE/ES/FR.
 
 ### Learner dashboard product
 
@@ -372,6 +380,7 @@ Activation behavior:
 
 - A successful one-time email verification creates the normal server-side session cookie and the auth page sends a newly verified learner to `/app/practice?quickStart=1&runMode=interview`; do not reintroduce a second password step after verification.
 - Student onboarding is optional personalization, not an access gate. Incomplete profiles remain on the dashboard with first-score practice as the primary action and onboarding as the secondary action.
+- Google OAuth initiation requires an independently signed state key, rejects external `next` destinations, and is covered by `app/api/auth/google/route.test.ts`; the live account chooser and callback were verified end to end in July 2026.
 
 ### Learner profile, progress, speaking, writing
 

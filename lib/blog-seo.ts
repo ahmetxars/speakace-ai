@@ -176,5 +176,6 @@ export function getBlogPublicTitle(slug: string, fallback: string) {
 }
 
 export function getBlogPublicDescription(slug: string, fallback: string) {
-  return blogSeoMap[slug]?.description ?? fallback;
+  const description = blogSeoMap[slug]?.description ?? fallback;
+  return description.replace(/\s+(?:Practice free|Try AI feedback)\s*->\s*$/i, "");
 }

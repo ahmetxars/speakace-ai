@@ -3,17 +3,36 @@ import type { Route } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
+import { ArrowLeft, ArrowRight, BookOpenText, Clock3, List, Sparkles } from "lucide-react";
 import { AdSenseUnit } from "@/components/adsense-unit";
 import { BlogAudioExample } from "@/components/blog-audio-example";
 import { BlogReadingEnhancements } from "@/components/blog-reading-enhancements";
 import { getBlogChromeCopy, getLocalizedBlogPost, getLocalizedBlogPosts } from "@/lib/blog-content";
 import { getBlogPublicDescription, getBlogPublicTitle, getBlogSeoEntry } from "@/lib/blog-seo";
-import type { Language } from "@/lib/copy";
+import { normalizePublicLanguage, type Language, type PublicLanguage } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
 import { getPublishedCustomBlogPostBySlug, listPublishedCustomBlogPosts } from "@/lib/server/custom-blog";
 import { siteConfig } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
+
+const blogArticleUi: Record<PublicLanguage, {
+  back: string;
+  resources: string;
+  guides: string;
+  contents: string;
+  minuteRead: string;
+  practiceEyebrow: string;
+  dismissPractice: string;
+  readNext: string;
+  relatedDescription: string;
+}> = {
+  en: { back: "All guides", resources: "Resources", guides: "Guides", contents: "In this guide", minuteRead: "min read", practiceEyebrow: "Apply what you read", dismissPractice: "Dismiss practice reminder", readNext: "Read next", relatedDescription: "Continue with one nearby topic, then move back into speaking practice." },
+  tr: { back: "Tüm rehberler", resources: "Kaynaklar", guides: "Rehberler", contents: "Bu rehberde", minuteRead: "dk okuma", practiceEyebrow: "Okuduğunu uygula", dismissPractice: "Pratik hatırlatıcısını kapat", readNext: "Sıradaki yazılar", relatedDescription: "Yakın bir konuyla devam et, ardından speaking pratiğine geri dön." },
+  de: { back: "Alle Leitfäden", resources: "Ressourcen", guides: "Leitfäden", contents: "In diesem Leitfaden", minuteRead: "Min. Lesezeit", practiceEyebrow: "Gelesenes anwenden", dismissPractice: "Übungserinnerung schließen", readNext: "Als Nächstes lesen", relatedDescription: "Lies ein verwandtes Thema und kehre dann zur Speaking-Praxis zurück." },
+  es: { back: "Todas las guías", resources: "Recursos", guides: "Guías", contents: "En esta guía", minuteRead: "min de lectura", practiceEyebrow: "Aplica lo que lees", dismissPractice: "Cerrar recordatorio de práctica", readNext: "Sigue leyendo", relatedDescription: "Continúa con un tema cercano y vuelve después a la práctica oral." },
+  fr: { back: "Tous les guides", resources: "Ressources", guides: "Guides", contents: "Dans ce guide", minuteRead: "min de lecture", practiceEyebrow: "Appliquez votre lecture", dismissPractice: "Fermer le rappel de pratique", readNext: "À lire ensuite", relatedDescription: "Continuez avec un sujet proche, puis revenez à la pratique orale." },
+};
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -46,21 +65,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const { slug } = await params;
   const language = await getServerLanguage();
   const chrome = getBlogChromeCopy(language);
-  const pageLabels = {
-    en: { resources: "Resources", guides: "Guides", readNext: "Read next" },
-    tr: { resources: "Kaynaklar", guides: "Rehberler", readNext: "Sıradaki okunacak yazılar" },
-    de: { resources: "Ressourcen", guides: "Leitfäden", readNext: "Als Nächstes lesen" },
-    es: { resources: "Recursos", guides: "Guías", readNext: "Sigue leyendo" },
-    fr: { resources: "Ressources", guides: "Guides", readNext: "À lire ensuite" },
-    it: { resources: "Risorse", guides: "Guide", readNext: "Leggi dopo" },
-    pt: { resources: "Recursos", guides: "Guias", readNext: "Ler a seguir" },
-    nl: { resources: "Bronnen", guides: "Gidsen", readNext: "Lees hierna" },
-    pl: { resources: "Materiały", guides: "Przewodniki", readNext: "Czytaj dalej" },
-    ru: { resources: "Материалы", guides: "Гайды", readNext: "Читайте дальше" },
-    ar: { resources: "المصادر", guides: "الأدلة", readNext: "اقرأ بعد ذلك" },
-    ja: { resources: "リソース", guides: "ガイド", readNext: "次に読む" },
-    ko: { resources: "리소스", guides: "가이드", readNext: "다음 글" }
-  }[language];
+  const articleUi = blogArticleUi[normalizePublicLanguage(language)];
   const ctaLabels = {
     en: { title: "Practice this topic with AI", description: "Get an IELTS-style score, instant feedback, and a clearer next attempt." },
     tr: { title: "Bu konuyu AI ile çalış", description: "IELTS benzeri skor, anında geri bildirim ve daha güçlü bir sonraki denemeyi gör." },
@@ -85,6 +90,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const seoDescription = getBlogPublicDescription(slug, post.description);
   const seoEntry = getBlogSeoEntry(slug);
   const audioTranscript = buildBlogAudioTranscript(post);
+  const articleWords = [post.intro, ...post.sections.flatMap((section) => section.body)].join(" ").trim().split(/\s+/).length;
+  const readingMinutes = Math.max(3, Math.ceil(articleWords / 220));
+  const sectionIds = post.sections.map((_, index) => `section-${index + 1}`);
 
   const relatedPosts = [
     ...(await listPublishedCustomBlogPosts(language)),
@@ -126,103 +134,118 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         ctaLabel={ctaLabels.title}
         ctaDescription={ctaLabels.description}
         ctaHref={practiceCta.href as Route}
+        dismissLabel={articleUi.dismissPractice}
       />
-      <main className="page-shell section">
-        <div className="section-head">
-          <span className="eyebrow">{chrome.cta.blog}</span>
-          <h1 style={{ fontSize: "clamp(2.6rem, 6vw, 4.5rem)", lineHeight: 0.98 }}>{seoTitle}</h1>
-          <p>{seoDescription}</p>
-        </div>
+      <main className="blog-article-page">
+        <nav className="blog-article-breadcrumb" aria-label="Breadcrumb">
+          <Link href="/blog"><ArrowLeft size={14} />{articleUi.back}</Link>
+          <span>/</span>
+          <span>{post.keywords[0] ?? chrome.cta.blog}</span>
+        </nav>
 
-        <article className="card" style={{ padding: "1.5rem" }}>
-          <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-            <Link href="/blog" className="pill">{chrome.cta.blog}</Link>
-            <Link href="/resources" className="pill">{pageLabels.resources}</Link>
-            <Link href="/guides" className="pill">{pageLabels.guides}</Link>
-          </div>
-          <p style={{ color: "var(--muted)", lineHeight: 1.85 }}>{post.intro}</p>
-
-          <BlogAudioExample
-            title={audioLabels[language]}
-            transcript={audioTranscript}
-            tr={language === "tr"}
-          />
-
-          <div className="card spotlight-card" style={{ marginTop: "1.2rem" }}>
-            <strong>{ctaLabels.title}</strong>
-            <p style={{ marginTop: "0.55rem" }}>{ctaLabels.description}</p>
-            <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap", marginTop: "0.85rem" }}>
-              <Link className="button button-primary" href={practiceCta.href as Route}>
-                {practiceCta.primaryLabel}
-              </Link>
-              <Link className="button button-secondary" href={practiceCta.secondaryHref as Route}>
-                {practiceCta.secondaryLabel}
-              </Link>
-              <Link className="button button-secondary" href={relatedPosts[0] ? `/blog/${relatedPosts[0].slug}` : "/ielts-speaking-topics"}>
-                {relatedPosts[0] ? pageLabels.readNext : fallbackTopicLabels[language]}
-              </Link>
+        <header className="blog-article-hero">
+          <div className="blog-article-hero-copy">
+            <span className="content-kicker"><BookOpenText size={14} />{chrome.cta.blog}</span>
+            <h1>{seoTitle}</h1>
+            <p>{seoDescription}</p>
+            <div className="blog-article-meta">
+              <span><Clock3 size={14} />{readingMinutes} {articleUi.minuteRead}</span>
+              {post.keywords.slice(0, 3).map((keyword) => <span key={keyword}>{keyword}</span>)}
             </div>
           </div>
 
-          {post.sections.map((section) => (
-            <section key={section.title} style={{ marginTop: "1.8rem" }}>
-              <h2 style={{ marginBottom: "0.7rem" }}>{section.title}</h2>
-              {section.body.map((paragraph) => (
-                <p key={paragraph} style={{ color: "var(--muted)", lineHeight: 1.85 }}>
-                  {linkParagraph(paragraph)}
-                </p>
+          <aside className="blog-article-hero-cta">
+            <span className="content-kicker"><Sparkles size={14} />{articleUi.practiceEyebrow}</span>
+            <h2>{ctaLabels.title}</h2>
+            <p>{ctaLabels.description}</p>
+            <Link className="button button-primary" href={practiceCta.href as Route}>
+              {practiceCta.primaryLabel}<ArrowRight size={16} />
+            </Link>
+          </aside>
+        </header>
+
+        <div className="blog-article-layout">
+          <aside className="blog-article-toc">
+            <div><List size={16} /><strong>{articleUi.contents}</strong></div>
+            <nav>
+              {post.sections.map((section, index) => (
+                <a key={section.title} href={`#${sectionIds[index]}`}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  {section.title}
+                </a>
               ))}
-              {section.title === post.sections[2]?.title ? (
-                <div className="card quick-pitch" style={{ marginTop: "1.1rem" }}>
-                  <h3 style={{ marginBottom: "0.55rem" }}>{practiceCta.inlineTitle}</h3>
-                  <p className="practice-copy" style={{ marginBottom: "0.9rem" }}>
-                    {practiceCta.inlineDescription}
-                  </p>
-                  <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
-                    <Link className="button button-primary" href={practiceCta.href as Route}>
-                      {practiceCta.primaryLabel}
-                    </Link>
-                    <Link className="button button-secondary" href={practiceCta.secondaryHref as Route}>
-                      {practiceCta.secondaryLabel}
-                    </Link>
-                    <Link className="button button-secondary" href="/pricing">
-                      {unlockFeedbackLabels[language]}
-                    </Link>
-                  </div>
-                </div>
-              ) : null}
+            </nav>
+            <div className="blog-article-toc-links">
+              <Link href="/resources">{articleUi.resources}</Link>
+              <Link href="/guides">{articleUi.guides}</Link>
+            </div>
+          </aside>
+
+          <article className="blog-article-body">
+            <p className="blog-article-lead">{linkParagraph(post.intro)}</p>
+
+            <BlogAudioExample
+              title={audioLabels[language]}
+              transcript={audioTranscript}
+              tr={language === "tr"}
+            />
+
+            <section className="blog-article-quick-practice">
+              <span className="content-kicker">{articleUi.practiceEyebrow}</span>
+              <h2>{ctaLabels.title}</h2>
+              <p>{ctaLabels.description}</p>
+              <div>
+                <Link className="button button-primary" href={practiceCta.href as Route}>{practiceCta.primaryLabel}</Link>
+                <Link className="button button-secondary" href={practiceCta.secondaryHref as Route}>{practiceCta.secondaryLabel}</Link>
+              </div>
             </section>
-          ))}
-        </article>
+
+            {post.sections.map((section, index) => (
+              <section key={section.title} id={sectionIds[index]} className="blog-article-section">
+                <span className="blog-article-section-number">{String(index + 1).padStart(2, "0")}</span>
+                <h2>{section.title}</h2>
+                {section.body.map((paragraph) => <p key={paragraph}>{linkParagraph(paragraph)}</p>)}
+
+                {index === 2 ? (
+                  <div className="blog-article-inline-cta">
+                    <h3>{practiceCta.inlineTitle}</h3>
+                    <p>{practiceCta.inlineDescription}</p>
+                    <div>
+                      <Link className="button button-primary" href={practiceCta.href as Route}>{practiceCta.primaryLabel}</Link>
+                      <Link className="button button-secondary" href={practiceCta.secondaryHref as Route}>{practiceCta.secondaryLabel}</Link>
+                      <Link className="button button-secondary" href="/pricing">{unlockFeedbackLabels[language]}</Link>
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+            ))}
+          </article>
+        </div>
 
         <AdSenseUnit />
 
-        <section className="section" style={{ paddingBottom: 0 }}>
-          <div className="section-head">
-            <span className="eyebrow">{chrome.cta.latest}</span>
-            <h2>{pageLabels.readNext}</h2>
+        <section className="blog-article-related">
+          <div className="blog-article-related-head">
+            <div>
+              <span className="content-kicker">{chrome.cta.latest}</span>
+              <h2>{articleUi.readNext}</h2>
+            </div>
+            <p>{articleUi.relatedDescription}</p>
           </div>
-          <div className="marketing-grid">
-            {relatedPosts.map((item) => (
-              <article key={item.slug} className="card feature-card">
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-                <Link className="button button-secondary" href={`/blog/${item.slug}`}>
-                  {chrome.cta.read}
-                </Link>
+          <div className="blog-article-related-grid">
+            {relatedPosts.map((item, index) => (
+              <article key={item.slug}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <h3>{getBlogPublicTitle(item.slug, item.title)}</h3>
+                <p>{getBlogPublicDescription(item.slug, item.description)}</p>
+                <Link href={`/blog/${item.slug}` as Route}>{chrome.cta.read}<ArrowRight size={15} /></Link>
               </article>
             ))}
           </div>
         </section>
 
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       </main>
     </>
   );
@@ -247,7 +270,7 @@ function linkParagraph(paragraph: string): ReactNode {
       return (
         <>
           {before}
-          <a href={item.href} style={{ color: "var(--primary)", fontWeight: 700 }}>
+          <a href={item.href} className="blog-article-inline-link">
             {item.phrase}
           </a>
           {after}
@@ -296,22 +319,6 @@ const audioLabels: Record<Language, string> = {
   ar: "نموذج تدفق بدرجة 8-9",
   ja: "Band 8-9 の回答例",
   ko: "Band 8-9 예시 흐름"
-};
-
-const fallbackTopicLabels: Record<Language, string> = {
-  en: "IELTS Speaking Topics",
-  tr: "IELTS speaking konuları",
-  de: "IELTS-Speaking-Themen",
-  es: "Temas de IELTS speaking",
-  fr: "Sujets IELTS speaking",
-  it: "Argomenti IELTS speaking",
-  pt: "Tópicos de IELTS speaking",
-  nl: "IELTS-speakingonderwerpen",
-  pl: "Tematy IELTS speaking",
-  ru: "Темы IELTS speaking",
-  ar: "موضوعات IELTS speaking",
-  ja: "IELTS Speaking トピック",
-  ko: "IELTS Speaking 주제"
 };
 
 const unlockFeedbackLabels: Record<Language, string> = {
