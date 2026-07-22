@@ -1,6 +1,7 @@
 import { buildRetryRequiredReport, buildSessionTranscript, cleanTranscriptText, detectTranscriptIssue, evaluateSession, getTranscriptQuality } from "@/lib/evaluator";
 import { withAdminPrivileges } from "@/lib/admin";
 import { PLAN_LIMITS } from "@/lib/membership";
+import { getPracticeMomentum } from "@/lib/practice-streak";
 import { getPromptTemplate, getUnseenPromptTemplate } from "@/lib/prompts";
 import { hasDatabaseUrl, getSql } from "@/lib/server/db";
 import { generateFeedbackReport } from "@/lib/server/openai";
@@ -612,11 +613,12 @@ export async function getProgressSummary(userId: string, since?: string): Promis
 
     const usedSessions = usage?.sessions_count ?? 0;
     const usedSeconds = usage?.speaking_seconds ?? 0;
+    const practiceMomentum = getPracticeMomentum(recentSessions);
 
     return {
       totalSessions: Number(countRow?.count ?? 0),
       averageScore: Number(averageRow?.average ?? 0),
-      streakDays: Math.min(Number(countRow?.count ?? 0), 6),
+      streakDays: practiceMomentum.streakDays,
       freeSessionsRemaining: member?.isAdmin ? 999 : Math.max(limits.sessionsPerDay - usedSessions, 0),
       remainingMinutesToday: member?.isAdmin ? 999 : Math.max(Number(((limits.speakingMinutesPerDay * 60 - usedSeconds) / 60).toFixed(1)), 0),
       currentPlan: member?.isAdmin ? "pro" : plan,
@@ -644,11 +646,12 @@ export async function getProgressSummary(userId: string, since?: string): Promis
 
   const remainingSessions = Math.max(limits.sessionsPerDay - usage.sessions, 0);
   const remainingMinutesToday = Math.max(Number(((limits.speakingMinutesPerDay * 60 - usage.seconds) / 60).toFixed(1)), 0);
+  const practiceMomentum = getPracticeMomentum(recentSessions);
 
   return {
     totalSessions: recentSessions.length,
     averageScore,
-    streakDays: Math.min(recentSessions.length, 6),
+    streakDays: practiceMomentum.streakDays,
     freeSessionsRemaining: member?.isAdmin ? 999 : remainingSessions,
     remainingMinutesToday: member?.isAdmin ? 999 : remainingMinutesToday,
     currentPlan: member?.isAdmin ? "pro" : plan,

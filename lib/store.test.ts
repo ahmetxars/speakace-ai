@@ -85,6 +85,7 @@ describe("session store", () => {
 
     expect(summary.totalSessions).toBe(1);
     expect(summary.averageScore).toBeGreaterThan(0);
+    expect(summary.streakDays).toBe(1);
     expect(summary.recentSessions).toHaveLength(1);
   });
 

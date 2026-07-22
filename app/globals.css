@@ -11131,6 +11131,82 @@ body[data-theme="dark"] .share-option:hover {
   line-height: 1.55;
 }
 
+.db-momentum-banner {
+  align-items: stretch;
+  background: linear-gradient(100deg, rgba(29, 111, 117, 0.1), rgba(255, 252, 248, 0.92));
+  border: 1.5px solid rgba(29, 111, 117, 0.22);
+}
+
+.db-momentum-banner[data-trial="true"] {
+  background: linear-gradient(100deg, rgba(201, 162, 39, 0.12), rgba(255, 252, 248, 0.94));
+  border-color: rgba(201, 162, 39, 0.34);
+}
+
+.db-momentum-copy {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.db-momentum-progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  max-width: 30rem;
+}
+
+.db-momentum-step {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(33, 23, 17, 0.08);
+  background: rgba(255, 255, 255, 0.66);
+  color: var(--muted);
+}
+
+.db-momentum-step > span {
+  width: 1.45rem;
+  height: 1.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: rgba(33, 23, 17, 0.07);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.db-momentum-step small {
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.db-momentum-step[data-done="true"] {
+  color: var(--accent-cool);
+  border-color: rgba(29, 111, 117, 0.18);
+  background: rgba(29, 111, 117, 0.08);
+}
+
+.db-momentum-step[data-done="true"] > span {
+  color: white;
+  background: var(--accent-cool);
+}
+
+.db-momentum-step[data-current="true"] {
+  color: var(--text);
+  border-color: rgba(217, 93, 57, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(217, 93, 57, 0.08);
+}
+
+.db-momentum-banner .dashboard-inline-actions {
+  align-self: center;
+  justify-content: flex-end;
+}
+
 .db-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
@@ -11463,6 +11539,25 @@ body[data-theme="dark"] .db-hero-stat {
   border-color: oklch(1 0 0 / 10%);
 }
 
+body[data-theme="dark"] .db-momentum-banner,
+body[data-theme="dark"] .db-momentum-banner[data-trial="true"] {
+  background: linear-gradient(100deg, rgba(29, 111, 117, 0.14), rgba(20, 18, 31, 0.96));
+  border-color: rgba(29, 111, 117, 0.3);
+}
+
+body[data-theme="dark"] .db-momentum-step {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body[data-theme="dark"] .db-momentum-step > span {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+body[data-theme="dark"] .db-momentum-step[data-done="true"] > span {
+  background: var(--accent-cool);
+}
+
 body[data-theme="dark"] .db-roadmap-block {
   background: rgba(29, 111, 117, 0.1);
   border-color: rgba(29, 111, 117, 0.18);
@@ -11697,6 +11792,25 @@ body[data-theme="dark"] .db-gap-badge[data-positive="true"] {
 
   .db-decision-cta {
     width: 100%;
+    justify-content: center;
+  }
+
+  .db-momentum-banner {
+    flex-direction: column;
+  }
+
+  .db-momentum-progress {
+    width: 100%;
+    max-width: none;
+  }
+
+  .db-momentum-banner .dashboard-inline-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .db-momentum-banner .dashboard-inline-actions .button {
+    flex: 1 1 11rem;
     justify-content: center;
   }
 }

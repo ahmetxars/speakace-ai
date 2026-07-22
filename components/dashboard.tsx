@@ -15,6 +15,7 @@ import {
   formatUsd,
   getAnnualMonthlyEquivalent
 } from "@/lib/commerce";
+import { getPracticeMomentum, getUtcPracticeDayKey } from "@/lib/practice-streak";
 import { resolveDashboardRole } from "@/lib/roles";
 import { AnnouncementItem, HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership, StudentProfile } from "@/lib/types";
 
@@ -323,8 +324,11 @@ export function Dashboard() {
     () => buildRecentStreakCalendar(summary.recentSessions),
     [summary.recentSessions]
   );
-
-  const practicedToday = streakCalendar[streakCalendar.length - 1]?.active ?? false;
+  const practiceMomentum = useMemo(
+    () => getPracticeMomentum(summary.recentSessions),
+    [summary.recentSessions]
+  );
+  const practicedToday = practiceMomentum.practicedToday;
 
   const nextAction = useMemo<DashboardNextAction>(() => {
     if (!summary.totalSessions) {
@@ -539,38 +543,93 @@ export function Dashboard() {
       : tr
         ? `${Math.ceil(trialHoursRemaining / 24)} gun kaldi`
         : `${Math.ceil(trialHoursRemaining / 24)} days left`;
+  const momentumDays = Math.min(practiceMomentum.activeDays7, 3);
+  const momentumComplete = momentumDays >= 3;
+  const momentumNextDay = Math.min(momentumDays + 1, 3);
+  const showMomentumMission = Boolean(
+    !loadingSummary &&
+    signedIn &&
+    (isPlusTrial || (summary.totalSessions > 0 && momentumDays > 0 && !momentumComplete))
+  );
+  const momentumPracticeHref = {
+    pathname: "/app/practice" as Route,
+    query: {
+      quickStart: "1",
+      runMode: "interview",
+      activation: `dashboard_momentum_day_${momentumNextDay}`
+    }
+  };
+  const momentumReviewHref: Route = scoredSessions[0]
+    ? (`/app/results/${scoredSessions[0].id}` as Route)
+    : "/app/review";
 
   return (
     <div className="page-shell section db-page">
 
-      {/* PLUS TRIAL ACTIVATION */}
-      {isPlusTrial ? (
-        <section className="db-banner card" style={{ background: "rgba(201,162,39,0.09)", border: "1.5px solid rgba(201,162,39,0.32)" }}>
-          <div className="db-banner-body">
-            <Sparkles size={15} />
-            <div>
-              <strong style={{ display: "block", marginBottom: "0.2rem" }}>
-                {tr ? `Plus denemen aktif · ${trialTimeLabel}` : `Your Plus trial is active · ${trialTimeLabel}`}
-              </strong>
-              <p style={{ margin: 0, fontSize: "0.87rem", color: "var(--muted)" }}>
-                {tr
-                  ? "Deneme bitmeden bir cevabi kaydet, tam AI feedback'i oku ve ayni prompt'u tekrar dene. Plus, deneme sonrasinda haftalik $3.99 ile devam eder."
-                  : "Before the trial ends, record one answer, read the full AI feedback, and retry the same prompt. Plus continues at $3.99/week after the trial."}
-              </p>
+      {/* THREE-DAY MOMENTUM MISSION */}
+      {showMomentumMission ? (
+        <section className="db-banner db-momentum-banner card" data-trial={isPlusTrial ? "true" : "false"}>
+          <div className="db-momentum-copy">
+            <div className="db-banner-body">
+              <Sparkles size={16} />
+              <div>
+                <strong style={{ display: "block", marginBottom: "0.2rem" }}>
+                  {isPlusTrial
+                    ? tr
+                      ? `Plus deneme gorevi · ${trialTimeLabel}`
+                      : `Plus trial mission · ${trialTimeLabel}`
+                    : tr
+                      ? `3 gunluk speaking ivmesi · ${momentumDays}/3 gun`
+                      : `3-day speaking momentum · ${momentumDays}/3 days`}
+                </strong>
+                <p>
+                  {momentumComplete
+                    ? tr
+                      ? "Uc farkli gunde tamamlanmis cevap verdin. Simdi geri bildirimi bir sonraki cevaba tasiyarak bu ritmi koru."
+                      : "You completed answers on three different days. Keep the rhythm by carrying one feedback point into your next answer."
+                    : practicedToday
+                      ? tr
+                        ? "Bugunku tamamlanmis cevabin kaydedildi. Yarin tek bir 5 dakikalik cevapla bir sonraki gunu ac."
+                        : "Today's completed answer is locked in. Return tomorrow for one five-minute answer to unlock the next day."
+                      : tr
+                        ? `Bugun bir cevabi tamamla ve ${momentumNextDay}. gunu ac. Ayni gun cok deneme degil, farkli gunlerde geri donmek ivmeyi kurar.`
+                        : `Complete one answer today to unlock day ${momentumNextDay}. Returning on different days builds momentum better than stacking sessions on one day.`}
+                </p>
+              </div>
+            </div>
+            <div className="db-momentum-progress" aria-label={tr ? "Uc gunluk speaking ilerlemesi" : "Three-day speaking progress"}>
+              {[1, 2, 3].map((day) => {
+                const done = day <= momentumDays;
+                const current = !done && day === momentumNextDay;
+                return (
+                  <span key={day} className="db-momentum-step" data-done={done ? "true" : "false"} data-current={current ? "true" : "false"}>
+                    <span>{done ? <CheckCircle2 size={14} /> : day}</span>
+                    <small>{tr ? `Gun ${day}` : `Day ${day}`}</small>
+                  </span>
+                );
+              })}
             </div>
           </div>
           <div className="dashboard-inline-actions">
-            <TrackedLink
-              className="button button-primary"
-              href="/app/practice"
-              userId={currentUser?.id}
-              analyticsEvent="marketing_cta_click"
-              analyticsPath="/app/trial/activate-practice"
-            >
-              {tr ? "Trial hedefini tamamla →" : "Complete the trial goal →"}
-            </TrackedLink>
-            <Link className="button button-secondary" href="/app/billing">
-              {tr ? "Plan detaylari" : "Plan details"}
+            {!momentumComplete && !practicedToday ? (
+              <TrackedLink
+                className="button button-primary"
+                href={momentumPracticeHref}
+                userId={currentUser?.id}
+                analyticsEvent="marketing_cta_click"
+                analyticsPath={`/app/momentum/day-${momentumNextDay}${isPlusTrial ? "/trial" : ""}`}
+              >
+                {tr ? `${momentumNextDay}. gunu baslat →` : `Start day ${momentumNextDay} →`}
+              </TrackedLink>
+            ) : (
+              <Link className="button button-primary" href={momentumReviewHref}>
+                {momentumComplete
+                  ? tr ? "Gelisim alanlarini ac →" : "Open improvement review →"
+                  : tr ? "Bugunku geri bildirimi ac →" : "Review today's feedback →"}
+              </Link>
+            )}
+            <Link className="button button-secondary" href={isPlusTrial ? "/app/billing" : "/app/plan"}>
+              {isPlusTrial ? (tr ? "Plan detaylari" : "Plan details") : (tr ? "Calisma plani" : "Study plan")}
             </Link>
           </div>
         </section>
@@ -1160,7 +1219,10 @@ function buildFirstTaskRecommendation(biggestChallenge: string, examType: "IELTS
 
 function buildRecentStreakCalendar(sessions: SpeakingSession[]) {
   const activeDays = new Set(
-    sessions.map((s) => new Date(s.createdAt).toISOString().slice(0, 10))
+    sessions
+      .filter((session) => session.audioUploaded)
+      .map((session) => getUtcPracticeDayKey(session.createdAt))
+      .filter((key): key is string => Boolean(key))
   );
   return Array.from({ length: 7 }, (_, i) => {
     const date = new Date();

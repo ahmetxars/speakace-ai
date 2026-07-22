@@ -144,6 +144,7 @@ This is the project-wide “where things live” map.
   - `components/study-lists-board.tsx`
 - Data:
   - `lib/store.ts`
+  - `lib/practice-streak.ts` counts streaks from distinct UTC days with completed audio uploads; multiple sessions on one day never inflate the streak
   - `lib/student-profile-store.ts`
   - `lib/study-lists-store.ts`
   - `lib/notifications.ts`
@@ -1011,6 +1012,8 @@ Inspect only:
 - Authenticated learner checkout initiation is recorded server-side in `app/api/payments/lemon/checkout/route.ts`. Keep the database event there so navigation cannot drop it, and do not add a second client-side `checkout_initiated` write for links targeting that route.
 - Lifecycle baseline before frequency controls on 2026-07-22: 520 daily-tip emails reached 180 recipients in 7 days, while only 43 users had practiced in 30 days; 71 emails reached 23 unverified accounts. Use these as reduction baselines and do not restore all-user daily sends.
 - Retention baseline on 2026-07-22: 34 of 45 recently verified learners uploaded a speaking attempt, but only 5 returned on another day. Prioritize measured day-one return activation before adding more broad acquisition or checkout pressure.
+- The learner dashboard uses a three-day momentum mission for early return behavior. Mission practice links carry `dashboard_momentum_day_*` activation attribution, and trial learners see the same daily-return loop with their remaining trial time.
+- Streaks must count distinct UTC days with completed audio uploads, not started sessions. Before this correction on 2026-07-22, 212 learner streaks were inflated; only 4 learners had completed practice on 1-2 distinct days in the prior week and none had reached 3 distinct active days.
 - Resend's monthly quota was exhausted in production on 2026-07-18. The lifecycle cron now uses `email_log` as a quota circuit breaker to avoid repeated failed sends until the quota resets or `IGNORE_EMAIL_QUOTA_BLOCK=true` is intentionally configured after an account upgrade.
 - High-intent practice-limit recovery emails are implemented behind `ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS=true`. Keep the flag off until the live Lemon webhook is configured and signed delivery is verified; the sequence excludes recent checkout starters, enforces a 14-day recovery cooldown, and avoids any user sent another email in the prior 24 hours.
 
