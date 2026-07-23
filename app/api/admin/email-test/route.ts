@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasEmailTransport, sendEmail } from "@/lib/server/email";
+import { recordEmailQuotaRecoveryProbe } from "@/lib/server/email-sequences";
 import { getAdminPanelSession, getAdminSessionCookieName } from "@/lib/server/admin-panel";
 import { cookies } from "next/headers";
 
@@ -33,7 +34,16 @@ export async function POST(request: Request) {
       text: "This is a test email from SpeakAce admin. Resend is configured correctly."
     });
 
-    return NextResponse.json({ ok: result.ok, configured: true, sentTo: to });
+    const quotaRecoveryRecorded = result.ok
+      ? await recordEmailQuotaRecoveryProbe(to)
+      : false;
+
+    return NextResponse.json({
+      ok: result.ok,
+      configured: true,
+      sentTo: to,
+      quotaRecoveryRecorded
+    });
   } catch (err) {
     return NextResponse.json({
       ok: false,

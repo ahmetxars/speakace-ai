@@ -9,6 +9,7 @@ const DAY_ONE_RETURN_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interv
 const PRICING_URL = `${SITE_URL}/pricing`;
 const BILLING_URL = `${SITE_URL}/app/billing`;
 const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&billing=annual&coupon=LAUNCH20&campaign=onboarding_email`;
+const EMAIL_QUOTA_RECOVERY_TEMPLATE = "quota_recovery_probe";
 let emailSequenceSchemaEnsured = false;
 
 export type PracticeLimitRecoveryReason = "practice_limit_hit" | "result_retry_locked";
@@ -26,6 +27,17 @@ export function resolveEmailQuotaKind(errorMessage: string | null | undefined): 
   if (errorMessage?.includes("monthly_quota_exceeded")) return "monthly";
   if (errorMessage?.includes("daily_quota_exceeded")) return "daily";
   return null;
+}
+
+export function isEmailQuotaFailureRecovered(
+  failureAt: string | Date,
+  recoveryAt: string | Date | null | undefined
+) {
+  if (!recoveryAt) return false;
+
+  const failureTime = new Date(failureAt).getTime();
+  const recoveryTime = new Date(recoveryAt).getTime();
+  return Number.isFinite(failureTime) && Number.isFinite(recoveryTime) && recoveryTime > failureTime;
 }
 
 export function resolveEmailLifecycleDailyBudget(value = process.env.EMAIL_LIFECYCLE_DAILY_BUDGET) {
@@ -101,26 +113,58 @@ export async function getCurrentEmailQuotaBlock(): Promise<{
 
   await ensureEmailSequenceSchema();
   const sql = getSql();
-  const rows = await sql<Array<{ error_message: string | null; sent_at: string | Date }>>`
-    select error_message, sent_at
-    from email_log
-    where status = 'failed'
-      and (
-        (
-          error_message like '%monthly_quota_exceeded%'
-          and sent_at >= date_trunc('month', now())
+  const rows = await sql<Array<{
+    error_message: string | null;
+    sent_at: string | Date;
+    recovered_at: string | Date | null;
+  }>>`
+    with current_quota_failures as (
+      select
+        error_message,
+        sent_at,
+        case
+          when error_message like '%monthly_quota_exceeded%' then 'monthly'
+          else 'daily'
+        end as quota_kind,
+        row_number() over (
+          partition by case
+            when error_message like '%monthly_quota_exceeded%' then 'monthly'
+            else 'daily'
+          end
+          order by sent_at desc
+        ) as quota_recency
+      from email_log
+      where status = 'failed'
+        and (
+          (
+            error_message like '%monthly_quota_exceeded%'
+            and sent_at >= date_trunc('month', now())
+          )
+          or (
+            error_message like '%daily_quota_exceeded%'
+            and sent_at >= date_trunc('day', now())
+          )
         )
-        or (
-          error_message like '%daily_quota_exceeded%'
-          and sent_at >= date_trunc('day', now())
-        )
-      )
+    ),
+    latest_recovery as (
+      select max(sent_at) as recovered_at
+      from email_log
+      where status = 'sent'
+        and template = ${EMAIL_QUOTA_RECOVERY_TEMPLATE}
+    )
+    select
+      failure.error_message,
+      failure.sent_at,
+      recovery.recovered_at
+    from current_quota_failures failure
+    cross join latest_recovery recovery
+    where failure.quota_recency = 1
     order by
-      case when error_message like '%monthly_quota_exceeded%' then 0 else 1 end,
-      sent_at desc
-    limit 1
+      case when failure.quota_kind = 'monthly' then 0 else 1 end
   `;
-  const row = rows[0];
+  const row = rows.find((candidate) => (
+    !isEmailQuotaFailureRecovered(candidate.sent_at, candidate.recovered_at)
+  ));
   const kind = resolveEmailQuotaKind(row?.error_message);
   if (!row || !kind) return null;
 
@@ -128,6 +172,31 @@ export async function getCurrentEmailQuotaBlock(): Promise<{
     kind,
     detectedAt: row.sent_at instanceof Date ? row.sent_at.toISOString() : new Date(row.sent_at).toISOString()
   };
+}
+
+export async function recordEmailQuotaRecoveryProbe(userEmail: string): Promise<boolean> {
+  const normalizedEmail = userEmail.trim().toLowerCase();
+  if (!hasDatabaseUrl() || !normalizedEmail) return false;
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+
+  try {
+    await sql`
+      insert into email_log (user_id, user_email, template, subject, status, error_message)
+      values (
+        ${null},
+        ${normalizedEmail},
+        ${EMAIL_QUOTA_RECOVERY_TEMPLATE},
+        ${"SpeakAce email quota recovery probe"},
+        ${"sent"},
+        ${null}
+      )
+    `;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function getEmailLifecycleBudgetStatus(): Promise<{

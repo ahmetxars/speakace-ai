@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildPracticeLimitRecoveryEmailContent,
   buildOnboardingEmailContent,
+  isEmailQuotaFailureRecovered,
   ONBOARDING_EMAIL_SCHEDULE,
   resolveEmailLifecycleDailyBudget,
   resolveEmailQuotaKind,
@@ -121,6 +122,14 @@ describe("email quota protection", () => {
     expect(resolveEmailLifecycleDailyBudget("-1")).toBe(0);
     expect(resolveEmailLifecycleDailyBudget("1000")).toBe(200);
     expect(resolveEmailLifecycleDailyBudget("invalid")).toBe(20);
+  });
+
+  it("clears only failures that happened before a successful recovery probe", () => {
+    const failureAt = "2026-07-23T04:38:33.620Z";
+
+    expect(isEmailQuotaFailureRecovered(failureAt, "2026-07-23T05:00:00.000Z")).toBe(true);
+    expect(isEmailQuotaFailureRecovered(failureAt, "2026-07-23T04:00:00.000Z")).toBe(false);
+    expect(isEmailQuotaFailureRecovered(failureAt, null)).toBe(false);
   });
 });
 

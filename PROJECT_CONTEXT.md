@@ -271,7 +271,7 @@ This is the project-wide “where things live” map.
   - onboarding email #2 is sent after one day; activated learners receive a checkout-free, attributed `email_day_one_return` practice link while non-activated learners keep the first-score prompt
   - learners with no speaking sessions receive first-score activation content instead of checkout pressure on day 7/10
   - the legacy `daily_tip` template is limited to verified learners active in the last 30 days, at most once per 7 days, and never within 24 hours of an onboarding email
-  - the lifecycle cron suppresses all provider sends when a current Resend daily/monthly quota failure is present; `IGNORE_EMAIL_QUOTA_BLOCK=true` is the explicit operational override after a quota upgrade
+  - the lifecycle cron suppresses all provider sends when a current Resend daily/monthly quota failure is present; after a quota upgrade, a successful Admin email test records a recovery probe that clears only older failures without disabling future quota protection
   - Admin reports 24-hour email delivery/failure health, active quota blocking, and attributed day-one practice returns over 30 days
   - email quick-start links retain their attributed `/app/practice` destination through both password and Google sign-in using `lib/auth-redirect.ts`
 - Cron:
@@ -1025,7 +1025,7 @@ Inspect only:
 - Streaks must count distinct UTC days with completed audio uploads, not started sessions. Before this correction on 2026-07-22, 212 learner streaks were inflated; only 4 learners had completed practice on 1-2 distinct days in the prior week and none had reached 3 distinct active days.
 - Upgrade prompts are frequency-capped to one full modal per learner per UTC day through `lib/upgrade-prompt-frequency.ts`; later limit hits use a compact recovery card that preserves checkout and review actions without blocking the page.
 - Prompt-fatigue baseline on 2026-07-23: 27 learners generated 160 upgrade-prompt views in 30 days, including 112 limit-hit views from 13 learners, while only 2 learners initiated checkout from the practice-limit path. Track `upgrade_prompt_cooldown_view` and `upgrade_prompt_dismissed` before increasing prompt pressure again.
-- Resend's monthly quota was exhausted in production on 2026-07-18. The lifecycle cron now uses `email_log` as a quota circuit breaker to avoid repeated failed sends until the quota resets or `IGNORE_EMAIL_QUOTA_BLOCK=true` is intentionally configured after an account upgrade.
+- Resend's monthly quota was exhausted in production on 2026-07-18. Transactional Pro (`50,000` emails/month) was activated on 2026-07-23 and renews on 2026-08-23. The lifecycle cron uses `email_log` as a quota circuit breaker; a successful Admin email test records `quota_recovery_probe` so stale failures are cleared while any later provider quota failure blocks sending again.
 - High-intent practice-limit recovery emails are implemented behind `ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS=true`. Keep the flag off until the Resend quota block is cleared and lifecycle delivery is verified; the sequence excludes recent checkout starters, enforces a 14-day recovery cooldown, and avoids any user sent another email in the prior 24 hours.
 
 ### Assumptions
