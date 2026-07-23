@@ -186,6 +186,7 @@ This is the project-wide “where things live” map.
   - `app/app/teacher/page.tsx`
 - Main UI:
   - `components/teacher-hub.tsx`
+  - The authenticated teacher dashboard uses the demo-inspired `.teacher-workspace-*` layout: a dark class/navigation rail and a light, responsive data workspace shared by the aggregate dashboard and class-detail tabs.
   - `components/teacher-student-detail.tsx`
   - `components/teacher-student-compare.tsx`
   - `components/teacher-note-templates.tsx`

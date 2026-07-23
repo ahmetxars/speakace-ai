@@ -4,11 +4,29 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
+import type { ReactNode } from "react";
 import { useAppState } from "@/components/providers";
 import { listPromptsForTask } from "@/lib/prompts";
 import { ExamType, HomeworkAutoAssignRule, SharedClassStudyItem, TaskType, TeacherClassAnalytics, TeacherEnrollmentRequest, TeacherStudentOverview } from "@/lib/types";
-import { AlertTriangle, BookOpen, CheckCircle, Clock, ShieldAlert, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  BarChart3,
+  BellRing,
+  BookOpen,
+  BookOpenCheck,
+  CheckCircle,
+  Clock,
+  Copy,
+  LayoutDashboard,
+  ListChecks,
+  Plus,
+  Settings2,
+  ShieldAlert,
+  TrendingDown,
+  UsersRound
+} from "lucide-react";
 
 type TeacherClassSummary = {
   id: string;
@@ -41,7 +59,7 @@ type TeacherDashboardAnalytics = {
   classes: TeacherClassAnalytics[];
 };
 
-type ClassTab = "overview" | "students" | "homework" | "study" | "settings";
+type ClassTab = "overview" | "students" | "homework" | "announcements" | "study" | "settings";
 
 const IELTS_TASKS: TaskType[] = ["ielts-part-1", "ielts-part-2", "ielts-part-3"];
 const TOEFL_TASKS: TaskType[] = ["toefl-task-1", "toefl-task-2", "toefl-task-3", "toefl-task-4"];
@@ -107,24 +125,14 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
     [atRiskOnly, filters, inactiveOnly, scoreDropOnly, studentSearch, students]
   );
 
-  const leaderboard = useMemo(
-    () => [...filteredStudents].sort((a, b) => (b.averageScore ?? 0) - (a.averageScore ?? 0)).slice(0, 5),
-    [filteredStudents]
-  );
-
-  const improvementLeaderboard = useMemo(
-    () => [...filteredStudents].filter((s) => typeof s.scoreDelta === "number").sort((a, b) => (b.scoreDelta ?? -999) - (a.scoreDelta ?? -999)).slice(0, 5),
-    [filteredStudents]
-  );
-
   const filterSkillOptions = useMemo(
     () => [...new Set(students.map((s) => s.weakestSkill).filter(Boolean))] as string[],
     [students]
   );
 
   const atRiskStudents = useMemo(
-    () => filteredStudents.filter((s) => (s.riskFlags?.length ?? 0) > 0).slice(0, 6),
-    [filteredStudents]
+    () => students.filter((s) => (s.riskFlags?.length ?? 0) > 0).slice(0, 6),
+    [students]
   );
 
   const completionRate = homeworkSummary.total > 0
@@ -374,911 +382,995 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
     setNotice(tr ? "Hatırlatma mesajı sınıfa gönderildi." : "Reminder sent to the class.");
   };
 
-  // ── access guard ─────────────────────────────────────────────────────────────
   if (loadingClasses && currentUser) {
-    return (
-      <div className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
-        <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "0.75rem" }}>
-          <div className="skeleton" style={{ height: "0.75rem", width: "6rem", borderRadius: 4 }} />
-          <div className="skeleton" style={{ height: "2.2rem", width: "14rem", borderRadius: 6 }} />
-          <div className="skeleton" style={{ height: "1rem", width: "22rem", maxWidth: "100%", borderRadius: 4 }} />
-        </section>
-        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.8rem" }}>
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="card teacher-stat-card" style={{ padding: "1rem", display: "grid", gap: "0.4rem" }}>
-              <div className="skeleton" style={{ height: "0.75rem", width: "60%", borderRadius: 4 }} />
-              <div className="skeleton skeleton-stat" style={{ width: "40%" }} />
-            </div>
-          ))}
-        </section>
-      </div>
-    );
+    return <TeacherWorkspaceLoading tr={tr} />;
   }
 
   if (!currentUser?.isTeacher && !currentUser?.isAdmin) {
     return (
-      <div className="page-shell section">
-        <section className="card" style={{ padding: "2rem", display: "grid", gap: "0.7rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "var(--destructive)" }}>
-            <AlertTriangle size={20} />
-            <strong style={{ fontSize: "1.1rem" }}>{tr ? "Öğretmen erişimi gerekli" : "Teacher access required"}</strong>
-          </div>
-          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
-            {tr ? "Bu paneli kullanmak için hesabının öğretmen olarak tanımlanmış olması gerekiyor." : "Your account must be marked as a teacher to use this panel."}
-          </p>
-        </section>
-      </div>
-    );
-  }
-
-  // ── CLASS LIST VIEW ──────────────────────────────────────────────────────────
-  if (!selectedClassId) {
-    const topClasses = classes.slice(0, 3);
-    const recentSignals = [...classes]
-      .sort((a, b) => (b.pendingCount ?? 0) - (a.pendingCount ?? 0))
-      .slice(0, 4);
-    return (
-      <div className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
-
-        {/* Header */}
-        <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
-          <span className="eyebrow">{tr ? "Class management" : "Class management"}</span>
-          <h1 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", margin: 0 }}>{tr ? "Öğretmen paneli" : "Teacher dashboard"}</h1>
-          <p style={{ color: "var(--muted)", margin: 0, lineHeight: 1.7 }}>
-            {tr ? "Önce genel görünümü gör, sonra istediğin sınıfa girip öğrencileri, ödevleri ve ayarları yönet." : "Start from the overview, then open any class to manage students, homework, and settings."}
-          </p>
-        </section>
-
-        {/* Feedback */}
-        {(notice || error) && (
+      <main className="teacher-workspace-page page-shell">
+        <section className="teacher-workspace-access">
+          <AlertTriangle size={22} />
           <div>
-            {notice && <p className="teacher-feedback teacher-feedback-success">{notice}</p>}
-            {error && <p className="teacher-feedback teacher-feedback-error">{error}</p>}
-          </div>
-        )}
-
-        {/* Create class */}
-        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <span className="eyebrow">{tr ? "Yeni sınıf" : "New class"}</span>
-          <h2 style={{ fontSize: "1.6rem", margin: 0 }}>{tr ? "Sınıf oluştur" : "Create a class"}</h2>
-          <div style={{ display: "flex", gap: "0.6rem" }}>
-            <input
-              value={newClassName}
-              onChange={(e) => setNewClassName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") void createClass(); }}
-              placeholder={tr ? "Örnek: IELTS Akşam Grubu" : "Example: IELTS Evening Group"}
-              style={{ ...fieldStyle, flex: 1 }}
-            />
-            <button type="button" className="button button-primary" onClick={createClass} disabled={!newClassName.trim()}>
-              {tr ? "Oluştur" : "Create"}
-            </button>
-          </div>
-        </section>
-
-        {/* Snapshot */}
-        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.8rem" }}>
-          <TeacherStat label={tr ? "Sınıf" : "Classes"} value={String(dashboardAnalytics?.totalClasses ?? classes.length)} />
-          <TeacherStat label={tr ? "Öğrenci" : "Students"} value={String(dashboardAnalytics?.totalStudents ?? 0)} />
-          <TeacherStat label={tr ? "Aktif öğrenci" : "Active students"} value={String(dashboardAnalytics?.activeStudents ?? 0)} />
-          <TeacherStat label={tr ? "Ort. skor" : "Avg score"} value={dashboardAnalytics?.averageScore ? dashboardAnalytics.averageScore.toFixed(1) : "-"} />
-          <TeacherStat label={tr ? "Bekleyen onay" : "Pending approvals"} value={String(dashboardAnalytics?.pendingApprovalCount ?? classes.reduce((sum, item) => sum + (item.pendingCount ?? 0), 0))} />
-          <TeacherStat label={tr ? "Geciken ödev" : "Overdue homework"} value={String(homeworkSummary.overdue)} />
-        </section>
-
-        {/* Priority actions + recent signals */}
-        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-            <div className="section-header-row">
-              <ShieldAlert size={16} style={{ color: "var(--destructive)" }} />
-              <strong>{tr ? "Öncelikli aksiyonlar" : "Priority actions"}</strong>
-            </div>
-            <ActionRow
-              label={tr ? "Geciken ödevleri hatırlat" : "Remind overdue homework"}
-              value={homeworkSummary.overdue}
-              cta={tr ? "Ödevler" : "Homework"}
-              onClick={() => topClasses[0] && openClass(topClasses[0].id)}
-            />
-            <ActionRow
-              label={tr ? "Bekleyen katılım onayları" : "Pending join approvals"}
-              value={dashboardAnalytics?.pendingApprovalCount ?? classes.reduce((sum, item) => sum + (item.pendingCount ?? 0), 0)}
-              cta={tr ? "Sınıflar" : "Classes"}
-              onClick={() => recentSignals[0] && openClass(recentSignals[0].id)}
-            />
-            <ActionRow
-              label={tr ? "Riskli öğrencileri incele" : "Review at-risk students"}
-              value={dashboardAnalytics?.atRiskStudentCount ?? 0}
-              cta={tr ? "Detay" : "Review"}
-              onClick={() => topClasses[0] && openClass(topClasses[0].id)}
-            />
-          </div>
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-            <div className="section-header-row">
-              <TrendingUp size={16} style={{ color: "var(--accent)" }} />
-              <strong>{tr ? "Son sınıf sinyalleri" : "Recent class signals"}</strong>
-            </div>
-            {recentSignals.length ? recentSignals.map((cls) => (
-              <button
-                key={cls.id}
-                type="button"
-                onClick={() => openClass(cls.id)}
-                className="card"
-                style={{ padding: "0.9rem", background: "var(--surface-strong)", textAlign: "left", cursor: "pointer", display: "grid", gap: "0.35rem" }}
-              >
-                <strong>{cls.name}</strong>
-                <div className="practice-meta">
-                  {(cls.pendingCount ?? 0)} {tr ? "bekleyen onay" : "pending approvals"} · {cls.studentCount} {tr ? "öğrenci" : "students"}
-                </div>
-              </button>
-            )) : (
-              <p style={{ margin: 0, color: "var(--muted)" }}>
-                {tr ? "Sınıf açtıkça burada son aktivite sinyallerini göreceksin." : "Class activity signals will appear here as you grow your roster."}
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* Class cards */}
-        {classes.length > 0 ? (
-          <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "0.9rem" }}>
-            {classes.map((cls) => (
-              <button key={cls.id} type="button" className="card" onClick={() => openClass(cls.id)}
-                style={{ padding: "1.3rem", textAlign: "left", cursor: "pointer", display: "grid", gap: "0.7rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.6rem" }}>
-                  <strong style={{ fontSize: "1.1rem" }}>{cls.name}</strong>
-                  {(cls.pendingCount ?? 0) > 0 && (
-                    <span className="pill teacher-pill-alert" style={{ fontSize: "0.78rem" }}>
-                      {cls.pendingCount} {tr ? "bekleyen" : "pending"}
-                    </span>
-                  )}
-                </div>
-                <div className="grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
-                  <TeacherStat label={tr ? "Öğrenci" : "Students"} value={String(cls.studentCount)} />
-                  <TeacherStat label={tr ? "Bekleyen" : "Pending"} value={String(cls.pendingCount ?? 0)} />
-                  <TeacherStat label={tr ? "Kod" : "Code"} value={cls.joinCode} />
-                </div>
-                <span className="teacher-link-hint">
-                  {tr ? "Sınıfa gir →" : "Open class →"}
-                </span>
-              </button>
-            ))}
-          </section>
-        ) : (
-          <section className="card" style={{ padding: "2.5rem 2rem", textAlign: "center", display: "grid", gap: "0.7rem" }}>
-            <div style={{ fontSize: "2rem" }}>🏫</div>
-            <strong style={{ fontSize: "1.1rem" }}>{tr ? "Henüz sınıf yok" : "No classes yet"}</strong>
-            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.9rem", lineHeight: 1.7 }}>
-              {tr ? "Yukarıdaki formu kullanarak ilk sınıfını oluştur. Öğrenciler join code ile katılabilir." : "Create your first class using the form above. Students can join with the class code."}
+            <strong>{tr ? "Öğretmen erişimi gerekli" : "Teacher access required"}</strong>
+            <p>
+              {tr
+                ? "Bu paneli kullanmak için hesabının öğretmen olarak tanımlanmış olması gerekiyor."
+                : "Your account must be marked as a teacher to use this panel."}
             </p>
-          </section>
-        )}
-      </div>
+          </div>
+        </section>
+      </main>
     );
   }
 
-  // ── CLASS DETAIL VIEW ────────────────────────────────────────────────────────
-  const tabs: Array<{ id: ClassTab; label: string; badge?: number }> = [
-    { id: "overview", label: tr ? "Genel Bakış" : "Overview" },
-    { id: "students", label: tr ? "Öğrenciler" : "Students", badge: students.length },
-    { id: "homework", label: tr ? "Ödevler" : "Homework", badge: homeworkSummary.overdue > 0 ? homeworkSummary.overdue : undefined },
-    { id: "study", label: tr ? "Study List" : "Study List", badge: sharedItems.length > 0 ? sharedItems.length : undefined },
-    { id: "settings", label: tr ? "Ayarlar" : "Settings", badge: pendingRequests.length > 0 ? pendingRequests.length : undefined },
-  ];
+  if (!selectedClassId) {
+    const pendingApprovals = dashboardAnalytics?.pendingApprovalCount
+      ?? classes.reduce((sum, item) => sum + (item.pendingCount ?? 0), 0);
+    const classRows = classes.map((classroom) => {
+      const classAnalytics = dashboardAnalytics?.classes.find((item) => item.classId === classroom.id);
+      return {
+        classroom,
+        attempts: classAnalytics?.totalAttempts ?? 0,
+        average: classAnalytics?.classAverageScore ?? null,
+        completion: classAnalytics?.homeworkCompletionRate ?? null,
+        active: classAnalytics?.activeStudents ?? 0,
+        atRisk: classAnalytics?.atRiskStudentCount ?? 0
+      };
+    });
+    const maxClassAttempts = Math.max(1, ...classRows.map((item) => item.attempts));
+    const firstClass = classes[0];
+    const approvalClass = [...classes].sort((a, b) => (b.pendingCount ?? 0) - (a.pendingCount ?? 0))[0];
 
-  return (
-    <div className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
-
-      {/* Class header */}
-      <section className="card" style={{ padding: "1.2rem 1.5rem", display: "grid", gap: "0.8rem" }}>
-        <button type="button" onClick={goBack} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: "0.9rem", textAlign: "left", padding: 0, width: "fit-content" }}>
-          ← {tr ? "Tüm sınıflar" : "All classes"}
-        </button>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.8rem" }}>
-          <div>
-            <span className="eyebrow">Teacher hub</span>
-            <h1 style={{ fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)", margin: "0.3rem 0 0" }}>{selectedClass?.name}</h1>
-          </div>
-          <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
-            <span className="pill" style={{ fontSize: "1rem", letterSpacing: "0.08em" }}>{selectedClass?.joinCode}</span>
-            <button type="button" className="button button-secondary" onClick={copyJoinCode}>
-              {copiedCode === selectedClass?.joinCode ? (tr ? "Kopyalandı ✓" : "Copied ✓") : (tr ? "Kodu kopyala" : "Copy code")}
-            </button>
-            <button type="button" className="button button-secondary" onClick={copyInviteMessage}>
-              {tr ? "Davet mesajı" : "Invite"}
-            </button>
-          </div>
-        </div>
-
-        {/* Tab bar */}
-        <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", borderBottom: "1px solid var(--line)", paddingBottom: "0.1rem", marginTop: "0.4rem" }}>
-          {tabs.map((tab) => (
-            <button key={tab.id} type="button" onClick={() => { setActiveTab(tab.id); setNotice(""); setError(""); }}
-              className={`teacher-tab-button ${activeTab === tab.id ? "is-active" : ""}`}
-              style={{ fontWeight: activeTab === tab.id ? 700 : 500 }}>
-              {tab.label}
-              {tab.badge !== undefined && (
-                <span className={`teacher-tab-badge ${tab.id === "homework" ? "is-alert" : ""}`}>
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Feedback */}
-      {(notice || error) && (
-        <div>
-          {notice && <p className="teacher-feedback teacher-feedback-success">{notice}</p>}
-          {error && <p className="teacher-feedback teacher-feedback-error">{error}</p>}
-        </div>
-      )}
-
-      {/* ── TAB: Overview ───────────────────────────────────────────────────── */}
-      {activeTab === "overview" && (
-        <>
-          {/* Analytics stats */}
-          {loadingStudents && <HubLoading label={tr ? "Sınıf verileri yükleniyor…" : "Loading class data…"} />}
-          {!loadingStudents && analytics && (
-            <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-              <span className="eyebrow">{tr ? "Sınıf istatistikleri" : "Class stats"}</span>
-              <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: "0.6rem" }}>
-                <TeacherStat label={tr ? "Sınıf ort." : "Class avg"} value={analytics.classAverageScore ? analytics.classAverageScore.toFixed(1) : "-"} />
-                <TeacherStat label={tr ? "Aktif" : "Active"} value={String(analytics.activeStudents)} />
-                <TeacherStat label={tr ? "Deneme" : "Attempts"} value={String(analytics.totalAttempts)} />
-                <TeacherStat label={tr ? "Ödev oranı" : "HW rate"} value={`${analytics.homeworkCompletionRate ?? 0}%`} />
-                <TeacherStat label={tr ? "Geciken" : "Overdue"} value={String(analytics.overdueHomeworkCount ?? 0)} />
-                <TeacherStat label={tr ? "Riskli" : "At-risk"} value={String(analytics.atRiskStudentCount ?? 0)} />
-                <TeacherStat label={tr ? "Zayıf alan" : "Weak area"} value={analytics.mostCommonWeakestSkill ? translateCategoryLabel(analytics.mostCommonWeakestSkill, tr) : "-"} />
+    return (
+      <main className="teacher-workspace-page page-shell">
+        <section className="teacher-workspace">
+          <aside className="teacher-workspace-sidebar">
+            <div className="teacher-workspace-brand">
+              <span>SA</span>
+              <div>
+                <strong>SpeakAce</strong>
+                <small>{tr ? "Öğretmen alanı" : "Teacher workspace"}</small>
               </div>
+            </div>
+            <nav aria-label={tr ? "Öğretmen menüsü" : "Teacher navigation"}>
+              <button type="button" className="is-active">
+                <LayoutDashboard size={18} />
+                <span>{tr ? "Genel bakış" : "Overview"}</span>
+              </button>
+              <span className="teacher-workspace-nav-label">{tr ? "Sınıflar" : "Classes"}</span>
+              {classes.slice(0, 6).map((classroom) => (
+                <button key={classroom.id} type="button" onClick={() => openClass(classroom.id)}>
+                  <UsersRound size={17} />
+                  <span>{classroom.name}</span>
+                  <small>{classroom.studentCount}</small>
+                </button>
+              ))}
+            </nav>
+            <div className="teacher-workspace-sidebar-foot">
+              <Link href="/app/teacher/billing">
+                <Settings2 size={17} />
+                <span>{tr ? "Plan ve faturalama" : "Plan and billing"}</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => document.getElementById("teacher-create-class-name")?.focus()}
+              >
+                <Plus size={17} />
+                <span>{tr ? "Yeni sınıf oluştur" : "Create a class"}</span>
+              </button>
+            </div>
+          </aside>
+
+          <section className="teacher-workspace-main">
+            <header className="teacher-workspace-head">
+              <div>
+                <span>{tr ? "Genel bakış" : "Overview"}</span>
+                <h1>{tr ? "Öğretmen paneli" : "Teacher dashboard"}</h1>
+                <p>
+                  {tr
+                    ? "Ders başlamadan önce sınıf hareketini ve öncelikli işleri tek bakışta gör."
+                    : "See class activity and the work that needs attention before the next lesson."}
+                </p>
+              </div>
+              <span className="teacher-workspace-period">{tr ? "Bu hafta" : "This week"}</span>
+            </header>
+
+            {(notice || error) && (
+              <div className="teacher-workspace-feedback">
+                {notice && <p className="teacher-feedback teacher-feedback-success">{notice}</p>}
+                {error && <p className="teacher-feedback teacher-feedback-error">{error}</p>}
+              </div>
+            )}
+
+            <section className="teacher-workspace-kpis" aria-label={tr ? "Genel istatistikler" : "Overview metrics"}>
+              <TeacherStat label={tr ? "Sınıf" : "Classes"} value={String(dashboardAnalytics?.totalClasses ?? classes.length)} />
+              <TeacherStat label={tr ? "Aktif öğrenci" : "Active students"} value={String(dashboardAnalytics?.activeStudents ?? 0)} detail={`${dashboardAnalytics?.totalStudents ?? 0} ${tr ? "toplam" : "total"}`} />
+              <TeacherStat label={tr ? "Sınıf ortalaması" : "Class average"} value={dashboardAnalytics?.averageScore ? dashboardAnalytics.averageScore.toFixed(1) : "-"} />
+              <TeacherStat
+                label={tr ? "Dikkat gerekli" : "Need attention"}
+                value={String((dashboardAnalytics?.atRiskStudentCount ?? 0) + pendingApprovals + homeworkSummary.overdue)}
+                detail={`${pendingApprovals} ${tr ? "onay" : "approvals"}`}
+                tone="alert"
+              />
             </section>
-          )}
 
-          {/* Priority Focus Panel */}
-          {(atRiskStudents.length > 0 || homeworkSummary.overdue > 0 || pendingRequests.length > 0) && (
-            <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-              <div className="section-header-row">
-                <ShieldAlert size={16} style={{ color: "var(--destructive)" }} />
-                <strong>{tr ? "Öncelikli aksiyon listesi" : "Priority action list"}</strong>
-              </div>
-              <div style={{ display: "grid", gap: "0.45rem" }}>
-                {atRiskStudents.length > 0 && (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", padding: "0.6rem 0.8rem", borderRadius: 10, background: "color-mix(in srgb, var(--destructive) 6%, var(--surface) 94%)", borderLeft: "3px solid var(--destructive)" }}>
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                      <AlertTriangle size={13} style={{ color: "var(--destructive)", flexShrink: 0 }} />
-                      <span style={{ fontSize: "0.88rem" }}>
-                        <strong>{atRiskStudents.length}</strong> {tr ? "öğrenci risk altında" : "students at-risk — review needed"}
-                      </span>
-                    </div>
-                    <button type="button" className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", whiteSpace: "nowrap" }} onClick={() => { setActiveTab("students"); setAtRiskOnly(true); }}>
-                      {tr ? "Gör →" : "View →"}
-                    </button>
+            <section className="teacher-workspace-overview-grid">
+              <article className="teacher-workspace-panel">
+                <PanelHeading
+                  eyebrow={tr ? "Sınıf aktivitesi" : "Class activity"}
+                  title={`${classRows.reduce((sum, item) => sum + item.attempts, 0)} ${tr ? "deneme" : "attempts"}`}
+                  icon={<BarChart3 size={18} />}
+                />
+                {classRows.some((item) => item.attempts > 0) ? (
+                  <div className="teacher-workspace-chart" aria-label={tr ? "Sınıflara göre deneme dağılımı" : "Attempts by class"}>
+                    {classRows.slice(0, 7).map((item) => (
+                      <div key={item.classroom.id}>
+                        <span
+                          style={{ height: `${Math.max(10, Math.round((item.attempts / maxClassAttempts) * 100))}%` }}
+                          title={`${item.classroom.name}: ${item.attempts}`}
+                        />
+                        <small>{classInitials(item.classroom.name)}</small>
+                      </div>
+                    ))}
                   </div>
+                ) : (
+                  <WorkspaceEmpty
+                    title={tr ? "Henüz sınıf aktivitesi yok" : "No class activity yet"}
+                    body={tr ? "İlk sınıfını oluşturduğunda aktivite burada görünecek." : "Activity will appear here after you create your first class."}
+                  />
                 )}
-                {homeworkSummary.overdue > 0 && (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", padding: "0.6rem 0.8rem", borderRadius: 10, background: "color-mix(in srgb, var(--destructive) 6%, var(--surface) 94%)", borderLeft: "3px solid var(--destructive)" }}>
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                      <BookOpen size={13} style={{ color: "var(--destructive)", flexShrink: 0 }} />
-                      <span style={{ fontSize: "0.88rem" }}>
-                        <strong>{homeworkSummary.overdue}</strong> {tr ? "gecikmiş ödev — hatırlatma gönder" : "overdue assignments — send reminders"}
+              </article>
+
+              <article className="teacher-workspace-panel teacher-workspace-action-panel">
+                <PanelHeading
+                  eyebrow={tr ? "Aksiyon kuyruğu" : "Action queue"}
+                  title={tr ? "Öncelikli işler" : "Priority work"}
+                  icon={<ShieldAlert size={18} />}
+                />
+                <ActionRow
+                  label={tr ? "Geciken ödevleri hatırlat" : "Remind overdue homework"}
+                  value={homeworkSummary.overdue}
+                  cta={tr ? "Aç" : "Open"}
+                  onClick={() => firstClass && openClass(firstClass.id)}
+                />
+                <ActionRow
+                  label={tr ? "Katılım onaylarını incele" : "Review join approvals"}
+                  value={pendingApprovals}
+                  cta={tr ? "İncele" : "Review"}
+                  onClick={() => approvalClass && openClass(approvalClass.id)}
+                />
+                <ActionRow
+                  label={tr ? "Riskli öğrencileri kontrol et" : "Check at-risk learners"}
+                  value={dashboardAnalytics?.atRiskStudentCount ?? 0}
+                  cta={tr ? "Gör" : "View"}
+                  onClick={() => firstClass && openClass(firstClass.id)}
+                />
+              </article>
+            </section>
+
+            <section className="teacher-workspace-panel teacher-workspace-class-panel">
+              <PanelHeading
+                eyebrow={tr ? "Sınıf nabzı" : "Class pulse"}
+                title={`${classes.length} ${tr ? "sınıf" : classes.length === 1 ? "class" : "classes"}`}
+                icon={<UsersRound size={18} />}
+              />
+              {classRows.length ? (
+                <div className="teacher-workspace-class-table">
+                  <div className="teacher-workspace-class-head">
+                    <span>{tr ? "Sınıf" : "Class"}</span>
+                    <span>{tr ? "Aktif" : "Active"}</span>
+                    <span>{tr ? "Ortalama" : "Average"}</span>
+                    <span>{tr ? "Ödev" : "Homework"}</span>
+                    <span>{tr ? "Durum" : "Status"}</span>
+                  </div>
+                  {classRows.map((item, index) => (
+                    <button key={item.classroom.id} type="button" onClick={() => openClass(item.classroom.id)} className="teacher-workspace-class-row">
+                      <span>
+                        <i>{String(index + 1).padStart(2, "0")}</i>
+                        <b>{item.classroom.name}</b>
+                        <small>{item.classroom.joinCode}</small>
                       </span>
-                    </div>
-                    <button type="button" className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", whiteSpace: "nowrap" }} onClick={() => setActiveTab("homework")}>
-                      {tr ? "Ödevler →" : "Homework →"}
-                    </button>
-                  </div>
-                )}
-                {pendingRequests.length > 0 && (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", padding: "0.6rem 0.8rem", borderRadius: 10, background: "color-mix(in srgb, var(--accent) 6%, var(--surface) 94%)", borderLeft: "3px solid var(--accent)" }}>
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                      <CheckCircle size={13} style={{ color: "var(--accent)", flexShrink: 0 }} />
-                      <span style={{ fontSize: "0.88rem" }}>
-                        <strong>{pendingRequests.length}</strong> {tr ? "öğrenci onay bekliyor" : "students awaiting approval"}
+                      <strong>{item.active || item.classroom.studentCount}</strong>
+                      <span>{item.average ? item.average.toFixed(1) : "-"}</span>
+                      <span>{item.completion === null ? "-" : `${item.completion}%`}</span>
+                      <span data-tone={item.atRisk > 0 || (item.classroom.pendingCount ?? 0) > 0 ? "attention" : "good"}>
+                        {item.atRisk > 0
+                          ? `${item.atRisk} ${tr ? "riskli" : "at risk"}`
+                          : (item.classroom.pendingCount ?? 0) > 0
+                            ? `${item.classroom.pendingCount} ${tr ? "bekliyor" : "pending"}`
+                            : tr ? "Yolunda" : "On track"}
                       </span>
-                    </div>
-                    <button type="button" className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", whiteSpace: "nowrap" }} onClick={() => setActiveTab("settings")}>
-                      {tr ? "Onayla →" : "Approve →"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* Pending approvals */}
-          {pendingRequests.length > 0 && (
-            <section className="card teacher-highlight teacher-highlight-warm" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-              <span className="eyebrow">{tr ? "Katılım onayları" : "Join approvals"}</span>
-              <h2 style={{ fontSize: "1.5rem", margin: 0 }}>
-                {tr ? `${pendingRequests.length} öğrenci onay bekliyor` : `${pendingRequests.length} students awaiting approval`}
-              </h2>
-              <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "0.6rem" }}>
-                {pendingRequests.map((req) => (
-                  <div key={req.student.id} className="card" style={{ padding: "1rem", display: "grid", gap: "0.5rem" }}>
-                    <strong>{req.student.name}</strong>
-                    <div className="practice-meta">{req.student.email}</div>
-                    <div className="practice-meta">{new Date(req.requestedAt).toLocaleString(tr ? "tr-TR" : "en-US")}</div>
-                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                      <button type="button" className="button button-primary" onClick={() => handleApproval(req.student.id, "approve")}>{tr ? "Onayla" : "Approve"}</button>
-                      <button type="button" className="button button-secondary" onClick={() => handleApproval(req.student.id, "reject")}>{tr ? "Reddet" : "Reject"}</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* At-risk */}
-          {atRiskStudents.length > 0 && (
-            <section className="card teacher-highlight teacher-highlight-danger" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                <AlertTriangle size={16} style={{ color: "var(--destructive)" }} />
-                <span className="eyebrow">{tr ? "Risk sinyali" : "At-risk students"}</span>
-              </div>
-              <h2 style={{ fontSize: "1.5rem", margin: 0 }}>
-                {tr ? `${atRiskStudents.length} öğrencide uyarı` : `${atRiskStudents.length} students flagged`}
-              </h2>
-              <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "0.6rem" }}>
-                {atRiskStudents.map((s) => (
-                  <Link key={s.student.id} href={`/app/teacher/student/${s.student.id}`} className="card teacher-soft-card" style={{ padding: "0.9rem", display: "grid", gap: "0.5rem" }}>
-                    <strong>{s.student.name}</strong>
-                    <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
-                      {(s.riskFlags ?? []).map((flag, i) => (
-                        <span key={i} className="risk-pill">{flag}</span>
-                      ))}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Leaderboards */}
-          {(leaderboard.length > 0 || improvementLeaderboard.length > 0) && (
-            <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
-              <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-                <span className="eyebrow">{tr ? "En yüksek skorlar" : "Top scorers"}</span>
-                {leaderboard.map((s, i) => (
-                  <div key={s.student.id} style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr) auto", gap: "0.7rem", alignItems: "center" }}>
-                    <span className="pill" style={{ fontSize: "0.78rem" }}>#{i + 1}</span>
-                    <div><strong>{s.student.name}</strong><div className="practice-meta">{tr ? "Ort." : "Avg"} {s.averageScore?.toFixed(1) ?? "-"}</div></div>
-                    <strong>{s.bestScore?.toFixed(1) ?? "-"}</strong>
-                  </div>
-                ))}
-              </div>
-              <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-                <span className="eyebrow">{tr ? "En çok gelişenler" : "Most improved"}</span>
-                {improvementLeaderboard.length ? improvementLeaderboard.map((s, i) => (
-                  <div key={s.student.id} style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr) auto", gap: "0.7rem", alignItems: "center" }}>
-                    <span className="pill" style={{ fontSize: "0.78rem" }}>+{i + 1}</span>
-                    <div><strong>{s.student.name}</strong><div className="practice-meta">{s.lastTaskType ? humanizeTaskType(s.lastTaskType, tr) : "-"}</div></div>
-                    <strong style={{ color: (s.scoreDelta ?? 0) >= 0 ? "var(--success)" : "color-mix(in srgb, var(--destructive) 82%, var(--text) 18%)" }}>{formatDelta(s.scoreDelta)}</strong>
-                  </div>
-                )) : <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Henüz yeterli veri yok." : "Not enough data yet."}</p>}
-              </div>
-            </section>
-          )}
-        </>
-      )}
-
-      {/* ── TAB: Students ───────────────────────────────────────────────────── */}
-      {activeTab === "students" && (
-        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "0.8rem" }}>
-            <div>
-              <span className="eyebrow">{tr ? "Öğrenci listesi" : "Student roster"}</span>
-              <h2 style={{ fontSize: "1.6rem", margin: "0.3rem 0 0" }}>
-                {filteredStudents.length === students.length
-                  ? (tr ? `${students.length} öğrenci` : `${students.length} students`)
-                  : (tr ? `${filteredStudents.length} / ${students.length}` : `${filteredStudents.length} of ${students.length}`)}
-              </h2>
-              {/* Quick group by weakness buttons */}
-              {filterSkillOptions.length > 0 && (
-                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
-                  <span style={{ fontSize: "0.78rem", color: "var(--muted)", alignSelf: "center" }}>
-                    {tr ? "Hızlı grup:" : "Quick group:"}
-                  </span>
-                  <button
-                    type="button"
-                    className={`button button-secondary${filters.skill === "all" ? " is-active" : ""}`}
-                    style={{ fontSize: "0.78rem", padding: "0.3rem 0.65rem" }}
-                    onClick={() => setFilters((f) => ({ ...f, skill: "all" }))}
-                  >
-                    {tr ? "Tümü" : "All"}
-                  </button>
-                  {filterSkillOptions.map((sk) => (
-                    <button
-                      key={sk}
-                      type="button"
-                      className={`button button-secondary${filters.skill === sk ? " is-active" : ""}`}
-                      style={{ fontSize: "0.78rem", padding: "0.3rem 0.65rem" }}
-                      onClick={() => setFilters((f) => ({ ...f, skill: f.skill === sk ? "all" : sk }))}
-                    >
-                      {translateCategoryLabel(sk, tr)}
+                      <ArrowRight size={16} />
                     </button>
                   ))}
                 </div>
+              ) : (
+                <WorkspaceEmpty
+                  title={tr ? "Henüz sınıf yok" : "No classes yet"}
+                  body={tr ? "İlk sınıfını oluştur ve öğrencileri kısa bir kodla davet et." : "Create your first class and invite learners with a short join code."}
+                />
               )}
-            </div>
-            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.1rem" }}>
-              <button
-                type="button"
-                className="button button-secondary"
-                style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", ...(atRiskOnly ? { borderColor: "var(--destructive)", color: "var(--destructive)", background: "color-mix(in srgb, var(--destructive) 8%, var(--surface) 92%)" } : {}) }}
-                onClick={() => setAtRiskOnly((v) => !v)}
-              >
-                <AlertTriangle size={11} style={{ display: "inline", marginRight: 4 }} />
-                {tr ? "Sadece riskli" : "At-risk only"}
-              </button>
-              <button
-                type="button"
-                className="button button-secondary"
-                style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", ...(inactiveOnly ? { borderColor: "var(--accent)", color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, var(--surface) 92%)" } : {}) }}
-                onClick={() => setInactiveOnly((v) => !v)}
-              >
-                <Clock size={11} style={{ display: "inline", marginRight: 4 }} />
-                {tr ? "Sadece pasif" : "Inactive only"}
-              </button>
-              <button
-                type="button"
-                className="button button-secondary"
-                style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem", ...(scoreDropOnly ? { borderColor: "var(--destructive)", color: "var(--destructive)", background: "color-mix(in srgb, var(--destructive) 8%, var(--surface) 92%)" } : {}) }}
-                onClick={() => setScoreDropOnly((v) => !v)}
-              >
-                <TrendingDown size={11} style={{ display: "inline", marginRight: 4 }} />
-                {tr ? "Skor düşüşü" : "Score drop"}
-              </button>
-            </div>
-            <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
-              <input
-                value={studentSearch}
-                onChange={(e) => setStudentSearch(e.target.value)}
-                placeholder={tr ? "Öğrenci ara…" : "Search students…"}
-                style={{ ...compactFieldStyle, minWidth: 160 }}
-              />
-              <select value={filters.exam} onChange={(e) => setFilters((f) => ({ ...f, exam: e.target.value as "all" | ExamType }))} style={selectStyle}>
-                <option value="all">{tr ? "Tüm sınavlar" : "All exams"}</option>
-                <option value="IELTS">IELTS</option>
-                <option value="TOEFL">TOEFL</option>
-              </select>
-              <select value={filters.task} onChange={(e) => setFilters((f) => ({ ...f, task: e.target.value as "all" | TaskType }))} style={selectStyle}>
-                <option value="all">{tr ? "Tüm taskler" : "All tasks"}</option>
-                {[...IELTS_TASKS, ...TOEFL_TASKS].map((t) => <option key={t} value={t}>{humanizeTaskType(t, tr)}</option>)}
-              </select>
-              {filterSkillOptions.length > 0 && (
-                <select value={filters.skill} onChange={(e) => setFilters((f) => ({ ...f, skill: e.target.value }))} style={selectStyle}>
-                  <option value="all">{tr ? "Tüm beceriler" : "All skills"}</option>
-                  {filterSkillOptions.map((sk) => <option key={sk} value={sk}>{translateCategoryLabel(sk, tr)}</option>)}
-                </select>
-              )}
-            </div>
-          </div>
-          <div style={{ display: "grid", gap: "0.55rem" }}>
-            {filteredStudents.length ? filteredStudents.map((s) => (
-              <div key={s.student.id} className="card" style={{ padding: "1rem", display: "grid", gap: "0.55rem", background: "var(--surface-strong)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.8rem", alignItems: "flex-start", flexWrap: "wrap" }}>
-                  <div>
-                    <strong>{s.student.name}</strong>
-                    <div className="practice-meta" style={{ marginTop: "0.2rem" }}>{s.student.email}</div>
-                  </div>
-                  <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-                    {typeof s.scoreDelta === "number" && s.scoreDelta > 0 && <TrendingUp size={13} style={{ color: "var(--success)" }} />}
-                    {typeof s.scoreDelta === "number" && s.scoreDelta < 0 && <TrendingDown size={13} style={{ color: "var(--destructive)" }} />}
-                    <span className="pill">{s.averageScore?.toFixed(1) ?? "-"}</span>
-                  </div>
-                </div>
-                <div className="grid" style={{ gridTemplateColumns: "repeat(4, minmax(0,1fr))", gap: "0.5rem" }}>
-                  <TeacherStat label={tr ? "Deneme" : "Attempts"} value={String(s.totalSessions)} />
-                  <TeacherStat label="Best" value={s.bestScore?.toFixed(1) ?? "-"} />
-                  <TeacherStat label={tr ? "Zayıf" : "Weak"} value={s.weakestSkill ? translateCategoryLabel(s.weakestSkill, tr) : "-"} />
-                  <TeacherStat label={tr ? "Artış" : "Delta"} value={formatDelta(s.scoreDelta)} />
-                </div>
-                {(s.riskFlags?.length ?? 0) > 0 && (
-                  <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
-                    {(s.riskFlags ?? []).map((flag, i) => <span key={i} className="risk-pill">{flag}</span>)}
-                  </div>
-                )}
-                <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                  <Link href={`/app/teacher/student/${s.student.id}`} className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem" }}>
-                    {tr ? "Detay →" : "Detail →"}
-                  </Link>
-                  <Link href={`/app/teacher/compare?student=${s.student.id}`} className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.3rem 0.7rem" }}>
-                    {tr ? "Karşılaştır" : "Compare"}
-                  </Link>
-                </div>
-              </div>
-            )) : (
-              <div className="card" style={{ padding: "1rem", color: "var(--muted)" }}>
-                {tr ? "Bu filtrelerle eşleşen öğrenci yok." : "No students match the current filters."}
-              </div>
-            )}
-          </div>
-        </section>
-      )}
+            </section>
 
-      {/* ── TAB: Homework ───────────────────────────────────────────────────── */}
-      {activeTab === "homework" && (
-        <>
-          {/* Summary */}
-          <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-            <span className="eyebrow">{tr ? "Ödev özeti" : "Homework summary"}</span>
-            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: "0.6rem" }}>
-              <TeacherStat label={tr ? "Toplam" : "Total"} value={String(homeworkSummary.total)} />
-              <TeacherStat label={tr ? "Tamamlanan" : "Completed"} value={String(homeworkSummary.completed)} />
-              <TeacherStat label={tr ? "Bekleyen" : "Pending"} value={String(homeworkSummary.pending)} />
-              <TeacherStat label={tr ? "Geciken" : "Overdue"} value={String(homeworkSummary.overdue)} />
-            </div>
-
-            {/* Visual progress bar */}
-            {homeworkSummary.total > 0 && (
-              <div style={{ display: "grid", gap: "0.45rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "var(--muted)" }}>
-                  <span>{tr ? "Tamamlama oranı" : "Completion rate"}</span>
-                  <strong style={{
-                    color: completionRate >= 70 ? "var(--success)" : completionRate >= 40 ? "var(--accent)" : "var(--destructive)"
-                  }}>
-                    {completionRate}%
-                  </strong>
-                </div>
-                <div style={{ height: 10, borderRadius: 99, background: "var(--line)", overflow: "hidden", display: "flex" }}>
-                  <div style={{
-                    width: `${(homeworkSummary.completed / homeworkSummary.total) * 100}%`,
-                    background: "var(--success)",
-                    transition: "width 0.5s ease",
-                  }} />
-                  {homeworkSummary.overdue > 0 && (
-                    <div style={{
-                      width: `${(homeworkSummary.overdue / homeworkSummary.total) * 100}%`,
-                      background: "var(--destructive)",
-                      transition: "width 0.5s ease",
-                    }} />
-                  )}
-                </div>
-                <div style={{ display: "flex", gap: "1rem", fontSize: "0.77rem", color: "var(--muted)" }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                    <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--success)", display: "inline-block" }} />
-                    {tr ? "Tamamlandı" : "Completed"}
-                  </span>
-                  {homeworkSummary.overdue > 0 && (
-                    <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                      <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--destructive)", display: "inline-block" }} />
-                      {tr ? "Gecikmiş" : "Overdue"}
-                    </span>
-                  )}
-                  <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                    <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--line)", display: "inline-block" }} />
-                    {tr ? "Bekliyor" : "Pending"}
-                  </span>
-                </div>
+            <section className="teacher-workspace-create">
+              <div>
+                <span>{tr ? "Yeni sınıf" : "New class"}</span>
+                <h2>{tr ? "Bir sonraki grubunu başlat" : "Start your next group"}</h2>
+                <p>{tr ? "Sınıf adı yeterli. Katılım kodunu otomatik oluşturacağız." : "Add a class name and we will generate the join code."}</p>
               </div>
-            )}
-
-            {/* Overdue reminder banner */}
-            {homeworkSummary.overdue > 0 && (
-              <div style={{
-                padding: "0.8rem 1rem",
-                borderRadius: 12,
-                background: "color-mix(in srgb, var(--destructive) 8%, var(--surface) 92%)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: "0.8rem",
-                flexWrap: "wrap",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <AlertTriangle size={15} style={{ color: "var(--destructive)", flexShrink: 0 }} />
-                  <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--destructive)" }}>
-                    {homeworkSummary.overdue} {tr ? "ödev gecikmiş" : "assignments overdue"}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="button button-secondary"
-                  style={{ fontSize: "0.82rem", padding: "0.45rem 0.85rem" }}
-                  onClick={sendOverdueReminders}
-                >
-                  {tr ? "Gecikenlere hatırlatma gönder" : "Send reminders to late students"}
+              <div className="teacher-workspace-create-form">
+                <input
+                  id="teacher-create-class-name"
+                  value={newClassName}
+                  onChange={(event) => setNewClassName(event.target.value)}
+                  onKeyDown={(event) => { if (event.key === "Enter") void createClass(); }}
+                  placeholder={tr ? "IELTS Akşam Grubu" : "IELTS Evening Group"}
+                />
+                <button type="button" className="button button-primary" onClick={createClass} disabled={!newClassName.trim()}>
+                  <Plus size={16} />
+                  {tr ? "Sınıf oluştur" : "Create class"}
                 </button>
               </div>
-            )}
+            </section>
           </section>
+        </section>
+      </main>
+    );
+  }
 
-          <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem", alignItems: "start" }}>
+  const tabs: Array<{ id: ClassTab; label: string; badge?: number; icon: typeof LayoutDashboard }> = [
+    { id: "overview", label: tr ? "Genel bakış" : "Overview", icon: LayoutDashboard },
+    { id: "students", label: tr ? "Öğrenciler" : "Students", badge: students.length, icon: UsersRound },
+    { id: "homework", label: tr ? "Ödevler" : "Assignments", badge: homeworkSummary.overdue || undefined, icon: BookOpenCheck },
+    { id: "announcements", label: tr ? "Duyurular" : "Announcements", icon: BellRing },
+    { id: "study", label: tr ? "Study list" : "Study list", badge: sharedItems.length || undefined, icon: ListChecks },
+    { id: "settings", label: tr ? "Ayarlar" : "Settings", badge: pendingRequests.length || undefined, icon: Settings2 }
+  ];
+  const activeTabMeta = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
+  const pulseStudents = [...students].sort((a, b) => b.totalSessions - a.totalSessions).slice(0, 7);
+  const maxStudentAttempts = Math.max(1, ...pulseStudents.map((student) => student.totalSessions));
+  const overviewStudents = [...students]
+    .sort((a, b) => (b.riskFlags?.length ?? 0) - (a.riskFlags?.length ?? 0) || b.totalSessions - a.totalSessions)
+    .slice(0, 7);
+  const attentionCount = (analytics?.atRiskStudentCount ?? atRiskStudents.length) + homeworkSummary.overdue + pendingRequests.length;
 
-            {/* Bulk homework */}
-            <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-              <span className="eyebrow">{tr ? "Toplu ödev" : "Bulk homework"}</span>
-              <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Sınıfa ödev ata" : "Assign to whole class"}</h2>
-              <input
-                value={bulkHomework.title}
-                onChange={(e) => setBulkHomework((b) => ({ ...b, title: e.target.value }))}
-                placeholder={tr ? "Ödev başlığı" : "Homework title"}
-                style={fieldStyle}
-              />
-              <textarea
-                value={bulkHomework.instructions}
-                onChange={(e) => setBulkHomework((b) => ({ ...b, instructions: e.target.value }))}
-                rows={4}
-                placeholder={tr ? "Tüm sınıfa gidecek yönergeler…" : "Instructions for the entire class…"}
-                style={textareaStyle}
-              />
-              <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
-                <select value={bulkHomework.recommendedTaskType} onChange={(e) => setBulkHomework((b) => ({ ...b, recommendedTaskType: e.target.value as TaskType }))} style={selectStyle}>
-                  {[...IELTS_TASKS, ...TOEFL_TASKS].map((t) => <option key={t} value={t}>{humanizeTaskType(t, tr)}</option>)}
-                </select>
-                <input
-                  type="number" min="1" max="21"
-                  value={bulkHomework.dueDays}
-                  onChange={(e) => setBulkHomework((b) => ({ ...b, dueDays: Number(e.target.value) || 7 }))}
-                  placeholder={tr ? "Gün sayısı" : "Due in days"}
-                  style={fieldStyle}
-                />
-              </div>
-              <button type="button" className="button button-primary" onClick={assignBulkHomework}>
-                {tr ? "Sınıfa ata" : "Assign to class"}
+  return (
+    <main className="teacher-workspace-page page-shell">
+      <section className="teacher-workspace">
+        <aside className="teacher-workspace-sidebar">
+          <div className="teacher-workspace-brand">
+            <span>SA</span>
+            <div>
+              <strong>SpeakAce</strong>
+              <small>{tr ? "Öğretmen alanı" : "Teacher workspace"}</small>
+            </div>
+          </div>
+          <button type="button" onClick={goBack} className="teacher-workspace-back">
+            <ArrowLeft size={16} />
+            <span>{tr ? "Tüm sınıflar" : "All classes"}</span>
+          </button>
+          <div className="teacher-workspace-class-name">
+            <span>{tr ? "Aktif sınıf" : "Active class"}</span>
+            <strong>{selectedClass?.name}</strong>
+          </div>
+          <nav aria-label={tr ? "Sınıf menüsü" : "Class navigation"}>
+            {tabs.map(({ id, label, badge, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                className={activeTab === id ? "is-active" : ""}
+                onClick={() => {
+                  setActiveTab(id);
+                  setNotice("");
+                  setError("");
+                }}
+              >
+                <Icon size={18} />
+                <span>{label}</span>
+                {badge !== undefined && <small data-alert={id === "homework" && badge > 0}>{badge}</small>}
+              </button>
+            ))}
+          </nav>
+          <div className="teacher-workspace-sidebar-foot teacher-workspace-code">
+            <span>{tr ? "Katılım kodu" : "Join code"}</span>
+            <strong>{selectedClass?.joinCode}</strong>
+            <button type="button" onClick={copyJoinCode}>
+              <Copy size={16} />
+              <span>{copiedCode === selectedClass?.joinCode ? (tr ? "Kopyalandı" : "Copied") : (tr ? "Kodu kopyala" : "Copy code")}</span>
+            </button>
+          </div>
+        </aside>
+
+        <section className="teacher-workspace-main">
+          <header className="teacher-workspace-head">
+            <div>
+              <span>{activeTabMeta.label}</span>
+              <h1>{selectedClass?.name}</h1>
+              <p>
+                {activeTab === "overview"
+                  ? tr ? "Sınıfın nabzını gör ve bir sonraki ders için doğru aksiyonu seç." : "Read the class pulse and choose the right action for the next lesson."
+                  : tr ? "Sınıf araçları tek, sakin bir çalışma alanında." : "Class tools stay together in one calm workspace."}
+              </p>
+            </div>
+            <div className="teacher-workspace-head-actions">
+              <span>{selectedClass?.joinCode}</span>
+              <button type="button" onClick={copyJoinCode}>
+                <Copy size={15} />
+                {copiedCode === selectedClass?.joinCode ? (tr ? "Kopyalandı" : "Copied") : (tr ? "Kopyala" : "Copy")}
+              </button>
+              <button type="button" onClick={copyInviteMessage}>
+                <BellRing size={15} />
+                {tr ? "Davet et" : "Invite"}
               </button>
             </div>
+          </header>
 
-            {/* Auto-assign */}
-            <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-              <span className="eyebrow">{tr ? "Otomatik atama" : "Auto-assign"}</span>
-              <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Düşük skor kuralı" : "Low-score rule"}</h2>
-              <label style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                <input type="checkbox" checked={Boolean(rule?.enabled)} onChange={(e) => setRule((r) => r ? { ...r, enabled: e.target.checked } : r)} />
-                <span className="practice-meta">{tr ? "Otomatik atamayı etkinleştir" : "Enable auto-assign"}</span>
-              </label>
-              <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
-                <label style={{ display: "grid", gap: "0.3rem" }}>
-                  <span className="practice-meta">{tr ? "Skor eşiği" : "Score threshold"}</span>
-                  <input type="number" min="1" max="9" step="0.1" value={rule?.scoreThreshold ?? 5.5}
-                    onChange={(e) => setRule((r) => r ? { ...r, scoreThreshold: Number(e.target.value) } : r)}
-                    style={compactFieldStyle} />
-                </label>
-                <label style={{ display: "grid", gap: "0.3rem" }}>
-                  <span className="practice-meta">{tr ? "Teslim günü" : "Due in days"}</span>
-                  <input type="number" min="1" max="21" value={rule?.dueDays ?? 7}
-                    onChange={(e) => setRule((r) => r ? { ...r, dueDays: Number(e.target.value) } : r)}
-                    style={compactFieldStyle} />
-                </label>
-                <select value={rule?.examType ?? "all"} onChange={(e) => setRule((r) => r ? { ...r, examType: e.target.value as HomeworkAutoAssignRule["examType"] } : r)} style={selectStyle}>
+          {(notice || error) && (
+            <div className="teacher-workspace-feedback">
+              {notice && <p className="teacher-feedback teacher-feedback-success">{notice}</p>}
+              {error && <p className="teacher-feedback teacher-feedback-error">{error}</p>}
+            </div>
+          )}
+
+          {activeTab === "overview" && (
+            <>
+              {loadingStudents ? (
+                <HubLoading label={tr ? "Sınıf verileri hazırlanıyor…" : "Preparing class data…"} />
+              ) : (
+                <>
+                  <section className="teacher-workspace-kpis" aria-label={tr ? "Sınıf istatistikleri" : "Class metrics"}>
+                    <TeacherStat label={tr ? "Sınıf ortalaması" : "Class average"} value={analytics?.classAverageScore ? analytics.classAverageScore.toFixed(1) : "-"} detail={analytics?.classBestScore ? `${tr ? "En iyi" : "Best"} ${analytics.classBestScore.toFixed(1)}` : undefined} />
+                    <TeacherStat label={tr ? "Haftalık deneme" : "Practice attempts"} value={String(analytics?.totalAttempts ?? 0)} detail={`${analytics?.activeStudents ?? 0} ${tr ? "aktif öğrenci" : "active learners"}`} />
+                    <TeacherStat label={tr ? "Ödev tamamlandı" : "Homework complete"} value={`${analytics?.homeworkCompletionRate ?? completionRate}%`} detail={`${homeworkSummary.completed} / ${homeworkSummary.total}`} />
+                    <TeacherStat label={tr ? "Dikkat gerekli" : "Need attention"} value={String(attentionCount)} detail={`${pendingRequests.length} ${tr ? "onay" : "approvals"}`} tone="alert" />
+                  </section>
+
+                  <section className="teacher-workspace-overview-grid">
+                    <article className="teacher-workspace-panel">
+                      <PanelHeading
+                        eyebrow={tr ? "Pratik aktivitesi" : "Practice activity"}
+                        title={`${analytics?.totalAttempts ?? 0} ${tr ? "deneme" : "attempts"}`}
+                        icon={<BarChart3 size={18} />}
+                      />
+                      {pulseStudents.some((student) => student.totalSessions > 0) ? (
+                        <div className="teacher-workspace-chart" aria-label={tr ? "Öğrenci denemeleri" : "Learner attempts"}>
+                          {pulseStudents.map((student) => (
+                            <div key={student.student.id}>
+                              <span
+                                style={{ height: `${Math.max(10, Math.round((student.totalSessions / maxStudentAttempts) * 100))}%` }}
+                                title={`${student.student.name}: ${student.totalSessions}`}
+                              />
+                              <small>{personInitials(student.student.name)}</small>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <WorkspaceEmpty
+                          title={tr ? "Henüz pratik verisi yok" : "No practice data yet"}
+                          body={tr ? "Öğrenciler ilk denemelerini tamamladığında dağılım burada görünecek." : "The distribution will appear after learners complete their first attempts."}
+                        />
+                      )}
+                    </article>
+
+                    <article className="teacher-workspace-panel teacher-workspace-action-panel">
+                      <PanelHeading
+                        eyebrow={tr ? "Aksiyon kuyruğu" : "Action queue"}
+                        title={`${attentionCount} ${tr ? "öncelik" : attentionCount === 1 ? "priority" : "priorities"}`}
+                        icon={<ShieldAlert size={18} />}
+                      />
+                      <ActionRow
+                        label={tr ? "Riskli öğrencileri incele" : "Review at-risk learners"}
+                        value={analytics?.atRiskStudentCount ?? atRiskStudents.length}
+                        cta={tr ? "Gör" : "View"}
+                        onClick={() => {
+                          setAtRiskOnly(true);
+                          setActiveTab("students");
+                        }}
+                      />
+                      <ActionRow
+                        label={tr ? "Geciken ödevleri hatırlat" : "Remind overdue assignments"}
+                        value={homeworkSummary.overdue}
+                        cta={tr ? "Ödevler" : "Assignments"}
+                        onClick={() => setActiveTab("homework")}
+                      />
+                      <ActionRow
+                        label={tr ? "Katılım taleplerini yanıtla" : "Respond to join requests"}
+                        value={pendingRequests.length}
+                        cta={tr ? "Onaylar" : "Approvals"}
+                        onClick={() => setActiveTab("settings")}
+                      />
+                    </article>
+                  </section>
+
+                  <section className="teacher-workspace-panel teacher-workspace-roster-panel">
+                    <PanelHeading
+                      eyebrow={tr ? "Öğrenci nabzı" : "Learner pulse"}
+                      title={`${students.length} ${tr ? "öğrenci" : students.length === 1 ? "learner" : "learners"}`}
+                      icon={<UsersRound size={18} />}
+                    />
+                    {overviewStudents.length ? (
+                      <div className="teacher-workspace-roster">
+                        <div className="teacher-workspace-roster-head">
+                          <span>{tr ? "Öğrenci" : "Learner"}</span>
+                          <span>{tr ? "Son ortalama" : "Latest average"}</span>
+                          <span>{tr ? "Mevcut odak" : "Current focus"}</span>
+                          <span>{tr ? "Durum" : "Status"}</span>
+                        </div>
+                        {overviewStudents.map((student, index) => {
+                          const status = getStudentStatus(student, tr);
+                          return (
+                            <div className="teacher-workspace-roster-row" key={student.student.id}>
+                              <span>
+                                <i>{String(index + 1).padStart(2, "0")}</i>
+                                <span>
+                                  <Link href={`/app/teacher/student/${student.student.id}`}>{student.student.name}</Link>
+                                  <small>{student.student.email}</small>
+                                </span>
+                              </span>
+                              <strong>{student.averageScore?.toFixed(1) ?? "-"}</strong>
+                              <span>{student.weakestSkill ? translateCategoryLabel(student.weakestSkill, tr) : tr ? "Dengeli pratik" : "Balanced practice"}</span>
+                              <span data-tone={status.tone}>{status.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <WorkspaceEmpty
+                        title={tr ? "Sınıfta henüz öğrenci yok" : "No learners in this class yet"}
+                        body={tr ? "Katılım kodunu paylaş veya Ayarlar bölümünden öğrenci ekle." : "Share the join code or add a learner from Settings."}
+                      />
+                    )}
+                    {students.length > overviewStudents.length && (
+                      <button type="button" className="teacher-workspace-text-action" onClick={() => setActiveTab("students")}>
+                        {tr ? "Tüm öğrenci listesini aç" : "Open full roster"}
+                        <ArrowRight size={15} />
+                      </button>
+                    )}
+                  </section>
+
+                  {pendingRequests.length > 0 && (
+                    <section className="teacher-workspace-panel teacher-workspace-approval-panel">
+                      <PanelHeading
+                        eyebrow={tr ? "Katılım onayları" : "Join approvals"}
+                        title={`${pendingRequests.length} ${tr ? "talep bekliyor" : "requests waiting"}`}
+                        icon={<CheckCircle size={18} />}
+                      />
+                      <div className="teacher-workspace-approval-list">
+                        {pendingRequests.map((request) => (
+                          <div key={request.student.id}>
+                            <span>
+                              <strong>{request.student.name}</strong>
+                              <small>{request.student.email}</small>
+                            </span>
+                            <time>{new Date(request.requestedAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</time>
+                            <div>
+                              <button type="button" onClick={() => handleApproval(request.student.id, "approve")}>{tr ? "Onayla" : "Approve"}</button>
+                              <button type="button" onClick={() => handleApproval(request.student.id, "reject")}>{tr ? "Reddet" : "Reject"}</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </>
+              )}
+            </>
+          )}
+
+          {activeTab === "students" && (
+            <section className="teacher-workspace-panel teacher-workspace-section">
+              <PanelHeading
+                eyebrow={tr ? "Öğrenci listesi" : "Student roster"}
+                title={filteredStudents.length === students.length
+                  ? `${students.length} ${tr ? "öğrenci" : students.length === 1 ? "learner" : "learners"}`
+                  : `${filteredStudents.length} / ${students.length}`}
+                icon={<UsersRound size={18} />}
+              />
+              <div className="teacher-workspace-filter-bar">
+                <input
+                  value={studentSearch}
+                  onChange={(event) => setStudentSearch(event.target.value)}
+                  placeholder={tr ? "Öğrenci ara…" : "Search learners…"}
+                  aria-label={tr ? "Öğrenci ara" : "Search learners"}
+                />
+                <select value={filters.exam} onChange={(event) => setFilters((current) => ({ ...current, exam: event.target.value as "all" | ExamType }))}>
                   <option value="all">{tr ? "Tüm sınavlar" : "All exams"}</option>
                   <option value="IELTS">IELTS</option>
                   <option value="TOEFL">TOEFL</option>
                 </select>
-                <select value={rule?.taskType ?? "all"} onChange={(e) => setRule((r) => r ? { ...r, taskType: e.target.value as HomeworkAutoAssignRule["taskType"] } : r)} style={selectStyle}>
-                  <option value="all">{tr ? "Tüm taskler" : "All tasks"}</option>
-                  {[...IELTS_TASKS, ...TOEFL_TASKS].map((t) => <option key={t} value={t}>{humanizeTaskType(t, tr)}</option>)}
+                <select value={filters.task} onChange={(event) => setFilters((current) => ({ ...current, task: event.target.value as "all" | TaskType }))}>
+                  <option value="all">{tr ? "Tüm görevler" : "All tasks"}</option>
+                  {[...IELTS_TASKS, ...TOEFL_TASKS].map((task) => <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>)}
                 </select>
+                {filterSkillOptions.length > 0 && (
+                  <select value={filters.skill} onChange={(event) => setFilters((current) => ({ ...current, skill: event.target.value }))}>
+                    <option value="all">{tr ? "Tüm beceriler" : "All skills"}</option>
+                    {filterSkillOptions.map((skill) => <option key={skill} value={skill}>{translateCategoryLabel(skill, tr)}</option>)}
+                  </select>
+                )}
               </div>
-              <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-                <button type="button" className="button button-secondary" onClick={saveAutoAssignRule}>{tr ? "Kuralı kaydet" : "Save rule"}</button>
-                <button type="button" className="button button-primary" onClick={runAutoAssignNow}>{tr ? "Şimdi çalıştır" : "Run now"}</button>
-              </div>
-            </div>
-          </section>
-        </>
-      )}
-
-      {/* ── TAB: Study List ─────────────────────────────────────────────────── */}
-      {activeTab === "study" && (
-        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem", alignItems: "start" }}>
-
-          {/* Share form */}
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-            <span className="eyebrow">{tr ? "Prompt paylaş" : "Share prompt"}</span>
-            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Sınıfa prompt ekle" : "Add prompt to class"}</h2>
-            <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
-              <select value={shareExamType} onChange={(e) => setShareExamType(e.target.value as ExamType)} style={selectStyle}>
-                <option value="IELTS">IELTS</option>
-                <option value="TOEFL">TOEFL</option>
-              </select>
-              <select value={shareTaskType} onChange={(e) => setShareTaskType(e.target.value as TaskType)} style={selectStyle}>
-                {availableTasks.map((t) => <option key={t} value={t}>{humanizeTaskType(t, tr)}</option>)}
-              </select>
-            </div>
-            <select value={sharePromptId} onChange={(e) => setSharePromptId(e.target.value)} style={selectStyle}>
-              {availableSharePrompts.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-            </select>
-            <textarea
-              value={shareNote}
-              onChange={(e) => setShareNote(e.target.value)}
-              rows={3}
-              placeholder={tr ? "Sınıfa kısa yönlendirme notu…" : "Short guidance note for the class…"}
-              style={textareaStyle}
-            />
-            <button type="button" className="button button-primary" onClick={sharePromptToClass}>
-              {tr ? "Promptu paylaş" : "Share prompt"}
-            </button>
-          </div>
-
-          {/* Shared items */}
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-            <span className="eyebrow">{tr ? "Paylaşılan promptlar" : "Shared prompts"}</span>
-            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Sınıf study list" : "Class study list"}</h2>
-            {sharedItems.length ? (
-              <div style={{ display: "grid", gap: "0.55rem" }}>
-                {sharedItems.map((item) => (
-                  <div key={item.id} className="card teacher-highlight teacher-highlight-cool" style={{ padding: "0.9rem", display: "grid", gap: "0.35rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.6rem" }}>
-                      <strong style={{ fontSize: "0.95rem" }}>{item.title}</strong>
-                      <button type="button" className="button button-secondary" style={{ fontSize: "0.8rem", padding: "0.3rem 0.7rem" }} onClick={() => removeSharedItem(item.id)}>
-                        {tr ? "Kaldır" : "Remove"}
-                      </button>
-                    </div>
-                    <div className="practice-meta">{item.examType} · {humanizeTaskType(item.taskType, tr)}</div>
-                    {item.note && <div className="practice-meta">{item.note}</div>}
-                  </div>
+              <div className="teacher-workspace-filter-chips">
+                <button type="button" className={atRiskOnly ? "is-active is-alert" : ""} onClick={() => setAtRiskOnly((value) => !value)}>
+                  <AlertTriangle size={13} />
+                  {tr ? "Sadece riskli" : "At-risk only"}
+                </button>
+                <button type="button" className={inactiveOnly ? "is-active" : ""} onClick={() => setInactiveOnly((value) => !value)}>
+                  <Clock size={13} />
+                  {tr ? "Sadece pasif" : "Inactive only"}
+                </button>
+                <button type="button" className={scoreDropOnly ? "is-active is-alert" : ""} onClick={() => setScoreDropOnly((value) => !value)}>
+                  <TrendingDown size={13} />
+                  {tr ? "Skoru düşenler" : "Score drop"}
+                </button>
+                {filterSkillOptions.slice(0, 4).map((skill) => (
+                  <button
+                    key={skill}
+                    type="button"
+                    className={filters.skill === skill ? "is-active" : ""}
+                    onClick={() => setFilters((current) => ({ ...current, skill: current.skill === skill ? "all" : skill }))}
+                  >
+                    {translateCategoryLabel(skill, tr)}
+                  </button>
                 ))}
               </div>
-            ) : (
-              <p style={{ margin: 0, color: "var(--muted)" }}>
-                {tr ? "Henüz paylaşılan prompt yok. Soldan ekleyebilirsin." : "No prompts shared yet. Add one on the left."}
-              </p>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* ── TAB: Settings ───────────────────────────────────────────────────── */}
-      {activeTab === "settings" && (
-        <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1rem", alignItems: "start" }}>
-
-          {/* Class settings */}
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-            <span className="eyebrow">{tr ? "Katılım ayarları" : "Enrollment settings"}</span>
-            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Sınıf ayarları" : "Class settings"}</h2>
-            <label style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-              <input type="checkbox" checked={classSettings.approvalRequired} onChange={(e) => setClassSettings((s) => ({ ...s, approvalRequired: e.target.checked }))} />
-              <span className="practice-meta">{tr ? "Katılım onayı gereksin" : "Require approval to join"}</span>
-            </label>
-            <textarea
-              value={classSettings.joinMessage}
-              onChange={(e) => setClassSettings((s) => ({ ...s, joinMessage: e.target.value }))}
-              rows={3}
-              placeholder={tr ? "Katılım sonrası öğrenciye kısa mesaj…" : "Short note students see after joining…"}
-              style={textareaStyle}
-            />
-            <button type="button" className="button button-primary" onClick={updateClassSettings}>
-              {tr ? "Ayarları kaydet" : "Save settings"}
-            </button>
-
-            <div style={{ borderTop: "1px solid var(--line)", paddingTop: "0.8rem", display: "grid", gap: "0.6rem" }}>
-              <span className="practice-meta" style={{ fontWeight: 600 }}>{tr ? "Öğrenci ekle" : "Add student"}</span>
-              <div style={{ display: "flex", gap: "0.6rem" }}>
-                <input value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} placeholder="student@example.com"
-                  style={{ ...compactFieldStyle, flex: 1 }} />
-                <button type="button" className="button button-secondary" onClick={addStudent}>{tr ? "Ekle" : "Add"}</button>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-              <a className="button button-secondary" href={`/api/teacher/classes/${selectedClassId}/export`}>{tr ? "CSV rapor indir" : "Download CSV"}</a>
-              <Link className="button button-secondary" href="/app/teacher/compare">{tr ? "Öğrenci karşılaştır" : "Compare students"}</Link>
-            </div>
-          </div>
-
-          {/* Announcement */}
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-            <span className="eyebrow">{tr ? "Duyuru" : "Announcement"}</span>
-            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Sınıfa mesaj gönder" : "Message the class"}</h2>
-            <input
-              value={announcementTitle}
-              onChange={(e) => setAnnouncementTitle(e.target.value)}
-              placeholder={tr ? "Duyuru başlığı" : "Announcement title"}
-              style={fieldStyle}
-            />
-            <textarea
-              value={announcementBody}
-              onChange={(e) => setAnnouncementBody(e.target.value)}
-              rows={5}
-              placeholder={tr ? "Sınıfa gidecek duyuru…" : "Announcement for the class…"}
-              style={textareaStyle}
-            />
-            <button type="button" className="button button-primary" onClick={sendClassAnnouncement}>
-              {tr ? "Duyuruyu gönder" : "Send announcement"}
-            </button>
-          </div>
-
-          {/* Office hours */}
-          <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-              <Clock size={16} style={{ color: "var(--accent)" }} />
-              <span className="eyebrow">{tr ? "Ofis saatleri" : "Office hours"}</span>
-            </div>
-            <h2 style={{ fontSize: "1.5rem", margin: 0 }}>{tr ? "Müsaitlik saatleri" : "Availability schedule"}</h2>
-            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.88rem", lineHeight: 1.6 }}>
-              {tr
-                ? "Kurum admini ofis saatlerinizi görebilir. Öğrenciler soru sorabilecekleri zaman aralığını bilir."
-                : "Institution admin can see your office hours. Students know when to reach you."}
-            </p>
-            <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}>
-              <label style={{ display: "grid", gap: "0.3rem" }}>
-                <span className="practice-meta">{tr ? "Başlangıç" : "Start time"}</span>
-                <input
-                  type="time"
-                  value={officeHoursStart}
-                  onChange={(e) => setOfficeHoursStart(e.target.value)}
-                  style={compactFieldStyle}
+              {filteredStudents.length ? (
+                <div className="teacher-workspace-student-table">
+                  <div className="teacher-workspace-student-head">
+                    <span>{tr ? "Öğrenci" : "Learner"}</span>
+                    <span>{tr ? "Deneme" : "Attempts"}</span>
+                    <span>{tr ? "Ortalama" : "Average"}</span>
+                    <span>{tr ? "Odak" : "Focus"}</span>
+                    <span>{tr ? "Durum" : "Status"}</span>
+                    <span />
+                  </div>
+                  {filteredStudents.map((student, index) => {
+                    const status = getStudentStatus(student, tr);
+                    return (
+                      <div className="teacher-workspace-student-row" key={student.student.id}>
+                        <span>
+                          <i>{String(index + 1).padStart(2, "0")}</i>
+                          <span>
+                            <strong>{student.student.name}</strong>
+                            <small>{student.student.email}</small>
+                          </span>
+                        </span>
+                        <strong>{student.totalSessions}</strong>
+                        <span>
+                          {student.averageScore?.toFixed(1) ?? "-"}
+                          {typeof student.scoreDelta === "number" && (
+                            <small data-positive={student.scoreDelta >= 0}>{formatDelta(student.scoreDelta)}</small>
+                          )}
+                        </span>
+                        <span>{student.weakestSkill ? translateCategoryLabel(student.weakestSkill, tr) : "-"}</span>
+                        <span data-tone={status.tone}>{status.label}</span>
+                        <span>
+                          <Link href={`/app/teacher/student/${student.student.id}`}>{tr ? "Detay" : "Detail"}</Link>
+                          <Link href={`/app/teacher/compare?student=${student.student.id}`}>{tr ? "Kıyasla" : "Compare"}</Link>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <WorkspaceEmpty
+                  title={tr ? "Eşleşen öğrenci yok" : "No matching learners"}
+                  body={tr ? "Aramayı veya aktif filtreleri değiştir." : "Change the search or active filters."}
                 />
-              </label>
-              <label style={{ display: "grid", gap: "0.3rem" }}>
-                <span className="practice-meta">{tr ? "Bitiş" : "End time"}</span>
-                <input
-                  type="time"
-                  value={officeHoursEnd}
-                  onChange={(e) => setOfficeHoursEnd(e.target.value)}
-                  style={compactFieldStyle}
-                />
-              </label>
-            </div>
-            <div style={{ display: "grid", gap: "0.4rem" }}>
-              <span className="practice-meta">{tr ? "Günler" : "Days"}</span>
-              <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                {(tr
-                  ? ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"]
-                  : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-                ).map((day, i) => {
-                  const key = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i];
-                  const active = officeHoursDays.includes(key);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setOfficeHoursDays((d) => active ? d.filter((x) => x !== key) : [...d, key])}
-                      style={{
-                        padding: "0.35rem 0.65rem",
-                        borderRadius: 10,
-                        border: `1px solid ${active ? "var(--accent)" : "var(--line)"}`,
-                        background: active ? "color-mix(in srgb, var(--accent) 15%, var(--surface) 85%)" : "var(--surface)",
-                        color: active ? "var(--accent)" : "var(--muted)",
-                        fontWeight: active ? 700 : 400,
-                        fontSize: "0.82rem",
-                        cursor: "pointer",
-                        font: "inherit",
-                      }}
-                    >
-                      {day}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div style={{ padding: "0.7rem", borderRadius: 12, background: "var(--surface-strong)", fontSize: "0.85rem", color: "var(--muted)" }}>
-              {tr ? "Kaydedilen:" : "Currently set:"} {officeHoursDays.join(", ")} · {officeHoursStart} – {officeHoursEnd}
-            </div>
-          </div>
-        </section>
-      )}
+              )}
+            </section>
+          )}
 
-    </div>
+          {activeTab === "homework" && (
+            <section className="teacher-workspace-tab-stack">
+              <div className="teacher-workspace-kpis">
+                <TeacherStat label={tr ? "Toplam" : "Total"} value={String(homeworkSummary.total)} />
+                <TeacherStat label={tr ? "Tamamlanan" : "Completed"} value={String(homeworkSummary.completed)} detail={`${completionRate}%`} />
+                <TeacherStat label={tr ? "Bekleyen" : "Pending"} value={String(homeworkSummary.pending)} />
+                <TeacherStat label={tr ? "Geciken" : "Overdue"} value={String(homeworkSummary.overdue)} tone={homeworkSummary.overdue > 0 ? "alert" : "default"} />
+              </div>
+
+              <article className="teacher-workspace-panel teacher-workspace-progress-panel">
+                <PanelHeading
+                  eyebrow={tr ? "Ödev ilerlemesi" : "Assignment progress"}
+                  title={`${completionRate}% ${tr ? "tamamlandı" : "complete"}`}
+                  icon={<BookOpenCheck size={18} />}
+                />
+                <div className="teacher-workspace-progress">
+                  <span style={{ width: `${completionRate}%` }} />
+                </div>
+                <div className="teacher-workspace-progress-legend">
+                  <span><i data-tone="good" />{tr ? "Tamamlandı" : "Completed"} · {homeworkSummary.completed}</span>
+                  <span><i />{tr ? "Bekliyor" : "Pending"} · {homeworkSummary.pending}</span>
+                  <span><i data-tone="alert" />{tr ? "Gecikti" : "Overdue"} · {homeworkSummary.overdue}</span>
+                  {homeworkSummary.overdue > 0 && (
+                    <button type="button" onClick={sendOverdueReminders}>{tr ? "Hatırlatma gönder" : "Send reminders"}</button>
+                  )}
+                </div>
+              </article>
+
+              <div className="teacher-workspace-form-grid">
+                <article className="teacher-workspace-panel teacher-workspace-form-panel">
+                  <PanelHeading
+                    eyebrow={tr ? "Toplu ödev" : "Bulk assignment"}
+                    title={tr ? "Tüm sınıfa görev ver" : "Assign the whole class"}
+                    icon={<BookOpen size={18} />}
+                  />
+                  <label>
+                    <span>{tr ? "Ödev başlığı" : "Assignment title"}</span>
+                    <input value={bulkHomework.title} onChange={(event) => setBulkHomework((current) => ({ ...current, title: event.target.value }))} placeholder={tr ? "Part 2 akıcılık çalışması" : "Part 2 fluency practice"} />
+                  </label>
+                  <label>
+                    <span>{tr ? "Yönergeler" : "Instructions"}</span>
+                    <textarea value={bulkHomework.instructions} onChange={(event) => setBulkHomework((current) => ({ ...current, instructions: event.target.value }))} rows={4} placeholder={tr ? "Öğrencilere gidecek kısa ve açık yönerge…" : "Short, clear guidance for learners…"} />
+                  </label>
+                  <div className="teacher-workspace-field-grid">
+                    <label>
+                      <span>{tr ? "Görev türü" : "Task type"}</span>
+                      <select value={bulkHomework.recommendedTaskType} onChange={(event) => setBulkHomework((current) => ({ ...current, recommendedTaskType: event.target.value as TaskType }))}>
+                        {[...IELTS_TASKS, ...TOEFL_TASKS].map((task) => <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>)}
+                      </select>
+                    </label>
+                    <label>
+                      <span>{tr ? "Teslim süresi" : "Due in days"}</span>
+                      <input type="number" min="1" max="21" value={bulkHomework.dueDays} onChange={(event) => setBulkHomework((current) => ({ ...current, dueDays: Number(event.target.value) || 7 }))} />
+                    </label>
+                  </div>
+                  <button type="button" className="button button-primary" onClick={assignBulkHomework}>{tr ? "Sınıfa ata" : "Assign to class"}</button>
+                </article>
+
+                <article className="teacher-workspace-panel teacher-workspace-form-panel">
+                  <PanelHeading
+                    eyebrow={tr ? "Otomatik atama" : "Auto-assign"}
+                    title={tr ? "Düşük skora göre takip" : "Follow up low scores"}
+                    icon={<ListChecks size={18} />}
+                  />
+                  <label className="teacher-workspace-checkbox">
+                    <input type="checkbox" checked={Boolean(rule?.enabled)} onChange={(event) => setRule((current) => current ? { ...current, enabled: event.target.checked } : current)} />
+                    <span>{tr ? "Otomatik atamayı etkinleştir" : "Enable auto-assign"}</span>
+                  </label>
+                  <div className="teacher-workspace-field-grid">
+                    <label>
+                      <span>{tr ? "Skor eşiği" : "Score threshold"}</span>
+                      <input type="number" min="1" max="9" step="0.1" value={rule?.scoreThreshold ?? 5.5} onChange={(event) => setRule((current) => current ? { ...current, scoreThreshold: Number(event.target.value) } : current)} />
+                    </label>
+                    <label>
+                      <span>{tr ? "Teslim süresi" : "Due in days"}</span>
+                      <input type="number" min="1" max="21" value={rule?.dueDays ?? 7} onChange={(event) => setRule((current) => current ? { ...current, dueDays: Number(event.target.value) } : current)} />
+                    </label>
+                    <label>
+                      <span>{tr ? "Sınav" : "Exam"}</span>
+                      <select value={rule?.examType ?? "all"} onChange={(event) => setRule((current) => current ? { ...current, examType: event.target.value as HomeworkAutoAssignRule["examType"] } : current)}>
+                        <option value="all">{tr ? "Tüm sınavlar" : "All exams"}</option>
+                        <option value="IELTS">IELTS</option>
+                        <option value="TOEFL">TOEFL</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>{tr ? "Görev" : "Task"}</span>
+                      <select value={rule?.taskType ?? "all"} onChange={(event) => setRule((current) => current ? { ...current, taskType: event.target.value as HomeworkAutoAssignRule["taskType"] } : current)}>
+                        <option value="all">{tr ? "Tüm görevler" : "All tasks"}</option>
+                        {[...IELTS_TASKS, ...TOEFL_TASKS].map((task) => <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                  <div className="teacher-workspace-button-row">
+                    <button type="button" className="button button-secondary" onClick={saveAutoAssignRule}>{tr ? "Kuralı kaydet" : "Save rule"}</button>
+                    <button type="button" className="button button-primary" onClick={runAutoAssignNow}>{tr ? "Şimdi çalıştır" : "Run now"}</button>
+                  </div>
+                </article>
+              </div>
+            </section>
+          )}
+
+          {activeTab === "announcements" && (
+            <section className="teacher-workspace-form-grid teacher-workspace-announcement-grid">
+              <article className="teacher-workspace-panel teacher-workspace-form-panel">
+                <PanelHeading
+                  eyebrow={tr ? "Yeni duyuru" : "New announcement"}
+                  title={tr ? "Sınıfa mesaj gönder" : "Message the class"}
+                  icon={<BellRing size={18} />}
+                />
+                <label>
+                  <span>{tr ? "Başlık" : "Title"}</span>
+                  <input value={announcementTitle} onChange={(event) => setAnnouncementTitle(event.target.value)} placeholder={tr ? "Bu haftanın odağı" : "This week's focus"} />
+                </label>
+                <label>
+                  <span>{tr ? "Mesaj" : "Message"}</span>
+                  <textarea value={announcementBody} onChange={(event) => setAnnouncementBody(event.target.value)} rows={7} placeholder={tr ? "Sınıfa gidecek kısa ve açık duyuru…" : "A short, clear announcement for the class…"} />
+                </label>
+                <button type="button" className="button button-primary" onClick={sendClassAnnouncement}>{tr ? "Duyuruyu gönder" : "Send announcement"}</button>
+              </article>
+
+              <aside className="teacher-workspace-panel teacher-workspace-delivery-panel">
+                <PanelHeading
+                  eyebrow={tr ? "Teslimat özeti" : "Delivery summary"}
+                  title={tr ? "Göndermeden önce" : "Before you send"}
+                  icon={<CheckCircle size={18} />}
+                />
+                <dl>
+                  <div>
+                    <dt>{tr ? "Alıcılar" : "Recipients"}</dt>
+                    <dd>{students.length} {tr ? "öğrenci" : students.length === 1 ? "learner" : "learners"}</dd>
+                  </div>
+                  <div>
+                    <dt>{tr ? "Sınıf" : "Class"}</dt>
+                    <dd>{selectedClass?.name}</dd>
+                  </div>
+                  <div>
+                    <dt>{tr ? "Kanal" : "Channel"}</dt>
+                    <dd>{tr ? "SpeakAce bildirimleri" : "SpeakAce notifications"}</dd>
+                  </div>
+                </dl>
+                <p>
+                  {tr
+                    ? "Duyuruyu tek bir aksiyon, tarih veya ders odağı etrafında kısa tut."
+                    : "Keep the announcement short and centered on one action, date, or lesson focus."}
+                </p>
+              </aside>
+            </section>
+          )}
+
+          {activeTab === "study" && (
+            <section className="teacher-workspace-form-grid">
+              <article className="teacher-workspace-panel teacher-workspace-form-panel">
+                <PanelHeading
+                  eyebrow={tr ? "Prompt paylaş" : "Share prompt"}
+                  title={tr ? "Sınıf study listine ekle" : "Add to the class study list"}
+                  icon={<ListChecks size={18} />}
+                />
+                <div className="teacher-workspace-field-grid">
+                  <label>
+                    <span>{tr ? "Sınav" : "Exam"}</span>
+                    <select value={shareExamType} onChange={(event) => setShareExamType(event.target.value as ExamType)}>
+                      <option value="IELTS">IELTS</option>
+                      <option value="TOEFL">TOEFL</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>{tr ? "Görev" : "Task"}</span>
+                    <select value={shareTaskType} onChange={(event) => setShareTaskType(event.target.value as TaskType)}>
+                      {availableTasks.map((task) => <option key={task} value={task}>{humanizeTaskType(task, tr)}</option>)}
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  <span>Prompt</span>
+                  <select value={sharePromptId} onChange={(event) => setSharePromptId(event.target.value)}>
+                    {availableSharePrompts.map((prompt) => <option key={prompt.id} value={prompt.id}>{prompt.title}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span>{tr ? "Öğretmen notu" : "Teacher note"}</span>
+                  <textarea value={shareNote} onChange={(event) => setShareNote(event.target.value)} rows={4} placeholder={tr ? "Bu promptta neye dikkat etmeleri gerektiğini yaz…" : "Tell learners what to focus on…"} />
+                </label>
+                <button type="button" className="button button-primary" onClick={sharePromptToClass}>{tr ? "Promptu paylaş" : "Share prompt"}</button>
+              </article>
+
+              <article className="teacher-workspace-panel teacher-workspace-form-panel">
+                <PanelHeading
+                  eyebrow={tr ? "Paylaşılan çalışmalar" : "Shared practice"}
+                  title={`${sharedItems.length} ${tr ? "prompt" : sharedItems.length === 1 ? "prompt" : "prompts"}`}
+                  icon={<BookOpenCheck size={18} />}
+                />
+                {sharedItems.length ? (
+                  <div className="teacher-workspace-study-list">
+                    {sharedItems.map((item, index) => (
+                      <div key={item.id}>
+                        <i>{String(index + 1).padStart(2, "0")}</i>
+                        <span>
+                          <strong>{item.title}</strong>
+                          <small>{item.examType} · {humanizeTaskType(item.taskType, tr)}</small>
+                          {item.note && <p>{item.note}</p>}
+                        </span>
+                        <button type="button" onClick={() => removeSharedItem(item.id)}>{tr ? "Kaldır" : "Remove"}</button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <WorkspaceEmpty
+                    title={tr ? "Henüz prompt paylaşılmadı" : "No prompts shared yet"}
+                    body={tr ? "Soldaki formdan ilk yönlendirilmiş çalışmayı ekle." : "Add the first guided practice from the form."}
+                  />
+                )}
+              </article>
+            </section>
+          )}
+
+          {activeTab === "settings" && (
+            <section className="teacher-workspace-settings-grid">
+              <article className="teacher-workspace-panel teacher-workspace-form-panel">
+                <PanelHeading
+                  eyebrow={tr ? "Katılım" : "Enrollment"}
+                  title={tr ? "Sınıf ayarları" : "Class settings"}
+                  icon={<Settings2 size={18} />}
+                />
+                <label className="teacher-workspace-checkbox">
+                  <input type="checkbox" checked={classSettings.approvalRequired} onChange={(event) => setClassSettings((current) => ({ ...current, approvalRequired: event.target.checked }))} />
+                  <span>{tr ? "Katılım için öğretmen onayı iste" : "Require teacher approval to join"}</span>
+                </label>
+                <label>
+                  <span>{tr ? "Katılım mesajı" : "Join message"}</span>
+                  <textarea value={classSettings.joinMessage} onChange={(event) => setClassSettings((current) => ({ ...current, joinMessage: event.target.value }))} rows={4} placeholder={tr ? "Öğrencinin katıldıktan sonra göreceği not…" : "A short note learners see after joining…"} />
+                </label>
+                <button type="button" className="button button-primary" onClick={updateClassSettings}>{tr ? "Ayarları kaydet" : "Save settings"}</button>
+                <div className="teacher-workspace-divider" />
+                <label>
+                  <span>{tr ? "E-posta ile öğrenci ekle" : "Add learner by email"}</span>
+                  <div className="teacher-workspace-inline-field">
+                    <input value={studentEmail} onChange={(event) => setStudentEmail(event.target.value)} placeholder="student@example.com" />
+                    <button type="button" className="button button-secondary" onClick={addStudent}>{tr ? "Ekle" : "Add"}</button>
+                  </div>
+                </label>
+                <div className="teacher-workspace-button-row">
+                  <a className="button button-secondary" href={`/api/teacher/classes/${selectedClassId}/export`}>{tr ? "CSV indir" : "Download CSV"}</a>
+                  <Link className="button button-secondary" href="/app/teacher/compare">{tr ? "Öğrencileri kıyasla" : "Compare learners"}</Link>
+                </div>
+              </article>
+
+              <article className="teacher-workspace-panel teacher-workspace-form-panel">
+                <PanelHeading
+                  eyebrow={tr ? "Müsaitlik" : "Availability"}
+                  title={tr ? "Ofis saatleri" : "Office hours"}
+                  icon={<Clock size={18} />}
+                />
+                <p className="teacher-workspace-form-note">
+                  {tr
+                    ? "Öğrencilerin sana ne zaman ulaşabileceğini netleştir."
+                    : "Make it clear when learners can reach you."}
+                </p>
+                <div className="teacher-workspace-field-grid">
+                  <label>
+                    <span>{tr ? "Başlangıç" : "Start"}</span>
+                    <input type="time" value={officeHoursStart} onChange={(event) => setOfficeHoursStart(event.target.value)} />
+                  </label>
+                  <label>
+                    <span>{tr ? "Bitiş" : "End"}</span>
+                    <input type="time" value={officeHoursEnd} onChange={(event) => setOfficeHoursEnd(event.target.value)} />
+                  </label>
+                </div>
+                <div className="teacher-workspace-days">
+                  <span>{tr ? "Günler" : "Days"}</span>
+                  <div>
+                    {(tr ? ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"] : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]).map((day, index) => {
+                      const key = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index];
+                      const active = officeHoursDays.includes(key);
+                      return (
+                        <button key={key} type="button" className={active ? "is-active" : ""} onClick={() => setOfficeHoursDays((days) => active ? days.filter((item) => item !== key) : [...days, key])}>
+                          {day}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="teacher-workspace-schedule-preview">
+                  <Clock size={16} />
+                  <span>{officeHoursDays.join(", ")} · {officeHoursStart}–{officeHoursEnd}</span>
+                </div>
+              </article>
+
+              {pendingRequests.length > 0 && (
+                <article className="teacher-workspace-panel teacher-workspace-approval-panel">
+                  <PanelHeading
+                    eyebrow={tr ? "Bekleyen talepler" : "Pending requests"}
+                    title={`${pendingRequests.length} ${tr ? "öğrenci" : pendingRequests.length === 1 ? "learner" : "learners"}`}
+                    icon={<CheckCircle size={18} />}
+                  />
+                  <div className="teacher-workspace-approval-list">
+                    {pendingRequests.map((request) => (
+                      <div key={request.student.id}>
+                        <span>
+                          <strong>{request.student.name}</strong>
+                          <small>{request.student.email}</small>
+                        </span>
+                        <time>{new Date(request.requestedAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</time>
+                        <div>
+                          <button type="button" onClick={() => handleApproval(request.student.id, "approve")}>{tr ? "Onayla" : "Approve"}</button>
+                          <button type="button" onClick={() => handleApproval(request.student.id, "reject")}>{tr ? "Reddet" : "Reject"}</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              )}
+            </section>
+          )}
+        </section>
+      </section>
+    </main>
   );
 }
 
 // ── Helper components ──────────────────────────────────────────────────────────
 
-function TeacherStat({ label, value }: { label: string; value: string }) {
+function TeacherStat({
+  label,
+  value,
+  detail,
+  tone = "default"
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+  tone?: "default" | "alert";
+}) {
   return (
-    <div className="card teacher-stat-card" style={{ padding: "0.75rem" }}>
-      <div style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "0.2rem" }}>{label}</div>
+    <article className="teacher-workspace-stat" data-tone={tone}>
+      <span>{label}</span>
       <strong>{value}</strong>
-    </div>
+      {detail && <small>{detail}</small>}
+    </article>
   );
 }
 
 function ActionRow({ label, value, cta, onClick }: { label: string; value: number; cta: string; onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="card"
-      style={{ padding: "0.9rem", background: "var(--surface-strong)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", cursor: "pointer" }}
-    >
-      <div style={{ textAlign: "left" }}>
-        <strong>{value}</strong>
-        <div className="practice-meta">{label}</div>
-      </div>
-      <span className="teacher-link-hint">{cta} →</span>
+    <button type="button" onClick={onClick} className="teacher-workspace-action-row">
+      <span>{String(value).padStart(2, "0")}</span>
+      <p>{label}</p>
+      <small>{cta}</small>
+      <ArrowRight size={15} />
     </button>
   );
+}
+
+function PanelHeading({ eyebrow, title, icon }: { eyebrow: string; title: string; icon: ReactNode }) {
+  return (
+    <div className="teacher-workspace-panel-head">
+      <div>
+        <span>{eyebrow}</span>
+        <strong>{title}</strong>
+      </div>
+      {icon}
+    </div>
+  );
+}
+
+function WorkspaceEmpty({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="teacher-workspace-empty">
+      <span><Plus size={16} /></span>
+      <div>
+        <strong>{title}</strong>
+        <p>{body}</p>
+      </div>
+    </div>
+  );
+}
+
+function getStudentStatus(student: TeacherStudentOverview, tr: boolean): { label: string; tone: "attention" | "good" | "neutral" } {
+  if ((student.riskFlags?.length ?? 0) > 0) {
+    return { label: tr ? "Takip et" : "Follow up", tone: "attention" };
+  }
+  if (student.totalSessions === 0) {
+    return { label: tr ? "Başlamadı" : "Not started", tone: "neutral" };
+  }
+  if ((student.scoreDelta ?? 0) > 0) {
+    return { label: tr ? "Gelişiyor" : "Improving", tone: "good" };
+  }
+  return { label: tr ? "Yolunda" : "On track", tone: "good" };
+}
+
+function classInitials(name: string) {
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  return initials || "CL";
+}
+
+function personInitials(name: string) {
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  return initials || "ST";
 }
 
 function translateCategoryLabel(label: string, tr: boolean) {
@@ -1315,46 +1407,43 @@ function formatDelta(value: number | null | undefined) {
   return value > 0 ? `+${value.toFixed(1)}` : value.toFixed(1);
 }
 
-const selectStyle: CSSProperties = {
-  padding: "0.8rem",
-  borderRadius: 14,
-  border: "1px solid var(--line)",
-  background: "var(--surface)",
-  color: "var(--text)",
-  font: "inherit",
-};
-
-const compactFieldStyle: CSSProperties = {
-  padding: "0.8rem",
-  borderRadius: 14,
-  border: "1px solid var(--line)",
-  background: "var(--surface)",
-  color: "var(--text)",
-  font: "inherit",
-};
-
-const fieldStyle: CSSProperties = {
-  padding: "0.85rem",
-  borderRadius: 14,
-  border: "1px solid var(--line)",
-  background: "var(--surface)",
-  color: "var(--text)",
-  font: "inherit",
-};
-
-const textareaStyle: CSSProperties = {
-  ...fieldStyle,
-  resize: "vertical",
-};
-
 function HubLoading({ label }: { label: string }) {
   return (
-    <div className="card" style={{ padding: "2rem 1.5rem", display: "flex", alignItems: "center", gap: "1rem", color: "var(--muted)" }}>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ animation: "spin 1s linear infinite", flexShrink: 0 }}>
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeOpacity="0.2" />
-        <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" />
-      </svg>
-      <span style={{ fontSize: "0.92rem" }}>{label}</span>
+    <div className="teacher-workspace-loading">
+      <span>{label}</span>
+      <div>
+        <i />
+        <i />
+        <i />
+        <i />
+      </div>
     </div>
+  );
+}
+
+function TeacherWorkspaceLoading({ tr }: { tr: boolean }) {
+  return (
+    <main className="teacher-workspace-page page-shell">
+      <section className="teacher-workspace teacher-workspace-is-loading" aria-busy="true">
+        <aside className="teacher-workspace-sidebar">
+          <div className="teacher-workspace-brand">
+            <span>SA</span>
+            <div>
+              <strong>SpeakAce</strong>
+              <small>{tr ? "Öğretmen alanı" : "Teacher workspace"}</small>
+            </div>
+          </div>
+          <div className="teacher-workspace-sidebar-skeleton">
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
+        </aside>
+        <section className="teacher-workspace-main">
+          <HubLoading label={tr ? "Öğretmen paneli hazırlanıyor…" : "Preparing teacher workspace…"} />
+        </section>
+      </section>
+    </main>
   );
 }
