@@ -1015,7 +1015,7 @@ Inspect only:
 
 ### Production revenue operations
 
-- As verified in the live Lemon Squeezy dashboard on 2026-07-22, no webhook is configured for the store. Subscription events will not reach `app/api/payments/lemon/webhook/route.ts` until `https://speakace.org/api/payments/lemon/webhook` is registered and its signing secret is configured in production as `LEMON_SQUEEZY_WEBHOOK_SECRET`.
+- The production Lemon Squeezy webhook was configured on 2026-07-23 at `https://speakace.org/api/payments/lemon/webhook` with 13 order/subscription events. Its signing secret is synchronized with Vercel; a valid signed smoke event returned `200` and an invalid signature returned `401`.
 - SpeakAce Plus currently uses a three-day Lemon Squeezy trial. Trial conversion and access depend on preserving the provider's `on_trial` status and `trial_ends_at` value through the webhook billing sync.
 - Live catalog values must be checked against site copy before changing pricing. On 2026-07-23, Plus was `$3.99/week`, Plus Annual `$49.99/year`, Pro Monthly was corrected to `$12/month`, Pro Annual was `$99/year`, and Lifetime was `$129.99`.
 - Anonymous and authenticated learner checkout initiation is recorded server-side in `app/api/payments/lemon/checkout/route.ts`. Keep the database event there so navigation cannot drop it, and do not add a second client-side `checkout_initiated` write for links targeting that route.
@@ -1026,7 +1026,7 @@ Inspect only:
 - Upgrade prompts are frequency-capped to one full modal per learner per UTC day through `lib/upgrade-prompt-frequency.ts`; later limit hits use a compact recovery card that preserves checkout and review actions without blocking the page.
 - Prompt-fatigue baseline on 2026-07-23: 27 learners generated 160 upgrade-prompt views in 30 days, including 112 limit-hit views from 13 learners, while only 2 learners initiated checkout from the practice-limit path. Track `upgrade_prompt_cooldown_view` and `upgrade_prompt_dismissed` before increasing prompt pressure again.
 - Resend's monthly quota was exhausted in production on 2026-07-18. The lifecycle cron now uses `email_log` as a quota circuit breaker to avoid repeated failed sends until the quota resets or `IGNORE_EMAIL_QUOTA_BLOCK=true` is intentionally configured after an account upgrade.
-- High-intent practice-limit recovery emails are implemented behind `ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS=true`. Keep the flag off until the live Lemon webhook is configured and signed delivery is verified; the sequence excludes recent checkout starters, enforces a 14-day recovery cooldown, and avoids any user sent another email in the prior 24 hours.
+- High-intent practice-limit recovery emails are implemented behind `ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS=true`. Keep the flag off until the Resend quota block is cleared and lifecycle delivery is verified; the sequence excludes recent checkout starters, enforces a 14-day recovery cooldown, and avoids any user sent another email in the prior 24 hours.
 
 ### Assumptions
 
