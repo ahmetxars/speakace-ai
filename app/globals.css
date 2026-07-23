@@ -12546,6 +12546,24 @@ textarea:focus-visible {
   --billing-gold-ink: oklch(0.48 0.12 82);
 }
 
+.billing-page > .card {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.billing-page > .card > *,
+.billing-page .grid,
+.billing-page .card {
+  min-width: 0;
+}
+
+.billing-comparison-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) 110px 110px;
+  align-items: center;
+  gap: 0.7rem;
+}
+
 .billing-current-card,
 .billing-comparison-card {
   background: var(--surface-strong);
@@ -12587,6 +12605,43 @@ textarea:focus-visible {
 body[data-theme="dark"] .billing-page {
   --billing-gold: oklch(0.72 0.13 87);
   --billing-gold-ink: oklch(0.8 0.12 87);
+}
+
+@media (max-width: 640px) {
+  .billing-page {
+    width: min(calc(100% - 1rem), var(--max-width));
+    padding: 3rem 0 6rem;
+  }
+
+  .billing-page > .card {
+    padding: 1rem !important;
+  }
+
+  .billing-page h1 {
+    font-size: clamp(1.75rem, 8vw, 2.25rem);
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+  }
+
+  .billing-page p {
+    overflow-wrap: anywhere;
+  }
+
+  .billing-comparison-row {
+    grid-template-columns: minmax(0, 1fr) minmax(4rem, 0.55fr) minmax(4.4rem, 0.65fr);
+    gap: 0.45rem;
+    font-size: 0.8rem;
+  }
+
+  .billing-comparison-row > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .billing-page .button {
+    max-width: 100%;
+    white-space: normal;
+  }
 }
 
 @media (max-width: 768px) {

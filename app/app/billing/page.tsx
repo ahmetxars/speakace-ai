@@ -177,7 +177,7 @@ export default function BillingPage() {
           <strong>{tr ? "Free ve Plus karşılaştırması" : "Free vs Plus"}</strong>
           <div style={{ display: "grid", gap: "0.65rem", marginTop: "0.8rem" }}>
             {comparison.map((item) => (
-              <div key={item.label} style={{ display: "grid", gridTemplateColumns: "minmax(160px, 1fr) 110px 110px", gap: "0.7rem" }}>
+              <div key={item.label} className="billing-comparison-row">
                 <span>{item.label}</span>
                 <span className="practice-meta">{item.free}</span>
                 <strong>{item.plus}</strong>
