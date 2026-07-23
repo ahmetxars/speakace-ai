@@ -262,7 +262,7 @@ This is the project-wide “where things live” map.
 
 - Transport/templates:
   - `lib/server/email.ts`
-  - public contact and reply-to fallback use `siteConfig.contactEmail` (`aa.arslan@outlook.com.tr`); keep `EMAIL_FROM` on a provider-verified sending domain rather than replacing it with the Outlook inbox
+  - public contact and reply-to use `siteConfig.contactEmail` (`aa.arslan@outlook.com.tr`); the lost legacy `info@speakace.org` reply-to is ignored even if it remains in production env. Keep `EMAIL_FROM` on the provider-verified `info@mail.speakace.org` sending address rather than replacing it with the Outlook inbox
 - Sequences:
   - `lib/server/email-sequences.ts`
   - onboarding is intentionally capped at five messages on days 0, 1, 4, 10, and 21.

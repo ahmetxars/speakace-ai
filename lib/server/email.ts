@@ -8,6 +8,14 @@ type EmailPayload = {
   text: string;
 };
 
+export function resolveEmailReplyTo(configuredValue = process.env.EMAIL_REPLY_TO) {
+  const candidate = configuredValue?.trim();
+  if (!candidate || candidate.toLowerCase() === "info@speakace.org") {
+    return siteConfig.contactEmail;
+  }
+  return candidate;
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")
@@ -21,7 +29,7 @@ function getResendConfig() {
   return {
     apiKey: process.env.RESEND_API_KEY ?? "",
     from: process.env.EMAIL_FROM ?? "",
-    replyTo: process.env.EMAIL_REPLY_TO ?? siteConfig.contactEmail
+    replyTo: resolveEmailReplyTo()
   };
 }
 
