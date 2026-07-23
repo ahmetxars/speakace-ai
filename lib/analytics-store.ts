@@ -7,6 +7,8 @@ export type AnalyticsEventName =
   | "practice_start"
   | "practice_limit_hit"
   | "upgrade_prompt_view"
+  | "upgrade_prompt_cooldown_view"
+  | "upgrade_prompt_dismissed"
   | "checkout_initiated"
   | "checkout_completed"
   | "billing_success_seen"

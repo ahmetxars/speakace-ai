@@ -7236,6 +7236,92 @@ body[data-theme="dark"] .practice-upgrade-trust {
   color: #919dab;
 }
 
+.practice-upgrade-cooldown {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, auto);
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.35rem;
+  border-color: rgba(29, 111, 117, 0.24);
+  background:
+    linear-gradient(110deg, rgba(29, 111, 117, 0.1), rgba(255, 252, 248, 0.96));
+}
+
+.practice-upgrade-cooldown::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -5rem;
+  right: -3rem;
+  width: 12rem;
+  height: 12rem;
+  border-radius: 50%;
+  background: rgba(44, 111, 255, 0.08);
+}
+
+.practice-upgrade-cooldown-copy {
+  min-width: 0;
+}
+
+.practice-upgrade-cooldown .practice-upgrade-eyebrow {
+  margin-bottom: 0.65rem;
+}
+
+.practice-upgrade-cooldown-copy > strong {
+  display: block;
+  color: var(--text);
+  font-size: clamp(1.05rem, 2vw, 1.28rem);
+  line-height: 1.25;
+}
+
+.practice-upgrade-cooldown-copy > p {
+  max-width: 68ch;
+  margin: 0.55rem 0 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.practice-upgrade-cooldown-actions {
+  min-width: min(100%, 250px);
+  display: grid;
+  gap: 0.55rem;
+}
+
+.practice-upgrade-cooldown-actions .button {
+  width: 100%;
+  justify-content: center;
+  white-space: normal;
+  text-align: center;
+}
+
+.practice-upgrade-cooldown-dismiss {
+  justify-self: center;
+  padding: 0.25rem 0.45rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.practice-upgrade-cooldown-dismiss:hover {
+  color: var(--text);
+}
+
+body[data-theme="dark"] .practice-upgrade-cooldown {
+  border-color: rgba(91, 161, 168, 0.28);
+  background:
+    linear-gradient(110deg, rgba(29, 111, 117, 0.14), rgba(20, 18, 31, 0.96));
+}
+
+body[data-theme="dark"] .practice-upgrade-cooldown::before {
+  background: rgba(92, 140, 255, 0.1);
+}
+
 @keyframes practice-upgrade-fade {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -7256,6 +7342,16 @@ body[data-theme="dark"] .practice-upgrade-trust {
   .practice-upgrade-backdrop,
   .practice-upgrade-dialog {
     animation: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .practice-upgrade-cooldown {
+    grid-template-columns: 1fr;
+  }
+
+  .practice-upgrade-cooldown-actions {
+    width: 100%;
   }
 }
 

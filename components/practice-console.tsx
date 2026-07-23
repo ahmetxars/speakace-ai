@@ -4,11 +4,16 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
-import { PracticeUpgradeDialog } from "@/components/practice-upgrade-dialog";
+import { PracticeUpgradeCooldownCard, PracticeUpgradeDialog } from "@/components/practice-upgrade-dialog";
 import { Difficulty, ExamType, ProgressSummary, SpeakingSession, TaskType } from "@/lib/types";
 import posthog from "posthog-js";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { listPromptsForTask } from "@/lib/prompts";
+import {
+  getUpgradePromptDayKey,
+  getUpgradePromptStorageKey,
+  shouldShowUpgradePromptDialog
+} from "@/lib/upgrade-prompt-frequency";
 
 const taskOptions: Record<ExamType, TaskType[]> = {
   IELTS: ["ielts-part-1", "ielts-part-2", "ielts-part-3"],
@@ -129,6 +134,9 @@ export function PracticeConsole() {
   const [upgradePrompt, setUpgradePrompt] = useState<{
     reason: UpgradePromptReason;
   } | null>(null);
+  const [cooldownUpgradePrompt, setCooldownUpgradePrompt] = useState<{
+    reason: UpgradePromptReason;
+  } | null>(null);
 
   const sessionRef = useRef<SpeakingSession | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -136,6 +144,7 @@ export function PracticeConsole() {
   const chunksRef = useRef<Blob[]>([]);
   const autoStartedRef = useRef(false);
   const dismissUpgradePrompt = useCallback(() => setUpgradePrompt(null), []);
+  const dismissCooldownUpgradePrompt = useCallback(() => setCooldownUpgradePrompt(null), []);
 
   const capturePracticeEvent = useCallback((event: string, properties: Record<string, unknown>) => {
     posthog.capture(event, {
@@ -219,6 +228,24 @@ export function PracticeConsole() {
       placement: "practice_trial_dialog"
     });
   }, [currentUser?.id, currentUser?.plan, upgradePrompt]);
+
+  useEffect(() => {
+    if (!cooldownUpgradePrompt || !currentUser?.id) {
+      return;
+    }
+
+    void trackClientEvent({
+      userId: currentUser.id,
+      event: "upgrade_prompt_cooldown_view",
+      path: `/app/practice/${cooldownUpgradePrompt.reason}/cooldown_card`
+    });
+
+    posthog.capture("upgrade_prompt_cooldown_view", {
+      source: cooldownUpgradePrompt.reason,
+      plan: currentUser.plan,
+      placement: "practice_cooldown_card"
+    });
+  }, [cooldownUpgradePrompt, currentUser?.id, currentUser?.plan]);
 
   const progressLabel = useMemo(() => {
     if (!session) {
@@ -639,19 +666,42 @@ export function PracticeConsole() {
       if (response.status === 403 && currentUser?.plan === "free") {
         const reason: UpgradePromptReason = mode === "done" ? "result_retry_locked" : "practice_limit_hit";
         const minutesLimited = (data.error ?? "").toLowerCase().includes("minute");
-        setUpgradePrompt({ reason });
+        let placement: "trial_dialog" | "cooldown_card" = "trial_dialog";
+
+        if (typeof window !== "undefined") {
+          try {
+            const storageKey = getUpgradePromptStorageKey(currentUser.id);
+            const lastShownDay = window.localStorage.getItem(storageKey);
+            if (shouldShowUpgradePromptDialog(lastShownDay)) {
+              window.localStorage.setItem(storageKey, getUpgradePromptDayKey());
+            } else {
+              placement = "cooldown_card";
+            }
+          } catch {
+            // Storage failures should not hide the only upgrade path.
+          }
+        }
+
+        if (placement === "trial_dialog") {
+          setCooldownUpgradePrompt(null);
+          setUpgradePrompt({ reason });
+        } else {
+          setUpgradePrompt(null);
+          setCooldownUpgradePrompt((current) => current?.reason === reason ? current : { reason });
+        }
+
         if (currentUser.id) {
           void trackClientEvent({
             userId: currentUser.id,
             event: "practice_limit_hit",
-            path: `/app/practice/${reason}/trial_dialog`
+            path: `/app/practice/${reason}/${placement}`
           });
         }
         posthog.capture("practice_limit_hit", {
           source: reason,
           limit_type: minutesLimited ? "minutes" : "sessions",
           plan: currentUser.plan,
-          placement: "practice_trial_dialog"
+          placement: placement === "trial_dialog" ? "practice_trial_dialog" : "practice_cooldown_card"
         });
         void fetch("/api/progress/summary", { cache: "no-store" })
           .then((summaryResponse) => summaryResponse.json())
@@ -669,6 +719,7 @@ export function PracticeConsole() {
       return;
     }
 
+    setCooldownUpgradePrompt(null);
     sessionRef.current = data.session;
     setPreferredPromptId(data.session.prompt.id);
     setTaskType(data.session.taskType);
@@ -1381,6 +1432,16 @@ export function PracticeConsole() {
             userId={currentUser?.id}
             currentPlan={currentUser?.plan}
             onDismiss={dismissUpgradePrompt}
+          />
+        ) : null}
+
+        {cooldownUpgradePrompt ? (
+          <PracticeUpgradeCooldownCard
+            reason={cooldownUpgradePrompt.reason}
+            language={language}
+            userId={currentUser?.id}
+            currentPlan={currentUser?.plan}
+            onDismiss={dismissCooldownUpgradePrompt}
           />
         ) : null}
 

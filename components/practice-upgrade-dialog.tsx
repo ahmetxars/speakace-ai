@@ -11,6 +11,7 @@ import {
 } from "@/lib/commerce";
 import { normalizePublicLanguage } from "@/lib/copy";
 import type { Language } from "@/lib/copy";
+import { trackClientEvent } from "@/lib/analytics-client";
 
 type UpgradePromptReason = "practice_limit_hit" | "result_retry_locked";
 
@@ -30,6 +31,11 @@ type UpgradeDialogCopy = {
   coupon: string;
   trust: string;
   dismiss: string;
+  cooldownTitle: Record<UpgradePromptReason, string>;
+  cooldownBody: Record<UpgradePromptReason, string>;
+  cooldownReset: string;
+  cooldownReview: string;
+  cooldownDismiss: string;
 };
 
 const copy: Record<"en" | "tr" | "de" | "es" | "fr", UpgradeDialogCopy> = {
@@ -54,7 +60,18 @@ const copy: Record<"en" | "tr" | "de" | "es" | "fr", UpgradeDialogCopy> = {
     annualCta: "Choose annual and save {savings}%",
     coupon: "Launch discount attached to checkout",
     trust: "Secure checkout by Lemon Squeezy. Manage or cancel from Billing.",
-    dismiss: "Not now"
+    dismiss: "Not now",
+    cooldownTitle: {
+      practice_limit_hit: "Today's free practice is complete.",
+      result_retry_locked: "Your next free retry opens tomorrow."
+    },
+    cooldownBody: {
+      practice_limit_hit: "You have already seen the Plus option today. Review what you learned now, or start the trial when you are ready to continue.",
+      result_retry_locked: "You have already seen the Plus option today. Use today's feedback now, then return tomorrow for the next free answer."
+    },
+    cooldownReset: "Free practice resets tomorrow",
+    cooldownReview: "Review today's feedback",
+    cooldownDismiss: "Hide this"
   },
   tr: {
     eyebrow: "Plus denemesi",
@@ -77,7 +94,18 @@ const copy: Record<"en" | "tr" | "de" | "es" | "fr", UpgradeDialogCopy> = {
     annualCta: "Yıllık seç ve %{savings} tasarruf et",
     coupon: "Lansman indirimi checkout'a eklendi",
     trust: "Lemon Squeezy ile güvenli ödeme. Billing'den yönetebilir veya iptal edebilirsin.",
-    dismiss: "Şimdi değil"
+    dismiss: "Şimdi değil",
+    cooldownTitle: {
+      practice_limit_hit: "Bugünkü ücretsiz pratiğin tamamlandı.",
+      result_retry_locked: "Bir sonraki ücretsiz retry yarın açılıyor."
+    },
+    cooldownBody: {
+      practice_limit_hit: "Plus seçeneğini bugün zaten gördün. Şimdi öğrendiklerini gözden geçir veya devam etmeye hazır olduğunda denemeyi başlat.",
+      result_retry_locked: "Plus seçeneğini bugün zaten gördün. Bugünkü geri bildirimi uygula, sonraki ücretsiz cevap için yarın geri dön."
+    },
+    cooldownReset: "Ücretsiz pratik yarın yenilenir",
+    cooldownReview: "Bugünkü geri bildirimi aç",
+    cooldownDismiss: "Bunu gizle"
   },
   de: {
     eyebrow: "Plus-Testphase",
@@ -100,7 +128,18 @@ const copy: Record<"en" | "tr" | "de" | "es" | "fr", UpgradeDialogCopy> = {
     annualCta: "Jährlich wählen und {savings}% sparen",
     coupon: "Launch-Rabatt ist im Checkout hinterlegt",
     trust: "Sicherer Checkout mit Lemon Squeezy. Im Billing verwalten oder kündigen.",
-    dismiss: "Nicht jetzt"
+    dismiss: "Nicht jetzt",
+    cooldownTitle: {
+      practice_limit_hit: "Dein kostenloses Training für heute ist abgeschlossen.",
+      result_retry_locked: "Dein nächster kostenloser Versuch ist morgen verfügbar."
+    },
+    cooldownBody: {
+      practice_limit_hit: "Du hast die Plus-Option heute bereits gesehen. Prüfe jetzt dein Feedback oder starte die Testphase, wenn du weiterüben möchtest.",
+      result_retry_locked: "Du hast die Plus-Option heute bereits gesehen. Nutze das heutige Feedback und kehre morgen für die nächste kostenlose Antwort zurück."
+    },
+    cooldownReset: "Kostenloses Training wird morgen zurückgesetzt",
+    cooldownReview: "Heutiges Feedback ansehen",
+    cooldownDismiss: "Ausblenden"
   },
   es: {
     eyebrow: "Prueba Plus",
@@ -123,7 +162,18 @@ const copy: Record<"en" | "tr" | "de" | "es" | "fr", UpgradeDialogCopy> = {
     annualCta: "Elige anual y ahorra un {savings}%",
     coupon: "Descuento de lanzamiento aplicado al checkout",
     trust: "Checkout seguro con Lemon Squeezy. Gestiona o cancela desde Billing.",
-    dismiss: "Ahora no"
+    dismiss: "Ahora no",
+    cooldownTitle: {
+      practice_limit_hit: "Tu práctica gratuita de hoy ha terminado.",
+      result_retry_locked: "Tu próximo reintento gratuito estará disponible mañana."
+    },
+    cooldownBody: {
+      practice_limit_hit: "Ya has visto hoy la opción Plus. Revisa lo aprendido o inicia la prueba cuando quieras continuar.",
+      result_retry_locked: "Ya has visto hoy la opción Plus. Aplica el feedback de hoy y vuelve mañana para tu próxima respuesta gratuita."
+    },
+    cooldownReset: "La práctica gratuita se reinicia mañana",
+    cooldownReview: "Revisar el feedback de hoy",
+    cooldownDismiss: "Ocultar"
   },
   fr: {
     eyebrow: "Essai Plus",
@@ -146,7 +196,18 @@ const copy: Record<"en" | "tr" | "de" | "es" | "fr", UpgradeDialogCopy> = {
     annualCta: "Choisir l'annuel et économiser {savings}%",
     coupon: "Remise de lancement ajoutée au checkout",
     trust: "Paiement sécurisé par Lemon Squeezy. Gère ou annule depuis Billing.",
-    dismiss: "Pas maintenant"
+    dismiss: "Pas maintenant",
+    cooldownTitle: {
+      practice_limit_hit: "Ta pratique gratuite est terminée pour aujourd'hui.",
+      result_retry_locked: "Ton prochain essai gratuit sera disponible demain."
+    },
+    cooldownBody: {
+      practice_limit_hit: "Tu as déjà vu l'offre Plus aujourd'hui. Relis ce que tu as appris ou démarre l'essai lorsque tu souhaites continuer.",
+      result_retry_locked: "Tu as déjà vu l'offre Plus aujourd'hui. Applique le feedback reçu et reviens demain pour ta prochaine réponse gratuite."
+    },
+    cooldownReset: "La pratique gratuite revient demain",
+    cooldownReview: "Relire le feedback du jour",
+    cooldownDismiss: "Masquer"
   }
 };
 
@@ -178,8 +239,13 @@ export function PracticeUpgradeDialog({
       placement: "practice_trial_dialog",
       current_plan: currentPlan
     });
+    void trackClientEvent({
+      userId,
+      event: "upgrade_prompt_dismissed",
+      path: `/app/practice/${reason}/trial_dialog`
+    });
     onDismiss();
-  }, [currentPlan, onDismiss, reason]);
+  }, [currentPlan, onDismiss, reason, userId]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -332,5 +398,95 @@ export function PracticeUpgradeDialog({
         </aside>
       </section>
     </div>
+  );
+}
+
+export function PracticeUpgradeCooldownCard({
+  reason,
+  language,
+  userId,
+  currentPlan,
+  onDismiss
+}: {
+  reason: UpgradePromptReason;
+  language: Language;
+  userId?: string | null;
+  currentPlan?: string | null;
+  onDismiss: () => void;
+}) {
+  const selectedCopy = copy[normalizePublicLanguage(language)];
+  const campaign = `${reason}_cooldown_card_weekly`;
+
+  const dismiss = useCallback(() => {
+    posthog.capture("upgrade_prompt_dismissed", {
+      source: reason,
+      placement: "practice_cooldown_card",
+      current_plan: currentPlan
+    });
+    void trackClientEvent({
+      userId,
+      event: "upgrade_prompt_dismissed",
+      path: `/app/practice/${reason}/cooldown_card`
+    });
+    onDismiss();
+  }, [currentPlan, onDismiss, reason, userId]);
+
+  return (
+    <section className="practice-upgrade-cooldown card" aria-live="polite">
+      <div className="practice-upgrade-cooldown-copy">
+        <span className="practice-upgrade-eyebrow">{selectedCopy.cooldownReset}</span>
+        <strong>{selectedCopy.cooldownTitle[reason]}</strong>
+        <p>{selectedCopy.cooldownBody[reason]}</p>
+      </div>
+      <div className="practice-upgrade-cooldown-actions">
+        <TrackedLink
+          className="button button-primary"
+          href={buildPlanCheckoutPath({
+            plan: "plus",
+            billing: "weekly",
+            coupon: couponCatalog.LAUNCH20.code,
+            campaign
+          })}
+          userId={userId}
+          analyticsEvent="checkout_initiated"
+          analyticsPath={`/app/practice/${reason}/cooldown_card/weekly`}
+          gaEvent="begin_checkout"
+          gaParams={{
+            currency: "USD",
+            value: commerceNumbers.plusWeeklyPrice,
+            coupon: couponCatalog.LAUNCH20.code,
+            items: [{
+              item_id: "plus_weekly",
+              item_name: "SpeakAce Plus - Weekly Trial",
+              price: commerceNumbers.plusWeeklyPrice,
+              quantity: 1
+            }]
+          }}
+          onClick={() => {
+            posthog.capture("checkout_initiated", {
+              plan: "plus",
+              billing: "weekly",
+              source: campaign,
+              placement: "practice_cooldown_card",
+              current_plan: currentPlan
+            });
+          }}
+        >
+          {selectedCopy.primary}
+        </TrackedLink>
+        <TrackedLink
+          className="button button-secondary"
+          href="/app/review"
+          userId={userId}
+          analyticsEvent="marketing_cta_click"
+          analyticsPath={`/app/practice/${reason}/cooldown_card/review`}
+        >
+          {selectedCopy.cooldownReview}
+        </TrackedLink>
+        <button className="practice-upgrade-cooldown-dismiss" type="button" onClick={dismiss}>
+          {selectedCopy.cooldownDismiss}
+        </button>
+      </div>
+    </section>
   );
 }
