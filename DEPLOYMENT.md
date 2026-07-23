@@ -151,9 +151,8 @@ To handle webhooks:
 3. Set secret in `LEMON_SQUEEZY_WEBHOOK_SECRET`
 4. Subscribe to order, subscription, subscription invoice/payment, cancellation, pause, expiry, and refund events
 
-The app temporarily routes Pro checkout to the verified `$99/year` variant because the
-live product named “Pro Monthly” is currently configured as `$12/week`. Correct the
-provider interval before re-enabling a monthly Pro CTA.
+The live Pro Monthly product is configured as `$12/month`; Pro Annual remains available
+at `$99/year`. Keep provider intervals and site copy aligned before changing either offer.
 
 ## Email (Resend)
 

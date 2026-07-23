@@ -16,7 +16,7 @@ export const commerceConfig = {
     "https://speakace.lemonsqueezy.com/checkout/buy/f2a9b0dd-88f7-48b9-9b3b-2069b2324cc7",
   proMonthlyPrice: "$12",
   proPlanName: "SpeakAce Pro",
-  proCheckoutPath: "/api/payments/lemon/checkout?plan=pro&billing=annual",
+  proCheckoutPath: "/api/payments/lemon/checkout?plan=pro&billing=monthly",
   proAnnualCheckout:
     process.env.LEMON_SQUEEZY_PRO_ANNUAL_CHECKOUT_URL ??
     "https://speakace.lemonsqueezy.com/checkout/buy/a00764fa-adb5-4245-97ef-6f2f9d5c0bb6",
@@ -42,6 +42,8 @@ export const commerceConfig = {
   launchOfferLabel: "Launch offer",
   launchOfferCopy: "Use LAUNCH20 for an early supporter discount."
 } as const;
+
+export type CheckoutBillingInterval = "weekly" | "monthly" | "annual";
 
 export const commerceNumbers = {
   plusWeeklyPrice: 3.99,
@@ -83,11 +85,14 @@ export function getAnnualSavingsPercentFromWeekly(weeklyPrice: number, annualPri
   return Math.max(0, Math.round((1 - annualPrice / baseline) * 100));
 }
 
-export function buildPlanCheckoutPath(input?: { plan?: "plus" | "pro" | "lifetime"; coupon?: string; campaign?: string; billing?: "weekly" | "annual" }) {
+export function buildPlanCheckoutPath(input?: {
+  plan?: "plus" | "pro" | "lifetime";
+  coupon?: string;
+  campaign?: string;
+  billing?: CheckoutBillingInterval;
+}) {
   const plan = input?.plan ?? "plus";
-  // The live Pro "Monthly" variant is currently configured as weekly.
-  // Route Pro buyers to the verified annual offer until the provider variant is corrected.
-  const billing = plan === "pro" ? "annual" : input?.billing;
+  const billing = input?.billing ?? (plan === "pro" ? "monthly" : "weekly");
   const params = new URLSearchParams({ plan });
   if (input?.coupon) {
     params.set("coupon", input.coupon);
@@ -95,15 +100,15 @@ export function buildPlanCheckoutPath(input?: { plan?: "plus" | "pro" | "lifetim
   if (input?.campaign) {
     params.set("campaign", input.campaign);
   }
-  if (billing === "annual") {
-    params.set("billing", "annual");
+  if (billing !== "weekly") {
+    params.set("billing", billing);
   }
   return `/api/payments/lemon/checkout?${params.toString()}`;
 }
 
 export function buildLemonCheckoutUrl(input?: {
   plan?: "plus" | "pro" | "lifetime";
-  billing?: "weekly" | "annual";
+  billing?: CheckoutBillingInterval;
   email?: string;
   name?: string;
   userId?: string;
@@ -115,7 +120,7 @@ export function buildLemonCheckoutUrl(input?: {
   visitorId?: string;
 }) {
   const selectedPlan = input?.plan ?? "plus";
-  const selectedBilling = selectedPlan === "pro" ? "annual" : input?.billing ?? "weekly";
+  const selectedBilling = input?.billing ?? (selectedPlan === "pro" ? "monthly" : "weekly");
   let baseCheckout: string;
   if (selectedPlan === "lifetime") {
     baseCheckout = commerceConfig.lifetimeCheckout;

@@ -235,7 +235,7 @@ This is the project-wide “where things live” map.
   - `lib/commerce.ts`
   - `app/api/account/plan/route.ts` is also the signed-in billing-state sync endpoint used by client refresh flows.
   - learner checkouts carry generated `checkout_id` and privacy-safe `visitor_id` values through the Lemon custom payload so anonymous starts can be joined to server-confirmed orders.
-  - the live Pro monthly variant is misconfigured as `$12/week`; all Pro checkout builders and the checkout route force the verified `$99/year` variant until the provider interval is corrected.
+  - Pro defaults to the `$12/month` checkout, while an explicit `billing=annual` request uses the `$99/year` variant.
 
 ### Analytics product
 
@@ -1017,7 +1017,7 @@ Inspect only:
 
 - As verified in the live Lemon Squeezy dashboard on 2026-07-22, no webhook is configured for the store. Subscription events will not reach `app/api/payments/lemon/webhook/route.ts` until `https://speakace.org/api/payments/lemon/webhook` is registered and its signing secret is configured in production as `LEMON_SQUEEZY_WEBHOOK_SECRET`.
 - SpeakAce Plus currently uses a three-day Lemon Squeezy trial. Trial conversion and access depend on preserving the provider's `on_trial` status and `trial_ends_at` value through the webhook billing sync.
-- Live catalog values must be checked against site copy before changing pricing. On 2026-07-23, Plus was `$3.99/week`, Plus Annual `$49.99/year`, Pro Monthly was incorrectly `$12/week`, Pro Annual `$99/year`, and Lifetime `$129.99`.
+- Live catalog values must be checked against site copy before changing pricing. On 2026-07-23, Plus was `$3.99/week`, Plus Annual `$49.99/year`, Pro Monthly was corrected to `$12/month`, Pro Annual was `$99/year`, and Lifetime was `$129.99`.
 - Anonymous and authenticated learner checkout initiation is recorded server-side in `app/api/payments/lemon/checkout/route.ts`. Keep the database event there so navigation cannot drop it, and do not add a second client-side `checkout_initiated` write for links targeting that route.
 - Lifecycle baseline before frequency controls on 2026-07-22: 520 daily-tip emails reached 180 recipients in 7 days, while only 43 users had practiced in 30 days; 71 emails reached 23 unverified accounts. Use these as reduction baselines and do not restore all-user daily sends.
 - Retention baseline on 2026-07-22: 34 of 45 recently verified learners uploaded a speaking attempt, but only 5 returned on another day. Prioritize measured day-one return activation before adding more broad acquisition or checkout pressure.

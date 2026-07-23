@@ -33,24 +33,20 @@ export function PricingCards() {
   const annualSavings = getAnnualSavingsPercentFromWeekly(commerceNumbers.plusWeeklyPrice, commerceNumbers.plusAnnualPrice);
 
   useEffect(() => {
-    if (currentUser?.id) {
-      void trackClientEvent({
-        userId: currentUser.id,
-        event: "pricing_view",
-        path: "/pricing"
-      });
-    }
+    void trackClientEvent({
+      userId: currentUser?.id,
+      event: "pricing_view",
+      path: "/pricing"
+    });
     posthog.capture("pricing_view", { page: "/pricing" });
   }, [currentUser?.id]);
 
   const trackPlusIntent = () => {
-    if (currentUser?.id) {
-      void trackClientEvent({
-        userId: currentUser.id,
-        event: "pricing_plus_click",
-        path: `/pricing/plus/${billing}`
-      });
-    }
+    void trackClientEvent({
+      userId: currentUser?.id,
+      event: "pricing_plus_click",
+      path: `/pricing/plus/${billing}`
+    });
 
     posthog.capture("pricing_plus_click", {
       billing,
@@ -270,9 +266,19 @@ export function PricingCards() {
         <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
           <a
             className="button button-secondary"
-            href={buildPlanCheckoutPath({ plan: "pro", billing: "annual", campaign: "pricing_advanced_pro" })}
+            href={buildPlanCheckoutPath({ plan: "pro", billing: "monthly", campaign: "pricing_advanced_pro_monthly" })}
             onClick={() => {
-              posthog.capture("checkout_initiated", { plan: "pro", billing: "annual", source: "pricing_advanced_pro" });
+              posthog.capture("checkout_initiated", { plan: "pro", billing: "monthly", source: "pricing_advanced_pro_monthly" });
+            }}
+            style={{ borderColor: "#c9a227", color: "#b38600" }}
+          >
+            View Pro Monthly · {commerceConfig.proMonthlyPrice}/month
+          </a>
+          <a
+            className="button button-secondary"
+            href={buildPlanCheckoutPath({ plan: "pro", billing: "annual", campaign: "pricing_advanced_pro_annual" })}
+            onClick={() => {
+              posthog.capture("checkout_initiated", { plan: "pro", billing: "annual", source: "pricing_advanced_pro_annual" });
             }}
             style={{ borderColor: "#c9a227", color: "#b38600" }}
           >
@@ -286,7 +292,7 @@ export function PricingCards() {
             }}
             style={{ borderColor: "oklch(0.55 0.18 165.41)", color: "oklch(0.45 0.18 165.41)" }}
           >
-            View Lifetime
+            View Lifetime · {commerceConfig.lifetimePrice} once
           </a>
         </div>
       </div>

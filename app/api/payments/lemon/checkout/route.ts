@@ -5,13 +5,17 @@ import {
   normalizeAnalyticsVisitorId
 } from "@/lib/analytics-policy";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
-import { buildLemonCheckoutUrl, commerceConfig } from "@/lib/commerce";
+import {
+  buildLemonCheckoutUrl,
+  commerceConfig,
+  type CheckoutBillingInterval
+} from "@/lib/commerce";
 import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
 
 function buildCheckoutAnalyticsPath(input: {
   ctaPath?: string;
   plan: "plus" | "pro" | "lifetime";
-  billing: "weekly" | "annual";
+  billing: CheckoutBillingInterval;
   campaign?: string;
 }) {
   if (input.ctaPath?.trim()) return input.ctaPath.trim().slice(0, 240);
@@ -26,8 +30,8 @@ export async function GET(request: Request) {
   const rawPlan = searchParams.get("plan");
   const plan: "plus" | "pro" | "lifetime" = rawPlan === "pro" ? "pro" : rawPlan === "lifetime" ? "lifetime" : "plus";
   const rawBilling = searchParams.get("billing");
-  const requestedBilling: "weekly" | "annual" = rawBilling === "annual" ? "annual" : "weekly";
-  const billing: "weekly" | "annual" = plan === "pro" ? "annual" : requestedBilling;
+  const billing: CheckoutBillingInterval =
+    rawBilling === "annual" ? "annual" : plan === "pro" ? "monthly" : "weekly";
   const coupon = searchParams.get("coupon") ?? undefined;
   const campaign = searchParams.get("campaign") ?? undefined;
   const ctaPath = searchParams.get("cta") ?? undefined;

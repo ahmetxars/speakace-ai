@@ -97,13 +97,23 @@ describe("Lemon checkout redirect", () => {
     });
   });
 
-  it("routes Pro buyers to the verified annual offer", async () => {
+  it("routes Pro buyers to the monthly offer by default", async () => {
     const response = await GET(
       new Request("https://speakace.org/api/payments/lemon/checkout?plan=pro")
     );
 
     const checkoutUrl = new URL(response.headers.get("location") ?? "");
     expect(checkoutUrl.searchParams.get("checkout[custom][plan]")).toBe("pro");
+    expect(checkoutUrl.searchParams.get("checkout[custom][billing]")).toBe("monthly");
+    expect(checkoutUrl.href).toContain("f2a9b0dd-88f7-48b9-9b3b-2069b2324cc7");
+  });
+
+  it("keeps the Pro annual offer available when explicitly requested", async () => {
+    const response = await GET(
+      new Request("https://speakace.org/api/payments/lemon/checkout?plan=pro&billing=annual")
+    );
+
+    const checkoutUrl = new URL(response.headers.get("location") ?? "");
     expect(checkoutUrl.searchParams.get("checkout[custom][billing]")).toBe("annual");
     expect(checkoutUrl.href).toContain("a00764fa-adb5-4245-97ef-6f2f9d5c0bb6");
   });
