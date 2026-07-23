@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ChevronDown, Globe, LockKeyhole, Menu, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, Globe, LockKeyhole, Menu, Moon, Sun, X } from "lucide-react";
 import {
   copy,
   languageMeta,
@@ -15,6 +15,7 @@ import {
   type PublicLanguage
 } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
+import { resolveDashboardRole } from "@/lib/roles";
 
 type HeaderLabels = {
   practice: string;
@@ -479,19 +480,48 @@ const authHeaderLabels: Record<PublicLanguage, { back: string; secure: string; l
 
 export function SiteHeader() {
   const pathname = usePathname() ?? "/";
-  const { language, setLanguage, signedIn, signOut } = useAppState();
+  const { language, setLanguage, signedIn, signOut, currentUser, theme, setTheme } = useAppState();
   const content = copy[language];
   const labels = headerLabels[language];
   const locale = languageMeta[language];
   const publicLanguage = normalizePublicLanguage(language);
   const authLabels = authHeaderLabels[publicLanguage];
+  const dashboardRole = resolveDashboardRole(currentUser);
+  const dashboardHref: Route =
+    dashboardRole === "school"
+      ? "/app/institution-admin"
+      : dashboardRole === "teacher"
+        ? "/app/teacher"
+        : "/app";
+  const accountItems: Array<{ href: Route; label: string }> =
+    dashboardRole === "school"
+      ? [
+          { href: "/app/institution-admin", label: labels.dashboard },
+          { href: "/app/billing", label: labels.billing },
+          { href: "/app/settings", label: labels.settings }
+        ]
+      : dashboardRole === "teacher"
+        ? [
+            { href: "/app/teacher", label: labels.dashboard },
+            { href: "/app/teacher/billing", label: labels.billing },
+            { href: "/app/settings", label: labels.settings }
+          ]
+        : [
+            { href: "/app/profile", label: labels.profile },
+            { href: "/app/billing", label: labels.billing },
+            { href: "/app/settings", label: labels.settings }
+          ];
+  const mobileAccountItem =
+    dashboardRole === "student"
+      ? { href: "/app/profile" as Route, label: labels.profile }
+      : { href: "/app/settings" as Route, label: labels.settings };
   const groups = useMemo(() => navGroups(labels), [labels]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [localeOpen, setLocaleOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const hideHeader = pathname.startsWith("/app") || pathname.startsWith("/admin") || pathname.startsWith("/maintenance");
+  const hideHeader = pathname.startsWith("/admin") || pathname.startsWith("/maintenance");
 
   const localeRef = useRef<HTMLDivElement>(null);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -666,16 +696,16 @@ export function SiteHeader() {
           <nav style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
             {signedIn ? (
               <Link
-                href="/app"
+                href={dashboardHref}
                 style={{
                   padding: "0.375rem 0.75rem",
                   fontSize: "0.875rem",
                   fontWeight: 500,
-                  color: isActive("/app") ? "var(--primary)" : "var(--foreground)",
+                  color: pathname === dashboardHref ? "var(--primary)" : "var(--foreground)",
                   textDecoration: "none",
                   borderRadius: "6px",
                   transition: "all 0.2s",
-                  opacity: isActive("/app") ? 1 : 0.8
+                  opacity: pathname === dashboardHref ? 1 : 0.8
                 }}
               >
                 {labels.dashboard}
@@ -782,6 +812,27 @@ export function SiteHeader() {
         >
           {signedIn ? (
             <>
+              <button
+                type="button"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "2.1rem",
+                  height: "2.1rem",
+                  borderRadius: "8px",
+                  color: "var(--foreground)",
+                  background: "transparent",
+                  border: "1px solid var(--nav-btn-border)",
+                  cursor: "pointer",
+                  opacity: 0.75
+                }}
+                aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+                title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+              >
+                {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
               <Link
                 href="/app/notifications"
                 style={{
@@ -832,11 +883,7 @@ export function SiteHeader() {
                       gap: "0.125rem"
                     }}
                   >
-                    {[
-                      { href: "/app/profile", label: labels.profile },
-                      { href: "/app/billing", label: labels.billing },
-                      { href: "/app/settings", label: labels.settings }
-                    ].map((item) => (
+                    {accountItems.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href as Route}
@@ -1167,11 +1214,19 @@ export function SiteHeader() {
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", paddingTop: "0.75rem", borderTop: "1px solid var(--nav-border)" }}>
           {signedIn ? (
             <>
-              <Link href="/app" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 600, color: "white", background: "var(--primary)", borderRadius: "8px", textDecoration: "none" }}>
+              <button
+                type="button"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", padding: "0.625rem 1rem", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "transparent", border: "1px solid var(--nav-btn-border)", borderRadius: "8px", cursor: "pointer" }}
+              >
+                {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+                {theme === "dark" ? "Light theme" : "Dark theme"}
+              </button>
+              <Link href={dashboardHref} style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 600, color: "white", background: "var(--primary)", borderRadius: "8px", textDecoration: "none" }}>
                 {labels.dashboard}
               </Link>
-              <Link href="/app/profile" style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "var(--nav-btn-bg)", border: "1px solid var(--nav-btn-border)", borderRadius: "8px", textDecoration: "none", opacity: 0.8 }}>
-                {labels.profile}
+              <Link href={mobileAccountItem.href} style={{ display: "block", padding: "0.625rem 1rem", textAlign: "center", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "var(--nav-btn-bg)", border: "1px solid var(--nav-btn-border)", borderRadius: "8px", textDecoration: "none", opacity: 0.8 }}>
+                {mobileAccountItem.label}
               </Link>
               <button type="button" onClick={() => void signOut()} style={{ padding: "0.625rem 1rem", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)", background: "transparent", border: "1px solid var(--nav-btn-border)", borderRadius: "8px", cursor: "pointer", opacity: 0.6 }}>
                 {labels.signOut}

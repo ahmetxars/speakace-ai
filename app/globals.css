@@ -12532,11 +12532,61 @@ textarea:focus-visible {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  padding-top: 64px;
 }
 
 .app-main {
   flex: 1;
   min-height: 0;
+}
+
+/* Billing surfaces follow theme tokens instead of hard-coded white overlays. */
+.billing-page {
+  --billing-gold: oklch(0.66 0.13 87);
+  --billing-gold-ink: oklch(0.48 0.12 82);
+}
+
+.billing-current-card,
+.billing-comparison-card {
+  background: var(--surface-strong);
+}
+
+.billing-plus-card {
+  background: color-mix(in srgb, var(--sa-accent-cool) 10%, var(--surface));
+}
+
+.billing-pro-card {
+  background: color-mix(in srgb, var(--billing-gold) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--billing-gold) 35%, var(--line));
+}
+
+.billing-pro-price {
+  color: var(--billing-gold-ink);
+}
+
+.billing-decision-card,
+.billing-growth-card {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--sa-accent-cool) 10%, var(--surface)) 0%,
+    var(--surface) 100%
+  );
+}
+
+.billing-value-card,
+.billing-confidence-card,
+.billing-growth-item {
+  background: color-mix(in srgb, var(--surface) 74%, var(--surface-strong));
+}
+
+.billing-checkout-note {
+  background: color-mix(in srgb, var(--sa-accent) 6%, var(--surface));
+  border-color: color-mix(in srgb, var(--sa-accent) 20%, var(--line));
+}
+
+body[data-theme="dark"] .billing-page {
+  --billing-gold: oklch(0.72 0.13 87);
+  --billing-gold-ink: oklch(0.8 0.12 87);
 }
 
 @media (max-width: 768px) {

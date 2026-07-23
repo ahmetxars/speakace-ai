@@ -152,7 +152,7 @@ export default function BillingPage() {
   }
 
   return (
-    <main className="page-shell section">
+    <main className="page-shell section billing-page">
       <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
         <span className="eyebrow">{tr ? "Ödeme" : "Billing"}</span>
         <h1 style={{ margin: 0 }}>{tr ? "SpeakAce Plus veya Pro ile daha fazla speaking pratiği aç" : "Unlock more speaking practice with SpeakAce Plus or Pro"}</h1>
@@ -160,20 +160,20 @@ export default function BillingPage() {
           {tr ? "Ücretli plan, sadece daha fazla limit değil; ayni gun daha fazla speaking denemesi, daha derin AI geri bildirimi ve daha hizli retry dongusu aciyor." : "A paid plan does more than raise limits. It unlocks same-day retries, deeper AI feedback, and a faster improvement loop."}
         </p>
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-          <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
+          <div className="card billing-current-card" style={{ padding: "1rem" }}>
             <strong>{tr ? "Mevcut plan" : "Current plan"}</strong>
             <p>{currentUser?.plan?.toUpperCase() ?? "FREE"}</p>
           </div>
-          <div className="card" style={{ padding: "1rem", background: "rgba(29, 111, 117, 0.08)" }}>
+          <div className="card billing-plus-card" style={{ padding: "1rem" }}>
             <strong>{commerceConfig.plusPlanName} · {commerceConfig.plusMonthlyPrice}/week</strong>
             <p>{tr ? `Ilk upgrade icin en net teklif: bugun devam et, daha fazla speaking yap, ayni prompt'u geri bildirimle tekrar dene. Yillik planda aylik maliyet ${formatUsd(plusAnnualMonthlyEquivalent)} seviyesine iner.` : `The clearest first upgrade: continue today, practice more, and retry the same prompt with stronger feedback. On annual billing the monthly equivalent drops to about ${formatUsd(plusAnnualMonthlyEquivalent)}.`}</p>
           </div>
-          <div className="card" style={{ padding: "1rem", background: "rgba(201,162,39,0.08)", border: "1px solid rgba(201,162,39,0.3)" }}>
-            <strong style={{ color: "#b38600" }}>{commerceConfig.proPlanName} · {commerceConfig.proMonthlyPrice}/month</strong>
+          <div className="card billing-pro-card" style={{ padding: "1rem" }}>
+            <strong className="billing-pro-price">{commerceConfig.proPlanName} · {commerceConfig.proMonthlyPrice}/month</strong>
             <p>{tr ? `Daha agir kullanim icin aylik Pro; uzun vadeli hazirlikta ${commerceConfig.proAnnualPrice}/yil secenegi de mevcut.` : `Monthly Pro for heavier usage, with a ${commerceConfig.proAnnualPrice}/year option for longer preparation.`}</p>
           </div>
         </div>
-        <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.6)" }}>
+        <div className="card billing-comparison-card" style={{ padding: "1rem" }}>
           <strong>{tr ? "Free ve Plus karşılaştırması" : "Free vs Plus"}</strong>
           <div style={{ display: "grid", gap: "0.65rem", marginTop: "0.8rem" }}>
             {comparison.map((item) => (
@@ -186,12 +186,11 @@ export default function BillingPage() {
           </div>
         </div>
         <div
-          className="card"
+          className="card billing-decision-card"
           style={{
             padding: "1rem",
             display: "grid",
-            gap: "0.9rem",
-            background: "linear-gradient(135deg, rgba(29, 111, 117, 0.08) 0%, rgba(255, 255, 255, 0.98) 100%)"
+            gap: "0.9rem"
           }}
         >
           <div>
@@ -201,21 +200,21 @@ export default function BillingPage() {
           </div>
           {currentUser?.plan === "free" ? (
             <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.8rem" }}>
-              <div className="card" style={{ padding: "0.95rem", background: "rgba(255,255,255,0.82)" }}>
+              <div className="card billing-value-card" style={{ padding: "0.95rem" }}>
                 <strong>{tr ? "Yillik fiyat avantaji" : "Annual value edge"}</strong>
                 <div style={{ fontSize: "1.35rem", fontWeight: 700, marginTop: "0.35rem" }}>%{plusAnnualSavings}</div>
                 <p style={{ margin: "0.35rem 0 0", color: "var(--muted)" }}>
                   {tr ? "Haftalik odemeye gore yaklasik tasarruf" : "Approximate savings versus paying weekly"}
                 </p>
               </div>
-              <div className="card" style={{ padding: "0.95rem", background: "rgba(255,255,255,0.82)" }}>
+              <div className="card billing-value-card" style={{ padding: "0.95rem" }}>
                 <strong>{tr ? "Aylik esit maliyet" : "Monthly equivalent"}</strong>
                 <div style={{ fontSize: "1.35rem", fontWeight: 700, marginTop: "0.35rem" }}>{formatUsd(plusAnnualMonthlyEquivalent)}</div>
                 <p style={{ margin: "0.35rem 0 0", color: "var(--muted)" }}>
                   {tr ? "Plus yillik icin aylik ortalama" : "Average monthly cost on Plus annual"}
                 </p>
               </div>
-              <div className="card" style={{ padding: "0.95rem", background: "rgba(255,255,255,0.82)" }}>
+              <div className="card billing-value-card" style={{ padding: "0.95rem" }}>
                 <strong>{tr ? "Kupon" : "Coupon"}</strong>
                 <div style={{ fontSize: "1.35rem", fontWeight: 700, marginTop: "0.35rem" }}>{couponCatalog.LAUNCH20.code}</div>
                 <p style={{ margin: "0.35rem 0 0", color: "var(--muted)" }}>
@@ -226,7 +225,7 @@ export default function BillingPage() {
           ) : null}
           <div style={{ display: "grid", gap: "0.55rem" }}>
             {purchaseConfidencePoints.map((item) => (
-              <div key={item} className="card" style={{ padding: "0.8rem 0.9rem", background: "rgba(255,255,255,0.8)" }}>
+              <div key={item} className="card billing-confidence-card" style={{ padding: "0.8rem 0.9rem" }}>
                 {item}
               </div>
             ))}
@@ -328,7 +327,7 @@ export default function BillingPage() {
               <a
                 className="button button-secondary"
                 href={buildPlanCheckoutPath({ plan: "pro", billing: "monthly", campaign: "billing_buy_pro_monthly" })}
-                style={{ borderColor: "#c9a227", color: "#b38600" }}
+                style={{ borderColor: "var(--billing-gold)", color: "var(--billing-gold-ink)" }}
                 onClick={() => {
                   posthog.capture("checkout_initiated", { plan: "pro", billing: "monthly", current_plan: currentUser?.plan, campaign: "billing_buy_pro_monthly" });
                   if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
@@ -401,12 +400,11 @@ export default function BillingPage() {
 
         {isPaidPlan ? (
           <div
-            className="card"
+            className="card billing-growth-card"
             style={{
               padding: "1rem",
               display: "grid",
-              gap: "0.85rem",
-              background: "linear-gradient(135deg, rgba(29,111,117,0.08) 0%, rgba(255,255,255,0.98) 100%)"
+              gap: "0.85rem"
             }}
           >
             <div>
@@ -419,7 +417,7 @@ export default function BillingPage() {
             </div>
             <div style={{ display: "grid", gap: "0.55rem" }}>
               {growthLoopActions.map((item) => (
-                <div key={item} className="card" style={{ padding: "0.8rem 0.9rem", background: "rgba(255,255,255,0.78)" }}>
+                <div key={item} className="card billing-growth-item" style={{ padding: "0.8rem 0.9rem" }}>
                   {item}
                 </div>
               ))}
@@ -448,7 +446,7 @@ export default function BillingPage() {
         ) : null}
 
         {currentUser?.plan === "free" ? (
-          <div className="card" style={{ padding: "1rem", background: "rgba(255, 248, 242, 0.9)", border: "1px solid rgba(217, 93, 57, 0.16)" }}>
+          <div className="card billing-checkout-note" style={{ padding: "1rem" }}>
             <strong style={{ display: "block", marginBottom: "0.45rem" }}>{tr ? "Ilk checkout notu" : "First checkout note"}</strong>
             <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
               {tr ? `Kararsizsan ${couponCatalog.LAUNCH20.code} kuponunu kullan. Asil amac indirim degil, ilk odemeyi risksiz hissettirmek.` : `If you need a softer first step, use ${couponCatalog.LAUNCH20.code}. The point is not the discount alone, but making the first upgrade feel low-risk.`}

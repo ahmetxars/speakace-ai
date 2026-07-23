@@ -521,7 +521,7 @@ Important implication:
 - the teacher demo hero surfaces a real class-pulse summary and deliberately reveals the larger dashboard preview within the first desktop viewport; its overview, students, assignments, and announcements tabs are interactive client-side views, not decorative navigation
 - `components/writing-console.tsx` owns the five-language Task 1/Task 2 studio; keep the mobile prompt carousel, desktop sticky prompt library, and editor in the `.writing-studio-*` namespace
 - `/auth` uses the viewport-contained `.auth-entry-*` shell in `app/auth/page.tsx`; sign-in and compact sign-up should fit without forced scrolling on common laptop and mobile viewports
-- `components/app-header.tsx` owns both language and theme controls for `/app`; do not reintroduce a floating mobile theme button over learner content
+- `components/site-header.tsx` is the unified public and authenticated top navigation, including role-aware dashboard/account links plus language and theme controls on `/app`; `app/app/layout.tsx` adds only the app content shell and mobile bottom navigation. Do not render a second top header or reintroduce a floating mobile theme button over learner content
 
 ### Persistence and store layer
 
