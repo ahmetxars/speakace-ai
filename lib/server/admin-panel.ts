@@ -509,17 +509,24 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       ) as email_failed_24h,
       exists (
         select 1
-        from email_log
-        where status = 'failed'
+        from email_log quota_failure
+        where quota_failure.status = 'failed'
           and (
             (
-              error_message like '%monthly_quota_exceeded%'
-              and sent_at >= date_trunc('month', now())
+              quota_failure.error_message like '%monthly_quota_exceeded%'
+              and quota_failure.sent_at >= date_trunc('month', now())
             )
             or (
-              error_message like '%daily_quota_exceeded%'
-              and sent_at >= date_trunc('day', now())
+              quota_failure.error_message like '%daily_quota_exceeded%'
+              and quota_failure.sent_at >= date_trunc('day', now())
             )
+          )
+          and not exists (
+            select 1
+            from email_log quota_recovery
+            where quota_recovery.status = 'sent'
+              and quota_recovery.template = 'quota_recovery_probe'
+              and quota_recovery.sent_at > quota_failure.sent_at
           )
       ) as email_quota_blocked,
       (
