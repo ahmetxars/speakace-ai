@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hasEmailTransport, sendEmail } from "@/lib/server/email";
 import { recordEmailQuotaRecoveryProbe } from "@/lib/server/email-sequences";
 import { getAdminPanelSession, getAdminSessionCookieName } from "@/lib/server/admin-panel";
+import { siteConfig } from "@/lib/site";
 import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => ({})) as { to?: string };
-  const to = body.to ?? process.env.EMAIL_REPLY_TO ?? process.env.EMAIL_FROM ?? "";
+  const to = body.to ?? siteConfig.contactEmail;
   if (!to) {
     return NextResponse.json({ ok: false, error: "No recipient address. Pass { to: 'your@email.com' } in the request body." });
   }

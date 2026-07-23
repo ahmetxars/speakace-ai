@@ -22,7 +22,8 @@ import {
   Activity,
   Rocket,
   CircleDollarSign,
-  ShieldCheck
+  ShieldCheck,
+  MailCheck
 } from "lucide-react";
 import {
   AdminAuthActivityRecord,
@@ -226,6 +227,9 @@ export function AdminPanel(props: {
   const [contentError, setContentError] = useState("");
   const [contentBusy, setContentBusy] = useState(false);
   const [contentBusyId, setContentBusyId] = useState<string | null>(null);
+  const [emailTestBusy, setEmailTestBusy] = useState(false);
+  const [emailTestMessage, setEmailTestMessage] = useState("");
+  const [emailTestError, setEmailTestError] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [memberDrafts, setMemberDrafts] = useState<Record<string, { plan: string; billingStatus: string; trialDays: string }>>(
     () =>
@@ -712,6 +716,36 @@ export function AdminPanel(props: {
       return;
     }
     setContentMessage(status === "published" ? "Post published." : "Post moved to draft.");
+    router.refresh();
+  };
+
+  const sendEmailDeliveryTest = async () => {
+    setEmailTestBusy(true);
+    setEmailTestMessage("");
+    setEmailTestError("");
+
+    const response = await fetch("/api/admin/email-test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const data = (await response.json()) as {
+      ok?: boolean;
+      quotaRecoveryRecorded?: boolean;
+      error?: string;
+    };
+
+    setEmailTestBusy(false);
+    if (!response.ok || !data.ok) {
+      setEmailTestError(data.error ?? "Email delivery test failed.");
+      return;
+    }
+
+    setEmailTestMessage(
+      data.quotaRecoveryRecorded
+        ? "Test sent and the stale provider quota block was cleared."
+        : "Test sent, but the quota recovery marker could not be recorded."
+    );
     router.refresh();
   };
 
@@ -2308,6 +2342,25 @@ export function AdminPanel(props: {
                   <h3>Quick Actions</h3>
                 </div>
                 <div className="adm-stack-list">
+                  <div className="adm-list-row">
+                    <div>
+                      <span className="adm-table-name">Email delivery test</span>
+                      <span className="adm-table-email">
+                        Send one production message to the configured SpeakAce contact inbox.
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="adm-secondary-btn"
+                      onClick={sendEmailDeliveryTest}
+                      disabled={emailTestBusy || !props.systemHealth.emailConfigured}
+                    >
+                      <MailCheck size={13} />
+                      {emailTestBusy ? "Sending..." : "Send test"}
+                    </button>
+                  </div>
+                  {emailTestMessage && <span className="adm-success">{emailTestMessage}</span>}
+                  {emailTestError && <span className="adm-error">{emailTestError}</span>}
                   {[
                     { label: "View public site", href: "/" },
                     { label: "Open blog", href: "/blog" },
