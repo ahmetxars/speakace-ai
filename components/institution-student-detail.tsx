@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, ArrowUpRight, BookOpenCheck, GraduationCap, TriangleAlert } from "lucide-react";
 import { ScoreLineChart } from "@/components/score-line-chart";
 import { useAppState } from "@/components/providers";
 
@@ -43,13 +44,20 @@ export function InstitutionStudentDetail({ studentId }: { studentId: string }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let active = true;
     fetch(`/api/institution-admin/students/${studentId}`)
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then((data: DetailPayload & { error?: string }) => {
         if (data.error) throw new Error(data.error);
-        setDetail(data);
+        if (active) setDetail(data);
       })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : tr ? "Öğrenci detayı yüklenemedi." : "Could not load student detail."));
+      .catch((reason: unknown) => {
+        if (!active) return;
+        setError(reason instanceof Error ? reason.message : tr ? "Öğrenci detayı yüklenemedi." : "Could not load student detail.");
+      });
+    return () => {
+      active = false;
+    };
   }, [studentId, tr]);
 
   const points = useMemo(
@@ -60,122 +68,244 @@ export function InstitutionStudentDetail({ studentId }: { studentId: string }) {
         .map((session) => ({
           label: new Date(session.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US", { month: "short", day: "numeric" }),
           value: session.report?.overall ?? 0,
-          meta: `${session.examType} • ${session.taskType}`,
+          meta: `${session.examType} · ${session.taskType}`
         })),
     [detail?.summary.recentSessions, tr]
   );
 
   if (!detail) {
     return (
-      <main className="page-shell section">
-        <div className="card" style={{ padding: "2rem", color: error ? "var(--destructive)" : "var(--muted)" }}>
-          {error || (tr ? "Öğrenci detayı yükleniyor…" : "Loading student detail…")}
-        </div>
+      <main className="page-shell section inside-page">
+        <div className="inside-loading">{error || (tr ? "Öğrenci profili hazırlanıyor…" : "Preparing student profile…")}</div>
       </main>
     );
   }
 
+  const initials = detail.student.name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const homeworkRate = detail.homework.total ? Math.round((detail.homework.completed / detail.homework.total) * 100) : 0;
+  const delta = detail.overview.scoreDelta;
+  const risks = detail.overview.riskFlags ?? [];
+
   return (
-    <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
-      <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.8rem" }}>
-        <span className="eyebrow">{tr ? "Öğrenci inceleme" : "Student inspection"}</span>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: "2rem" }}>{detail.student.name}</h1>
-            <p style={{ margin: "0.25rem 0 0", color: "var(--muted)" }}>{detail.student.email}</p>
-          </div>
-          <div style={{ display: "grid", gap: "0.35rem", justifyItems: "end" }}>
-            <span className="pill">{detail.overview.averageScore?.toFixed(1) ?? "—"}</span>
-            <span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
-              {tr ? "Son aktivite" : "Last active"}: {detail.overview.lastActiveAt ? new Date(detail.overview.lastActiveAt).toLocaleDateString(tr ? "tr-TR" : "en-US") : "—"}
-            </span>
-          </div>
-        </div>
-        {(detail.overview.riskFlags ?? []).length > 0 && (
-          <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-            {detail.overview.riskFlags?.map((flag) => <span key={flag} className="risk-pill">{flag}</span>)}
-          </div>
-        )}
-      </section>
-
-      <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.8rem" }}>
-        <Metric label={tr ? "Toplam session" : "Total sessions"} value={String(detail.overview.totalSessions)} />
-        <Metric label={tr ? "Ort. skor" : "Average score"} value={detail.overview.averageScore?.toFixed(1) ?? "—"} />
-        <Metric label={tr ? "En iyi skor" : "Best score"} value={detail.overview.bestScore?.toFixed(1) ?? "—"} />
-        <Metric label={tr ? "Skor değişimi" : "Score delta"} value={typeof detail.overview.scoreDelta === "number" ? detail.overview.scoreDelta.toFixed(1) : "—"} />
-        <Metric label={tr ? "Ödev tamamlama" : "Homework done"} value={detail.homework.total ? `${Math.round((detail.homework.completed / detail.homework.total) * 100)}%` : "—"} />
-      </section>
-
-      <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-        <div>
-          <span className="eyebrow">{tr ? "Skor grafiği" : "Score chart"}</span>
-          <h2 style={{ margin: "0.25rem 0 0", fontSize: "1.4rem" }}>{tr ? "Tüm session skorları" : "Full session score history"}</h2>
-        </div>
-        <ScoreLineChart points={points} />
-      </section>
-
-      <section className="grid" style={{ gridTemplateColumns: "minmax(280px, 0.9fr) minmax(360px, 1.1fr)", gap: "1rem", alignItems: "start" }}>
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <strong>{tr ? "Bağlı sınıflar ve öğretmenler" : "Connected classes and teachers"}</strong>
-          {detail.classes.map((item) => (
-            <div key={item.classId} className="card" style={{ padding: "0.85rem", background: "var(--surface-strong)", display: "grid", gap: "0.25rem" }}>
-              <strong>{item.className}</strong>
-              <div className="practice-meta">{item.teacherName}</div>
-              <div className="practice-meta">{tr ? "Katılım" : "Joined"}: {item.joinedAt ? new Date(item.joinedAt).toLocaleDateString(tr ? "tr-TR" : "en-US") : "—"}</div>
+    <main className="page-shell section inside-page">
+      <header className="inside-header">
+        <div className="inside-header-main">
+          <Link href="/app/institution-admin" className="inside-breadcrumb">
+            <ArrowLeft size={14} style={{ verticalAlign: "middle", marginRight: "0.3rem" }} />
+            {tr ? "Okul paneline dön" : "Back to school panel"}
+          </Link>
+          <div className="inside-person">
+            <div className="inside-avatar" aria-hidden="true">{initials}</div>
+            <div>
+              <span className="inside-kicker">{tr ? "Öğrenci görünümü" : "Student overview"}</span>
+              <h1 className="inside-title is-person">{detail.student.name}</h1>
+              <p className="inside-lede">{detail.student.email}</p>
             </div>
-          ))}
-        </div>
-
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <strong>{tr ? "Session tablosu" : "Session table"}</strong>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.88rem" }}>
-              <thead>
-                <tr style={{ textAlign: "left", color: "var(--muted)" }}>
-                  <th style={{ paddingBottom: "0.6rem" }}>{tr ? "Tarih" : "Date"}</th>
-                  <th style={{ paddingBottom: "0.6rem" }}>{tr ? "Görev" : "Task"}</th>
-                  <th style={{ paddingBottom: "0.6rem" }}>{tr ? "Skor" : "Score"}</th>
-                  <th style={{ paddingBottom: "0.6rem" }}>{tr ? "İncele" : "Review"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {detail.summary.recentSessions.map((session) => (
-                  <tr key={session.id} style={{ borderTop: "1px solid var(--line)" }}>
-                    <td style={{ padding: "0.65rem 0" }}>{new Date(session.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</td>
-                    <td style={{ padding: "0.65rem 0" }}>{session.examType} · {session.taskType}</td>
-                    <td style={{ padding: "0.65rem 0", fontWeight: 700 }}>{session.report?.overall?.toFixed(1) ?? "—"}</td>
-                    <td style={{ padding: "0.65rem 0" }}>
-                      <Link href={`/app/results/${session.id}`} className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem" }}>
-                        {tr ? "Aç" : "Open"}
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
+        <div className="inside-actions">
+          <span className={`inside-status${risks.length ? " is-alert" : " is-good"}`}>
+            {risks.length ? (tr ? "İlgilenilmeli" : "Needs attention") : (tr ? "Normal ilerliyor" : "On track")}
+          </span>
+        </div>
+      </header>
+
+      <section className="inside-metric-strip" style={{ "--metric-count": 5 } as React.CSSProperties}>
+        <StudentMetric label={tr ? "Toplam deneme" : "Total attempts"} value={`${detail.overview.totalSessions}`} note={tr ? "Speaking oturumu" : "Speaking sessions"} />
+        <StudentMetric label={tr ? "Ortalama" : "Average"} value={detail.overview.averageScore ? detail.overview.averageScore.toFixed(1) : "—"} note={tr ? "Son sonuçlar" : "Recent results"} />
+        <StudentMetric label={tr ? "En iyi skor" : "Best score"} value={detail.overview.bestScore?.toFixed(1) ?? "—"} note={tr ? "Kayıtlı zirve" : "Recorded peak"} />
+        <StudentMetric label={tr ? "Skor hareketi" : "Score movement"} value={typeof delta === "number" ? `${delta > 0 ? "+" : ""}${delta.toFixed(1)}` : "—"} note={tr ? "Önceki döneme göre" : "Versus prior period"} />
+        <StudentMetric label={tr ? "Ödev tamamlama" : "Homework completion"} value={detail.homework.total ? `${homeworkRate}%` : "—"} note={`${detail.homework.completed}/${detail.homework.total}`} />
       </section>
 
-      <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-        <strong>{tr ? "Öğretmen notları" : "Teacher notes"}</strong>
-        {detail.notes.length ? detail.notes.map((note) => (
-          <div key={note.id} className="card" style={{ padding: "0.85rem", background: "var(--surface-strong)", display: "grid", gap: "0.25rem" }}>
-            <div className="practice-meta">{new Date(note.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</div>
-            {note.tags?.length ? <div className="practice-meta">{note.tags.map((tag) => `#${tag}`).join(" ")}</div> : null}
-            <div>{note.note}</div>
+      <div className="inside-layout">
+        <div className="inside-main">
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Performans" : "Performance"}</span>
+                <h2>{tr ? "Skor yönü" : "Score direction"}</h2>
+                <p className="inside-section-copy">
+                  {detail.overview.weakestSkill
+                    ? `${tr ? "Mevcut gelişim odağı" : "Current improvement focus"}: ${translateCategory(detail.overview.weakestSkill, tr)}`
+                    : (tr ? "İlk skorlu sonuçtan sonra gelişim odağı görünür." : "The improvement focus appears after the first scored result.")}
+                </p>
+              </div>
+            </div>
+            {points.length ? <ScoreLineChart points={points} /> : (
+              <div className="inside-empty">
+                <strong>{tr ? "Henüz çizilecek skor yok." : "No scores to chart yet."}</strong>
+                <span>{tr ? "Öğrenci ilk değerlendirmeyi tamamladığında trend burada başlar." : "The trend starts after the student completes a first evaluation."}</span>
+              </div>
+            )}
+          </section>
+
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Sonuç kaydı" : "Result ledger"}</span>
+                <h2>{tr ? "Son speaking denemeleri" : "Recent speaking attempts"}</h2>
+              </div>
+              <GraduationCap size={20} aria-hidden="true" />
+            </div>
+            {detail.summary.recentSessions.length ? (
+              <div className="inside-row-list">
+                {detail.summary.recentSessions.map((session) => {
+                  const weakest = session.report?.categories.slice().sort((a, b) => a.score - b.score)[0];
+                  return (
+                    <Link key={session.id} href={`/app/results/${session.id}`} className="inside-row">
+                      <div className="inside-row-main">
+                        <strong className="inside-row-title">{session.prompt.title}</strong>
+                        <div className="inside-row-meta">
+                          <span>{new Date(session.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US", { day: "numeric", month: "short", year: "numeric" })}</span>
+                          <span>{session.examType} · {session.taskType}</span>
+                          {weakest ? <span>{tr ? "Odak" : "Focus"}: {translateCategory(weakest.label, tr)}</span> : null}
+                        </div>
+                      </div>
+                      <div className="inside-row-side">
+                        <strong className="inside-row-score">{session.report?.overall?.toFixed(1) ?? "—"}</strong>
+                        <ArrowUpRight size={16} aria-hidden="true" />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="inside-empty">
+                <strong>{tr ? "Henüz speaking sonucu yok." : "No speaking results yet."}</strong>
+                <span>{tr ? "Öğrencinin ilk tamamlanan oturumu burada görünür." : "The student’s first completed session will appear here."}</span>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <aside className="inside-rail">
+          <section className="inside-section is-accent">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Operasyon özeti" : "Operational summary"}</span>
+                <h3>{tr ? "Ödev ve aktivite" : "Homework and activity"}</h3>
+              </div>
+              <BookOpenCheck size={19} aria-hidden="true" />
+            </div>
+            <div className="inside-progress">
+              <div className="inside-progress-labels">
+                <span>{tr ? "Tamamlanan ödev" : "Homework completed"}</span>
+                <span>{homeworkRate}%</span>
+              </div>
+              <div className="inside-progress-track"><span style={{ width: `${homeworkRate}%` }} /></div>
+            </div>
+            <div className="inside-row-list" style={{ marginTop: "0.8rem" }}>
+              <div className="inside-row">
+                <span className="inside-row-title">{tr ? "Geciken ödev" : "Overdue homework"}</span>
+                <strong>{detail.homework.overdue}</strong>
+              </div>
+              <div className="inside-row">
+                <span className="inside-row-title">{tr ? "Son aktivite" : "Last active"}</span>
+                <strong style={{ fontSize: "0.82rem" }}>
+                  {detail.overview.lastActiveAt ? new Date(detail.overview.lastActiveAt).toLocaleDateString(tr ? "tr-TR" : "en-US") : "—"}
+                </strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Bağlantılar" : "Connections"}</span>
+                <h3>{tr ? "Sınıf ve öğretmen" : "Classes and teachers"}</h3>
+              </div>
+            </div>
+            {detail.classes.length ? (
+              <div className="inside-row-list">
+                {detail.classes.map((item) => (
+                  <div key={item.classId} className="inside-row">
+                    <div className="inside-row-main">
+                      <strong className="inside-row-title">{item.className}</strong>
+                      <div className="inside-row-meta">
+                        <span>{item.teacherName}</span>
+                        <span>{tr ? "Katılım" : "Joined"}: {item.joinedAt ? new Date(item.joinedAt).toLocaleDateString(tr ? "tr-TR" : "en-US") : "—"}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="inside-empty"><span>{tr ? "Bağlı sınıf bulunmuyor." : "No connected class."}</span></div>
+            )}
+          </section>
+
+          {risks.length ? (
+            <section className="inside-section is-warm">
+              <div className="inside-section-head">
+                <div>
+                  <span className="inside-kicker">{tr ? "Risk sinyalleri" : "Risk signals"}</span>
+                  <h3>{tr ? "Takip edilmesi gerekenler" : "Items to follow up"}</h3>
+                </div>
+                <TriangleAlert size={19} aria-hidden="true" />
+              </div>
+              <div className="inside-tag-list">
+                {risks.map((flag) => <span key={flag} className="inside-status is-alert">{flag}</span>)}
+              </div>
+            </section>
+          ) : null}
+        </aside>
+      </div>
+
+      <section className="inside-section">
+        <div className="inside-section-head">
+          <div>
+            <span className="inside-kicker">{tr ? "Öğretmen bağlamı" : "Teacher context"}</span>
+            <h2>{tr ? "Son değerlendirme notları" : "Recent review notes"}</h2>
           </div>
-        )) : <p style={{ margin: 0, color: "var(--muted)" }}>{tr ? "Henüz not yok." : "No notes yet."}</p>}
+        </div>
+        {detail.notes.length ? (
+          <div className="inside-row-list">
+            {detail.notes.map((note) => (
+              <div key={note.id} className="inside-row">
+                <div className="inside-row-main">
+                  <strong className="inside-row-title" style={{ whiteSpace: "normal" }}>{note.note}</strong>
+                  <div className="inside-row-meta">
+                    <span>{new Date(note.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</span>
+                    {note.tags?.length ? <span>{note.tags.map((tag) => `#${tag}`).join(" ")}</span> : null}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="inside-empty"><span>{tr ? "Henüz değerlendirme notu yok." : "No review notes yet."}</span></div>
+        )}
       </section>
     </main>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function StudentMetric({ label, value, note }: { label: string; value: string; note: string }) {
   return (
-    <div className="card teacher-stat-card" style={{ padding: "0.85rem" }}>
-      <div style={{ color: "var(--muted)", fontSize: "0.82rem", marginBottom: "0.2rem" }}>{label}</div>
-      <strong>{value}</strong>
+    <div className="inside-metric">
+      <span className="inside-metric-label">{label}</span>
+      <strong className="inside-metric-value">{value}</strong>
+      <span className="inside-metric-note">{note}</span>
     </div>
   );
+}
+
+function translateCategory(label: string, tr: boolean) {
+  if (!tr) return label;
+  const labels: Record<string, string> = {
+    "Fluency and Coherence": "Akıcılık ve tutarlılık",
+    "Lexical Resource": "Kelime kullanımı",
+    "Grammatical Range and Accuracy": "Dilbilgisi ve doğruluk",
+    Pronunciation: "Telaffuz",
+    Delivery: "Aktarım",
+    "Language Use": "Dil kullanımı",
+    "Topic Development": "İçerik gelişimi"
+  };
+  return labels[label] ?? label;
 }

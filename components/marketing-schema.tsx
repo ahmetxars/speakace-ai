@@ -6,7 +6,7 @@ export function MarketingSchema() {
     "@type": "Organization",
     name: siteConfig.name,
     url: siteConfig.domain,
-    email: "info@speakace.org"
+    email: siteConfig.contactEmail
   };
   const websiteJsonLd = {
     "@context": "https://schema.org",

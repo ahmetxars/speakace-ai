@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Mail } from "lucide-react";
+import { siteConfig } from "@/lib/site";
 
 function IconX({ size = 18 }: { size?: number }) {
   return (
@@ -510,7 +511,7 @@ export function SiteFooter() {
               { href: "https://linkedin.com/company/speakace", Icon: IconLinkedin, label: "LinkedIn" },
               { href: "https://instagram.com/speakace", Icon: IconInstagram, label: "Instagram" },
               { href: "https://youtube.com/@speakace", Icon: IconYoutube, label: "YouTube" },
-              { href: "mailto:support@speakace.org", Icon: Mail, label: "Email" }
+              { href: `mailto:${siteConfig.contactEmail}`, Icon: Mail, label: "Email" }
             ].map(({ href, Icon, label }) => (
               <a
                 key={label}

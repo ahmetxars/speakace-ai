@@ -83,7 +83,7 @@ LEMON_SQUEEZY_STORE_URL=https://speakace.lemonsqueezy.com
 LEMON_SQUEEZY_WEBHOOK_SECRET=whsec_...
 RESEND_API_KEY=re_...
 EMAIL_FROM=noreply@speakace.org
-EMAIL_REPLY_TO=support@speakace.org
+EMAIL_REPLY_TO=aa.arslan@outlook.com.tr
 GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 GOOGLE_REDIRECT_URI=https://your-domain.com/api/auth/google/callback
@@ -257,7 +257,7 @@ For issues:
 2. Review error messages in browser console
 3. Check database connection
 4. Verify environment variables
-5. Contact support@speakace.org
+5. Contact aa.arslan@outlook.com.tr
 
 ## Next Steps
 

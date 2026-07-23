@@ -3,7 +3,7 @@ export const siteConfig = {
   description:
     "Practice English speaking with AI — get instant feedback, IELTS band score estimates, pronunciation coaching, and speaking test simulation for IELTS and TOEFL.",
   domain: process.env.NEXT_PUBLIC_SITE_URL || "https://speakace.org",
-  contactEmail: "info@speakace.org",
+  contactEmail: "aa.arslan@outlook.com.tr",
   keywords: [
     "AI English speaking practice",
     "IELTS speaking practice online",

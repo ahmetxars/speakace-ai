@@ -1,4 +1,5 @@
 import { generateUnsubscribeToken } from "./unsubscribe-token";
+import { siteConfig } from "@/lib/site";
 
 type EmailPayload = {
   to: string;
@@ -20,7 +21,7 @@ function getResendConfig() {
   return {
     apiKey: process.env.RESEND_API_KEY ?? "",
     from: process.env.EMAIL_FROM ?? "",
-    replyTo: process.env.EMAIL_REPLY_TO ?? ""
+    replyTo: process.env.EMAIL_REPLY_TO ?? siteConfig.contactEmail
   };
 }
 

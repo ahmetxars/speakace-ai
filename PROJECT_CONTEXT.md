@@ -142,6 +142,8 @@ This is the project-wide “where things live” map.
   - `components/notifications-center.tsx`
   - `components/study-plan-board.tsx`
   - `components/study-lists-board.tsx`
+- Authenticated learner profile, onboarding, review, plan, teacher-student, and institution person-detail pages share the `.inside-*` workspace namespace in `app/globals.css`. Preserve this hierarchy instead of reintroducing nested `.card` grids.
+- Learner onboarding is a three-step target, baseline, and rhythm flow. Its completion screen keeps the first free practice as the primary action and presents Plus as an optional accelerator after the plan.
 - Data:
   - `lib/store.ts`
   - `lib/practice-streak.ts` counts streaks from distinct UTC days with completed audio uploads; multiple sessions on one day never inflate the streak
@@ -256,6 +258,7 @@ This is the project-wide “where things live” map.
 
 - Transport/templates:
   - `lib/server/email.ts`
+  - public contact and reply-to fallback use `siteConfig.contactEmail` (`aa.arslan@outlook.com.tr`); keep `EMAIL_FROM` on a provider-verified sending domain rather than replacing it with the Outlook inbox
 - Sequences:
   - `lib/server/email-sequences.ts`
   - password signups receive onboarding only after successful email verification; unverified accounts are excluded from lifecycle marketing
@@ -1025,6 +1028,7 @@ Inspect only:
 - Neon Postgres is the intended production DB.
 - Vercel is the intended runtime/deployment platform.
 - Postgres-backed behavior is the production path; in-memory mode mainly supports local fallback/testing behavior.
+- In-memory classroom data may not remain coherent across separately compiled Next.js route modules during local development. Use Postgres-backed checks for teacher/student enrollment integration; do not treat an empty local cross-route roster as production evidence.
 
 ## Tests and verification
 

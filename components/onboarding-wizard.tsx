@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
+import { Check, Clock3, Sparkles, Target } from "lucide-react";
 import { TrackedLink } from "@/components/tracked-link";
 import { useAppState } from "@/components/providers";
 import {
@@ -15,7 +16,7 @@ import {
 } from "@/lib/commerce";
 import type { StudentProfile as StudentProfileType } from "@/lib/types";
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 3;
 
 type FormState = StudentProfileType & {
   englishBackground: string;
@@ -24,39 +25,30 @@ type FormState = StudentProfileType & {
   learningStyle: string;
 };
 
-interface OptionCardProps {
+type Choice = {
   value: string;
   label: string;
-  desc?: string;
+  desc: string;
+};
+
+function OptionCard({
+  option,
+  selected,
+  onSelect
+}: {
+  option: Choice;
   selected: boolean;
   onSelect: (value: string) => void;
-  microcopy?: string;
-}
-
-function OptionCard({ value, label, desc, selected, onSelect, microcopy }: OptionCardProps) {
+}) {
   return (
     <button
       type="button"
-      onClick={() => onSelect(value)}
-      style={{
-        padding: "0.95rem 1.1rem",
-        borderRadius: 14,
-        border: selected ? "1.5px solid var(--sa-accent)" : "1px solid var(--line)",
-        background: selected ? "rgba(29, 111, 117, 0.1)" : "var(--surface-strong)",
-        cursor: "pointer",
-        textAlign: "left",
-        display: "grid",
-        gap: "0.25rem",
-        transition: "all 0.15s ease"
-      }}
+      className={`inside-choice${selected ? " is-selected" : ""}`}
+      aria-pressed={selected}
+      onClick={() => onSelect(option.value)}
     >
-      <strong style={{ fontSize: "0.9rem", color: selected ? "var(--sa-accent)" : "var(--text)" }}>{label}</strong>
-      {desc ? <span style={{ color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.45 }}>{desc}</span> : null}
-      {selected && microcopy ? (
-        <span style={{ color: "var(--sa-accent)", fontSize: "0.8rem", marginTop: "0.2rem", fontStyle: "italic" }}>
-          {microcopy}
-        </span>
-      ) : null}
+      <strong>{option.label}</strong>
+      <span>{option.desc}</span>
     </button>
   );
 }
@@ -65,7 +57,6 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
   const router = useRouter();
   const { currentUser, language } = useAppState();
   const tr = language === "tr";
-
   const [form, setForm] = useState<FormState>({
     ...profile,
     studyDays: Array.isArray(profile.studyDays) ? profile.studyDays.map(String) : [],
@@ -74,199 +65,128 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
     estimatedLevel: profile.estimatedLevel ?? "",
     learningStyle: profile.learningStyle ?? ""
   });
-  const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [step, setStep] = useState(1);
+  const [saving, setSaving] = useState(false);
   const [planReady, setPlanReady] = useState(false);
   const [savedProfile, setSavedProfile] = useState<StudentProfileType | null>(null);
 
   const steps = [
-    { title: tr ? "Hedef belirleme" : "Exam goal" },
-    { title: tr ? "Geçmiş ve deneyim" : "Background" },
-    { title: tr ? "Zorluklar" : "Challenges" },
-    { title: tr ? "Seviye tespiti" : "Your level" },
-    { title: tr ? "Çalışma ritmi" : "Study rhythm" }
+    { title: tr ? "Hedefin" : "Your target" },
+    { title: tr ? "Başlangıç noktan" : "Starting point" },
+    { title: tr ? "Çalışma ritmin" : "Study rhythm" }
   ];
 
-  const englishBackgroundOptions = [
-    {
-      value: "abroad",
-      label: tr ? "Yurtdışında yaşadım / okudum" : "I lived or studied abroad",
-      desc: tr ? "Yabancı dil ortamında bulundum" : "I've been immersed in an English environment",
-      microcopy: tr ? "Harika! Bu altyapı sana çok avantaj sağlayacak." : "Excellent! That immersion gives you a real head start."
-    },
-    {
-      value: "work",
-      label: tr ? "İş hayatımda her gün İngilizce kullanıyorum" : "I use English daily at work",
-      desc: tr ? "Profesyonel bağlamda aktif kullanıcıyım" : "Active professional English user",
-      microcopy: tr ? "Profesyonel deneyim sınav için mükemmel bir temel." : "Professional experience is a fantastic base for exam prep."
-    },
-    {
-      value: "school",
-      label: tr ? "Ağırlıklı olarak okulda öğrendim" : "I learned mainly at school",
-      desc: tr ? "Resmi eğitim yoluyla edindim" : "Formal education background",
-      microcopy: tr ? "Sağlam bir temelimiz var. Şimdi konuşma pratiğine odaklanacağız." : "Solid foundation. We'll focus on turning theory into speaking."
-    },
-    {
-      value: "self",
-      label: tr ? "Kendi kendime / online öğrendim" : "I'm self-taught or learned online",
-      desc: tr ? "Dizi, uygulama, video gibi kaynaklarla" : "Through apps, shows, videos, and online resources",
-      microcopy: tr ? "Öz disiplin çok değerli. Sistematik pratik ekleyeceğiz." : "Self-motivation is powerful. We'll add structured practice on top."
-    },
-    {
-      value: "mixed",
-      label: tr ? "Karma bir geçmişim var" : "I have a mixed background",
-      desc: tr ? "Birden fazla kaynaktan öğrendim" : "Combination of school, work, and self-study",
-      microcopy: tr ? "Çeşitli deneyim avantajlı. Eksik yönleri birlikte kapatacağız." : "Diverse experience is an advantage. We'll target the gaps."
-    }
-  ];
-
-  const biggestChallengeOptions = [
-    {
-      value: "vocabulary",
-      label: tr ? "Kelime bulamıyorum" : "I run out of words",
-      desc: tr ? "Cümle ortasında kelime aklıma gelmiyor" : "Words escape me mid-sentence",
-      microcopy: tr ? "Bu çok yaygın! Kelime zenginliğine özel egzersizler önereceğiz." : "Very common! We'll target vocabulary expansion exercises for you."
-    },
-    {
-      value: "anxiety",
-      label: tr ? "Heyecanlanıp donuyorum" : "I freeze up under pressure",
-      desc: tr ? "Sinir baskısıyla düşüncelerimi toplayamıyorum" : "Nerves take over and I lose my train of thought",
-      microcopy: tr ? "Güvenli, kolay konularla başlayıp güven inşa edeceğiz." : "We'll start with comfortable topics to build confidence gradually."
-    },
-    {
-      value: "grammar",
-      label: tr ? "Gramer hataları yapıyorum" : "I make grammar mistakes",
-      desc: tr ? "Zaman kiplerini ve yapıları karıştırıyorum" : "Tenses and structures trip me up",
-      microcopy: tr ? "Yapı odaklı pratiklerle hataları kalıcı olarak azaltacağız." : "Targeted structure drills will make these errors rare over time."
-    },
-    {
-      value: "pronunciation",
-      label: tr ? "Aksanım anlaşılmıyor" : "My pronunciation is unclear",
-      desc: tr ? "Telaffuz ve vurgu konusunda zorlanıyorum" : "Stress, rhythm, and clarity are challenging",
-      microcopy: tr ? "Telaffuza özel geri bildirimler sana en çok yardımcı olacak." : "Pronunciation-focused feedback will be your biggest lever."
-    },
-    {
-      value: "fluency",
-      label: tr ? "Çok yavaş / çok duraklıyorum" : "I speak too slowly or pause too much",
-      desc: tr ? "Akıcılığım yok, düşünürken sessiz kalıyorum" : "Fluency and filler-free speech are struggles",
-      microcopy: tr ? "Akıcılık drilleri ve zamanlı pratiklerle bunu çözeceğiz." : "Fluency drills and timed practice will break this pattern."
-    },
-    {
-      value: "structure",
-      label: tr ? "Cevaplarımı organize edemiyorum" : "I can't organize my answers",
-      desc: tr ? "Ne söyleyeceğimi bilirim ama nasıl yapılandıracağımı bilemem" : "I have ideas but don't know how to structure them",
-      microcopy: tr ? "Cevap çerçeveleme teknikleri tam sana göre!" : "Answer-framing techniques are exactly what you need."
-    }
-  ];
-
-  const estimatedLevelOptions = [
+  const estimatedLevelOptions: Choice[] = [
     {
       value: "A2",
-      label: tr ? "A2 – Başlangıç" : "A2 – Beginner",
-      desc: tr ? "Temel İngilizce biliyorum ama konuşmak çok zor" : "I know basic English but speaking is very hard",
-      microcopy: tr ? "Her şeyin bir başlangıcı var! Sana uygun tempoda ilerliyoruz." : "Everyone starts somewhere. We'll pace this perfectly for you."
+      label: tr ? "A2 · Başlangıç" : "A2 · Beginner",
+      desc: tr ? "Temel cümleler kurabiliyorum, konuşmak hâlâ zor." : "I can form basic sentences, but speaking is still hard."
     },
     {
       value: "B1",
-      label: tr ? "B1 – Orta" : "B1 – Intermediate",
-      desc: tr ? "Basit konuşmalar yapabiliyorum ama çok hata yapıyorum" : "I can hold simple conversations but make many mistakes",
-      microcopy: tr ? "B1'den hedefe giden yolu birlikte çizeceğiz." : "B1 is a great launchpad. We'll map the path to your target."
+      label: tr ? "B1 · Orta" : "B1 · Intermediate",
+      desc: tr ? "Basit konuşmaları sürdürüyorum fakat sık hata yapıyorum." : "I can hold simple conversations but still make frequent mistakes."
     },
     {
       value: "B2",
-      label: tr ? "B2 – Orta-İleri" : "B2 – Upper-Intermediate",
-      desc: tr ? "Kendimi ifade edebiliyorum ama tam akıcı değilim" : "I can express myself but I'm not fully fluent yet",
-      microcopy: tr ? "B2'desin — hedefe birkaç adım kaldı!" : "You're at B2 — just a few focused steps to your target."
+      label: tr ? "B2 · Orta ileri" : "B2 · Upper-intermediate",
+      desc: tr ? "Kendimi anlatabiliyorum, akıcılık ve doğruluk eksik." : "I can express ideas, but fluency and accuracy are inconsistent."
     },
     {
       value: "C1",
-      label: tr ? "C1 – İleri" : "C1 – Advanced",
-      desc: tr ? "Oldukça akıcıyım, sınav taktiklerine odaklanacağım" : "I'm quite fluent, focusing on exam strategies",
-      microcopy: tr ? "C1'de ince ayar ve sınav formatı odağımız olacak." : "At C1, fine-tuning and exam format will be our focus."
+      label: tr ? "C1 · İleri" : "C1 · Advanced",
+      desc: tr ? "Akıcıyım; sınav formatı ve ince ayara ihtiyacım var." : "I am fluent and mainly need exam strategy and fine-tuning."
     },
     {
       value: "C1+",
-      label: tr ? "C1+ – Neredeyse Akıcı" : "C1+ – Near-Fluent",
-      desc: tr ? "Neredeyse anadil gibi konuşuyorum, sınav formatı öğreneceğim" : "Near-native level, here mainly to learn exam format",
-      microcopy: tr ? "Mükemmel seviye! Sadece sınav stratejisi ve format çalışacağız." : "Excellent! Pure exam strategy and format polish from here."
+      label: tr ? "C1+ · Neredeyse akıcı" : "C1+ · Near-fluent",
+      desc: tr ? "Hedefim üst band ve sınav performansını kusursuzlaştırmak." : "My goal is a top score and polished exam performance."
     }
   ];
 
-  const learningStyleOptions = [
+  const biggestChallengeOptions: Choice[] = [
+    {
+      value: "vocabulary",
+      label: tr ? "Kelime bulamıyorum" : "I run out of words",
+      desc: tr ? "Cümle ortasında doğru kelime aklıma gelmiyor." : "The right word disappears in the middle of an answer."
+    },
+    {
+      value: "anxiety",
+      label: tr ? "Baskı altında donuyorum" : "I freeze under pressure",
+      desc: tr ? "Heyecanlandığımda düşüncelerimi toparlayamıyorum." : "Nerves take over and I lose my train of thought."
+    },
+    {
+      value: "grammar",
+      label: tr ? "Gramer hataları yapıyorum" : "Grammar breaks down",
+      desc: tr ? "Zamanları ve karmaşık yapıları konuşurken karıştırıyorum." : "Tenses and complex structures become unreliable when I speak."
+    },
+    {
+      value: "pronunciation",
+      label: tr ? "Telaffuzum net değil" : "My pronunciation is unclear",
+      desc: tr ? "Vurgu, ritim veya seslerin anlaşılmasını istiyorum." : "I need clearer sounds, stress, and speaking rhythm."
+    },
+    {
+      value: "fluency",
+      label: tr ? "Çok duraklıyorum" : "I pause too often",
+      desc: tr ? "Cevabımda sessizlik ve filler kelimeler artıyor." : "Silence and filler words interrupt my answers."
+    },
+    {
+      value: "structure",
+      label: tr ? "Cevabımı düzenleyemiyorum" : "My answers lack structure",
+      desc: tr ? "Fikrim var fakat net bir başlangıç ve sonuç kuramıyorum." : "I have ideas but struggle to shape a clear beginning and ending."
+    }
+  ];
+
+  const learningStyleOptions: Choice[] = [
     {
       value: "practice-first",
-      label: tr ? "Bol pratik yaparak" : "Learning by doing",
-      desc: tr ? "Önce dene, sonra hatalardan öğren" : "Jump in and learn from the feedback",
-      microcopy: tr ? "Harika! Sana bol pratik fırsatı sunacağız." : "Perfect! We'll keep your sessions action-packed."
+      label: tr ? "Önce pratik" : "Practice first",
+      desc: tr ? "Hemen dener, geri bildirimden öğrenirim." : "I learn fastest by trying first and reviewing feedback."
     },
     {
       value: "theory-first",
-      label: tr ? "Önce teori, sonra pratik" : "Theory first, then practice",
-      desc: tr ? "Yapıyı anla, sonra uygula" : "Understand the structure before applying it",
-      microcopy: tr ? "Anlaşıldı! Her modülden önce konsepti açıklayacağız." : "Got it! We'll explain the concept before each practice module."
+      label: tr ? "Önce yöntem" : "Method first",
+      desc: tr ? "Çerçeveyi anladıktan sonra uygulamak isterim." : "I prefer understanding the framework before applying it."
     },
     {
       value: "feedback-driven",
-      label: tr ? "Geri bildirimleri analiz ederek" : "Analyzing feedback deeply",
-      desc: tr ? "Raporlardan öğren, eksikleri hedefle" : "Study your reports and target specific weaknesses",
-      microcopy: tr ? "Detaylı analiz seni hızlı geliştirir. Harika seçim!" : "Deep analysis accelerates progress. Great choice!"
+      label: tr ? "Derin analiz" : "Deep feedback",
+      desc: tr ? "Raporları inceleyip tek bir zayıflığı hedeflerim." : "I like studying reports and targeting one weakness at a time."
     }
   ];
 
   const save = async () => {
+    if (saving) return;
     setError("");
-    setNotice("");
-    const response = await fetch("/api/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, onboardingComplete: true })
-    });
-    const data = (await response.json()) as { profile?: StudentProfileType; error?: string };
-    if (!response.ok || !data.profile) {
-      setError(data.error ?? (tr ? "Onboarding kaydedilemedi." : "Could not save onboarding."));
-      return;
+    setSaving(true);
+    try {
+      const response = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, onboardingComplete: true })
+      });
+      const data = (await response.json()) as { profile?: StudentProfileType; error?: string };
+      if (!response.ok || !data.profile) {
+        setError(data.error ?? (tr ? "Planın kaydedilemedi." : "Could not save your plan."));
+        return;
+      }
+      posthog.capture("onboarding_completed", {
+        exam_type: data.profile.preferredExamType,
+        target_score: data.profile.targetScore,
+        weekly_goal: data.profile.weeklyGoal,
+        focus_skill: data.profile.focusSkill,
+        biggest_challenge: data.profile.biggestChallenge,
+        estimated_level: data.profile.estimatedLevel
+      });
+      setSavedProfile(data.profile);
+      setPlanReady(true);
+    } catch {
+      setError(tr ? "Plan oluşturulurken bağlantı hatası oluştu." : "A connection error occurred while creating your plan.");
+    } finally {
+      setSaving(false);
     }
-    posthog.capture("onboarding_completed", {
-      exam_type: data.profile.preferredExamType,
-      target_score: data.profile.targetScore,
-      weekly_goal: data.profile.weeklyGoal,
-      focus_skill: data.profile.focusSkill,
-      discovery_source: data.profile.discoverySource
-    });
-    setSavedProfile(data.profile);
-    setPlanReady(true);
   };
-
-  const levelToIeltsScore: Record<string, number> = {
-    A2: 4.0, B1: 5.0, B2: 6.5, C1: 7.5, "C1+": 8.5
-  };
-  const levelToToeflScore: Record<string, number> = {
-    A2: 10, B1: 15, B2: 20, C1: 26, "C1+": 29
-  };
-  const challengeToFocus: Record<string, { en: string; tr: string; taskHint: string }> = {
-    vocabulary: { en: "Lexical Resource", tr: "Kelime Zenginliği", taskHint: tr ? "Part 2 kart sorularıyla başla — bol açıklama pratiği yapar." : "Start with Part 2 cue cards — they push you to describe and expand vocabulary." },
-    anxiety: { en: "Confidence Building", tr: "Özgüven İnşası", taskHint: tr ? "Part 1 günlük konularla başla — tanıdık sorular korkuyu azaltır." : "Start with Part 1 familiar topics — known subjects lower speaking anxiety quickly." },
-    grammar: { en: "Grammar Accuracy", tr: "Dilbilgisi Doğruluğu", taskHint: tr ? "Part 3 tartışma soruları seni karmaşık yapı kurmaya zorlar." : "Try Part 3 discussion questions — they require complex structures you can drill." },
-    pronunciation: { en: "Delivery & Clarity", tr: "Telaffuz ve Netlik", taskHint: tr ? "Her partta geri bildirim telaffuz puanını içerir — hepsinde çalış." : "Feedback scores your delivery every session — practice any part consistently." },
-    fluency: { en: "Fluency & Flow", tr: "Akıcılık", taskHint: tr ? "Zamanlı Part 1 sorularıyla akıcılık drill'i yap — hız ve ritm gelişir." : "Timed Part 1 drills build rhythm and reduce hesitation fast." },
-    structure: { en: "Coherence & Structure", tr: "Yapı ve Tutarlılık", taskHint: tr ? "Part 2 cue card hazırlık süresini yapı planlamak için kullan." : "Use Part 2 prep time to practice structuring your answer before speaking." }
-  };
-
-  function calcGap(level: string, target: number | null, examType: "IELTS" | "TOEFL") {
-    if (!target || !level) return null;
-    const current = examType === "IELTS" ? levelToIeltsScore[level] : levelToToeflScore[level];
-    if (!current) return null;
-    return { current, gap: Math.max(0, target - current) };
-  }
-
-  function weeksToTarget(gap: number, sessionsPerWeek: number, examType: "IELTS" | "TOEFL") {
-    if (gap <= 0) return 0;
-    const bandValue = examType === "IELTS" ? gap : gap / 3;
-    const sessionsPerBand = 40;
-    const totalSessions = bandValue * sessionsPerBand;
-    return Math.ceil(totalSessions / Math.max(1, sessionsPerWeek));
-  }
 
   useEffect(() => {
     if (!planReady || currentUser?.plan !== "free" || !savedProfile) return;
@@ -278,580 +198,439 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
     });
   }, [currentUser?.plan, planReady, savedProfile]);
 
-  function recommendedTask(examType: "IELTS" | "TOEFL", level: string) {
-    const easy = ["A2", "B1"].includes(level);
-    if (examType === "IELTS") return easy ? "IELTS Part 1 – Starter" : "IELTS Part 2 – Target";
-    return easy ? "TOEFL Task 1 – Starter" : "TOEFL Task 2 – Target";
-  }
+  useEffect(() => {
+    if (planReady) window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [planReady]);
 
   const studyDays = Array.isArray(form.studyDays) ? form.studyDays : [];
-  const stepIntroCardStyle = {
-    padding: "1rem",
-    background: "color-mix(in srgb, var(--surface-strong) 88%, var(--surface) 12%)",
-    border: "1px solid var(--line)",
-    display: "grid",
-    gap: "0.35rem"
-  } as const;
+  const canContinue =
+    step === 1
+      ? Boolean(form.preferredExamType && form.targetScore)
+      : step === 2
+        ? Boolean(form.estimatedLevel && form.biggestChallenge)
+        : true;
 
   if (planReady && savedProfile) {
-    const p = savedProfile;
-    const examType = p.preferredExamType;
-    const gapData = calcGap(p.estimatedLevel ?? "", p.targetScore, examType);
-    const weeks = gapData ? weeksToTarget(gapData.gap, p.weeklyGoal, examType) : null;
-    const challengeFocus = p.biggestChallenge ? challengeToFocus[p.biggestChallenge] : null;
-    const firstTask = recommendedTask(examType, p.estimatedLevel ?? "B1");
-    const months = weeks ? (weeks >= 4 ? Math.round(weeks / 4.3) : null) : null;
-    const shouldRecommendAnnual = (weeks !== null && weeks >= 10) || p.weeklyGoal >= 4;
-    const recommendedBilling = shouldRecommendAnnual ? "annual" : "weekly";
-    const recommendedCheckoutPath = buildPlanCheckoutPath({
-      plan: "plus",
-      billing: recommendedBilling,
-      coupon: couponCatalog.LAUNCH20.code,
-      campaign: `onboarding_plan_ready_${recommendedBilling}`
-    });
-    const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
-    const recommendationTitle = tr
-      ? shouldRecommendAnnual
-        ? "Sana uygun sonraki adim: Plus yillik"
-        : "Sana uygun sonraki adim: Plus haftalik"
-      : shouldRecommendAnnual
-        ? "Best next step for you: Plus annual"
-        : "Best next step for you: Plus weekly";
-    const recommendationBody = tr
-      ? shouldRecommendAnnual
-        ? `Haftalik hedefin ve tahmini calisma suresi, birkac haftadan daha uzun bir hazirlik dongusu gosteriyor. Bu yuzden aylik maliyeti ${formatUsd(annualMonthlyEquivalent)} seviyesine indiren yillik plan daha mantikli.`
-        : `Ilk odemeyi kolaylastirmak icin en dusuk surtunmeli secenek haftalik Plus. Ayni gun daha fazla deneme ve tam geri bildirim acilir.`
-      : shouldRecommendAnnual
-        ? `Your weekly goal and estimated timeline point to a prep cycle longer than a few weeks. That makes annual Plus the cleaner value move at about ${formatUsd(annualMonthlyEquivalent)}/month.`
-        : `For a lower-friction first purchase, weekly Plus is the simplest step. It unlocks more same-day attempts and full feedback immediately.`;
-    const timeStr = weeks === 0
-      ? (tr ? "Hedefine çok yakınsın!" : "You're very close to your target!")
-      : months
-        ? (tr ? `~${months} ay` : `~${months} months`)
-        : weeks
-          ? (tr ? `~${weeks} hafta` : `~${weeks} weeks`)
-          : "—";
-
-    return (
-      <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
-        <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.8rem" }}>
-          <span className="eyebrow">{tr ? "Planın hazır" : "Your plan is ready"}</span>
-          <h1 style={{ margin: 0 }}>{tr ? "İşte kişisel yol haritanız" : "Here's your personalized roadmap"}</h1>
-          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
-            {tr
-              ? "Verdiğin cevaplara göre sana özel bir plan oluşturduk. Şimdi ilk oturumuna başlayarak bu planı hayata geçir."
-              : "Based on your answers, we've built a plan tailored to you. Start your first session to put it into action."}
-          </p>
-        </section>
-
-        {gapData && (
-          <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-            <strong style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)" }}>
-              {tr ? "Skor Analizi" : "Score Analysis"}
-            </strong>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.6rem" }}>
-              <div className="card" style={{ padding: "1rem", textAlign: "center", background: "var(--surface-strong)" }}>
-                <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--muted)" }}>{gapData.current}</div>
-                <div style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.2rem" }}>{tr ? "Tahmini Mevcut" : "Est. Current"}</div>
-              </div>
-              <div className="card" style={{ padding: "1rem", textAlign: "center", background: "rgba(29,111,117,0.08)", border: "1px solid var(--sa-accent)" }}>
-                <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--sa-accent)" }}>{gapData.gap > 0 ? `+${examType === "IELTS" ? gapData.gap.toFixed(1) : Math.round(gapData.gap)}` : "✓"}</div>
-                <div style={{ fontSize: "0.78rem", color: "var(--sa-accent)", marginTop: "0.2rem" }}>{tr ? "Kapatılacak Fark" : "Gap to Close"}</div>
-              </div>
-              <div className="card" style={{ padding: "1rem", textAlign: "center", background: "var(--surface-strong)" }}>
-                <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text)" }}>{p.targetScore ?? "—"}</div>
-                <div style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.2rem" }}>{tr ? "Hedef Skor" : "Target Score"}</div>
-              </div>
-            </div>
-            {weeks !== null && (
-              <div style={{ padding: "0.75rem 1rem", background: "rgba(29,111,117,0.06)", borderRadius: 10, border: "1px solid rgba(29,111,117,0.15)" }}>
-                <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.65 }}>
-                  {tr
-                    ? `Haftada ${p.weeklyGoal} oturum ile tahmini süre: `
-                    : `At ${p.weeklyGoal} sessions/week, estimated time to target: `}
-                  <strong style={{ color: "var(--sa-accent)" }}>{timeStr}</strong>
-                </p>
-              </div>
-            )}
-          </section>
-        )}
-
-        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-          <strong style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)" }}>
-            {tr ? "Öncelikli Odak Alanın" : "Your Priority Focus Area"}
-          </strong>
-          {challengeFocus ? (
-            <div style={{ display: "grid", gap: "0.5rem" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-                <span style={{ fontSize: "1.3rem" }}>🎯</span>
-                <strong style={{ color: "var(--sa-accent)" }}>{tr ? challengeFocus.tr : challengeFocus.en}</strong>
-              </div>
-              <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.88rem", lineHeight: 1.65 }}>{challengeFocus.taskHint}</p>
-            </div>
-          ) : (
-            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.88rem" }}>
-              {tr ? "Dengeli gelişim için tüm partlarda pratik yapmanı öneririz." : "We recommend practicing across all parts for balanced improvement."}
-            </p>
-          )}
-        </section>
-
-        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
-          <strong style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)" }}>
-            {tr ? "Önerilen Başlangıç" : "Recommended First Session"}
-          </strong>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
-            <span style={{ fontSize: "1.5rem" }}>🎤</span>
-            <div>
-              <strong style={{ fontSize: "0.95rem" }}>{firstTask}</strong>
-              <p style={{ margin: "0.2rem 0 0", color: "var(--muted)", fontSize: "0.83rem" }}>
-                {tr
-                  ? "Seviyene uygun, güven inşa eden bir başlangıç noktası."
-                  : "A confidence-building starting point matched to your level."}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.7rem" }}>
-          <strong style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--muted)" }}>
-            {tr ? "Haftalık Programın" : "Your Weekly Schedule"}
-          </strong>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
-            {[
-              { label: tr ? "Oturum / hafta" : "Sessions / week", value: p.weeklyGoal },
-              { label: tr ? "Günlük dakika" : "Daily minutes", value: p.dailyMinutesGoal ?? 15 },
-              { label: tr ? "Sınav tipi" : "Exam type", value: examType },
-              { label: tr ? "Öğrenme tercihi" : "Learning style", value: p.learningStyle || "—" }
-            ].map((item) => (
-              <div key={item.label} style={{ padding: "0.65rem 0.9rem", background: "var(--surface-strong)", borderRadius: 10 }}>
-                <div style={{ fontSize: "0.78rem", color: "var(--muted)" }}>{item.label}</div>
-                <div style={{ fontWeight: 700, fontSize: "0.95rem", marginTop: "0.15rem" }}>{item.value}</div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {currentUser?.plan === "free" ? (
-          <section
-            className="card"
-            style={{
-              padding: "1.2rem",
-              display: "grid",
-              gap: "0.85rem",
-              background: "linear-gradient(135deg, rgba(29,111,117,0.08) 0%, rgba(255,255,255,0.98) 100%)",
-              border: "1px solid rgba(29,111,117,0.16)"
-            }}
-          >
-            <span className="eyebrow">{tr ? "Kisisellestirilmis teklif" : "Personalized offer"}</span>
-            <strong>{recommendationTitle}</strong>
-            <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>{recommendationBody}</p>
-            <div style={{ display: "grid", gap: "0.55rem" }}>
-              <div style={{ padding: "0.7rem 0.85rem", borderRadius: 10, background: "rgba(255,255,255,0.75)" }}>
-                {shouldRecommendAnnual ? (
-                  <strong>{tr ? `${commerceConfig.plusAnnualPrice}/yil, yaklasik ${formatUsd(annualMonthlyEquivalent)}/ay` : `${commerceConfig.plusAnnualPrice}/year, about ${formatUsd(annualMonthlyEquivalent)}/month`}</strong>
-                ) : (
-                  <strong>{tr ? `${commerceConfig.plusMonthlyPrice}/hafta ile daha dusuk ilk odeme` : `${commerceConfig.plusMonthlyPrice}/week for a lower first payment`}</strong>
-                )}
-              </div>
-              <div style={{ padding: "0.7rem 0.85rem", borderRadius: 10, background: "rgba(255,255,255,0.75)" }}>
-                <span style={{ color: "var(--muted)" }}>
-                  {tr
-                    ? `Ilk checkout'ta ${couponCatalog.LAUNCH20.code} kuponu aktif.`
-                    : `${couponCatalog.LAUNCH20.code} is active on your first checkout.`}
-                </span>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-              <TrackedLink
-                className="button button-primary"
-                href={recommendedCheckoutPath}
-                userId={currentUser?.id}
-                analyticsEvent="checkout_initiated"
-                analyticsPath={`/app/onboarding/${recommendedBilling}`}
-                onClick={() => {
-                  posthog.capture("checkout_initiated", {
-                    source: "onboarding_plan_ready",
-                    plan: "plus",
-                    billing: recommendedBilling,
-                    weekly_goal: p.weeklyGoal,
-                    estimated_weeks_to_target: weeks
-                  });
-                }}
-              >
-                {tr
-                  ? shouldRecommendAnnual
-                    ? "Plani simdi yillik ac"
-                    : "Plus'u haftalik ac"
-                  : shouldRecommendAnnual
-                    ? "Unlock annual Plus now"
-                    : "Unlock weekly Plus"}
-              </TrackedLink>
-              <button
-                type="button"
-                className="button button-secondary"
-                onClick={() => router.push("/app/billing")}
-              >
-                {tr ? "Tum planlari incele" : "Review all plans"}
-              </button>
-            </div>
-          </section>
-        ) : null}
-
-        <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-          <button
-            type="button"
-            className="button button-primary"
-            onClick={() => router.push("/app/practice")}
-            style={{ flex: 1 }}
-          >
-            {tr ? "İlk oturumu başlat →" : "Start first session →"}
-          </button>
-          <button
-            type="button"
-            className="button button-secondary"
-            onClick={() => router.push("/app")}
-          >
-            {tr ? "Dashboard'a git" : "Go to dashboard"}
-          </button>
-        </div>
-      </main>
-    );
+    return <ReadyPlan profile={savedProfile} tr={tr} currentPlan={currentUser?.plan} onDashboard={() => router.push("/app")} />;
   }
 
+  const stepHeadings = [
+    {
+      title: tr ? "Önce varış noktasını seç" : "Start with the destination",
+      body: tr ? "Hedef skor ve tarih, sana gereksiz içerik değil doğru zorlukta pratik önermemizi sağlar." : "Your score target and date help us recommend the right difficulty instead of generic practice."
+    },
+    {
+      title: tr ? "Bugün nerede olduğunu söyle" : "Tell us where you are today",
+      body: tr ? "Kısa bir öz değerlendirme yeterli. İlk skorlu denemenden sonra bu tahmini gerçek verilerle güncelleyeceğiz." : "A quick self-assessment is enough. Your first scored attempt will replace this estimate with real data."
+    },
+    {
+      title: tr ? "Sürdürebileceğin ritmi kur" : "Build a rhythm you can keep",
+      body: tr ? "Mükemmel program değil, sınav gününe kadar tekrar edebileceğin küçük bir sistem kuruyoruz." : "We are not building a perfect schedule, just a small system you can repeat until exam day."
+    }
+  ];
+  const currentHeading = stepHeadings[step - 1];
+
   return (
-    <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
-
-      {/* HEADER */}
-      <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.8rem" }}>
-        <span className="eyebrow">{tr ? "İlk kurulum" : "First-time setup"}</span>
-        <h1 style={{ margin: 0 }}>{tr ? "Sana özel programını oluşturalım" : "Let's build your personalized plan"}</h1>
-        <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
-          {tr
-            ? "Sadece 2 dakikanı ayır. Verdiğin cevaplar dashboard önerilerini ve yol haritanı kişiselleştirir."
-            : "Just 2 minutes. Your answers personalize your dashboard, recommendations, and roadmap."}
-        </p>
-      </section>
-
-      {/* PROGRESS BAR */}
-      <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "1rem" }}>
-        <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
-          {steps.map((s, i) => {
-            const num = i + 1;
-            const done = num < step;
-            const active = num === step;
-            return (
-              <div key={num} style={{ display: "flex", alignItems: "center", flex: active ? 2 : 1, gap: "0.3rem" }}>
-                <div
-                  style={{
-                    width: active ? "auto" : 28,
-                    height: 28,
-                    minWidth: 28,
-                    borderRadius: 99,
-                    background: done ? "var(--sa-accent)" : active ? "rgba(29,111,117,0.15)" : "var(--surface-strong)",
-                    border: active ? "1.5px solid var(--sa-accent)" : done ? "none" : "1px solid var(--line)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "0.4rem",
-                    padding: active ? "0 0.75rem" : undefined,
-                    fontSize: "0.82rem",
-                    fontWeight: 700,
-                    color: done ? "#fff" : active ? "var(--sa-accent)" : "var(--muted)",
-                    whiteSpace: "nowrap",
-                    transition: "all 0.2s ease"
-                  }}
-                >
-                  {done ? "✓" : null}
-                  {!done && <span>{num}</span>}
-                  {active ? <span style={{ fontSize: "0.78rem", fontWeight: 600 }}>{s.title}</span> : null}
+    <main className="page-shell section inside-page inside-onboarding">
+      <div className="inside-onboarding-shell">
+        <aside className="inside-onboarding-aside">
+          <div>
+            <span className="inside-kicker">{tr ? "SpeakAce kurulumu" : "SpeakAce setup"}</span>
+            <h1>{tr ? "İlk pratiğini sana göre hazırlayalım." : "Let’s tailor your first practice."}</h1>
+          </div>
+          <div className="inside-onboarding-steps" aria-label={tr ? "Kurulum adımları" : "Setup steps"}>
+            {steps.map((item, index) => {
+              const number = index + 1;
+              const complete = number < step;
+              const active = number === step;
+              return (
+                <div key={item.title} className={`inside-onboarding-step${active ? " is-active" : complete ? " is-complete" : ""}`}>
+                  <span>{complete ? <Check size={14} /> : number}</span>
+                  <span>{item.title}</span>
                 </div>
-                {num < TOTAL_STEPS ? (
-                  <div style={{ height: 2, flex: 1, background: done ? "var(--sa-accent)" : "var(--line)", borderRadius: 2 }} />
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+          <p className="inside-onboarding-note">
+            <Clock3 size={14} style={{ verticalAlign: "middle", marginRight: "0.35rem" }} />
+            {tr ? "Yaklaşık 2 dakika. Bütün cevaplarını daha sonra profilden değiştirebilirsin." : "About 2 minutes. You can change every answer later from your profile."}
+          </p>
+        </aside>
 
-        {/* STEP CONTENT */}
-        <div style={{ display: "grid", gap: "0.9rem" }}>
+        <section className="inside-onboarding-content">
+          <div className="inside-onboarding-head">
+            <span className="inside-kicker">{tr ? `Adım ${step} / ${TOTAL_STEPS}` : `Step ${step} of ${TOTAL_STEPS}`}</span>
+            <h2>{currentHeading.title}</h2>
+            <p>{currentHeading.body}</p>
+          </div>
 
-          {/* STEP 1 – EXAM GOAL */}
           {step === 1 ? (
-            <>
-              <div className="card" style={stepIntroCardStyle}>
-                <strong>{tr ? "Hangi sınava hazırlanıyorsun?" : "What's your exam goal?"}</strong>
-                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
-                  {tr
-                    ? "Sınav tipi ve hedef skorun, sana özel sorular ve zorluk seviyeleri seçmemizi sağlar."
-                    : "Your exam type and target score let us pick the right questions and difficulty for you."}
-                </p>
+            <div className="inside-form-stack">
+              <div className="inside-field">
+                <span className="inside-field-label">{tr ? "Sınav türü" : "Exam type"}</span>
+                <div className="inside-choice-grid">
+                  {(["IELTS", "TOEFL"] as const).map((exam) => (
+                    <button
+                      key={exam}
+                      type="button"
+                      className={`inside-choice${form.preferredExamType === exam ? " is-selected" : ""}`}
+                      aria-pressed={form.preferredExamType === exam}
+                      onClick={() => setForm((current) => ({ ...current, preferredExamType: exam }))}
+                    >
+                      <strong>{exam}</strong>
+                      <span>{exam === "IELTS" ? (tr ? "Band 1–9" : "Band scale 1–9") : (tr ? "Speaking task 0–30" : "Speaking task scale 0–30")}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <label style={{ display: "grid", gap: "0.35rem" }}>
-                <span>{tr ? "Sınav tipi" : "Exam type"}</span>
-                <select
-                  value={form.preferredExamType}
-                  onChange={(e) => setForm((c) => ({ ...c, preferredExamType: e.target.value as "IELTS" | "TOEFL" }))}
-                  className="practice-select"
-                >
-                  <option value="IELTS">IELTS</option>
-                  <option value="TOEFL">TOEFL</option>
-                </select>
-              </label>
-              <label style={{ display: "grid", gap: "0.35rem" }}>
-                <span>{tr ? "Hedef skor" : "Target score"}</span>
-                <input
-                  value={form.targetScore ?? ""}
-                  onChange={(e) => setForm((c) => ({ ...c, targetScore: e.target.value ? Number(e.target.value) : null }))}
-                  type="number"
-                  min="1"
-                  max={form.preferredExamType === "IELTS" ? "9" : "30"}
-                  step="0.1"
-                  placeholder={form.preferredExamType === "IELTS" ? "Örn: 7.0" : "Örn: 24"}
-                  style={inputStyle}
-                />
-              </label>
-              <label style={{ display: "grid", gap: "0.35rem" }}>
-                <span>{tr ? "Sınav tarihi (isteğe bağlı)" : "Exam date (optional)"}</span>
-                <input
-                  value={form.examDate ?? ""}
-                  onChange={(e) => setForm((c) => ({ ...c, examDate: e.target.value }))}
-                  placeholder={tr ? "Örn: Haziran 2025" : "Ex: June 2025"}
-                  style={inputStyle}
-                />
-              </label>
-              <label style={{ display: "grid", gap: "0.35rem" }}>
-                <span>{tr ? "Bu skoru neden istiyorsun?" : "Why do you need this score?"}</span>
-                <input
-                  value={form.targetReason ?? ""}
-                  onChange={(e) => setForm((c) => ({ ...c, targetReason: e.target.value }))}
-                  placeholder={tr ? "Üniversite, iş, vize, kişisel hedef…" : "University, job, visa, personal goal…"}
-                  style={inputStyle}
-                />
-              </label>
-            </>
+              <div className="inside-form-grid">
+                <label className="inside-field">
+                  <span className="inside-field-label">{tr ? "Hedef skor" : "Target score"}</span>
+                  <span className="inside-field-help">{tr ? "Ulaşmak istediğin yaklaşık skor." : "The approximate score you need."}</span>
+                  <input
+                    value={form.targetScore ?? ""}
+                    onChange={(event) => setForm((current) => ({ ...current, targetScore: event.target.value ? Number(event.target.value) : null }))}
+                    type="number"
+                    min="1"
+                    max={form.preferredExamType === "IELTS" ? "9" : "30"}
+                    step="0.1"
+                    placeholder={form.preferredExamType === "IELTS" ? "6.5" : "24"}
+                  />
+                </label>
+                <label className="inside-field">
+                  <span className="inside-field-label">{tr ? "Sınav tarihi" : "Exam date"}</span>
+                  <span className="inside-field-help">{tr ? "İsteğe bağlı, yaklaşık tarih olabilir." : "Optional, an approximate date is fine."}</span>
+                  <input value={form.examDate ?? ""} onChange={(event) => setForm((current) => ({ ...current, examDate: event.target.value }))} placeholder={tr ? "Örn. Haziran 2026" : "Example: June 2026"} />
+                </label>
+                <label className="inside-field is-wide">
+                  <span className="inside-field-label">{tr ? "Bu skor neden önemli?" : "Why does this score matter?"}</span>
+                  <span className="inside-field-help">{tr ? "Bu cevap motivasyon mesajlarını daha anlamlı yapar." : "This makes your progress prompts more relevant."}</span>
+                  <input value={form.targetReason ?? ""} onChange={(event) => setForm((current) => ({ ...current, targetReason: event.target.value }))} placeholder={tr ? "Üniversite, iş, vize, kişisel hedef…" : "University, work, visa, personal goal…"} />
+                </label>
+              </div>
+            </div>
           ) : null}
 
-          {/* STEP 2 – ENGLISH BACKGROUND */}
           {step === 2 ? (
-            <>
-              <div className="card" style={stepIntroCardStyle}>
-                <strong>{tr ? "İngilizce geçmişin nasıl?" : "What's your English background?"}</strong>
-                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
-                  {tr
-                    ? "Bu bilgi, sana en uygun egzersiz türlerini ve başlangıç noktasını belirler."
-                    : "This helps us match you with the right exercise types and starting point."}
-                </p>
+            <div className="inside-form-stack">
+              <div className="inside-field">
+                <span className="inside-field-label">{tr ? "Tahmini İngilizce seviyen" : "Estimated English level"}</span>
+                <span className="inside-field-help">{tr ? "Mükemmel tahmin etmen gerekmiyor." : "It does not need to be exact."}</span>
+                <div className="inside-choice-grid">
+                  {estimatedLevelOptions.map((option) => (
+                    <OptionCard key={option.value} option={option} selected={form.estimatedLevel === option.value} onSelect={(value) => setForm((current) => ({ ...current, estimatedLevel: value }))} />
+                  ))}
+                </div>
               </div>
-              <div style={{ display: "grid", gap: "0.55rem" }}>
-                {englishBackgroundOptions.map((opt) => (
-                  <OptionCard
-                    key={opt.value}
-                    value={opt.value}
-                    label={opt.label}
-                    desc={opt.desc}
-                    microcopy={opt.microcopy}
-                    selected={form.englishBackground === opt.value}
-                    onSelect={(v) => setForm((c) => ({ ...c, englishBackground: v }))}
-                  />
-                ))}
+              <div className="inside-field">
+                <span className="inside-field-label">{tr ? "Konuşurken en büyük engelin" : "Your biggest speaking barrier"}</span>
+                <span className="inside-field-help">{tr ? "İlk haftanın ana egzersizini bu seçim belirler." : "This choice sets the main drill for your first week."}</span>
+                <div className="inside-choice-grid">
+                  {biggestChallengeOptions.map((option) => (
+                    <OptionCard key={option.value} option={option} selected={form.biggestChallenge === option.value} onSelect={(value) => setForm((current) => ({ ...current, biggestChallenge: value }))} />
+                  ))}
+                </div>
               </div>
-            </>
+            </div>
           ) : null}
 
-          {/* STEP 3 – BIGGEST CHALLENGE */}
           {step === 3 ? (
-            <>
-              <div className="card" style={stepIntroCardStyle}>
-                <strong>{tr ? "Konuşurken seni en çok ne zorluyor?" : "What's your biggest speaking challenge?"}</strong>
-                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
-                  {tr
-                    ? "Dürüst cevap en iyi. Bu seçim, dashboard'un ilk görev önerisini ve odak alanını belirler."
-                    : "Be honest — this shapes your first task recommendation and focus area on the dashboard."}
-                </p>
+            <div className="inside-form-stack">
+              <div className="inside-form-grid">
+                <label className="inside-field">
+                  <span className="inside-field-label">{tr ? "Haftalık speaking denemesi" : "Speaking attempts per week"}</span>
+                  <span className="inside-field-help">{tr ? "1–14 arasında gerçekçi bir hedef." : "A realistic target between 1 and 14."}</span>
+                  <input value={form.weeklyGoal} onChange={(event) => setForm((current) => ({ ...current, weeklyGoal: Number(event.target.value) || 4 }))} type="number" min="1" max="14" />
+                </label>
+                <label className="inside-field">
+                  <span className="inside-field-label">{tr ? "Günlük dakika" : "Minutes per day"}</span>
+                  <span className="inside-field-help">{tr ? "5 dakika bile iyi bir başlangıç." : "Even 5 minutes is a useful start."}</span>
+                  <input value={form.dailyMinutesGoal ?? 15} onChange={(event) => setForm((current) => ({ ...current, dailyMinutesGoal: Number(event.target.value) || 15 }))} type="number" min="5" max="60" />
+                </label>
               </div>
-              <div style={{ display: "grid", gap: "0.55rem" }}>
-                {biggestChallengeOptions.map((opt) => (
-                  <OptionCard
-                    key={opt.value}
-                    value={opt.value}
-                    label={opt.label}
-                    desc={opt.desc}
-                    microcopy={opt.microcopy}
-                    selected={form.biggestChallenge === opt.value}
-                    onSelect={(v) => setForm((c) => ({ ...c, biggestChallenge: v }))}
-                  />
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          {/* STEP 4 – LEVEL ESTIMATION */}
-          {step === 4 ? (
-            <>
-              <div className="card" style={stepIntroCardStyle}>
-                <strong>{tr ? "Mevcut İngilizce seviyeni kendin nasıl değerlendirirsin?" : "How would you rate your current English level?"}</strong>
-                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
-                  {tr
-                    ? "Bu tahmini seviye, yol haritanı hedefine göre kalibre eder. İlk deneme sonrasında otomatik güncellenir."
-                    : "This calibrates your roadmap gap to your target. It will auto-update after your first session."}
-                </p>
-              </div>
-              <div style={{ display: "grid", gap: "0.55rem" }}>
-                {estimatedLevelOptions.map((opt) => (
-                  <OptionCard
-                    key={opt.value}
-                    value={opt.value}
-                    label={opt.label}
-                    desc={opt.desc}
-                    microcopy={opt.microcopy}
-                    selected={form.estimatedLevel === opt.value}
-                    onSelect={(v) => setForm((c) => ({ ...c, estimatedLevel: v }))}
-                  />
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          {/* STEP 5 – STUDY RHYTHM */}
-          {step === 5 ? (
-            <>
-              <div className="card" style={stepIntroCardStyle}>
-                <strong>{tr ? "Çalışma ritmin nasıl olacak?" : "How will you study?"}</strong>
-                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65, fontSize: "0.88rem" }}>
-                  {tr
-                    ? "Gerçekçi bir plan belirle. Az ama düzenli, çok ama dağınıktan her zaman daha iyidir."
-                    : "Set a realistic plan. Consistent and small always beats big and scattered."}
-                </p>
-              </div>
-              <label style={{ display: "grid", gap: "0.35rem" }}>
-                <span>{tr ? "Haftada kaç speaking oturumu?" : "Speaking sessions per week"}</span>
-                <input
-                  value={form.weeklyGoal}
-                  onChange={(e) => setForm((c) => ({ ...c, weeklyGoal: Number(e.target.value) || 4 }))}
-                  type="number" min="1" max="14"
-                  placeholder={tr ? "Haftalık hedef" : "Weekly goal"}
-                  style={inputStyle}
-                />
-              </label>
-              <label style={{ display: "grid", gap: "0.35rem" }}>
-                <span>{tr ? "Günde kaç dakika ayırabilirsin?" : "Minutes of study per day"}</span>
-                <input
-                  value={form.dailyMinutesGoal ?? 15}
-                  onChange={(e) => setForm((c) => ({ ...c, dailyMinutesGoal: Number(e.target.value) || 15 }))}
-                  type="number" min="5" max="60"
-                  placeholder={tr ? "Günlük dakika" : "Daily minutes"}
-                  style={inputStyle}
-                />
-              </label>
-              <div style={{ display: "grid", gap: "0.45rem" }}>
-                <span style={{ fontSize: "0.9rem" }}>{tr ? "Hangi günler çalışacaksın?" : "Which days will you study?"}</span>
-                <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
-                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => {
-                    const active = studyDays.includes(day);
+              <div className="inside-field">
+                <span className="inside-field-label">{tr ? "Çalışacağın günler" : "Your study days"}</span>
+                <div className="inside-day-picker">
+                  {[
+                    { key: "Mon", tr: "Pzt" },
+                    { key: "Tue", tr: "Sal" },
+                    { key: "Wed", tr: "Çar" },
+                    { key: "Thu", tr: "Per" },
+                    { key: "Fri", tr: "Cum" },
+                    { key: "Sat", tr: "Cmt" },
+                    { key: "Sun", tr: "Paz" }
+                  ].map((day) => {
+                    const active = studyDays.includes(day.key);
                     return (
                       <button
-                        key={day}
+                        key={day.key}
                         type="button"
-                        className="button button-secondary"
-                        style={{ background: active ? "rgba(29, 111, 117, 0.12)" : undefined, border: active ? "1px solid var(--sa-accent)" : undefined }}
-                        onClick={() =>
-                          setForm((c) => ({
-                            ...c,
-                            studyDays: active ? studyDays.filter((d) => d !== day) : [...studyDays, day]
-                          }))
-                        }
+                        className={`inside-day${active ? " is-active" : ""}`}
+                        aria-pressed={active}
+                        onClick={() => setForm((current) => ({ ...current, studyDays: active ? studyDays.filter((item) => item !== day.key) : [...studyDays, day.key] }))}
                       >
-                        {day}
+                        {tr ? day.tr : day.key}
                       </button>
                     );
                   })}
                 </div>
               </div>
-              <div style={{ display: "grid", gap: "0.45rem" }}>
-                <span style={{ fontSize: "0.9rem" }}>{tr ? "Nasıl öğrenmeyi tercih edersin?" : "How do you prefer to learn?"}</span>
-                <div style={{ display: "grid", gap: "0.5rem" }}>
-                  {learningStyleOptions.map((opt) => (
-                    <OptionCard
-                      key={opt.value}
-                      value={opt.value}
-                      label={opt.label}
-                      desc={opt.desc}
-                      microcopy={opt.microcopy}
-                      selected={form.learningStyle === opt.value}
-                      onSelect={(v) => setForm((c) => ({ ...c, learningStyle: v }))}
-                    />
+              <div className="inside-field">
+                <span className="inside-field-label">{tr ? "Nasıl öğrenmek istersin?" : "How do you prefer to learn?"}</span>
+                <div className="inside-choice-grid">
+                  {learningStyleOptions.map((option) => (
+                    <OptionCard key={option.value} option={option} selected={form.learningStyle === option.value} onSelect={(value) => setForm((current) => ({ ...current, learningStyle: value }))} />
                   ))}
                 </div>
               </div>
-              <label style={{ display: "grid", gap: "0.35rem" }}>
-                <span>{tr ? "En çok odaklanmak istediğin skill" : "Skill you want to focus on most"}</span>
-                <input
-                  value={form.focusSkill}
-                  onChange={(e) => setForm((c) => ({ ...c, focusSkill: e.target.value }))}
-                  placeholder={tr ? "Akıcılık, telaffuz, kelime hazinesi, yapı…" : "Fluency, pronunciation, vocabulary, structure…"}
-                  style={inputStyle}
-                />
+              <label className="inside-field">
+                <span className="inside-field-label">{tr ? "Özel bir odak ekle" : "Add a custom focus"}</span>
+                <span className="inside-field-help">{tr ? "Boş bırakırsan en büyük engeline göre otomatik seçeriz." : "Leave it blank and we will infer it from your biggest barrier."}</span>
+                <input value={form.focusSkill} onChange={(event) => setForm((current) => ({ ...current, focusSkill: event.target.value }))} placeholder={tr ? "Akıcılık, telaffuz, yapı…" : "Fluency, pronunciation, structure…"} />
               </label>
-
-              {/* SUMMARY */}
-              <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)", display: "grid", gap: "0.5rem" }}>
-                <strong>{tr ? "Planın özeti" : "Your plan summary"}</strong>
-                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7, fontSize: "0.88rem" }}>
+              <div className="inside-callout">
+                <strong>{tr ? "Plan özeti" : "Plan summary"}</strong>
+                <p>
                   {tr
-                    ? `${form.preferredExamType} · Hedef: ${form.targetScore ?? "—"} · Haftada ${form.weeklyGoal} oturum · Günde ${form.dailyMinutesGoal ?? 15} dk`
-                    : `${form.preferredExamType} · Target: ${form.targetScore ?? "—"} · ${form.weeklyGoal} sessions/week · ${form.dailyMinutesGoal ?? 15} min/day`}
+                    ? `${form.preferredExamType} · Hedef ${form.targetScore ?? "—"} · Haftada ${form.weeklyGoal} deneme · Günde ${form.dailyMinutesGoal ?? 15} dakika`
+                    : `${form.preferredExamType} · Target ${form.targetScore ?? "—"} · ${form.weeklyGoal} attempts/week · ${form.dailyMinutesGoal ?? 15} minutes/day`}
                 </p>
-                {form.estimatedLevel ? (
-                  <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.6, fontSize: "0.85rem" }}>
-                    {tr
-                      ? `Tahmini seviye: ${form.estimatedLevel} · Öğrenme tercihi: ${form.learningStyle || "—"}`
-                      : `Estimated level: ${form.estimatedLevel} · Learning style: ${form.learningStyle || "—"}`}
-                  </p>
-                ) : null}
               </div>
-            </>
+            </div>
           ) : null}
 
-        </div>
+          {error ? <p className="inside-feedback is-error">{error}</p> : null}
 
-        {/* NAVIGATION */}
-        <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", marginTop: "0.2rem" }}>
-          {step > 1 ? (
-            <button type="button" className="button button-secondary" onClick={() => setStep((s) => s - 1)}>
-              {tr ? "Geri" : "Back"}
-            </button>
-          ) : null}
-          {step < TOTAL_STEPS ? (
-            <button type="button" className="button button-primary" onClick={() => setStep((s) => s + 1)}>
-              {tr ? "Devam et →" : "Continue →"}
-            </button>
-          ) : (
-            <button type="button" className="button button-primary" onClick={save}>
-              {tr ? "Programımı oluştur" : "Create my plan"}
-            </button>
-          )}
-          {step < TOTAL_STEPS ? (
-            <button
-              type="button"
-              style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: "0.85rem" }}
-              onClick={() => setStep((s) => s + 1)}
-            >
-              {tr ? "Bu adımı atla" : "Skip this step"}
-            </button>
-          ) : null}
-        </div>
-        {notice ? <p style={{ margin: 0, color: "var(--success)" }}>{notice}</p> : null}
-        {error ? <p style={{ margin: 0, color: "var(--accent-deep)" }}>{error}</p> : null}
-      </section>
+          <div className="inside-onboarding-actions">
+            {step > 1 ? (
+              <button type="button" className="button button-secondary" onClick={() => setStep((current) => current - 1)}>
+                {tr ? "Geri" : "Back"}
+              </button>
+            ) : (
+              <span />
+            )}
+            {step < TOTAL_STEPS ? (
+              <button type="button" className="button button-primary" disabled={!canContinue} onClick={() => setStep((current) => current + 1)}>
+                {tr ? "Devam et" : "Continue"}
+              </button>
+            ) : (
+              <button type="button" className="button button-primary" onClick={save} disabled={saving}>
+                <Sparkles size={16} />
+                {saving ? (tr ? "Plan oluşturuluyor…" : "Creating plan…") : (tr ? "Planımı oluştur" : "Create my plan")}
+              </button>
+            )}
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
 
-const inputStyle = {
-  padding: "0.9rem",
-  borderRadius: 14,
-  border: "1px solid var(--line)",
-  background: "var(--surface-strong)",
-  color: "var(--text)"
-} as const;
+function ReadyPlan({
+  profile,
+  tr,
+  currentPlan,
+  onDashboard
+}: {
+  profile: StudentProfileType;
+  tr: boolean;
+  currentPlan?: string;
+  onDashboard: () => void;
+}) {
+  const levelToIeltsScore: Record<string, number> = { A2: 4, B1: 5, B2: 6.5, C1: 7.5, "C1+": 8.5 };
+  const levelToToeflScore: Record<string, number> = { A2: 10, B1: 15, B2: 20, C1: 26, "C1+": 29 };
+  const level = profile.estimatedLevel ?? "";
+  const current = profile.preferredExamType === "IELTS" ? levelToIeltsScore[level] : levelToToeflScore[level];
+  const gap = current && profile.targetScore ? Math.max(0, profile.targetScore - current) : null;
+  const normalizedGap = profile.preferredExamType === "IELTS" ? gap : gap === null ? null : gap / 3;
+  const weeks = normalizedGap === null ? null : normalizedGap <= 0 ? 0 : Math.ceil((normalizedGap * 40) / Math.max(1, profile.weeklyGoal));
+  const shouldRecommendAnnual = (weeks !== null && weeks >= 10) || profile.weeklyGoal >= 4;
+  const recommendedBilling = shouldRecommendAnnual ? "annual" : "weekly";
+  const recommendedCheckoutPath = buildPlanCheckoutPath({
+    plan: "plus",
+    billing: recommendedBilling,
+    coupon: couponCatalog.LAUNCH20.code,
+    campaign: `onboarding_plan_ready_${recommendedBilling}`
+  });
+  const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
+  const focusLabels: Record<string, { tr: string; en: string; hintTr: string; hintEn: string }> = {
+    vocabulary: { tr: "Kelime zenginliği", en: "Lexical resource", hintTr: "Bir fikri neden ve örnekle genişlet.", hintEn: "Expand one idea with a reason and example." },
+    anxiety: { tr: "Özgüven", en: "Confidence", hintTr: "Tanıdık konularda kısa cevaplarla başla.", hintEn: "Start with short answers on familiar topics." },
+    grammar: { tr: "Dilbilgisi doğruluğu", en: "Grammar accuracy", hintTr: "Her cevapta tek bir karmaşık yapıyı hedefle.", hintEn: "Target one complex structure in each answer." },
+    pronunciation: { tr: "Telaffuz ve netlik", en: "Delivery and clarity", hintTr: "Kaydından tek bir cümleyi daha net tekrar et.", hintEn: "Replay and repeat one sentence more clearly." },
+    fluency: { tr: "Akıcılık", en: "Fluency", hintTr: "Kısa zamanlı tekrarlarla duraklamayı azalt.", hintEn: "Use short timed retries to reduce pauses." },
+    structure: { tr: "Yapı ve tutarlılık", en: "Structure and coherence", hintTr: "Cevaptan önce üç maddelik iskelet çıkar.", hintEn: "Create a three-point outline before answering." }
+  };
+  const focus = focusLabels[profile.biggestChallenge ?? ""] ?? {
+    tr: profile.focusSkill || "Dengeli gelişim",
+    en: profile.focusSkill || "Balanced improvement",
+    hintTr: "İlk skorundan sonra odağın otomatik güncellenecek.",
+    hintEn: "Your focus will update after your first scored attempt."
+  };
+  const firstTask = profile.preferredExamType === "IELTS"
+    ? ["A2", "B1"].includes(level) ? "IELTS Part 1 · Starter" : "IELTS Part 2 · Target"
+    : ["A2", "B1"].includes(level) ? "TOEFL Task 1 · Starter" : "TOEFL Task 2 · Target";
+  const timeLabel = weeks === null
+    ? "—"
+    : weeks === 0
+      ? (tr ? "Hedefe yakın" : "Near target")
+      : weeks >= 4
+        ? (tr ? `~${Math.round(weeks / 4.3)} ay` : `~${Math.round(weeks / 4.3)} months`)
+        : (tr ? `~${weeks} hafta` : `~${weeks} weeks`);
+
+  return (
+    <main className="page-shell section inside-page inside-onboarding">
+      <header className="inside-header inside-plan-hero">
+        <div className="inside-header-main">
+          <span className="inside-kicker">{tr ? "Planın hazır" : "Your plan is ready"}</span>
+          <h1 className="inside-title">{tr ? "İlk haftan tek bir net odakla başlıyor." : "Your first week starts with one clear focus."}</h1>
+          <p className="inside-lede">
+            {tr ? `${firstTask} ile başlangıç skorunu al. Sonraki görevler tahmine değil gerçek performansına göre güncellenecek.` : `Use ${firstTask} to establish your baseline. Every task after that will adapt to real performance, not estimates.`}
+          </p>
+        </div>
+        <div className="inside-actions">
+          <button type="button" className="button button-secondary" onClick={onDashboard}>
+            {tr ? "Dashboard" : "Dashboard"}
+          </button>
+          <TrackedLink className="button button-primary" href="/app/practice" analyticsEvent="marketing_cta_click" analyticsPath="/app/onboarding/first-practice">
+            {tr ? "İlk pratiği başlat" : "Start first practice"}
+          </TrackedLink>
+        </div>
+      </header>
+
+      <section className="inside-metric-strip" style={{ "--metric-count": 4 } as React.CSSProperties}>
+        <ReadyMetric label={tr ? "Tahmini seviye" : "Estimated level"} value={level || "—"} note={current ? `${tr ? "Yaklaşık skor" : "Approx. score"} ${current}` : (tr ? "İlk denemede ölçülecek" : "Measured in first attempt")} />
+        <ReadyMetric label={tr ? "Hedef" : "Target"} value={profile.targetScore?.toString() ?? "—"} note={profile.preferredExamType} />
+        <ReadyMetric label={tr ? "Kapanacak fark" : "Gap to close"} value={gap === null ? "—" : gap <= 0 ? "0" : profile.preferredExamType === "IELTS" ? gap.toFixed(1) : Math.round(gap).toString()} note={tr ? "İlk sonuçtan sonra netleşir" : "Refines after first result"} />
+        <ReadyMetric label={tr ? "Tahmini ritim" : "Estimated rhythm"} value={timeLabel} note={`${profile.weeklyGoal} ${tr ? "deneme / hafta" : "attempts / week"}`} />
+      </section>
+
+      <div className="inside-layout">
+        <div className="inside-main">
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "7 günlük başlangıç" : "7-day launch"}</span>
+                <h2>{tr ? "İlk üç hareketin" : "Your first three moves"}</h2>
+              </div>
+              <Target size={20} aria-hidden="true" />
+            </div>
+            <div className="inside-timeline">
+              {[
+                {
+                  day: tr ? "Bugün" : "Today",
+                  title: firstTask,
+                  body: tr ? "İlk cevabını kaydet ve başlangıç skorunu oluştur." : "Record one answer and establish your baseline score."
+                },
+                {
+                  day: tr ? "Sonraki" : "Next",
+                  title: tr ? "Aynı soruyu bir kez daha cevapla" : "Retry the same prompt once",
+                  body: tr ? "Rapordaki tek bir öneriyi seçip ikinci cevapta uygula." : "Choose one recommendation from the report and apply it in the second answer."
+                },
+                {
+                  day: tr ? "Bu hafta" : "This week",
+                  title: tr ? `${profile.weeklyGoal} kısa oturumu tamamla` : `Complete ${profile.weeklyGoal} short sessions`,
+                  body: tr ? `Her gün yaklaşık ${profile.dailyMinutesGoal ?? 15} dakika yeterli.` : `About ${profile.dailyMinutesGoal ?? 15} minutes on each study day is enough.`
+                }
+              ].map((item) => (
+                <div key={item.day} className="inside-timeline-item">
+                  <span className="inside-timeline-day">{item.day}</span>
+                  <div className="inside-row-main">
+                    <strong className="inside-row-title">{item.title}</strong>
+                    <span className="inside-row-meta">{item.body}</span>
+                  </div>
+                  <Check size={17} aria-hidden="true" />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {currentPlan === "free" ? (
+            <section className="inside-section is-accent">
+              <div className="inside-section-head">
+                <div>
+                  <span className="inside-kicker">{tr ? "İsteğe bağlı hızlandırıcı" : "Optional accelerator"}</span>
+                  <h2>{tr ? "Daha fazla tekrar gerektiğinde Plus" : "Plus when you need more repetitions"}</h2>
+                  <p className="inside-section-copy">
+                    {tr
+                      ? "Önce ücretsiz ilk skorunu alabilirsin. Aynı gün daha çok deneme ve tam geri bildirim istediğinde bu öneri hazır."
+                      : "You can get your first score for free. This option is ready when you want more same-day attempts and full feedback."}
+                  </p>
+                </div>
+                <Sparkles size={20} aria-hidden="true" />
+              </div>
+              <div className="inside-plan-focus">
+                <div className="inside-callout">
+                  <strong>
+                    {shouldRecommendAnnual
+                      ? (tr ? `${commerceConfig.plusAnnualPrice}/yıl · yaklaşık ${formatUsd(annualMonthlyEquivalent)}/ay` : `${commerceConfig.plusAnnualPrice}/year · about ${formatUsd(annualMonthlyEquivalent)}/month`)
+                      : (tr ? `${commerceConfig.plusMonthlyPrice} ile düşük ilk ödeme` : `${commerceConfig.plusMonthlyPrice} with a lower first payment`)}
+                  </strong>
+                  <p>{tr ? `İlk checkout için ${couponCatalog.LAUNCH20.code} kodu aktif.` : `${couponCatalog.LAUNCH20.code} is active for your first checkout.`}</p>
+                </div>
+                <TrackedLink
+                  className="button button-primary"
+                  href={recommendedCheckoutPath}
+                  analyticsEvent="checkout_initiated"
+                  analyticsPath={`/app/onboarding/${recommendedBilling}`}
+                  onClick={() => {
+                    posthog.capture("checkout_initiated", {
+                      source: "onboarding_plan_ready",
+                      plan: "plus",
+                      billing: recommendedBilling,
+                      weekly_goal: profile.weeklyGoal,
+                      estimated_weeks_to_target: weeks
+                    });
+                  }}
+                >
+                  {tr ? "Plus seçeneğini aç" : "Open Plus option"}
+                </TrackedLink>
+              </div>
+            </section>
+          ) : null}
+        </div>
+
+        <aside className="inside-rail">
+          <section className="inside-section is-accent">
+            <span className="inside-kicker">{tr ? "Ana odağın" : "Primary focus"}</span>
+            <h2 style={{ margin: "0.45rem 0 0" }}>{tr ? focus.tr : focus.en}</h2>
+            <p className="inside-section-copy">{tr ? focus.hintTr : focus.hintEn}</p>
+          </section>
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Çalışma sözü" : "Practice commitment"}</span>
+                <h3>{tr ? "Küçük, düzenli, ölçülebilir" : "Small, consistent, measurable"}</h3>
+              </div>
+              <Clock3 size={19} aria-hidden="true" />
+            </div>
+            <div className="inside-row-list">
+              <div className="inside-row">
+                <span className="inside-row-title">{tr ? "Haftalık deneme" : "Weekly attempts"}</span>
+                <strong>{profile.weeklyGoal}</strong>
+              </div>
+              <div className="inside-row">
+                <span className="inside-row-title">{tr ? "Günlük süre" : "Daily time"}</span>
+                <strong>{profile.dailyMinutesGoal ?? 15} min</strong>
+              </div>
+              <div className="inside-row">
+                <span className="inside-row-title">{tr ? "Seçilen gün" : "Selected days"}</span>
+                <strong>{profile.studyDays.length}</strong>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  );
+}
+
+function ReadyMetric({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <div className="inside-metric">
+      <span className="inside-metric-label">{label}</span>
+      <strong className="inside-metric-value">{value}</strong>
+      <span className="inside-metric-note">{note}</span>
+    </div>
+  );
+}

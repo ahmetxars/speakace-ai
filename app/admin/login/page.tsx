@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { siteConfig } from "@/lib/site";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function AdminLoginPage() {
           <input
             value={identifier}
             onChange={(event) => setIdentifier(event.target.value)}
-            placeholder="admin or admin@speakace.org"
+            placeholder={`admin or ${siteConfig.contactEmail}`}
             style={{ padding: "0.95rem", borderRadius: 14, border: "1px solid var(--line)" }}
           />
         </label>

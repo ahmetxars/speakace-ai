@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, Clock3, LineChart, Save, Sparkles, Target, UserRound } from "lucide-react";
 import { useAppState } from "@/components/providers";
 import { ProgressSummary, StudentProfile as StudentProfileType } from "@/lib/types";
 
@@ -14,7 +16,15 @@ const emptySummary: ProgressSummary = {
   recentSessions: []
 };
 
-const studyDayOptions = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const studyDayOptions = [
+  { key: "Mon", en: "Mon", tr: "Pzt" },
+  { key: "Tue", en: "Tue", tr: "Sal" },
+  { key: "Wed", en: "Wed", tr: "Çar" },
+  { key: "Thu", en: "Thu", tr: "Per" },
+  { key: "Fri", en: "Fri", tr: "Cum" },
+  { key: "Sat", en: "Sat", tr: "Cmt" },
+  { key: "Sun", en: "Sun", tr: "Paz" }
+];
 
 function normalizeStudyDays(value: unknown): string[] {
   if (Array.isArray(value)) {
@@ -59,58 +69,31 @@ export function StudentProfile() {
   const tr = language === "tr";
   const [profile, setProfile] = useState<StudentProfileType | null>(null);
   const [summary, setSummary] = useState<ProgressSummary>(emptySummary);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
-  const fieldText = {
-    preferredExamType: {
-      label: tr ? "Hazırlandığın sınav" : "Preferred exam",
-      help: tr ? "Dashboard ve öneriler bu sınava göre şekillenir." : "Dashboard recommendations will adapt to this exam."
-    },
-    targetScore: {
-      label: tr ? "Hedef skor" : "Target score",
-      help: tr ? "Ulaşmak istediğin yaklaşık band ya da task skoru." : "The score or band you want to reach."
-    },
-    weeklyGoal: {
-      label: tr ? "Haftalık test hedefi" : "Weekly session goal",
-      help: tr ? "Haftada kaç speaking denemesi yapmak istediğin." : "How many speaking attempts you want each week."
-    },
-    dailyMinutesGoal: {
-      label: tr ? "Günlük speaking süresi" : "Daily speaking minutes",
-      help: tr ? "Her gün ayırabileceğin gerçekçi süre." : "A realistic amount of speaking time per day."
-    },
-    currentLevel: {
-      label: tr ? "Mevcut seviye" : "Current level",
-      help: tr ? "Örn: Band 5.5 civarı, B1, başlangıç üstü." : "Example: Around Band 5.5, B1, upper beginner."
-    },
-    focusSkill: {
-      label: tr ? "Ana gelişim odağı" : "Main focus skill",
-      help: tr ? "Şu an en çok geliştirmek istediğin alan." : "The skill you want to improve most right now."
-    },
-    examDate: {
-      label: tr ? "Sınav tarihi" : "Exam date",
-      help: tr ? "Net bir tarihin varsa yaz; yoksa boş bırakabilirsin." : "Add it if you have one; otherwise leave it blank."
-    },
-    targetReason: {
-      label: tr ? "Bu skoru neden istiyorsun?" : "Why this score matters",
-      help: tr ? "Üniversite, iş, burs, vize veya kişisel hedef." : "University, work, scholarship, visa, or personal goal."
-    },
-    discoverySource: {
-      label: tr ? "SpeakAce'i nereden buldun?" : "How you found SpeakAce",
-      help: tr ? "Google, sosyal medya, arkadaş, öğretmen gibi." : "Google, social media, a friend, or a teacher."
-    },
-    bio: {
-      label: tr ? "Kısa çalışma notu" : "Short study note",
-      help: tr ? "Şu an seni en çok zorlayan speaking problemi." : "The speaking issue that feels hardest right now."
-    }
-  } as const;
-
   useEffect(() => {
+    let active = true;
     fetch("/api/profile")
-      .then((response) => response.json())
-      .then((data: { profile?: StudentProfileType }) => setProfile(normalizeProfile(data.profile ?? null)))
-      .catch(() => setProfile(null));
-  }, []);
+      .then((response) => {
+        if (!response.ok) throw new Error("profile");
+        return response.json();
+      })
+      .then((data: { profile?: StudentProfileType }) => {
+        if (active) setProfile(normalizeProfile(data.profile ?? null));
+      })
+      .catch(() => {
+        if (active) setError(tr ? "Profil yüklenemedi." : "Could not load your profile.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [tr]);
 
   useEffect(() => {
     if (!signedIn || !currentUser || currentUser.role === "guest") return;
@@ -122,256 +105,348 @@ export function StudentProfile() {
 
   const profileReadiness = useMemo(() => {
     if (!profile?.targetScore || !summary.averageScore) {
-      return tr ? "Bir hedef belirlediğinde sistem sana daha net bir yol haritası çıkarır." : "Set a target to unlock a clearer roadmap.";
+      return tr ? "İlk skorlu denemenden sonra hedef mesafeni ve haftalık önceliğini burada göreceksin." : "After your first scored attempt, this space will show your target gap and weekly priority.";
     }
     const gap = Number((profile.targetScore - summary.averageScore).toFixed(1));
     if (gap <= 0) {
-      return tr ? "Hedef skoruna oldukça yakınsın. Bundan sonra asıl odak istikrar olmalı." : "You are close to your target score. Consistency is now the priority.";
+      return tr ? "Hedef skoruna ulaştın. Şimdi odağın sınav gününe kadar bu seviyeyi istikrarlı tutmak." : "You have reached your target. The priority now is holding this level consistently until exam day.";
     }
-    return tr ? `Hedefine ulaşmak için yaklaşık ${gap} puanlık bir mesafe var. Haftalık planını koruyarak ilerle.` : `You are ${gap} points away from your target. Stay consistent with your weekly plan.`;
+    return tr ? `Hedefinle son ortalaman arasında ${gap} puan var. Kısa tekrarlar ve aynı soruyu ikinci kez cevaplamak en hızlı kaldıraç.` : `There is a ${gap}-point gap between your recent average and target. Short retries on the same prompt are your fastest lever.`;
   }, [profile?.targetScore, summary.averageScore, tr]);
 
+  const completion = useMemo(() => {
+    if (!profile) return 0;
+    const fields = [
+      profile.targetScore,
+      profile.currentLevel,
+      profile.focusSkill,
+      profile.examDate,
+      profile.targetReason,
+      profile.bio,
+      profile.studyDays.length,
+      profile.weeklyGoal
+    ];
+    return Math.round((fields.filter(Boolean).length / fields.length) * 100);
+  }, [profile]);
+
   const saveProfile = async () => {
-    if (!profile) return;
+    if (!profile || saving) return;
     setError("");
     setNotice("");
-    const response = await fetch("/api/profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(profile)
-    });
-    const data = (await response.json()) as { profile?: StudentProfileType; error?: string };
-    if (!response.ok || !data.profile) {
-      setError(data.error ?? (tr ? "Profil kaydedilemedi." : "Could not save profile."));
-      return;
+    setSaving(true);
+    try {
+      const response = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(profile)
+      });
+      const data = (await response.json()) as { profile?: StudentProfileType; error?: string };
+      if (!response.ok || !data.profile) {
+        setError(data.error ?? (tr ? "Profil kaydedilemedi." : "Could not save profile."));
+        return;
+      }
+      setProfile(normalizeProfile(data.profile));
+      setNotice(tr ? "Değişikliklerin kaydedildi." : "Your changes have been saved.");
+    } catch {
+      setError(tr ? "Profil kaydedilirken bağlantı hatası oluştu." : "A connection error occurred while saving.");
+    } finally {
+      setSaving(false);
     }
-    setProfile(normalizeProfile(data.profile));
-    setNotice(tr ? "Profilin güncellendi." : "Profile updated.");
   };
 
-  if (!currentUser || !profile) {
+  if (loading || !currentUser || !profile) {
     return (
-      <main className="page-shell section">
-        <div className="card" style={{ padding: "1.5rem" }}>{tr ? "Profil yükleniyor..." : "Loading profile..."}</div>
+      <main className="page-shell section inside-page">
+        <div className="inside-loading">
+          {error || (tr ? "Profilin hazırlanıyor…" : "Preparing your profile…")}
+        </div>
       </main>
     );
   }
 
+  const initials = currentUser.name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
-    <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
-      <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "0.9rem" }}>
-        <span className="eyebrow">{tr ? "Öğrenci profili" : "Student profile"}</span>
-        <h1 style={{ margin: 0 }}>{currentUser.name}</h1>
-        <p style={{ color: "var(--muted)", margin: 0 }}>{currentUser.email}</p>
-        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "0.75rem" }}>
-          <ProfileStat label={tr ? "Ortalama skor" : "Average score"} value={summary.averageScore ? summary.averageScore.toFixed(1) : "-"} />
-          <ProfileStat label={tr ? "Streak" : "Streak"} value={`${summary.streakDays}`} />
-          <ProfileStat label={tr ? "Toplam deneme" : "Total sessions"} value={`${summary.totalSessions}`} />
-          <ProfileStat label={tr ? "Plan" : "Plan"} value={currentUser.plan.toUpperCase()} />
+    <main className="page-shell section inside-page">
+      <header className="inside-header">
+        <div className="inside-header-main">
+          <div className="inside-person">
+            <div className="inside-avatar" aria-hidden="true">
+              {profile.avatarDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.avatarDataUrl} alt="" />
+              ) : (
+                initials
+              )}
+            </div>
+            <div>
+              <span className="inside-kicker">{tr ? "Öğrenci profili" : "Learner profile"}</span>
+              <h1 className="inside-title is-person">{currentUser.name}</h1>
+              <p className="inside-lede">{currentUser.email}</p>
+            </div>
+          </div>
         </div>
+        <div className="inside-actions">
+          <Link href="/app/review" className="button button-secondary">
+            <LineChart size={16} />
+            {tr ? "Sonuçları aç" : "Open results"}
+          </Link>
+          <Link href="/app/plan" className="button button-primary">
+            <Sparkles size={16} />
+            {tr ? "Planımı gör" : "View my plan"}
+          </Link>
+        </div>
+      </header>
+
+      <section className="inside-metric-strip" style={{ "--metric-count": 4 } as React.CSSProperties}>
+        <ProfileMetric label={tr ? "Ortalama skor" : "Average score"} value={summary.averageScore ? summary.averageScore.toFixed(1) : "—"} note={tr ? "Son skorlu denemeler" : "Recent scored attempts"} />
+        <ProfileMetric label={tr ? "Pratik serisi" : "Practice streak"} value={`${summary.streakDays}`} note={tr ? "Gün" : "Days"} />
+        <ProfileMetric label={tr ? "Toplam deneme" : "Total attempts"} value={`${summary.totalSessions}`} note={tr ? "Speaking oturumu" : "Speaking sessions"} />
+        <ProfileMetric label={tr ? "Üyelik" : "Membership"} value={currentUser.plan.toUpperCase()} note={tr ? "Mevcut plan" : "Current plan"} />
       </section>
 
-      <section className="grid" style={{ gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1fr)", gap: "1rem", alignItems: "start" }}>
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <strong>{tr ? "Hedeflerin ve tercihlerin" : "Goals and preferences"}</strong>
-          <label style={fieldBlockStyle}>
-            <span style={fieldLabelStyle}>{fieldText.preferredExamType.label}</span>
-            <span style={fieldHelpStyle}>{fieldText.preferredExamType.help}</span>
-            <select value={profile.preferredExamType} onChange={(event) => setProfile((current) => current ? { ...current, preferredExamType: event.target.value as "IELTS" | "TOEFL" } : current)} className="practice-select" style={selectStyle}>
-              <option value="IELTS">IELTS</option>
-              <option value="TOEFL">TOEFL</option>
-            </select>
-          </label>
-          <label style={fieldBlockStyle}>
-            <span style={fieldLabelStyle}>{fieldText.targetScore.label}</span>
-            <span style={fieldHelpStyle}>{fieldText.targetScore.help}</span>
-            <input value={profile.targetScore ?? ""} type="number" min="1" max={profile.preferredExamType === "IELTS" ? "9" : "30"} step="0.1" onChange={(event) => setProfile((current) => current ? { ...current, targetScore: event.target.value ? Number(event.target.value) : null } : current)} placeholder={tr ? "Örn: 6.5" : "Example: 6.5"} style={inputStyle} />
-          </label>
-          <label style={fieldBlockStyle}>
-            <span style={fieldLabelStyle}>{fieldText.weeklyGoal.label}</span>
-            <span style={fieldHelpStyle}>{fieldText.weeklyGoal.help}</span>
-            <input value={profile.weeklyGoal} type="number" min="1" max="14" onChange={(event) => setProfile((current) => current ? { ...current, weeklyGoal: Number(event.target.value) || 4 } : current)} placeholder={tr ? "Örn: 4" : "Example: 4"} style={inputStyle} />
-          </label>
-          <label style={fieldBlockStyle}>
-            <span style={fieldLabelStyle}>{fieldText.dailyMinutesGoal.label}</span>
-            <span style={fieldHelpStyle}>{fieldText.dailyMinutesGoal.help}</span>
-            <input value={profile.dailyMinutesGoal ?? 15} type="number" min="5" max="60" onChange={(event) => setProfile((current) => current ? { ...current, dailyMinutesGoal: Number(event.target.value) || 15 } : current)} placeholder={tr ? "Örn: 15" : "Example: 15"} style={inputStyle} />
-          </label>
-          <label style={fieldBlockStyle}>
-            <span style={fieldLabelStyle}>{fieldText.currentLevel.label}</span>
-            <span style={fieldHelpStyle}>{fieldText.currentLevel.help}</span>
-            <input value={profile.currentLevel} onChange={(event) => setProfile((current) => current ? { ...current, currentLevel: event.target.value } : current)} placeholder={tr ? "Örn: Band 5.5 / B1" : "Example: Band 5.5 / B1"} style={inputStyle} />
-          </label>
-          <label style={fieldBlockStyle}>
-            <span style={fieldLabelStyle}>{fieldText.focusSkill.label}</span>
-            <span style={fieldHelpStyle}>{fieldText.focusSkill.help}</span>
-            <input value={profile.focusSkill} onChange={(event) => setProfile((current) => current ? { ...current, focusSkill: event.target.value } : current)} placeholder={tr ? "Akıcılık, telaffuz, yapı..." : "Fluency, pronunciation, structure..."} style={inputStyle} />
-          </label>
-          <label style={fieldBlockStyle}>
-            <span style={fieldLabelStyle}>{fieldText.examDate.label}</span>
-            <span style={fieldHelpStyle}>{fieldText.examDate.help}</span>
-            <input value={profile.examDate ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, examDate: event.target.value } : current)} placeholder={tr ? "Örn: 2026-06-15" : "Example: 2026-06-15"} style={inputStyle} />
-          </label>
-          <label style={fieldBlockStyle}>
-            <span style={fieldLabelStyle}>{fieldText.targetReason.label}</span>
-            <span style={fieldHelpStyle}>{fieldText.targetReason.help}</span>
-            <input value={profile.targetReason ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, targetReason: event.target.value } : current)} placeholder={tr ? "Üniversite başvurusu, iş, vize..." : "University, job, visa..."} style={inputStyle} />
-          </label>
-          <label style={fieldBlockStyle}>
-            <span style={fieldLabelStyle}>{fieldText.discoverySource.label}</span>
-            <span style={fieldHelpStyle}>{fieldText.discoverySource.help}</span>
-            <input value={profile.discoverySource ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, discoverySource: event.target.value } : current)} placeholder={tr ? "Google, Instagram, arkadaş..." : "Google, Instagram, a friend..."} style={inputStyle} />
-          </label>
-          <div style={{ display: "grid", gap: "0.55rem" }}>
-            <span className="practice-meta">{tr ? "Profil fotoğrafı" : "Profile photo"}</span>
-            <div style={{ display: "flex", gap: "0.8rem", alignItems: "center", flexWrap: "wrap" }}>
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 999,
-                  overflow: "hidden",
-                  display: "grid",
-                  placeItems: "center",
-                  background: "var(--surface-strong)",
-                  border: "1px solid var(--line)",
-                  fontWeight: 800
-                }}
-              >
+      <div className="inside-layout">
+        <div className="inside-main">
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "01 · Sonuç" : "01 · Outcome"}</span>
+                <h2>{tr ? "Sınav hedefin" : "Your exam target"}</h2>
+                <p className="inside-section-copy">
+                  {tr ? "Öneriler, skor aralığı ve geri sayım bu bilgilere göre şekillenir." : "Recommendations, score ranges, and your countdown adapt to these details."}
+                </p>
+              </div>
+              <Target size={20} aria-hidden="true" />
+            </div>
+            <div className="inside-form-grid">
+              <label className="inside-field">
+                <span className="inside-field-label">{tr ? "Hazırlandığın sınav" : "Preferred exam"}</span>
+                <span className="inside-field-help">{tr ? "Dashboard görevlerini belirler." : "Sets the task mix on your dashboard."}</span>
+                <select value={profile.preferredExamType} onChange={(event) => setProfile((current) => current ? { ...current, preferredExamType: event.target.value as "IELTS" | "TOEFL" } : current)}>
+                  <option value="IELTS">IELTS</option>
+                  <option value="TOEFL">TOEFL</option>
+                </select>
+              </label>
+              <label className="inside-field">
+                <span className="inside-field-label">{tr ? "Hedef skor" : "Target score"}</span>
+                <span className="inside-field-help">{tr ? "Ulaşmak istediğin band veya task skoru." : "The band or task score you want to reach."}</span>
+                <input value={profile.targetScore ?? ""} type="number" min="1" max={profile.preferredExamType === "IELTS" ? "9" : "30"} step="0.1" onChange={(event) => setProfile((current) => current ? { ...current, targetScore: event.target.value ? Number(event.target.value) : null } : current)} placeholder={profile.preferredExamType === "IELTS" ? "6.5" : "24"} />
+              </label>
+              <label className="inside-field">
+                <span className="inside-field-label">{tr ? "Sınav tarihi" : "Exam date"}</span>
+                <span className="inside-field-help">{tr ? "Net değilse yaklaşık tarihi yazabilirsin." : "An approximate date is fine if it is not fixed."}</span>
+                <input value={profile.examDate ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, examDate: event.target.value } : current)} placeholder={tr ? "Örn. 15 Haziran 2026" : "Example: June 15, 2026"} />
+              </label>
+              <label className="inside-field">
+                <span className="inside-field-label">{tr ? "Bu hedef neden önemli?" : "Why does this target matter?"}</span>
+                <span className="inside-field-help">{tr ? "Üniversite, iş, vize veya kişisel hedef." : "University, work, visa, or a personal goal."}</span>
+                <input value={profile.targetReason ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, targetReason: event.target.value } : current)} placeholder={tr ? "Üniversite başvurusu…" : "University application…"} />
+              </label>
+            </div>
+          </section>
+
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "02 · Ritim" : "02 · Rhythm"}</span>
+                <h2>{tr ? "Gerçekçi çalışma düzenin" : "A realistic study rhythm"}</h2>
+                <p className="inside-section-copy">
+                  {tr ? "Planın yalnızca gerçekten ayırabileceğin zamana göre çalışmalı." : "Your plan should only use time you can genuinely protect."}
+                </p>
+              </div>
+              <CalendarDays size={20} aria-hidden="true" />
+            </div>
+            <div className="inside-form-grid">
+              <label className="inside-field">
+                <span className="inside-field-label">{tr ? "Haftalık deneme hedefi" : "Weekly attempt goal"}</span>
+                <span className="inside-field-help">{tr ? "Haftada kaç speaking denemesi?" : "How many speaking attempts per week?"}</span>
+                <input value={profile.weeklyGoal} type="number" min="1" max="14" onChange={(event) => setProfile((current) => current ? { ...current, weeklyGoal: Number(event.target.value) || 4 } : current)} />
+              </label>
+              <label className="inside-field">
+                <span className="inside-field-label">{tr ? "Günlük süre" : "Daily time"}</span>
+                <span className="inside-field-help">{tr ? "Kısa ama sürdürülebilir bir süre seç." : "Choose a short, sustainable practice block."}</span>
+                <input value={profile.dailyMinutesGoal ?? 15} type="number" min="5" max="60" onChange={(event) => setProfile((current) => current ? { ...current, dailyMinutesGoal: Number(event.target.value) || 15 } : current)} />
+              </label>
+              <label className="inside-field">
+                <span className="inside-field-label">{tr ? "Mevcut seviyen" : "Current level"}</span>
+                <span className="inside-field-help">{tr ? "Örn. B1 veya IELTS 5.5 civarı." : "Example: B1 or around IELTS 5.5."}</span>
+                <input value={profile.currentLevel} onChange={(event) => setProfile((current) => current ? { ...current, currentLevel: event.target.value } : current)} placeholder={tr ? "B1 / Band 5.5" : "B1 / Band 5.5"} />
+              </label>
+              <label className="inside-field">
+                <span className="inside-field-label">{tr ? "Ana odak" : "Primary focus"}</span>
+                <span className="inside-field-help">{tr ? "Bu hafta en çok geliştirmek istediğin alan." : "The skill you most want to improve this week."}</span>
+                <input value={profile.focusSkill} onChange={(event) => setProfile((current) => current ? { ...current, focusSkill: event.target.value } : current)} placeholder={tr ? "Akıcılık, telaffuz, yapı…" : "Fluency, pronunciation, structure…"} />
+              </label>
+              <div className="inside-field is-wide">
+                <span className="inside-field-label">{tr ? "Çalışma günleri" : "Study days"}</span>
+                <span className="inside-field-help">{tr ? "Hatırlatmalar ve haftalık plan bu günleri kullanır." : "Reminders and your weekly plan use these days."}</span>
+                <div className="inside-day-picker">
+                  {studyDayOptions.map((day) => {
+                    const active = profile.studyDays.includes(day.key);
+                    return (
+                      <button
+                        key={day.key}
+                        type="button"
+                        className={`inside-day${active ? " is-active" : ""}`}
+                        aria-pressed={active}
+                        onClick={() =>
+                          setProfile((current) =>
+                            current
+                              ? {
+                                  ...current,
+                                  studyDays: active ? current.studyDays.filter((item) => item !== day.key) : [...current.studyDays, day.key]
+                                }
+                              : current
+                          )
+                        }
+                      >
+                        {tr ? day.tr : day.en}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "03 · Koçluk bağlamı" : "03 · Coaching context"}</span>
+                <h2>{tr ? "Seni daha iyi tanıyalım" : "Help the coach understand you"}</h2>
+                <p className="inside-section-copy">
+                  {tr ? "Bu notlar önerileri daha kişisel ve uygulanabilir yapar." : "These notes make recommendations more personal and practical."}
+                </p>
+              </div>
+              <UserRound size={20} aria-hidden="true" />
+            </div>
+            <div className="inside-form-grid">
+              <label className="inside-field">
+                <span className="inside-field-label">{tr ? "SpeakAce'i nereden buldun?" : "How did you find SpeakAce?"}</span>
+                <span className="inside-field-help">{tr ? "Google, sosyal medya, arkadaş veya öğretmen." : "Google, social media, a friend, or a teacher."}</span>
+                <input value={profile.discoverySource ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, discoverySource: event.target.value } : current)} placeholder={tr ? "Google…" : "Google…"} />
+              </label>
+              <label className="inside-field is-wide">
+                <span className="inside-field-label">{tr ? "Koçuna kısa not" : "A short note for your coach"}</span>
+                <span className="inside-field-help">{tr ? "Konuşurken nerede takıldığını veya neyi değiştirmek istediğini yaz." : "Describe where you get stuck and what you want to change."}</span>
+                <textarea value={profile.bio ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, bio: event.target.value } : current)} placeholder={tr ? "Part 2'de fikirlerimi uzatırken takılıyorum…" : "I get stuck when extending ideas in Part 2…"} />
+              </label>
+            </div>
+          </section>
+
+          <div className="inside-savebar">
+            <p className={`inside-feedback${notice ? " is-success" : error ? " is-error" : ""}`}>
+              {notice || error || (tr ? "Değişiklikler yalnızca kaydettiğinde planına yansır." : "Changes update your plan after you save them.")}
+            </p>
+            <button type="button" className="button button-primary" onClick={saveProfile} disabled={saving}>
+              <Save size={16} />
+              {saving ? (tr ? "Kaydediliyor…" : "Saving…") : (tr ? "Profili kaydet" : "Save profile")}
+            </button>
+          </div>
+        </div>
+
+        <aside className="inside-rail">
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Profil durumu" : "Profile status"}</span>
+                <h3>{tr ? `%${completion} tamamlandı` : `${completion}% complete`}</h3>
+              </div>
+            </div>
+            <div className="inside-progress">
+              <div className="inside-progress-labels">
+                <span>{tr ? "Kişiselleştirme" : "Personalization"}</span>
+                <span>{completion}%</span>
+              </div>
+              <div className="inside-progress-track" aria-label={`${completion}%`}>
+                <span style={{ width: `${completion}%` }} />
+              </div>
+            </div>
+            <div className="inside-callout" style={{ marginTop: "1rem" }}>
+              <strong>{tr ? "Koç yorumu" : "Coach insight"}</strong>
+              <p>{profileReadiness}</p>
+            </div>
+          </section>
+
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Kimlik" : "Identity"}</span>
+                <h3>{tr ? "Profil fotoğrafın" : "Profile photo"}</h3>
+              </div>
+            </div>
+            <div className="inside-person">
+              <div className="inside-avatar">
                 {profile.avatarDataUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={profile.avatarDataUrl} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <img src={profile.avatarDataUrl} alt={tr ? "Profil fotoğrafı" : "Profile photo"} />
                 ) : (
-                  currentUser.name.slice(0, 2).toUpperCase()
+                  initials
                 )}
               </div>
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                style={{ color: "var(--foreground)" }}
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    const result = typeof reader.result === "string" ? reader.result : "";
-                    setProfile((current) => current ? { ...current, avatarDataUrl: result } : current);
-                  };
-                  reader.readAsDataURL(file);
-                }}
-              />
-              {profile.avatarDataUrl ? (
-                <button type="button" className="button button-secondary" onClick={() => setProfile((current) => current ? { ...current, avatarDataUrl: "" } : current)}>
-                  {tr ? "Fotoğrafı kaldır" : "Remove photo"}
-                </button>
-              ) : null}
-            </div>
-          </div>
-          <label style={fieldBlockStyle}>
-            <span style={fieldLabelStyle}>{fieldText.bio.label}</span>
-            <span style={fieldHelpStyle}>{fieldText.bio.help}</span>
-            <textarea value={profile.bio ?? ""} onChange={(event) => setProfile((current) => current ? { ...current, bio: event.target.value } : current)} rows={4} placeholder={tr ? "Örn: Part 2'de fikirleri uzatırken takılıyorum..." : "Example: I get stuck when I try to extend ideas in Part 2..."} style={{ ...inputStyle, resize: "vertical", minHeight: 120 }} />
-          </label>
-          <div style={{ display: "grid", gap: "0.45rem" }}>
-            <span className="practice-meta">{tr ? "Çalışma günleri" : "Study days"}</span>
-            <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
-              {studyDayOptions.map((day) => {
-                const active = profile.studyDays.includes(day);
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    className="button button-secondary"
-                    style={{ background: active ? "rgba(29, 111, 117, 0.12)" : undefined }}
-                    onClick={() =>
-                      setProfile((current) =>
-                        current
-                          ? {
-                              ...current,
-                              studyDays: active ? current.studyDays.filter((item) => item !== day) : [...current.studyDays, day]
-                            }
-                          : current
-                      )
-                    }
-                  >
-                    {day}
+              <div className="inside-inline-actions">
+                <label className="button button-secondary" style={{ cursor: "pointer" }}>
+                  {tr ? "Fotoğraf seç" : "Choose photo"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    hidden
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 2_000_000) {
+                        setError(tr ? "Fotoğraf 2 MB'dan küçük olmalı." : "The photo must be smaller than 2 MB.");
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        const result = typeof reader.result === "string" ? reader.result : "";
+                        setProfile((current) => current ? { ...current, avatarDataUrl: result } : current);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
+                {profile.avatarDataUrl ? (
+                  <button type="button" className="button button-secondary" onClick={() => setProfile((current) => current ? { ...current, avatarDataUrl: "" } : current)}>
+                    {tr ? "Kaldır" : "Remove"}
                   </button>
-                );
-              })}
+                ) : null}
+              </div>
             </div>
-          </div>
-          <button type="button" className="button button-primary" onClick={saveProfile}>{tr ? "Profili kaydet" : "Save profile"}</button>
-          {notice ? <p style={{ color: "var(--success)", margin: 0 }}>{notice}</p> : null}
-          {error ? <p style={{ color: "var(--accent-deep)", margin: 0 }}>{error}</p> : null}
-        </div>
+          </section>
 
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <strong>{tr ? "Profil yorumu" : "Profile insight"}</strong>
-          <p style={{ margin: 0, lineHeight: 1.7 }}>{profileReadiness}</p>
-          <div className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)", display: "grid", gap: "0.45rem" }}>
-            <strong>{tr ? "Bu haftaki odak" : "This week’s focus"}</strong>
-            <div className="practice-meta">{profile.focusSkill}</div>
-            <div style={{ color: "var(--muted)", lineHeight: 1.7 }}>
-              {tr
-                ? `Bu hafta için ${profile.weeklyGoal} speaking hedefi ve gunde ${profile.dailyMinutesGoal ?? 15} dakika ritmi belirledin. ${profile.studyDays.join(", ")} gunlerinde kisa ama duzenli denemeler yapman iyi olur.`
-                : `You set a ${profile.weeklyGoal}-session weekly goal and ${profile.dailyMinutesGoal ?? 15} daily speaking minutes. Use ${profile.studyDays.join(", ")} for short but consistent practice blocks.`}
+          <section className="inside-section is-accent">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Bu haftaki sözün" : "This week's commitment"}</span>
+                <h3>{profile.focusSkill}</h3>
+              </div>
+              <Clock3 size={19} aria-hidden="true" />
             </div>
-          </div>
-          <div className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)", display: "grid", gap: "0.45rem" }}>
-            <strong>{tr ? "Sınav tercihi" : "Preferred exam"}</strong>
-            <div>{profile.preferredExamType}</div>
-            <div className="practice-meta">{profile.currentLevel}</div>
-            {profile.examDate ? <div className="practice-meta">{tr ? `Sinav tarihi: ${profile.examDate}` : `Exam date: ${profile.examDate}`}</div> : null}
-            {profile.targetReason ? <div className="practice-meta">{profile.targetReason}</div> : null}
-          </div>
-        </div>
-      </section>
+            <p className="inside-section-copy">
+              {tr
+                ? `${profile.weeklyGoal} deneme, günde ${profile.dailyMinutesGoal ?? 15} dakika. Küçük ve düzenli bloklar yeterli.`
+                : `${profile.weeklyGoal} attempts and ${profile.dailyMinutesGoal ?? 15} minutes per day. Small, consistent blocks are enough.`}
+            </p>
+          </section>
+        </aside>
+      </div>
     </main>
   );
 }
 
-function ProfileStat({ label, value }: { label: string; value: string }) {
+function ProfileMetric({ label, value, note }: { label: string; value: string; note: string }) {
   return (
-    <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
-      <div style={{ color: "var(--muted)", marginBottom: "0.35rem" }}>{label}</div>
-      <strong style={{ fontSize: "1.8rem" }}>{value}</strong>
+    <div className="inside-metric">
+      <span className="inside-metric-label">{label}</span>
+      <strong className="inside-metric-value">{value}</strong>
+      <span className="inside-metric-note">{note}</span>
     </div>
   );
 }
-
-const inputStyle = {
-  width: "100%",
-  padding: "0.9rem",
-  background: "var(--surface-strong)",
-  color: "var(--foreground)",
-  borderRadius: 14,
-  border: "1px solid color-mix(in srgb, var(--line) 78%, transparent)",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)"
-} as const;
-
-const selectStyle = {
-  width: "100%",
-  minHeight: 52,
-  background: "var(--surface-strong)",
-  color: "var(--foreground)",
-  borderRadius: 14,
-  border: "1px solid color-mix(in srgb, var(--line) 78%, transparent)",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)"
-} as const;
-
-const fieldBlockStyle = {
-  display: "grid",
-  gap: "0.38rem"
-} as const;
-
-const fieldLabelStyle = {
-  fontSize: "0.9rem",
-  fontWeight: 700,
-  color: "var(--foreground)"
-} as const;
-
-const fieldHelpStyle = {
-  fontSize: "0.8rem",
-  lineHeight: 1.55,
-  color: "var(--muted)"
-} as const;

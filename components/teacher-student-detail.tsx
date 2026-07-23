@@ -2,12 +2,21 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowUpRight,
+  BookOpen,
+  CheckCircle,
+  FileText,
+  MessageSquare,
+  Printer
+} from "lucide-react";
 import { useAppState } from "@/components/providers";
 import { ScoreLineChart } from "@/components/score-line-chart";
 import { TeacherNoteTemplates } from "@/components/teacher-note-templates";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { HomeworkAssignment, ProgressSummary, TeacherNote, TeacherStudentOverview } from "@/lib/types";
-import { AlertTriangle, BookOpen, CheckCircle, FileText, Printer, TrendingDown, TrendingUp } from "lucide-react";
 
 type StudentDetailPayload = {
   student: { id: string; name: string; email: string };
@@ -23,16 +32,18 @@ type HomeworkSuggestion = {
   recommendedTaskType: string;
 };
 
+const noteTagOptions = ["fluency", "pronunciation", "structure", "example", "vocabulary"];
+
 function translateCategoryLabel(label: string, tr: boolean) {
   if (!tr) return label;
   const labels: Record<string, string> = {
-    "Fluency and Coherence": "Akıcılık ve Tutarlılık",
-    "Lexical Resource": "Kelime Kullanımı",
-    "Grammatical Range and Accuracy": "Dilbilgisi ve Doğruluk",
+    "Fluency and Coherence": "Akıcılık ve tutarlılık",
+    "Lexical Resource": "Kelime kullanımı",
+    "Grammatical Range and Accuracy": "Dilbilgisi ve doğruluk",
     Pronunciation: "Telaffuz",
-    Delivery: "Delivery",
+    Delivery: "Aktarım",
     "Language Use": "Dil kullanımı",
-    "Topic Development": "İçerik gelişimi",
+    "Topic Development": "İçerik gelişimi"
   };
   return labels[label] ?? label;
 }
@@ -50,7 +61,7 @@ function buildActivityHeatmap(sessions: ProgressSummary["recentSessions"], tr: b
     return {
       key,
       label: date.toLocaleDateString(tr ? "tr-TR" : "en-US", { month: "numeric", day: "numeric" }),
-      count: counts.get(key) ?? 0,
+      count: counts.get(key) ?? 0
     };
   });
 }
@@ -74,29 +85,50 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
   const [assignedHomework, setAssignedHomework] = useState<HomeworkAssignment[]>([]);
   const [dueDays, setDueDays] = useState(7);
   const [printing, setPrinting] = useState(false);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     fetch(`/api/teacher/students/${studentId}`)
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then((data: StudentDetailPayload & { error?: string }) => {
-        if (data.error) { setError(data.error); return; }
-        setDetail(data);
+        if (data.error) {
+          if (active) setError(data.error);
+          return;
+        }
+        if (active) setDetail(data);
       })
-      .catch(() => setError(tr ? "Öğrenci detayı yüklenemedi." : "Could not load student detail."));
+      .catch(() => {
+        if (active) setError(tr ? "Öğrenci detayı yüklenemedi." : "Could not load student detail.");
+      });
+    return () => {
+      active = false;
+    };
   }, [studentId, tr]);
 
   useEffect(() => {
+    let active = true;
     fetch(`/api/teacher/homework?studentId=${encodeURIComponent(studentId)}`)
-      .then((r) => r.json())
-      .then((data: { suggestions?: HomeworkSuggestion[] }) => setHomeworkSuggestions(data.suggestions ?? []))
-      .catch(() => setHomeworkSuggestions([]));
+      .then((response) => response.json())
+      .then((data: { suggestions?: HomeworkSuggestion[] }) => {
+        if (active) setHomeworkSuggestions(data.suggestions ?? []);
+      })
+      .catch(() => {
+        if (active) setHomeworkSuggestions([]);
+      });
 
     fetch("/api/teacher/homework")
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then((data: { assignments?: Array<{ assignment: HomeworkAssignment; studentName: string; studentEmail: string }> }) => {
-        setAssignedHomework((data.assignments ?? []).map((i) => i.assignment).filter((i) => i.studentId === studentId));
+        if (!active) return;
+        setAssignedHomework((data.assignments ?? []).map((item) => item.assignment).filter((item) => item.studentId === studentId));
       })
-      .catch(() => setAssignedHomework([]));
+      .catch(() => {
+        if (active) setAssignedHomework([]);
+      });
+    return () => {
+      active = false;
+    };
   }, [studentId]);
 
   const sessionNotesMap = useMemo(() => {
@@ -109,46 +141,59 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
   }, [detail?.notes]);
 
   const saveNote = async () => {
-    setError(""); setNotice("");
+    const text = note.trim();
+    if (!text) {
+      setError(tr ? "Kaydetmeden önce bir not yaz." : "Write a note before saving.");
+      return;
+    }
+    setError("");
+    setNotice("");
     const response = await fetch("/api/teacher/notes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studentId, note, tags: noteTags }),
+      body: JSON.stringify({ studentId, note: text, tags: noteTags })
     });
     const data = (await response.json()) as { error?: string; note?: TeacherNote };
     if (!response.ok || !data.note) {
       setError(data.error ?? (tr ? "Öğretmen notu kaydedilemedi." : "Could not save teacher note."));
       return;
     }
-    setNote(""); setNoteTags([]);
+    setNote("");
+    setNoteTags([]);
     setNotice(tr ? "Öğretmen notu kaydedildi." : "Teacher note saved.");
-    setDetail((cur) => (cur ? { ...cur, notes: [data.note!, ...cur.notes] } : cur));
-    if (currentUser?.id) void trackClientEvent({ userId: currentUser.id, event: "teacher_note_saved", path: `/app/teacher/student/${studentId}` });
+    setDetail((current) => current ? { ...current, notes: [data.note!, ...current.notes] } : current);
+    if (currentUser?.id) {
+      void trackClientEvent({ userId: currentUser.id, event: "teacher_note_saved", path: `/app/teacher/student/${studentId}` });
+    }
   };
 
   const saveSessionNote = async (sessionId: string) => {
     const text = sessionDrafts[sessionId]?.trim();
     if (!text) return;
-    setError(""); setNotice("");
+    setError("");
+    setNotice("");
     const response = await fetch("/api/teacher/notes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studentId, note: text, sessionId, tags: sessionTags[sessionId] ?? [] }),
+      body: JSON.stringify({ studentId, note: text, sessionId, tags: sessionTags[sessionId] ?? [] })
     });
     const data = (await response.json()) as { error?: string; note?: TeacherNote };
     if (!response.ok || !data.note) {
-      setError(data.error ?? (tr ? "Seans notu kaydedilemedi." : "Could not save session note."));
+      setError(data.error ?? (tr ? "Deneme yorumu kaydedilemedi." : "Could not save attempt comment."));
       return;
     }
-    setSessionDrafts((cur) => ({ ...cur, [sessionId]: "" }));
-    setSessionTags((cur) => ({ ...cur, [sessionId]: [] }));
-    setNotice(tr ? "Seans notu kaydedildi." : "Session note saved.");
-    setDetail((cur) => (cur ? { ...cur, notes: [data.note!, ...cur.notes] } : cur));
-    if (currentUser?.id) void trackClientEvent({ userId: currentUser.id, event: "teacher_note_saved", path: `/app/teacher/student/${studentId}` });
+    setSessionDrafts((current) => ({ ...current, [sessionId]: "" }));
+    setSessionTags((current) => ({ ...current, [sessionId]: [] }));
+    setNotice(tr ? "Deneme yorumu kaydedildi." : "Attempt comment saved.");
+    setDetail((current) => current ? { ...current, notes: [data.note!, ...current.notes] } : current);
+    if (currentUser?.id) {
+      void trackClientEvent({ userId: currentUser.id, event: "teacher_note_saved", path: `/app/teacher/student/${studentId}` });
+    }
   };
 
   const assignHomework = async (suggestion: HomeworkSuggestion) => {
-    setError(""); setNotice("");
+    setError("");
+    setNotice("");
     const response = await fetch("/api/teacher/homework", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -158,15 +203,15 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
         instructions: suggestion.instructions,
         focusSkill: suggestion.focusSkill,
         recommendedTaskType: suggestion.recommendedTaskType,
-        dueAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * dueDays).toISOString(),
-      }),
+        dueAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * dueDays).toISOString()
+      })
     });
     const data = (await response.json()) as { error?: string; assignment?: HomeworkAssignment };
     if (!response.ok || !data.assignment) {
       setError(data.error ?? (tr ? "Ödev atanamadı." : "Could not assign homework."));
       return;
     }
-    setAssignedHomework((cur) => [data.assignment!, ...cur]);
+    setAssignedHomework((current) => [data.assignment!, ...current]);
     setNotice(tr ? "Ödev atandı." : "Homework assigned.");
   };
 
@@ -180,60 +225,48 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
 
   if (!currentUser?.isTeacher) {
     return (
-      <div className="page-shell section">
-        <div className="card" style={{ padding: "2rem", display: "grid", gap: "0.6rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", color: "var(--destructive)" }}>
-            <AlertTriangle size={20} />
-            <strong style={{ fontSize: "1.1rem" }}>{tr ? "Erişim kısıtlı" : "Access restricted"}</strong>
-          </div>
-          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
-            {tr ? "Bu sayfayı görüntülemek için öğretmen yetkisi gerekiyor." : "Teacher access is required to view this page."}
-          </p>
+      <main className="page-shell section inside-page">
+        <div className="inside-loading">
+          <span style={{ color: "var(--destructive)" }}>{tr ? "Bu görünüm için öğretmen yetkisi gerekiyor." : "Teacher access is required for this view."}</span>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (!detail) {
     return (
-      <div className="page-shell section">
-        <div className="card" style={{ padding: "2rem 1.5rem", display: "flex", alignItems: "center", gap: "1rem", color: "var(--muted)" }}>
-          {error ? (
-            <>
-              <AlertTriangle size={18} style={{ color: "var(--destructive)", flexShrink: 0 }} />
-              <span style={{ color: "var(--destructive)" }}>{error}</span>
-            </>
-          ) : (
-            <>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ animation: "spin 1s linear infinite", flexShrink: 0 }}>
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeOpacity="0.2" />
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-              <span style={{ fontSize: "0.92rem" }}>{tr ? "Öğrenci detayı yükleniyor…" : "Loading student profile…"}</span>
-            </>
-          )}
+      <main className="page-shell section inside-page">
+        <div className="inside-loading">
+          <span style={{ color: error ? "var(--destructive)" : undefined }}>
+            {error || (tr ? "Öğrenci görünümü hazırlanıyor…" : "Preparing student overview…")}
+          </span>
         </div>
-      </div>
+      </main>
     );
   }
 
   const delta = detail.overview.scoreDelta;
   const riskFlags = detail.overview.riskFlags ?? [];
-  const last3Notes = detail.notes.filter((n) => !n.sessionId).slice(0, 3);
-  const nextAction = homeworkSuggestions[0]?.title ?? (tr ? "Pratik yapmaya devam et" : "Continue practicing");
+  const generalNotes = detail.notes.filter((item) => !item.sessionId);
+  const last3Notes = generalNotes.slice(0, 3);
+  const nextAction = homeworkSuggestions[0]?.title ?? (tr ? "Kısa bir speaking tekrarı planla" : "Plan a short speaking retry");
   const timelinePoints = [...detail.summary.recentSessions]
     .reverse()
     .filter((session) => session.report?.overall != null)
     .map((session) => ({
       label: new Date(session.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US", { month: "short", day: "numeric" }),
       value: session.report?.overall ?? 0,
-      meta: `${session.examType} • ${session.taskType}`,
+      meta: `${session.examType} · ${session.taskType}`
     }));
+  const initials = detail.student.name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <div className="page-shell section" style={{ display: "grid", gap: "1.5rem", maxWidth: "1400px", margin: "0 auto", width: "100%" }}>
-
-      {/* ── Print Report Card (hidden on screen, visible only when printing) ── */}
+    <div className="page-shell section inside-page">
       <div
         id="student-report-card"
         className="print-report-card"
@@ -242,481 +275,404 @@ export function TeacherStudentDetail({ studentId }: { studentId: string }) {
           position: "fixed",
           inset: 0,
           zIndex: 9999,
-          background: "white",
-          padding: "40px",
           overflowY: "auto",
+          padding: "40px",
+          background: "white"
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
           <div>
-            <div style={{ fontSize: "22pt", fontWeight: 800, color: "#111" }}>{detail.student.name}</div>
-            <div style={{ fontSize: "10pt", color: "#666", marginTop: "4px" }}>{detail.student.email}</div>
+            <div style={{ color: "#111", fontSize: "22pt", fontWeight: 800 }}>{detail.student.name}</div>
+            <div style={{ marginTop: "4px", color: "#666", fontSize: "10pt" }}>{detail.student.email}</div>
           </div>
-          <div>
-            <div style={{ fontSize: "8pt", color: "#999", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {tr ? "Öğrenci Gelişim Karnesi" : "Student Progress Report"}
+          <div style={{ textAlign: "right" }}>
+            <div style={{ color: "#999", fontSize: "8pt", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+              {tr ? "Öğrenci gelişim karnesi" : "Student progress report"}
             </div>
-            <div style={{ fontSize: "8pt", color: "#999", marginTop: "2px" }}>
+            <div style={{ marginTop: "2px", color: "#999", fontSize: "8pt" }}>
               {new Date().toLocaleDateString(tr ? "tr-TR" : "en-US", { year: "numeric", month: "long", day: "numeric" })}
             </div>
           </div>
         </div>
 
         <hr className="print-divider" />
-
         <div className="print-metric-grid">
-          <div className="print-metric">
-            <div className="print-metric-label">{tr ? "Toplam Deneme" : "Total Attempts"}</div>
-            <div className="print-metric-value">{detail.overview.totalSessions}</div>
-          </div>
-          <div className="print-metric">
-            <div className="print-metric-label">{tr ? "Ortalama Skor" : "Average Score"}</div>
-            <div className="print-metric-value">{detail.overview.averageScore?.toFixed(1) ?? "-"}</div>
-          </div>
-          <div className="print-metric">
-            <div className="print-metric-label">{tr ? "En İyi Skor" : "Best Score"}</div>
-            <div className="print-metric-value">{detail.overview.bestScore?.toFixed(1) ?? "-"}</div>
-          </div>
-          <div className="print-metric">
-            <div className="print-metric-label">{tr ? "Skor Trendi" : "Score Trend"}</div>
-            <div className="print-metric-value" style={{ color: (delta ?? 0) >= 0 ? "#16a34a" : "#dc2626" }}>
-              {formatDelta(delta) ?? "—"}
-            </div>
-          </div>
+          <PrintMetric label={tr ? "Toplam deneme" : "Total attempts"} value={`${detail.overview.totalSessions}`} />
+          <PrintMetric label={tr ? "Ortalama skor" : "Average score"} value={detail.overview.averageScore?.toFixed(1) ?? "—"} />
+          <PrintMetric label={tr ? "En iyi skor" : "Best score"} value={detail.overview.bestScore?.toFixed(1) ?? "—"} />
+          <PrintMetric label={tr ? "Skor trendi" : "Score movement"} value={formatDelta(delta) ?? "—"} />
         </div>
 
-        <div style={{ marginBottom: "16px" }}>
-          <div style={{ fontSize: "9pt", fontWeight: 700, textTransform: "uppercase", color: "#666", letterSpacing: "0.05em", marginBottom: "8px" }}>
-            {tr ? "Zayıf Alan" : "Weakest Skill"}
-          </div>
-          <div style={{ fontSize: "12pt", fontWeight: 600 }}>
-            {detail.overview.weakestSkill ? translateCategoryLabel(detail.overview.weakestSkill, tr) : "—"}
-          </div>
+        <div style={{ marginBottom: "18px" }}>
+          <div className="print-metric-label">{tr ? "Ana gelişim alanı" : "Primary improvement area"}</div>
+          <strong>{detail.overview.weakestSkill ? translateCategoryLabel(detail.overview.weakestSkill, tr) : "—"}</strong>
         </div>
 
-        {riskFlags.length > 0 && (
-          <div style={{ marginBottom: "16px" }}>
-            <div style={{ fontSize: "9pt", fontWeight: 700, textTransform: "uppercase", color: "#666", letterSpacing: "0.05em", marginBottom: "8px" }}>
-              {tr ? "Risk Göstergeleri" : "Risk Flags"}
-            </div>
-            <div>
-              {riskFlags.map((flag, i) => <span key={i} className="print-flag">{flag}</span>)}
-            </div>
+        {riskFlags.length ? (
+          <div style={{ marginBottom: "18px" }}>
+            <div className="print-metric-label">{tr ? "Risk sinyalleri" : "Risk signals"}</div>
+            <div>{riskFlags.map((flag) => <span key={flag} className="print-flag">{flag}</span>)}</div>
           </div>
-        )}
+        ) : null}
 
-        <hr className="print-divider" />
-
-        {last3Notes.length > 0 && (
-          <div style={{ marginBottom: "16px" }}>
-            <div style={{ fontSize: "9pt", fontWeight: 700, textTransform: "uppercase", color: "#666", letterSpacing: "0.05em", marginBottom: "8px" }}>
-              {tr ? "Son Öğretmen Notları" : "Recent Teacher Notes"}
-            </div>
-            {last3Notes.map((n) => (
-              <div key={n.id} className="print-note">
-                <div style={{ fontSize: "8pt", color: "#999", marginBottom: "4px" }}>
-                  {new Date(n.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}
-                  {n.tags?.length ? ` · ${n.tags.map((t) => `#${t}`).join(" ")}` : ""}
-                </div>
-                {n.note}
-              </div>
-            ))}
-          </div>
-        )}
-
-        <hr className="print-divider" />
-
-        <div>
-          <div style={{ fontSize: "9pt", fontWeight: 700, textTransform: "uppercase", color: "#666", letterSpacing: "0.05em", marginBottom: "8px" }}>
-            {tr ? "Önerilen Sonraki Adım" : "Recommended Next Action"}
-          </div>
-          <div style={{ fontSize: "11pt", lineHeight: 1.6 }}>{nextAction}</div>
-        </div>
-
-        <div style={{ marginTop: "40px", fontSize: "8pt", color: "#bbb", textAlign: "center" }}>
-          Speakace.org · {tr ? "Yapay zeka destekli konuşma koçu" : "AI-powered speaking coach"}
-        </div>
-      </div>
-
-      {/* ── Student header ── */}
-      <section className="card no-print" style={{ padding: "1.5rem 2rem", display: "grid", gap: "1.2rem" }}>
-
-        {/* Name + actions */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
-          <div>
-            <span className="eyebrow">{tr ? "Öğrenci detayı" : "Student detail"}</span>
-            <h1 style={{ fontSize: "clamp(1.6rem, 3vw, 2.4rem)", margin: "0.25rem 0 0", lineHeight: 1.2 }}>{detail.student.name}</h1>
-            <p style={{ color: "var(--muted)", margin: "0.25rem 0 0", fontSize: "0.92rem" }}>{detail.student.email}</p>
-          </div>
-          <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", alignItems: "center" }}>
-            <Link href={`/app/teacher/compare?left=${studentId}`} className="button button-secondary" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <FileText size={14} />
-              {tr ? "Karşılaştır" : "Compare"}
-            </Link>
-            <button
-              type="button"
-              className="button button-secondary"
-              style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}
-              onClick={printReport}
-            >
-              <Printer size={14} />
-              {tr ? "Karneyi yazdır" : "Print report"}
-            </button>
-          </div>
-        </div>
-
-        {/* Stats row */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem" }}>
-          <Stat label={tr ? "Toplam deneme" : "Total attempts"} value={String(detail.overview.totalSessions)} />
-          <Stat label={tr ? "Ortalama skor" : "Average score"} value={detail.overview.averageScore?.toFixed(1) ?? "-"} />
-          <Stat label={tr ? "En iyi skor" : "Best score"} value={detail.overview.bestScore?.toFixed(1) ?? "-"} />
-          <Stat
-            label={tr ? "Skor trendi" : "Score trend"}
-            value={formatDelta(delta) ?? "—"}
-            valueColor={(delta ?? 0) > 0 ? "var(--success)" : (delta ?? 0) < 0 ? "var(--destructive)" : undefined}
-            icon={(delta ?? 0) > 0 ? <TrendingUp size={16} /> : (delta ?? 0) < 0 ? <TrendingDown size={16} /> : undefined}
-          />
-          <Stat
-            label={tr ? "Zayıf alan" : "Weakest skill"}
-            value={detail.overview.weakestSkill ? translateCategoryLabel(detail.overview.weakestSkill, tr) : "-"}
-          />
-        </div>
-
-        {/* Risk flags */}
-        {riskFlags.length > 0 && (
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap", paddingTop: "0.2rem" }}>
-            <AlertTriangle size={14} style={{ color: "var(--destructive)", flexShrink: 0 }} />
-            {riskFlags.map((flag, i) => (
-              <span key={i} className="risk-pill">{flag}</span>
-            ))}
-          </div>
-        )}
-
-        {/* Feedback */}
-        {notice ? <p style={{ color: "var(--success)", margin: 0, fontSize: "0.9rem" }}>{notice}</p> : null}
-        {error ? <p style={{ color: "var(--destructive)", margin: 0, fontSize: "0.9rem" }}>{error}</p> : null}
-      </section>
-
-      {/* ── Main 2-column layout ── */}
-      <div className="no-print" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.15fr) minmax(340px, 0.85fr)", gap: "1.2rem", alignItems: "start" }}>
-
-        {/* ══ LEFT COLUMN ══ */}
-        <div style={{ display: "grid", gap: "1.2rem" }}>
-
-          {/* Performance analysis */}
-          <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1.1rem" }}>
-            <div>
-              <span className="eyebrow">{tr ? "Performans analizi" : "Performance analysis"}</span>
-              <h2 style={{ fontSize: "1.4rem", margin: "0.2rem 0 0" }}>{tr ? "Session skor trendi" : "Session score trend"}</h2>
-            </div>
-            <ScoreLineChart points={timelinePoints} />
-            {detail.summary.recentSessions.length > 0 && (
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.87rem" }}>
-                  <thead>
-                    <tr style={{ textAlign: "left" }}>
-                      <th style={{ paddingBottom: "0.65rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "Tarih" : "Date"}</th>
-                      <th style={{ paddingBottom: "0.65rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "Görev" : "Task"}</th>
-                      <th style={{ paddingBottom: "0.65rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "Skor" : "Score"}</th>
-                      <th style={{ paddingBottom: "0.65rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "Zayıf alan" : "Weak area"}</th>
-                      <th style={{ paddingBottom: "0.65rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "İncele" : "Review"}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {detail.summary.recentSessions.map((session) => {
-                      const weakest = session.report?.categories?.slice().sort((a, b) => a.score - b.score)[0]?.label ?? null;
-                      return (
-                        <tr key={session.id} style={{ borderTop: "1px solid var(--line)" }}>
-                          <td style={{ padding: "0.65rem 0.5rem 0.65rem 0", whiteSpace: "nowrap" }}>{new Date(session.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</td>
-                          <td style={{ padding: "0.65rem 0.5rem", color: "var(--muted)", fontSize: "0.83rem" }}>{session.examType} · {session.taskType}</td>
-                          <td style={{ padding: "0.65rem 0.5rem", fontWeight: 700 }}>{session.report?.overall?.toFixed(1) ?? "—"}</td>
-                          <td style={{ padding: "0.65rem 0.5rem", color: "var(--muted)", fontSize: "0.83rem" }}>{weakest ? translateCategoryLabel(weakest, tr) : "—"}</td>
-                          <td style={{ padding: "0.65rem 0 0.65rem 0.5rem" }}>
-                            <Link href={`/app/results/${session.id}`} className="button button-secondary" style={{ fontSize: "0.78rem", padding: "0.25rem 0.65rem" }}>
-                              {tr ? "Aç" : "Open"}
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Recent speaking attempts */}
-          <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
-            <div>
-              <span className="eyebrow">{tr ? "Sonuçlar" : "Results"}</span>
-              <h2 style={{ fontSize: "1.4rem", margin: "0.2rem 0 0" }}>{tr ? "Son speaking denemeleri" : "Recent speaking attempts"}</h2>
-            </div>
-            <div style={{ display: "grid", gap: "0.75rem" }}>
-              {detail.summary.recentSessions.length ? detail.summary.recentSessions.map((session) => (
-                <div key={session.id} className="card" style={{ padding: "1rem", display: "grid", gap: "0.7rem", background: "var(--surface-strong)" }}>
-                  <Link href={`/app/results/${session.id}`} style={{ display: "grid", gap: "0.4rem", color: "inherit", textDecoration: "none" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.8rem" }}>
-                      <strong style={{ lineHeight: 1.4 }}>{session.prompt.title}</strong>
-                      <strong style={{ fontSize: "1.1rem", flexShrink: 0 }}>{session.report?.overall ?? "—"}</strong>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.5rem" }}>
-                      <div className="practice-meta" style={{ fontSize: "0.83rem" }}>{session.examType} · {session.taskType}</div>
-                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                        {sessionNotesMap.get(session.id)?.length ? (
-                          <span style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.78rem", color: "var(--accent)" }}>
-                            <CheckCircle size={12} />
-                            {tr ? "İncelendi" : "Reviewed"}
-                          </span>
-                        ) : null}
-                        <span style={{ color: "var(--muted)", fontSize: "0.82rem" }}>
-                          {session.report?.scaleLabel ?? (tr ? "Değerlendiriliyor" : "Awaiting evaluation")}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                    <Link href={`/app/replay/${session.id}`} className="button button-secondary" style={{ fontSize: "0.82rem" }}>
-                      {tr ? "Replay aç" : "Open replay"}
-                    </Link>
+        {last3Notes.length ? (
+          <>
+            <hr className="print-divider" />
+            <div style={{ marginBottom: "18px" }}>
+              <div className="print-metric-label">{tr ? "Son öğretmen notları" : "Recent teacher notes"}</div>
+              {last3Notes.map((item) => (
+                <div key={item.id} className="print-note">
+                  <div style={{ marginBottom: "4px", color: "#999", fontSize: "8pt" }}>
+                    {new Date(item.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}
                   </div>
-
-                  {/* Session comment area */}
-                  <div style={{ borderTop: "1px solid var(--line)", paddingTop: "0.75rem", display: "grid", gap: "0.55rem" }}>
-                    <strong style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{tr ? "Bu denemeye yorum bırak" : "Leave a comment"}</strong>
-                    <TeacherNoteTemplates
-                      tr={tr}
-                      onSelect={(value) =>
-                        setSessionDrafts((cur) => ({ ...cur, [session.id]: cur[session.id] ? `${cur[session.id]}\n${value}` : value }))
-                      }
-                    />
-                    <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
-                      {["fluency", "pronunciation", "structure", "example", "vocabulary"].map((tag) => {
-                        const active = (sessionTags[session.id] ?? []).includes(tag);
-                        return (
-                          <button
-                            key={`${session.id}-${tag}`}
-                            type="button"
-                            className="button button-secondary"
-                            style={{ background: active ? "color-mix(in srgb, var(--accent) 14%, var(--surface) 86%)" : undefined, fontSize: "0.78rem", padding: "0.3rem 0.65rem" }}
-                            onClick={() =>
-                              setSessionTags((cur) => {
-                                const tags = cur[session.id] ?? [];
-                                return { ...cur, [session.id]: active ? tags.filter((t) => t !== tag) : [...tags, tag] };
-                              })
-                            }
-                          >
-                            #{tag}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <textarea
-                      value={sessionDrafts[session.id] ?? ""}
-                      onChange={(e) => setSessionDrafts((cur) => ({ ...cur, [session.id]: e.target.value }))}
-                      rows={2}
-                      placeholder={tr ? "Bu denemede öğrenciye neyi düzeltmesini önerirsin?" : "What should the student improve in this attempt?"}
-                      style={{ padding: "0.75rem", borderRadius: 12, border: "1px solid var(--line)", resize: "vertical", background: "var(--surface)", color: "var(--text)", font: "inherit", fontSize: "0.88rem" }}
-                    />
-                    <button type="button" className="button button-secondary" style={{ justifySelf: "start" }} onClick={() => saveSessionNote(session.id)}>
-                      {tr ? "Yorumu kaydet" : "Save comment"}
-                    </button>
-                    {sessionNotesMap.get(session.id)?.length ? (
-                      <div style={{ display: "grid", gap: "0.4rem", paddingTop: "0.3rem", borderTop: "1px solid var(--line)" }}>
-                        {(sessionNotesMap.get(session.id) ?? []).slice(0, 2).map((item) => (
-                          <div key={item.id} style={{ fontSize: "0.82rem", color: "var(--muted)", lineHeight: 1.6 }}>
-                            {item.tags?.length ? <div style={{ marginBottom: "0.15rem", fontWeight: 600, color: "var(--accent)" }}>{item.tags.map((t) => `#${t}`).join(" ")}</div> : null}
-                            {item.note}
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-              )) : (
-                <div style={{ padding: "2rem 1rem", color: "var(--muted)", textAlign: "center" }}>
-                  {tr ? "Henüz speaking denemesi yok." : "No speaking attempts yet."}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ══ RIGHT COLUMN ══ */}
-        <div style={{ display: "grid", gap: "1.2rem" }}>
-
-          {/* Adaptive homework */}
-          <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-              <BookOpen size={18} style={{ color: "var(--accent)", flexShrink: 0 }} />
-              <div>
-                <span className="eyebrow">{tr ? "Adaptive ödev" : "Adaptive homework"}</span>
-                <h2 style={{ fontSize: "1.2rem", margin: "0.1rem 0 0", lineHeight: 1.3 }}>{tr ? "Skora göre otomatik ödev" : "Score-based assignment"}</h2>
-              </div>
-            </div>
-
-            {/* Due date presets */}
-            <div>
-              <div style={{ fontSize: "0.82rem", color: "var(--muted)", marginBottom: "0.5rem", fontWeight: 600 }}>{tr ? "Teslim süresi" : "Due date preset"}</div>
-              <div style={{ display: "flex", gap: "0.4rem" }}>
-                {[3, 7, 14].map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className="button button-secondary"
-                    onClick={() => setDueDays(value)}
-                    style={{
-                      background: dueDays === value ? "color-mix(in srgb, var(--accent) 18%, var(--surface) 82%)" : undefined,
-                      borderColor: dueDays === value ? "color-mix(in srgb, var(--accent) 40%, transparent 60%)" : undefined,
-                      fontSize: "0.85rem",
-                    }}
-                  >
-                    {tr ? `${value} gün` : `${value} days`}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Suggestions */}
-            {homeworkSuggestions.map((item, index) => (
-              <div key={`${item.title}-${index}`} className="card" style={{ padding: "1rem", background: "color-mix(in srgb, var(--accent) 7%, var(--surface) 93%)", display: "grid", gap: "0.6rem", borderColor: "color-mix(in srgb, var(--accent) 20%, transparent 80%)" }}>
-                <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--accent)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "0.3rem" }}>{item.focusSkill}</div>
-                  <strong style={{ fontSize: "0.95rem", lineHeight: 1.4 }}>{item.title}</strong>
-                </div>
-                <p style={{ margin: 0, lineHeight: 1.65, fontSize: "0.85rem", color: "var(--muted)" }}>{item.instructions}</p>
-                <button type="button" className="button button-primary" style={{ fontSize: "0.88rem" }} onClick={() => assignHomework(item)}>
-                  {tr ? "Bu ödevi ata" : "Assign this homework"}
-                </button>
-              </div>
-            ))}
-
-            {/* Assigned homework list */}
-            <div>
-              <div style={{ fontSize: "0.82rem", color: "var(--muted)", fontWeight: 600, marginBottom: "0.6rem" }}>{tr ? "Atanmış ödevler" : "Assigned homework"}</div>
-              <div style={{ display: "grid", gap: "0.4rem" }}>
-                {assignedHomework.length ? assignedHomework.slice(0, 5).map((item) => {
-                  const overdue = !item.completedAt && item.dueAt && new Date(item.dueAt).getTime() < Date.now();
-                  return (
-                    <div key={item.id} style={{ display: "flex", gap: "0.55rem", alignItems: "flex-start", fontSize: "0.85rem", lineHeight: 1.5, padding: "0.5rem 0", borderBottom: "1px solid var(--line)" }}>
-                      <span style={{ color: item.completedAt ? "var(--success)" : overdue ? "var(--destructive)" : "var(--muted)", flexShrink: 0, fontSize: "1rem" }}>
-                        {item.completedAt ? "✓" : overdue ? "⚠" : "·"}
-                      </span>
-                      <span style={{ color: overdue ? "var(--destructive)" : undefined }}>
-                        {item.title}
-                        {item.dueAt && <span style={{ color: "var(--muted)", fontSize: "0.8rem" }}> · {tr ? "teslim" : "due"} {new Date(item.dueAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</span>}
-                      </span>
-                    </div>
-                  );
-                }) : (
-                  <div style={{ color: "var(--muted)", fontSize: "0.85rem", padding: "0.5rem 0" }}>{tr ? "Henüz ödev atanmadı." : "No homework assigned yet."}</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Activity heatmap */}
-          <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
-            <div>
-              <span className="eyebrow">{tr ? "Aktivite" : "Activity"}</span>
-              <h2 style={{ fontSize: "1.2rem", margin: "0.1rem 0 0" }}>{tr ? "Son 28 gün" : "Last 28 days"}</h2>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: "0.35rem" }}>
-              {buildActivityHeatmap(detail.summary.recentSessions, tr).map((day) => (
-                <div
-                  key={day.key}
-                  className={`card heatmap-${Math.min(day.count, 3)}`}
-                  style={{ padding: "0.5rem 0.25rem", textAlign: "center" }}
-                >
-                  <div style={{ fontSize: "0.65rem", color: "var(--muted)", marginBottom: "0.15rem" }}>{day.label}</div>
-                  <strong style={{ fontSize: "0.82rem" }}>{day.count}</strong>
+                  {item.note}
                 </div>
               ))}
             </div>
-            <p style={{ margin: 0, color: "var(--muted)", fontSize: "0.8rem", lineHeight: 1.55 }}>
-              {tr ? "Koyu kutular aynı gün içinde daha fazla speaking denemesi yapıldığını gösterir." : "Darker cells indicate more speaking activity on that day."}
-            </p>
-          </div>
+          </>
+        ) : null}
 
-          {/* Teacher notes */}
-          <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
+        <hr className="print-divider" />
+        <div>
+          <div className="print-metric-label">{tr ? "Önerilen sonraki adım" : "Recommended next action"}</div>
+          <div style={{ fontSize: "11pt", lineHeight: 1.6 }}>{nextAction}</div>
+        </div>
+        <div style={{ marginTop: "40px", color: "#bbb", fontSize: "8pt", textAlign: "center" }}>speakace.org</div>
+      </div>
+
+      <header className="inside-header no-print">
+        <div className="inside-header-main">
+          <Link href="/app/teacher" className="inside-breadcrumb">
+            <ArrowLeft size={14} style={{ verticalAlign: "middle", marginRight: "0.3rem" }} />
+            {tr ? "Öğretmen merkezine dön" : "Back to teacher hub"}
+          </Link>
+          <div className="inside-person">
+            <div className="inside-avatar" aria-hidden="true">{initials}</div>
             <div>
-              <span className="eyebrow">{tr ? "Öğretmen notları" : "Teacher notes"}</span>
-              <h2 style={{ fontSize: "1.2rem", margin: "0.1rem 0 0" }}>{tr ? "Not bırak" : "Leave a note"}</h2>
+              <span className="inside-kicker">{tr ? "Öğrenci çalışma alanı" : "Student workspace"}</span>
+              <h1 className="inside-title is-person">{detail.student.name}</h1>
+              <p className="inside-lede">{detail.student.email}</p>
             </div>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={3}
-              placeholder={tr ? "Öğrencinin bir sonraki derste neye odaklanması gerektiğini yaz…" : "What should this student focus on in the next lesson?"}
-              style={{ padding: "0.85rem", borderRadius: 12, border: "1px solid var(--line)", resize: "vertical", background: "var(--surface)", color: "var(--text)", font: "inherit", fontSize: "0.9rem" }}
-            />
-            <TeacherNoteTemplates tr={tr} onSelect={(v) => setNote((cur) => (cur ? `${cur}\n${v}` : v))} />
-            <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
-              {["fluency", "pronunciation", "structure", "example", "vocabulary"].map((tag) => {
-                const active = noteTags.includes(tag);
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    className="button button-secondary"
-                    style={{ background: active ? "color-mix(in srgb, var(--accent) 14%, var(--surface) 86%)" : undefined, fontSize: "0.78rem", padding: "0.3rem 0.65rem" }}
-                    onClick={() => setNoteTags((cur) => (active ? cur.filter((t) => t !== tag) : [...cur, tag]))}
-                  >
-                    #{tag}
-                  </button>
-                );
-              })}
-            </div>
-            <button type="button" className="button button-primary" onClick={saveNote}>
-              {tr ? "Öğretmen notunu kaydet" : "Save teacher note"}
-            </button>
+          </div>
+        </div>
+        <div className="inside-actions">
+          <Link href={`/app/teacher/compare?left=${studentId}`} className="button button-secondary">
+            <FileText size={15} />
+            {tr ? "Karşılaştır" : "Compare"}
+          </Link>
+          <button type="button" className="button button-primary" onClick={printReport}>
+            <Printer size={15} />
+            {tr ? "Karne oluştur" : "Create report"}
+          </button>
+        </div>
+      </header>
 
-            {/* Saved notes list */}
-            {detail.notes.filter((n) => !n.sessionId).length > 0 && (
-              <div style={{ display: "grid", gap: "0.6rem", paddingTop: "0.2rem", borderTop: "1px solid var(--line)" }}>
-                <div style={{ fontSize: "0.8rem", color: "var(--muted)", fontWeight: 600 }}>{tr ? "Kaydedilen notlar" : "Saved notes"}</div>
-                {detail.notes.filter((n) => !n.sessionId).map((item) => (
-                  <div key={item.id} className="card" style={{ padding: "0.85rem", background: "var(--surface-strong)", display: "grid", gap: "0.35rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", alignItems: "center" }}>
-                      <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-                        {new Date(item.createdAt).toLocaleString(tr ? "tr-TR" : "en-US", { dateStyle: "medium", timeStyle: "short" })}
+      <section className="inside-metric-strip no-print" style={{ "--metric-count": 5 } as React.CSSProperties}>
+        <DetailMetric label={tr ? "Toplam deneme" : "Total attempts"} value={`${detail.overview.totalSessions}`} note={tr ? "Speaking oturumu" : "Speaking sessions"} />
+        <DetailMetric label={tr ? "Ortalama" : "Average"} value={detail.overview.averageScore?.toFixed(1) ?? "—"} note={tr ? "Son sonuçlar" : "Recent results"} />
+        <DetailMetric label={tr ? "En iyi skor" : "Best score"} value={detail.overview.bestScore?.toFixed(1) ?? "—"} note={tr ? "Kayıtlı zirve" : "Recorded peak"} />
+        <DetailMetric label={tr ? "Skor hareketi" : "Score movement"} value={formatDelta(delta) ?? "—"} note={tr ? "Önceki döneme göre" : "Versus prior period"} />
+        <DetailMetric label={tr ? "Ana odak" : "Primary focus"} value={detail.overview.weakestSkill ? translateCategoryLabel(detail.overview.weakestSkill, tr) : "—"} note={tr ? "En düşük kategori" : "Lowest category"} />
+      </section>
+
+      {(notice || error || riskFlags.length) ? (
+        <section className="inside-section no-print" style={{ paddingBlock: "0.85rem" }}>
+          {riskFlags.length ? (
+            <div className="inside-tag-list">
+              <AlertTriangle size={17} style={{ color: "var(--destructive)" }} aria-hidden="true" />
+              {riskFlags.map((flag) => <span key={flag} className="inside-status is-alert">{flag}</span>)}
+            </div>
+          ) : null}
+          {notice ? <p className="inside-feedback is-success" style={{ marginTop: riskFlags.length ? "0.65rem" : 0 }}>{notice}</p> : null}
+          {error ? <p className="inside-feedback is-error" style={{ marginTop: riskFlags.length ? "0.65rem" : 0 }}>{error}</p> : null}
+        </section>
+      ) : null}
+
+      <div className="inside-layout no-print">
+        <div className="inside-main">
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Performans" : "Performance"}</span>
+                <h2>{tr ? "Skor yönü" : "Score direction"}</h2>
+                <p className="inside-section-copy">
+                  {tr ? "Tüm skorlu denemeler kronolojik sırada gösterilir." : "All scored attempts are shown in chronological order."}
+                </p>
+              </div>
+            </div>
+            {timelinePoints.length ? <ScoreLineChart points={timelinePoints} /> : (
+              <div className="inside-empty">
+                <strong>{tr ? "Henüz çizilecek skor yok." : "No scores to chart yet."}</strong>
+                <span>{tr ? "İlk değerlendirme tamamlandığında trend burada başlar." : "The trend starts after the first evaluation."}</span>
+              </div>
+            )}
+          </section>
+
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Sonuç ve yorum" : "Results and comments"}</span>
+                <h2>{tr ? "Speaking denemeleri" : "Speaking attempts"}</h2>
+                <p className="inside-section-copy">
+                  {tr ? "Bir denemeyi seçerek yalnızca o sonuca yorum bırak." : "Select one attempt to leave feedback on that specific result."}
+                </p>
+              </div>
+              <MessageSquare size={20} aria-hidden="true" />
+            </div>
+
+            {detail.summary.recentSessions.length ? (
+              <div className="inside-row-list">
+                {detail.summary.recentSessions.map((session) => {
+                  const weakest = session.report?.categories.slice().sort((a, b) => a.score - b.score)[0];
+                  const reviewed = Boolean(sessionNotesMap.get(session.id)?.length);
+                  const editorOpen = activeSessionId === session.id;
+                  return (
+                    <div key={session.id}>
+                      <div className="inside-row" style={{ paddingBlock: "0.9rem" }}>
+                        <div className="inside-row-main">
+                          <strong className="inside-row-title">{session.prompt.title}</strong>
+                          <div className="inside-row-meta">
+                            <span>{new Date(session.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US", { day: "numeric", month: "short", year: "numeric" })}</span>
+                            <span>{session.examType} · {session.taskType}</span>
+                            {weakest ? <span>{tr ? "Odak" : "Focus"}: {translateCategoryLabel(weakest.label, tr)}</span> : null}
+                            {reviewed ? <span className="inside-status is-good"><CheckCircle size={12} /> {tr ? "Yorumlandı" : "Reviewed"}</span> : null}
+                          </div>
+                        </div>
+                        <div className="inside-row-side">
+                          <strong className="inside-row-score">{session.report?.overall?.toFixed(1) ?? "—"}</strong>
+                          <Link href={`/app/results/${session.id}`} className="inside-row-action" aria-label={tr ? "Sonucu aç" : "Open result"}>
+                            <ArrowUpRight size={16} />
+                          </Link>
+                          <button type="button" className="button button-secondary" onClick={() => setActiveSessionId(editorOpen ? null : session.id)}>
+                            {editorOpen ? (tr ? "Kapat" : "Close") : (tr ? "Yorum" : "Comment")}
+                          </button>
+                        </div>
                       </div>
-                      {item.tags?.length ? (
-                        <div style={{ fontSize: "0.73rem", color: "var(--accent)", fontWeight: 600 }}>
-                          {item.tags.map((t) => `#${t}`).join(" ")}
+
+                      {editorOpen ? (
+                        <div className="inside-note-editor">
+                          <TeacherNoteTemplates
+                            tr={tr}
+                            onSelect={(value) =>
+                              setSessionDrafts((current) => ({
+                                ...current,
+                                [session.id]: current[session.id] ? `${current[session.id]}\n${value}` : value
+                              }))
+                            }
+                          />
+                          <div className="inside-tag-list">
+                            {noteTagOptions.map((tag) => {
+                              const active = (sessionTags[session.id] ?? []).includes(tag);
+                              return (
+                                <button
+                                  key={`${session.id}-${tag}`}
+                                  type="button"
+                                  className={`inside-status${active ? " is-good" : ""}`}
+                                  aria-pressed={active}
+                                  onClick={() =>
+                                    setSessionTags((current) => {
+                                      const tags = current[session.id] ?? [];
+                                      return { ...current, [session.id]: active ? tags.filter((item) => item !== tag) : [...tags, tag] };
+                                    })
+                                  }
+                                >
+                                  #{tag}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <textarea
+                            className="inside-input"
+                            value={sessionDrafts[session.id] ?? ""}
+                            onChange={(event) => setSessionDrafts((current) => ({ ...current, [session.id]: event.target.value }))}
+                            rows={3}
+                            placeholder={tr ? "Bu denemede öğrencinin bir sonraki adımı ne olmalı?" : "What should the student do next after this attempt?"}
+                            style={{ resize: "vertical" }}
+                          />
+                          <div className="inside-inline-actions">
+                            <button type="button" className="button button-primary" onClick={() => saveSessionNote(session.id)}>
+                              {tr ? "Yorumu kaydet" : "Save comment"}
+                            </button>
+                            <Link href={`/app/replay/${session.id}`} className="button button-secondary">
+                              {tr ? "Kaydı aç" : "Open replay"}
+                            </Link>
+                          </div>
+                          {(sessionNotesMap.get(session.id) ?? []).slice(0, 2).map((item) => (
+                            <div key={item.id} className="inside-callout">
+                              {item.tags?.length ? <strong>{item.tags.map((tag) => `#${tag}`).join(" ")}</strong> : null}
+                              <p>{item.note}</p>
+                            </div>
+                          ))}
                         </div>
                       ) : null}
                     </div>
-                    <p style={{ margin: 0, lineHeight: 1.65, fontSize: "0.87rem" }}>{item.note}</p>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="inside-empty">
+                <strong>{tr ? "Henüz speaking denemesi yok." : "No speaking attempts yet."}</strong>
+                <span>{tr ? "Öğrencinin ilk tamamlanan denemesi burada görünür." : "The student’s first completed attempt will appear here."}</span>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <aside className="inside-rail" style={{ position: "static" }}>
+          <section className="inside-section is-accent">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Adaptif ödev" : "Adaptive homework"}</span>
+                <h3>{tr ? "Skora göre sonraki görev" : "Next task from the score"}</h3>
+              </div>
+              <BookOpen size={19} aria-hidden="true" />
+            </div>
+            <div className="inside-filter" aria-label={tr ? "Teslim süresi" : "Due date"}>
+              {[3, 7, 14].map((value) => (
+                <button key={value} type="button" className={dueDays === value ? "is-active" : ""} onClick={() => setDueDays(value)}>
+                  {tr ? `${value} gün` : `${value} days`}
+                </button>
+              ))}
+            </div>
+            {homeworkSuggestions.length ? (
+              <div className="inside-row-list" style={{ marginTop: "0.8rem" }}>
+                {homeworkSuggestions.map((item, index) => (
+                  <div key={`${item.title}-${index}`} className="inside-row" style={{ gridTemplateColumns: "1fr", alignItems: "start" }}>
+                    <div className="inside-row-main">
+                      <span className="inside-tag">{item.focusSkill}</span>
+                      <strong className="inside-row-title" style={{ whiteSpace: "normal" }}>{item.title}</strong>
+                      <span className="inside-row-meta">{item.instructions}</span>
+                    </div>
+                    <button type="button" className="button button-primary" onClick={() => assignHomework(item)}>
+                      {tr ? "Bu ödevi ata" : "Assign homework"}
+                    </button>
                   </div>
                 ))}
               </div>
+            ) : (
+              <div className="inside-empty"><span>{tr ? "Skora uygun otomatik öneri henüz yok." : "No score-based suggestion yet."}</span></div>
             )}
-          </div>
-        </div>
+
+            <div style={{ marginTop: "0.9rem" }}>
+              <strong style={{ fontSize: "0.82rem" }}>{tr ? "Atanmış ödevler" : "Assigned homework"}</strong>
+              {assignedHomework.length ? (
+                <div className="inside-row-list" style={{ marginTop: "0.35rem" }}>
+                  {assignedHomework.slice(0, 5).map((item) => {
+                    const overdue = !item.completedAt && item.dueAt && new Date(item.dueAt).getTime() < Date.now();
+                    return (
+                      <div key={item.id} className="inside-row">
+                        <div className="inside-row-main">
+                          <strong className="inside-row-title" style={{ whiteSpace: "normal" }}>{item.title}</strong>
+                          <span className="inside-row-meta">
+                            {item.dueAt ? `${tr ? "Teslim" : "Due"} ${new Date(item.dueAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}` : (tr ? "Tarih yok" : "No due date")}
+                          </span>
+                        </div>
+                        <span className={`inside-status${item.completedAt ? " is-good" : overdue ? " is-alert" : ""}`}>
+                          {item.completedAt ? (tr ? "Bitti" : "Done") : overdue ? (tr ? "Gecikti" : "Overdue") : (tr ? "Açık" : "Open")}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="inside-section-copy">{tr ? "Henüz atanmış ödev yok." : "No homework assigned yet."}</p>
+              )}
+            </div>
+          </section>
+
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Aktivite" : "Activity"}</span>
+                <h3>{tr ? "Son 28 gün" : "Last 28 days"}</h3>
+              </div>
+            </div>
+            <div className="inside-heatmap">
+              {buildActivityHeatmap(detail.summary.recentSessions, tr).map((day) => (
+                <div key={day.key} className="inside-heatmap-cell" data-level={Math.min(day.count, 3)}>
+                  <small>{day.label}</small>
+                  <strong>{day.count}</strong>
+                </div>
+              ))}
+            </div>
+            <p className="inside-section-copy">{tr ? "Daha koyu hücreler aynı gün içindeki ek denemeleri gösterir." : "Darker cells indicate additional attempts on the same day."}</p>
+          </section>
+
+          <section className="inside-section">
+            <div className="inside-section-head">
+              <div>
+                <span className="inside-kicker">{tr ? "Genel öğretmen notu" : "General teacher note"}</span>
+                <h3>{tr ? "Bir sonraki derse bağlam bırak" : "Leave context for the next lesson"}</h3>
+              </div>
+            </div>
+            <div className="inside-form-stack">
+              <textarea
+                className="inside-input"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                rows={4}
+                placeholder={tr ? "Öğrencinin bir sonraki derste neye odaklanması gerekiyor?" : "What should this student focus on in the next lesson?"}
+                style={{ resize: "vertical" }}
+              />
+              <TeacherNoteTemplates tr={tr} onSelect={(value) => setNote((current) => current ? `${current}\n${value}` : value)} />
+              <div className="inside-tag-list">
+                {noteTagOptions.map((tag) => {
+                  const active = noteTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      className={`inside-status${active ? " is-good" : ""}`}
+                      aria-pressed={active}
+                      onClick={() => setNoteTags((current) => active ? current.filter((item) => item !== tag) : [...current, tag])}
+                    >
+                      #{tag}
+                    </button>
+                  );
+                })}
+              </div>
+              <button type="button" className="button button-primary" onClick={saveNote}>
+                {tr ? "Notu kaydet" : "Save note"}
+              </button>
+            </div>
+
+            {generalNotes.length ? (
+              <div className="inside-row-list" style={{ marginTop: "1rem" }}>
+                {generalNotes.map((item) => (
+                  <div key={item.id} className="inside-row">
+                    <div className="inside-row-main">
+                      <strong className="inside-row-title" style={{ whiteSpace: "normal" }}>{item.note}</strong>
+                      <div className="inside-row-meta">
+                        <span>{new Date(item.createdAt).toLocaleDateString(tr ? "tr-TR" : "en-US")}</span>
+                        {item.tags?.length ? <span>{item.tags.map((tag) => `#${tag}`).join(" ")}</span> : null}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        </aside>
       </div>
     </div>
   );
 }
 
-function Stat({
-  label,
-  value,
-  valueColor,
-  icon,
-}: {
-  label: string;
-  value: string;
-  valueColor?: string;
-  icon?: React.ReactNode;
-}) {
+function DetailMetric({ label, value, note }: { label: string; value: string; note: string }) {
   return (
-    <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
-      <div style={{ color: "var(--muted)", marginBottom: "0.35rem", fontSize: "0.82rem" }}>{label}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", color: valueColor ?? "var(--text)" }}>
-        {icon}
-        <strong style={{ fontSize: "1.4rem" }}>{value}</strong>
-      </div>
+    <div className="inside-metric">
+      <span className="inside-metric-label">{label}</span>
+      <strong className="inside-metric-value">{value}</strong>
+      <span className="inside-metric-note">{note}</span>
+    </div>
+  );
+}
+
+function PrintMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="print-metric">
+      <div className="print-metric-label">{label}</div>
+      <div className="print-metric-value">{value}</div>
     </div>
   );
 }

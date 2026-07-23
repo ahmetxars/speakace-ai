@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Temporarily Offline",
@@ -21,7 +22,7 @@ export default function MaintenancePage() {
         </p>
         <div className="maintenance-meta">
           <span>Practice will reopen soon</span>
-          <span>Support: support@speakace.org</span>
+          <span>Support: {siteConfig.contactEmail}</span>
         </div>
       </section>
     </main>
