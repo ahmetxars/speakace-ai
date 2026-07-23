@@ -12,6 +12,7 @@ import {
   listInstitutionBreakdown,
   listReferralCodes
 } from "@/lib/server/admin-panel";
+import { resolveEmailLifecycleDailyBudget } from "@/lib/server/email-sequences";
 
 export default async function AdminPage() {
   let session: Awaited<ReturnType<typeof getAdminPanelSession>> = null;
@@ -171,10 +172,22 @@ export default async function AdminPage() {
     const referralCodes = referralCodesResult.status === "fulfilled" ? referralCodesResult.value : [];
     const institutions = institutionsResult.status === "fulfilled" ? institutionsResult.value : [];
     const customPosts = customPostsResult.status === "fulfilled" ? customPostsResult.value : [];
+    const systemHealth = {
+      nodeEnv: process.env.NODE_ENV ?? "unknown",
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "—",
+      vercelEnv: process.env.VERCEL_ENV ?? "unknown",
+      region: process.env.VERCEL_REGION ?? "—",
+      databaseConfigured: Boolean(process.env.DATABASE_URL),
+      lemonWebhookConfigured: Boolean(process.env.LEMON_SQUEEZY_WEBHOOK_SECRET),
+      emailConfigured: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
+      analyticsConfigured: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS !== "false",
+      lifecycleDailyBudget: resolveEmailLifecycleDailyBudget()
+    };
 
     const payload = JSON.parse(
       JSON.stringify({
         sessionLabel: session.adminLabel,
+        systemHealth,
         overview,
         members,
         billingEvents,
@@ -185,6 +198,7 @@ export default async function AdminPage() {
       })
     ) as {
       sessionLabel: string;
+      systemHealth: typeof systemHealth;
       overview: typeof overview;
       members: typeof members;
       billingEvents: typeof billingEvents;
@@ -197,6 +211,7 @@ export default async function AdminPage() {
     return (
       <AdminPanel
         sessionLabel={payload.sessionLabel}
+        systemHealth={payload.systemHealth}
         overview={payload.overview}
         members={payload.members}
         billingEvents={payload.billingEvents}

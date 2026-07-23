@@ -33,6 +33,7 @@ describe("Lemon billing helpers", () => {
       meta: {
         custom_data: {
           checkout_id: "checkout-123",
+          visitor_id: "visitor-1234567890",
           campaign: "billing_decision_annual",
           cta_path: "/app/billing"
         }
@@ -49,6 +50,7 @@ describe("Lemon billing helpers", () => {
 
     expect(getLemonCheckoutMetadata(payload)).toEqual({
       checkoutId: "checkout-123",
+      visitorId: "visitor-1234567890",
       campaign: "billing_decision_annual",
       ctaPath: "/app/billing",
       ctaEvent: null
@@ -109,6 +111,20 @@ describe("Lemon billing helpers", () => {
         attributes: { subtotal: "1200", currency: "usd" }
       }
     })).toBe("pro");
+
+    expect(resolvePlanFromLemonPayload({
+      data: {
+        type: "orders",
+        attributes: { subtotal: "12999", currency: "usd" }
+      }
+    })).toBe("lifetime");
+
+    expect(resolvePlanFromLemonPayload({
+      data: {
+        type: "orders",
+        attributes: { subtotal: "14900", currency: "usd" }
+      }
+    })).toBe("lifetime");
   });
 
   it("ignores webhook event types that cannot change billing state", () => {

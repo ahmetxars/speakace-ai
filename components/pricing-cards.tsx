@@ -270,13 +270,13 @@ export function PricingCards() {
         <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
           <a
             className="button button-secondary"
-            href={buildPlanCheckoutPath({ plan: "pro", billing, campaign: "pricing_advanced_pro" })}
+            href={buildPlanCheckoutPath({ plan: "pro", billing: "annual", campaign: "pricing_advanced_pro" })}
             onClick={() => {
-              posthog.capture("checkout_initiated", { plan: "pro", billing, source: "pricing_advanced_pro" });
+              posthog.capture("checkout_initiated", { plan: "pro", billing: "annual", source: "pricing_advanced_pro" });
             }}
             style={{ borderColor: "#c9a227", color: "#b38600" }}
           >
-            View Pro
+            View Pro Annual · {commerceConfig.proAnnualPrice}/year
           </a>
           <a
             className="button button-secondary"

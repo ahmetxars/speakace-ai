@@ -64,6 +64,7 @@ export function getLemonCheckoutMetadata(payload: LemonPayload) {
 
   return {
     checkoutId: stringValue(customData.checkout_id),
+    visitorId: stringValue(customData.visitor_id),
     campaign: stringValue(customData.campaign),
     ctaPath: stringValue(customData.cta_path),
     ctaEvent: stringValue(customData.cta_event)
@@ -147,10 +148,7 @@ export function resolvePlanFromLemonPayload(payload: LemonPayload): Exclude<Subs
 
   if (Number.isFinite(subtotalInCents)) {
     const roundedSubtotal = Math.round(subtotalInCents);
-    if (
-      roundedSubtotal === Math.round(commerceNumbers.plusWeeklyPrice * 100) ||
-      roundedSubtotal === Math.round(commerceNumbers.plusAnnualPrice * 100)
-    ) {
+    if ([399, 4900, Math.round(commerceNumbers.plusAnnualPrice * 100)].includes(roundedSubtotal)) {
       return "plus";
     }
     if (
@@ -159,7 +157,7 @@ export function resolvePlanFromLemonPayload(payload: LemonPayload): Exclude<Subs
     ) {
       return "pro";
     }
-    if (roundedSubtotal === Math.round(commerceNumbers.lifetimePrice * 100)) {
+    if ([12999, 14900, Math.round(commerceNumbers.lifetimePrice * 100)].includes(roundedSubtotal)) {
       return "lifetime";
     }
   }

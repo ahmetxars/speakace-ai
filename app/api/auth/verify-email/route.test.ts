@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getSessionCookieName: vi.fn(),
   getSessionCookieOptions: vi.fn(),
   verifyEmailToken: vi.fn(),
+  getCurrentEmailQuotaBlock: vi.fn(),
   markOnboardingEmailSent: vi.fn(),
   sendOnboardingEmail: vi.fn(),
   checkRateLimit: vi.fn(),
@@ -31,6 +32,7 @@ vi.mock("@/lib/server/rate-limit", () => ({
 }));
 
 vi.mock("@/lib/server/email-sequences", () => ({
+  getCurrentEmailQuotaBlock: mocks.getCurrentEmailQuotaBlock,
   markOnboardingEmailSent: mocks.markOnboardingEmailSent,
   sendOnboardingEmail: mocks.sendOnboardingEmail
 }));
@@ -61,6 +63,7 @@ describe("email verification activation", () => {
       token: "session-token",
       expiresAt: new Date("2026-08-01T00:00:00.000Z")
     });
+    mocks.getCurrentEmailQuotaBlock.mockResolvedValue(null);
     mocks.sendOnboardingEmail.mockResolvedValue({ ok: true });
     mocks.markOnboardingEmailSent.mockResolvedValue(undefined);
   });
@@ -96,5 +99,19 @@ describe("email verification activation", () => {
     expect(mocks.createAuthSession).not.toHaveBeenCalled();
     expect(mocks.cookieSet).not.toHaveBeenCalled();
     expect(mocks.sendOnboardingEmail).not.toHaveBeenCalled();
+  });
+
+  it("activates the account without attempting lifecycle mail during a quota block", async () => {
+    mocks.getCurrentEmailQuotaBlock.mockResolvedValue({
+      kind: "monthly",
+      detectedAt: "2026-07-18T00:00:00.000Z"
+    });
+
+    const response = await GET(new Request("https://speakace.org/api/auth/verify-email?token=valid-token"));
+
+    expect(response.status).toBe(200);
+    expect(mocks.createAuthSession).toHaveBeenCalledWith("user-1");
+    expect(mocks.sendOnboardingEmail).not.toHaveBeenCalled();
+    expect(mocks.markOnboardingEmailSent).not.toHaveBeenCalled();
   });
 });

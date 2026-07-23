@@ -78,8 +78,8 @@ export default function BillingPage() {
               detail: tr
                 ? "Plus zaten acik. Daha yogun calisiyor ve daha fazla speaking hacmi istiyorsan Pro'ya gec; aksi halde once kullanim aliskanligini buyut."
                 : "Plus is already active. Upgrade to Pro only if you are pushing a heavier study routine and want more volume; otherwise keep compounding usage first.",
-              ctaLabel: tr ? "Pro'ya bak" : "View Pro upgrade",
-              ctaHref: buildPlanCheckoutPath({ plan: "pro", campaign: "billing_decision_pro" }),
+              ctaLabel: tr ? "Yillik Pro'ya bak" : "View Pro Annual",
+              ctaHref: buildPlanCheckoutPath({ plan: "pro", billing: "annual", campaign: "billing_decision_pro" }),
               secondaryLabel: tr ? "Once practice yap" : "Practice first",
               secondaryHref: "/app/practice"
             }
@@ -169,8 +169,8 @@ export default function BillingPage() {
             <p>{tr ? `Ilk upgrade icin en net teklif: bugun devam et, daha fazla speaking yap, ayni prompt'u geri bildirimle tekrar dene. Yillik planda aylik maliyet ${formatUsd(plusAnnualMonthlyEquivalent)} seviyesine iner.` : `The clearest first upgrade: continue today, practice more, and retry the same prompt with stronger feedback. On annual billing the monthly equivalent drops to about ${formatUsd(plusAnnualMonthlyEquivalent)}.`}</p>
           </div>
           <div className="card" style={{ padding: "1rem", background: "rgba(201,162,39,0.08)", border: "1px solid rgba(201,162,39,0.3)" }}>
-            <strong style={{ color: "#b38600" }}>{commerceConfig.proPlanName} · {commerceConfig.proMonthlyPrice}/month</strong>
-            <p>{tr ? "Daha agir kullanim veya yogun calisma rutini icin ikinci adim. Cogu ilk odeme once Plus ile daha kolay yapilir." : "A second-step option for heavier usage or an intense study routine. Most first purchases convert more easily through Plus."}</p>
+            <strong style={{ color: "#b38600" }}>{commerceConfig.proPlanName} · {commerceConfig.proAnnualPrice}/year</strong>
+            <p>{tr ? "Daha agir kullanim veya yogun calisma rutini icin yillik ikinci adim. Cogu ilk odeme once Plus ile daha kolay yapilir." : "A verified annual option for heavier usage or an intense study routine. Most first purchases convert more easily through Plus."}</p>
           </div>
         </div>
         <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.6)" }}>
@@ -251,7 +251,7 @@ export default function BillingPage() {
                   const billing = purchaseDecisionGuide.ctaHref.includes("billing=annual") ? "annual" : "weekly";
                   posthog.capture("checkout_initiated", { plan: "plus", billing, current_plan: currentUser?.plan, campaign: `billing_decision_${billing}` });
                 } else if (purchaseDecisionGuide.ctaHref.includes("plan=pro")) {
-                  posthog.capture("checkout_initiated", { plan: "pro", current_plan: currentUser?.plan, campaign: "billing_decision_pro" });
+                  posthog.capture("checkout_initiated", { plan: "pro", billing: "annual", current_plan: currentUser?.plan, campaign: "billing_decision_pro" });
                 }
               }}
             >
@@ -327,40 +327,40 @@ export default function BillingPage() {
               </TrackedLink>
               <a
                 className="button button-secondary"
-                href={buildPlanCheckoutPath({ plan: "pro", campaign: "billing_buy_pro" })}
+                href={buildPlanCheckoutPath({ plan: "pro", billing: "annual", campaign: "billing_buy_pro" })}
                 style={{ borderColor: "#c9a227", color: "#b38600" }}
                 onClick={() => {
-                  posthog.capture("checkout_initiated", { plan: "pro", current_plan: currentUser?.plan, campaign: "billing_buy_pro" });
+                  posthog.capture("checkout_initiated", { plan: "pro", billing: "annual", current_plan: currentUser?.plan, campaign: "billing_buy_pro" });
                   if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
                     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
                       currency: 'USD',
-                      value: commerceNumbers.proMonthlyPrice,
-                      items: [{ item_id: 'pro_monthly', item_name: 'SpeakAce Pro - Monthly', price: commerceNumbers.proMonthlyPrice, quantity: 1 }]
+                      value: commerceNumbers.proAnnualPrice,
+                      items: [{ item_id: 'pro_annual', item_name: 'SpeakAce Pro - Annual', price: commerceNumbers.proAnnualPrice, quantity: 1 }]
                     });
                   }
                 }}
               >
-                {tr ? "Daha sonra Pro'ya bak" : "View Pro later"}
+                {tr ? "Yillik Pro'ya bak" : "View Pro Annual"}
               </a>
             </>
           ) : currentUser?.plan === "plus" ? (
             <>
               <a
                 className="button button-primary"
-                href={buildPlanCheckoutPath({ plan: "pro", campaign: "billing_upgrade_pro" })}
+                href={buildPlanCheckoutPath({ plan: "pro", billing: "annual", campaign: "billing_upgrade_pro" })}
                 style={{ background: "#c9a227", borderColor: "#c9a227" }}
                 onClick={() => {
-                  posthog.capture("checkout_initiated", { plan: "pro", current_plan: currentUser?.plan, campaign: "billing_upgrade_pro" });
+                  posthog.capture("checkout_initiated", { plan: "pro", billing: "annual", current_plan: currentUser?.plan, campaign: "billing_upgrade_pro" });
                   if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
                     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
                       currency: 'USD',
-                      value: commerceNumbers.proMonthlyPrice,
-                      items: [{ item_id: 'pro_monthly', item_name: 'SpeakAce Pro - Monthly', price: commerceNumbers.proMonthlyPrice, quantity: 1 }]
+                      value: commerceNumbers.proAnnualPrice,
+                      items: [{ item_id: 'pro_annual', item_name: 'SpeakAce Pro - Annual', price: commerceNumbers.proAnnualPrice, quantity: 1 }]
                     });
                   }
                 }}
               >
-                {tr ? "Pro'ya yükselt" : "Upgrade to Pro"}
+                {tr ? "Yillik Pro'ya yükselt" : "Upgrade to Pro Annual"}
               </a>
               <a className="button button-secondary" href="/api/payments/lemon/portal">
                 {tr ? "Faturayı yönet" : "Manage billing"}

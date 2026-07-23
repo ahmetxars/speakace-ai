@@ -9,14 +9,14 @@ export const commerceConfig = {
   plusAnnualCheckout:
     process.env.LEMON_SQUEEZY_PLUS_ANNUAL_CHECKOUT_URL ??
     "https://speakace.lemonsqueezy.com/checkout/buy/adc582d9-6b58-45ed-aafb-517f21059b2e",
-  plusAnnualPrice: "$49",
+  plusAnnualPrice: "$49.99",
   // Pro — monthly & annual
   proMonthlyCheckout:
     process.env.LEMON_SQUEEZY_PRO_CHECKOUT_URL ??
     "https://speakace.lemonsqueezy.com/checkout/buy/f2a9b0dd-88f7-48b9-9b3b-2069b2324cc7",
   proMonthlyPrice: "$12",
   proPlanName: "SpeakAce Pro",
-  proCheckoutPath: "/api/payments/lemon/checkout?plan=pro",
+  proCheckoutPath: "/api/payments/lemon/checkout?plan=pro&billing=annual",
   proAnnualCheckout:
     process.env.LEMON_SQUEEZY_PRO_ANNUAL_CHECKOUT_URL ??
     "https://speakace.lemonsqueezy.com/checkout/buy/a00764fa-adb5-4245-97ef-6f2f9d5c0bb6",
@@ -25,7 +25,7 @@ export const commerceConfig = {
   lifetimeCheckout:
     process.env.LEMON_SQUEEZY_LIFETIME_CHECKOUT_URL ??
     "https://speakace.lemonsqueezy.com/checkout/buy/e6ab7696-0c87-46c2-87dd-ecd66f0f3344",
-  lifetimePrice: "$149",
+  lifetimePrice: "$129.99",
   lifetimePlanName: "SpeakAce Lifetime",
   lifetimeCheckoutPath: "/api/payments/lemon/checkout?plan=lifetime",
   // Institution plans
@@ -45,10 +45,10 @@ export const commerceConfig = {
 
 export const commerceNumbers = {
   plusWeeklyPrice: 3.99,
-  plusAnnualPrice: 49,
+  plusAnnualPrice: 49.99,
   proMonthlyPrice: 12,
   proAnnualPrice: 99,
-  lifetimePrice: 149
+  lifetimePrice: 129.99
 } as const;
 
 export const couponCatalog = {
@@ -85,6 +85,9 @@ export function getAnnualSavingsPercentFromWeekly(weeklyPrice: number, annualPri
 
 export function buildPlanCheckoutPath(input?: { plan?: "plus" | "pro" | "lifetime"; coupon?: string; campaign?: string; billing?: "weekly" | "annual" }) {
   const plan = input?.plan ?? "plus";
+  // The live Pro "Monthly" variant is currently configured as weekly.
+  // Route Pro buyers to the verified annual offer until the provider variant is corrected.
+  const billing = plan === "pro" ? "annual" : input?.billing;
   const params = new URLSearchParams({ plan });
   if (input?.coupon) {
     params.set("coupon", input.coupon);
@@ -92,7 +95,7 @@ export function buildPlanCheckoutPath(input?: { plan?: "plus" | "pro" | "lifetim
   if (input?.campaign) {
     params.set("campaign", input.campaign);
   }
-  if (input?.billing === "annual") {
+  if (billing === "annual") {
     params.set("billing", "annual");
   }
   return `/api/payments/lemon/checkout?${params.toString()}`;
@@ -109,9 +112,10 @@ export function buildLemonCheckoutUrl(input?: {
   ctaPath?: string;
   ctaEvent?: string;
   checkoutId?: string;
+  visitorId?: string;
 }) {
   const selectedPlan = input?.plan ?? "plus";
-  const selectedBilling = input?.billing ?? "weekly";
+  const selectedBilling = selectedPlan === "pro" ? "annual" : input?.billing ?? "weekly";
   let baseCheckout: string;
   if (selectedPlan === "lifetime") {
     baseCheckout = commerceConfig.lifetimeCheckout;
@@ -147,6 +151,9 @@ export function buildLemonCheckoutUrl(input?: {
   }
   if (input?.checkoutId) {
     url.searchParams.set("checkout[custom][checkout_id]", input.checkoutId);
+  }
+  if (input?.visitorId) {
+    url.searchParams.set("checkout[custom][visitor_id]", input.visitorId);
   }
   return url.toString();
 }

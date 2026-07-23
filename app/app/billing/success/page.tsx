@@ -24,15 +24,15 @@ type CheckoutAttribution = BillingRecoveryAttribution & {
 const PLAN_PURCHASE_META = {
   plus: {
     weekly: { value: 3.99, itemId: "plus_weekly", itemName: "SpeakAce Plus - Weekly" },
-    annual: { value: 49, itemId: "plus_annual", itemName: "SpeakAce Plus - Annual" }
+    annual: { value: 49.99, itemId: "plus_annual", itemName: "SpeakAce Plus - Annual" }
   },
   pro: {
     weekly: { value: 12, itemId: "pro_monthly", itemName: "SpeakAce Pro - Monthly" },
     annual: { value: 99, itemId: "pro_annual", itemName: "SpeakAce Pro - Annual" }
   },
   lifetime: {
-    weekly: { value: 149, itemId: "lifetime", itemName: "SpeakAce Lifetime" },
-    annual: { value: 149, itemId: "lifetime", itemName: "SpeakAce Lifetime" }
+    weekly: { value: 129.99, itemId: "lifetime", itemName: "SpeakAce Lifetime" },
+    annual: { value: 129.99, itemId: "lifetime", itemName: "SpeakAce Lifetime" }
   }
 } as const;
 

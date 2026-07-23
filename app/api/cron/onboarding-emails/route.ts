@@ -9,7 +9,8 @@ import {
   sendPracticeLimitRecoveryEmail,
   getUsersDueForTrialLifecycleEmail,
   sendTrialLifecycleEmail,
-  getCurrentEmailQuotaBlock
+  getCurrentEmailQuotaBlock,
+  getEmailLifecycleBudgetStatus
 } from "@/lib/server/email-sequences";
 
 function isAuthorized(request: Request) {
@@ -41,6 +42,8 @@ export async function GET(request: Request) {
   const recoveryEnabled = process.env.ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS === "true";
   const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 250) : 100;
   const quotaBlock = await getCurrentEmailQuotaBlock();
+  const lifecycleBudget = await getEmailLifecycleBudgetStatus();
+  let remainingAttempts = lifecycleBudget.remaining;
   const sendingSuppressed = dryRun || Boolean(quotaBlock);
 
   // ── Onboarding emails ──────────────────────────────────────────────────────
@@ -51,11 +54,12 @@ export async function GET(request: Request) {
 
   for (const user of onboardingUsers) {
     try {
-      if (sendingSuppressed) {
+      if (sendingSuppressed || remainingAttempts <= 0) {
         onboardingSkipped++;
         continue;
       }
 
+      remainingAttempts--;
       const result = await sendOnboardingEmail(user.id, user.nextEmailNumber);
       if (result.ok) {
         await markOnboardingEmailSent(user.id, user.nextEmailNumber);
@@ -80,11 +84,12 @@ export async function GET(request: Request) {
 
   for (const user of recoveryUsers) {
     try {
-      if (sendingSuppressed) {
+      if (sendingSuppressed || remainingAttempts <= 0) {
         recoverySkipped++;
         continue;
       }
 
+      remainingAttempts--;
       const result = await sendPracticeLimitRecoveryEmail(user.id);
       if (result.ok) {
         recoverySent++;
@@ -102,17 +107,20 @@ export async function GET(request: Request) {
   let tipSent = 0;
   let tipSkipped = 0;
   let tipFailed = 0;
+  const trialUsers = await getUsersDueForTrialLifecycleEmail(limit);
 
   if (!skipTips) {
-    const tipUsers = await getUsersForDailyTip(200);
+    const tipAttemptCap = Math.max(0, remainingAttempts - trialUsers.length);
+    const tipUsers = await getUsersForDailyTip(Math.min(200, tipAttemptCap));
 
     for (const user of tipUsers) {
       try {
-        if (sendingSuppressed) {
+        if (sendingSuppressed || remainingAttempts <= trialUsers.length) {
           tipSkipped++;
           continue;
         }
 
+        remainingAttempts--;
         const result = await sendDailyTipEmail(user.id);
         if (result.ok) {
           tipSent++;
@@ -131,15 +139,15 @@ export async function GET(request: Request) {
   let trialSent = 0;
   let trialSkipped = 0;
   let trialFailed = 0;
-  const trialUsers = await getUsersDueForTrialLifecycleEmail(limit);
 
   for (const user of trialUsers) {
     try {
-      if (sendingSuppressed) {
+      if (sendingSuppressed || remainingAttempts <= 0) {
         trialSkipped++;
         continue;
       }
 
+      remainingAttempts--;
       const result = await sendTrialLifecycleEmail(user.id, user.stage);
       if (result.ok) {
         trialSent++;
@@ -159,6 +167,11 @@ export async function GET(request: Request) {
     emailQuota: quotaBlock
       ? { blocked: true, kind: quotaBlock.kind, detectedAt: quotaBlock.detectedAt }
       : { blocked: false },
+    lifecycleBudget: {
+      limit: lifecycleBudget.limit,
+      sentToday: lifecycleBudget.sentToday,
+      attemptsRemaining: remainingAttempts
+    },
     onboarding: {
       queued: onboardingUsers.length,
       sent: onboardingSent,

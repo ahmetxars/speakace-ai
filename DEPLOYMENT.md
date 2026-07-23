@@ -84,6 +84,9 @@ LEMON_SQUEEZY_WEBHOOK_SECRET=whsec_...
 RESEND_API_KEY=re_...
 EMAIL_FROM=noreply@speakace.org
 EMAIL_REPLY_TO=aa.arslan@outlook.com.tr
+EMAIL_LIFECYCLE_DAILY_BUDGET=20
+NEXT_PUBLIC_ENABLE_ANALYTICS=true
+ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS=false
 GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 GOOGLE_REDIRECT_URI=https://your-domain.com/api/auth/google/callback
@@ -144,8 +147,13 @@ Checkout link: `https://speakace.lemonsqueezy.com/checkout`
 
 To handle webhooks:
 1. Add webhook endpoint in Lemon Squeezy dashboard
-2. Point to: `https://your-domain.com/api/webhooks/lemon-squeezy`
+2. Point to: `https://speakace.org/api/payments/lemon/webhook`
 3. Set secret in `LEMON_SQUEEZY_WEBHOOK_SECRET`
+4. Subscribe to order, subscription, subscription invoice/payment, cancellation, pause, expiry, and refund events
+
+The app temporarily routes Pro checkout to the verified `$99/year` variant because the
+live product named “Pro Monthly” is currently configured as `$12/week`. Correct the
+provider interval before re-enabling a monthly Pro CTA.
 
 ## Email (Resend)
 

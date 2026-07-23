@@ -3,6 +3,7 @@ import {
   buildPracticeLimitRecoveryEmailContent,
   buildOnboardingEmailContent,
   ONBOARDING_EMAIL_SCHEDULE,
+  resolveEmailLifecycleDailyBudget,
   resolveEmailQuotaKind,
   resolvePracticeLimitRecoveryReason,
   resolveTrialLifecycleStage
@@ -11,6 +12,16 @@ import {
 describe("onboarding lifecycle segmentation", () => {
   it("schedules the first retention follow-up one day after signup", () => {
     expect(ONBOARDING_EMAIL_SCHEDULE.find((step) => step.emailNumber === 2)?.dayOffset).toBe(1);
+  });
+
+  it("keeps the onboarding sequence focused to five high-intent messages", () => {
+    expect(ONBOARDING_EMAIL_SCHEDULE).toEqual([
+      { dayOffset: 0, emailNumber: 1 },
+      { dayOffset: 1, emailNumber: 2 },
+      { dayOffset: 4, emailNumber: 3 },
+      { dayOffset: 10, emailNumber: 4 },
+      { dayOffset: 21, emailNumber: 5 }
+    ]);
   });
 
   it("sends activated learners into an attributed day-one return session", () => {
@@ -102,6 +113,14 @@ describe("email quota protection", () => {
     expect(resolveEmailQuotaKind('{"name":"monthly_quota_exceeded"}')).toBe("monthly");
     expect(resolveEmailQuotaKind("network unavailable")).toBeNull();
     expect(resolveEmailQuotaKind(null)).toBeNull();
+  });
+
+  it("uses a conservative lifecycle budget and clamps unsafe overrides", () => {
+    expect(resolveEmailLifecycleDailyBudget(undefined)).toBe(20);
+    expect(resolveEmailLifecycleDailyBudget("35")).toBe(35);
+    expect(resolveEmailLifecycleDailyBudget("-1")).toBe(0);
+    expect(resolveEmailLifecycleDailyBudget("1000")).toBe(200);
+    expect(resolveEmailLifecycleDailyBudget("invalid")).toBe(20);
   });
 });
 

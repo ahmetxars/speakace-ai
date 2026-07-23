@@ -3,10 +3,14 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const repoRoot = "/Users/ahmet/Documents/Playground";
+const repoRoot = process.cwd();
 const appRoot = path.join(repoRoot, "app");
 const copySource = fs.readFileSync(path.join(repoRoot, "lib/copy.ts"), "utf8");
-const localeCodes = [...copySource.matchAll(/code: "([a-z]+)"/g)].map((match) => match[1]);
+const publicLocaleSource =
+  copySource.match(/export const publicLocaleOptions = \[([\s\S]*?)\] as const;/)?.[1] ?? "";
+const localeCodes = [
+  ...new Set([...publicLocaleSource.matchAll(/code: "([a-z]+)"/g)].map((match) => match[1]))
+];
 
 function walkPages(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -27,6 +31,7 @@ function walkPages(dir) {
 
 function summarizePage(source) {
   const importsServerLanguage = source.includes("getServerLanguage");
+  const usesPublicLanguage = source.includes("PublicLanguage") || source.includes("normalizePublicLanguage");
   const hasAllConfiguredLocales = localeCodes.every((code) => source.includes(`${code}:`));
   const hasTrOnlyFallback =
     /language === "tr"|const tr =|[\s:(?]tr\s*\?/.test(source) &&
@@ -34,7 +39,7 @@ function summarizePage(source) {
   const hasInlineJsxText = /<h1|<h2|<h3|<p|<span|<strong|<label/.test(source);
 
   let status = "needs-review";
-  if (importsServerLanguage && hasAllConfiguredLocales) status = "multi-locale";
+  if ((importsServerLanguage || usesPublicLanguage) && hasAllConfiguredLocales) status = "multi-locale";
   else if (hasTrOnlyFallback) status = "tr-en-only";
   else if (!importsServerLanguage && hasInlineJsxText) status = "hardcoded-copy";
 

@@ -3,7 +3,7 @@ create table if not exists users (
   email text not null unique,
   name text not null,
   role text not null check (role in ('guest', 'member')),
-  plan text not null check (plan in ('free', 'plus', 'pro')),
+  plan text not null check (plan in ('free', 'plus', 'pro', 'lifetime')),
   password_hash text,
   email_verified boolean not null default false,
   email_opt_out boolean not null default false,
@@ -170,7 +170,8 @@ create table if not exists study_task_reminders (
 
 create table if not exists analytics_events (
   id text primary key,
-  user_id text not null references users(id) on delete cascade,
+  user_id text references users(id) on delete cascade,
+  visitor_id text,
   event text not null,
   path text,
   created_at timestamptz not null default now()
@@ -190,7 +191,7 @@ create table if not exists billing_events (
   event_name text not null,
   user_email text,
   user_id text references users(id) on delete set null,
-  plan text not null check (plan in ('free', 'plus', 'pro')),
+  plan text not null check (plan in ('free', 'plus', 'pro', 'lifetime')),
   billing_status text not null,
   provider_customer_id text,
   provider_subscription_id text,
@@ -256,7 +257,7 @@ create table if not exists speaking_sessions (
   exam_type text not null check (exam_type in ('IELTS', 'TOEFL')),
   task_type text not null,
   difficulty text not null,
-  plan text not null check (plan in ('free', 'plus', 'pro')),
+  plan text not null check (plan in ('free', 'plus', 'pro', 'lifetime')),
   prompt_id text not null,
   prompt_title text not null,
   prompt_text text not null,
@@ -337,6 +338,10 @@ alter table users add column if not exists lemon_customer_id text;
 alter table users add column if not exists lemon_subscription_id text;
 alter table users add column if not exists trial_ends_at timestamptz;
 alter table users add column if not exists referral_code_used text;
+alter table analytics_events alter column user_id drop not null;
+alter table analytics_events add column if not exists visitor_id text;
+alter table billing_events drop constraint if exists billing_events_plan_check;
+alter table billing_events add constraint billing_events_plan_check check (plan in ('free', 'plus', 'pro', 'lifetime'));
 alter table teacher_classes add column if not exists approval_required boolean not null default true;
 alter table teacher_classes add column if not exists join_message text;
 alter table teacher_class_enrollments add column if not exists status text not null default 'approved';
@@ -425,6 +430,9 @@ create index if not exists idx_class_shared_study_items_class_created
 create index if not exists idx_analytics_events_user_created
   on analytics_events(user_id, created_at desc);
 
+create index if not exists idx_analytics_events_visitor_created
+  on analytics_events(visitor_id, created_at desc);
+
 create index if not exists idx_billing_events_email_created
   on billing_events(user_email, created_at desc);
 
@@ -480,7 +488,7 @@ begin
   ) then
     alter table users
       add constraint users_plan_check
-      check (plan in ('free', 'plus', 'pro'));
+      check (plan in ('free', 'plus', 'pro', 'lifetime'));
   end if;
 end $$;
 
@@ -508,7 +516,7 @@ begin
   ) then
     alter table speaking_sessions
       add constraint speaking_sessions_plan_check
-      check (plan in ('free', 'plus', 'pro'));
+      check (plan in ('free', 'plus', 'pro', 'lifetime'));
   end if;
 end $$;
 

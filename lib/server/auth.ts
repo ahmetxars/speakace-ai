@@ -665,18 +665,29 @@ export async function createEmailVerificationFlow(email: string) {
   });
 
   const verificationUrl = buildAppUrl(`/auth?verify=${token}`);
-  if (hasEmailTransport()) {
-    await sendVerificationEmail({
-      to: user.email,
-      name: user.name,
-      verificationUrl
-    });
+  const transportAvailable = hasEmailTransport();
+  let emailSent = false;
+  let deliveryUnavailable = !transportAvailable;
+  if (transportAvailable) {
+    try {
+      const result = await sendVerificationEmail({
+        to: user.email,
+        name: user.name,
+        verificationUrl
+      });
+      emailSent = result.ok;
+      deliveryUnavailable = !result.ok;
+    } catch (error) {
+      deliveryUnavailable = true;
+      console.error("Verification email delivery failed:", error);
+    }
   }
 
   return {
     ok: true as const,
     verificationUrl,
-    emailSent: hasEmailTransport()
+    emailSent,
+    deliveryUnavailable
   };
 }
 
@@ -730,18 +741,24 @@ export async function createPasswordResetFlow(email: string) {
   });
 
   const resetUrl = buildAppUrl(`/auth?reset=${token}`);
+  let emailSent = false;
   if (hasEmailTransport()) {
-    await sendPasswordResetEmail({
-      to: resolvedProfile.email,
-      name: resolvedProfile.name,
-      resetUrl
-    });
+    try {
+      const result = await sendPasswordResetEmail({
+        to: resolvedProfile.email,
+        name: resolvedProfile.name,
+        resetUrl
+      });
+      emailSent = result.ok;
+    } catch (error) {
+      console.error("Password reset email delivery failed:", error);
+    }
   }
 
   return {
     ok: true as const,
     resetUrl,
-    emailSent: hasEmailTransport()
+    emailSent
   };
 }
 

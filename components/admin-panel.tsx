@@ -180,6 +180,17 @@ const tabTitles: Record<AdminTab, string> = {
 
 export function AdminPanel(props: {
   sessionLabel: string;
+  systemHealth: {
+    nodeEnv: string;
+    siteUrl: string;
+    vercelEnv: string;
+    region: string;
+    databaseConfigured: boolean;
+    lemonWebhookConfigured: boolean;
+    emailConfigured: boolean;
+    analyticsConfigured: boolean;
+    lifecycleDailyBudget: number;
+  };
   overview: AdminOverview;
   members: AdminMemberRecord[];
   billingEvents: Array<{
@@ -2203,16 +2214,65 @@ export function AdminPanel(props: {
                 </div>
                 <div className="adm-overview-list">
                   {[
-                    { label: "NODE_ENV", value: process.env.NODE_ENV ?? "—" },
+                    { label: "NODE_ENV", value: props.systemHealth.nodeEnv },
                     { label: "Next.js", value: "15 (App Router)" },
-                    { label: "Site URL", value: process.env.NEXT_PUBLIC_SITE_URL ?? "—" },
-                    { label: "Vercel env", value: process.env.VERCEL_ENV ?? "local" },
-                    { label: "Region", value: process.env.VERCEL_REGION ?? "—" },
+                    { label: "Site URL", value: props.systemHealth.siteUrl },
+                    { label: "Vercel env", value: props.systemHealth.vercelEnv },
+                    { label: "Region", value: props.systemHealth.region },
                     { label: "Admin session", value: props.sessionLabel }
                   ].map(({ label, value }) => (
                     <div key={label} className="adm-overview-item">
                       <strong style={{ fontFamily: "monospace", fontSize: "0.8rem" }}>{label}</strong>
                       <span style={{ fontFamily: "monospace", fontSize: "0.8rem", color: "var(--adm-muted)" }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="adm-panel-card">
+                <div className="adm-panel-card-head">
+                  <h3>Revenue Infrastructure</h3>
+                </div>
+                <div className="adm-stack-list">
+                  {[
+                    {
+                      label: "Production database",
+                      ready: props.systemHealth.databaseConfigured,
+                      detail: props.systemHealth.databaseConfigured ? "Persistent product data is connected." : "DATABASE_URL is missing."
+                    },
+                    {
+                      label: "Lemon webhook",
+                      ready: props.systemHealth.lemonWebhookConfigured,
+                      detail: props.systemHealth.lemonWebhookConfigured
+                        ? "Signed billing events can update access."
+                        : "Billing events cannot update paid access until the secret is configured."
+                    },
+                    {
+                      label: "Email delivery",
+                      ready: props.systemHealth.emailConfigured && !props.overview.emailQuotaBlocked,
+                      detail: props.overview.emailQuotaBlocked
+                        ? "Provider quota is currently blocking lifecycle delivery."
+                        : props.systemHealth.emailConfigured
+                          ? `Configured with a ${props.systemHealth.lifecycleDailyBudget}/day lifecycle budget.`
+                          : "RESEND_API_KEY or EMAIL_FROM is missing."
+                    },
+                    {
+                      label: "Product analytics",
+                      ready: props.systemHealth.analyticsConfigured,
+                      detail: props.systemHealth.analyticsConfigured
+                        ? "First-party funnel events are enabled."
+                        : "Analytics is disabled by environment configuration."
+                    }
+                  ].map((item) => (
+                    <div key={item.label} className="adm-list-row">
+                      <div>
+                        <span className="adm-table-name">{item.label}</span>
+                        <span className="adm-table-email">{item.detail}</span>
+                      </div>
+                      <StatusBadge
+                        label={item.ready ? "Ready" : "Needs action"}
+                        tone={item.ready ? "success" : "warning"}
+                      />
                     </div>
                   ))}
                 </div>
@@ -2231,7 +2291,7 @@ export function AdminPanel(props: {
                     { label: "Paid members", value: String(props.overview.paidMembers) },
                     { label: "On trial", value: String(props.overview.trialMembers) },
                     { label: "Active sessions", value: String(props.overview.activeSessions) },
-                    { label: "Weekly revenue est.", value: formatMoney(props.overview.monthlyRevenueEstimate) },
+                    { label: "Monthly revenue est.", value: formatMoney(props.overview.monthlyRevenueEstimate) },
                     { label: "Live users (5m)", value: String(props.overview.liveUsers5m) },
                     { label: "Last request", value: formatRelativeDate(props.overview.lastRequestAt) }
                   ].map(({ label, value }) => (

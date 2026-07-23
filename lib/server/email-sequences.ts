@@ -17,22 +17,21 @@ export type EmailQuotaKind = "daily" | "monthly";
 export const ONBOARDING_EMAIL_SCHEDULE: Array<{ dayOffset: number; emailNumber: number }> = [
   { dayOffset: 0, emailNumber: 1 },
   { dayOffset: 1, emailNumber: 2 },
-  { dayOffset: 5, emailNumber: 3 },
-  { dayOffset: 7, emailNumber: 4 },
-  { dayOffset: 10, emailNumber: 5 },
-  { dayOffset: 14, emailNumber: 6 },
-  { dayOffset: 21, emailNumber: 7 },
-  { dayOffset: 30, emailNumber: 8 },
-  { dayOffset: 45, emailNumber: 9 },
-  { dayOffset: 60, emailNumber: 10 },
-  { dayOffset: 75, emailNumber: 11 },
-  { dayOffset: 90, emailNumber: 12 }
+  { dayOffset: 4, emailNumber: 3 },
+  { dayOffset: 10, emailNumber: 4 },
+  { dayOffset: 21, emailNumber: 5 }
 ];
 
 export function resolveEmailQuotaKind(errorMessage: string | null | undefined): EmailQuotaKind | null {
   if (errorMessage?.includes("monthly_quota_exceeded")) return "monthly";
   if (errorMessage?.includes("daily_quota_exceeded")) return "daily";
   return null;
+}
+
+export function resolveEmailLifecycleDailyBudget(value = process.env.EMAIL_LIFECYCLE_DAILY_BUDGET) {
+  const parsed = Number(value ?? "20");
+  if (!Number.isFinite(parsed)) return 20;
+  return Math.min(Math.max(Math.floor(parsed), 0), 200);
 }
 
 async function ensureEmailSequenceSchema() {
@@ -128,6 +127,33 @@ export async function getCurrentEmailQuotaBlock(): Promise<{
   return {
     kind,
     detectedAt: row.sent_at instanceof Date ? row.sent_at.toISOString() : new Date(row.sent_at).toISOString()
+  };
+}
+
+export async function getEmailLifecycleBudgetStatus(): Promise<{
+  limit: number;
+  sentToday: number;
+  remaining: number;
+}> {
+  const limit = resolveEmailLifecycleDailyBudget();
+  if (!hasDatabaseUrl()) {
+    return { limit, sentToday: 0, remaining: limit };
+  }
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  const rows = await sql<Array<{ count: number }>>`
+    select count(*)::int as count
+    from email_log
+    where status = 'sent'
+      and sent_at >= date_trunc('day', now())
+  `;
+  const sentToday = rows[0]?.count ?? 0;
+
+  return {
+    limit,
+    sentToday,
+    remaining: Math.max(0, limit - sentToday)
   };
 }
 

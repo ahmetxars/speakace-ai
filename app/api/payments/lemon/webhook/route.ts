@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { getPostHogClient } from "@/lib/posthog-server";
 import {
   applyBillingPlanByEmail,
@@ -185,6 +186,17 @@ export async function POST(request: Request) {
   // Lemon sends order_created alongside subscription_created for the same initial sale.
   // Count only the order event so revenue and checkout conversion are not duplicated.
   if (eventName === "order_created") {
+    try {
+      await trackAnalyticsEvent({
+        userId: matchedUserId,
+        visitorId: checkoutMetadata.visitorId ?? checkoutMetadata.checkoutId,
+        event: "checkout_completed",
+        path: checkoutMetadata.ctaPath ?? undefined
+      });
+    } catch {
+      // Revenue analytics must never make a valid billing webhook retry.
+    }
+
     posthog.capture({
       distinctId,
       event: "checkout_completed",

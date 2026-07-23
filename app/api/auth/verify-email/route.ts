@@ -7,7 +7,11 @@ import {
   getSessionCookieOptions,
   verifyEmailToken
 } from "@/lib/server/auth";
-import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
+import {
+  getCurrentEmailQuotaBlock,
+  markOnboardingEmailSent,
+  sendOnboardingEmail
+} from "@/lib/server/email-sequences";
 import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function GET(request: Request) {
@@ -38,9 +42,12 @@ export async function GET(request: Request) {
     const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), session.token, getSessionCookieOptions(session.expiresAt));
     try {
-      const result = await sendOnboardingEmail(verification.userId, 1);
-      if (result.ok) {
-        await markOnboardingEmailSent(verification.userId, 1);
+      const quotaBlock = await getCurrentEmailQuotaBlock();
+      if (!quotaBlock) {
+        const result = await sendOnboardingEmail(verification.userId, 1);
+        if (result.ok) {
+          await markOnboardingEmailSent(verification.userId, 1);
+        }
       }
     } catch {
       // Email delivery must never block account activation.

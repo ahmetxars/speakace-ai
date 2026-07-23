@@ -234,7 +234,8 @@ This is the project-wide “where things live” map.
   - `lib/store.ts`
   - `lib/commerce.ts`
   - `app/api/account/plan/route.ts` is also the signed-in billing-state sync endpoint used by client refresh flows.
-  - learner checkouts carry a generated `checkout_id` through the Lemon custom payload and attribution cookie so GA4 purchases can use a stable transaction ID.
+  - learner checkouts carry generated `checkout_id` and privacy-safe `visitor_id` values through the Lemon custom payload so anonymous starts can be joined to server-confirmed orders.
+  - the live Pro monthly variant is misconfigured as `$12/week`; all Pro checkout builders and the checkout route force the verified `$99/year` variant until the provider interval is corrected.
 
 ### Analytics product
 
@@ -245,11 +246,14 @@ This is the project-wide “where things live” map.
   - `lib/analytics-client.ts`
 - API and persistence:
   - `app/api/analytics/**`
+  - `lib/analytics-policy.ts`
   - `lib/analytics-store.ts`
 - External tracking:
   - `instrumentation-client.ts`
   - `lib/posthog-server.ts`
   - first-payment funnel events include `pricing_view`, `pricing_plus_click`, `practice_limit_hit`, `upgrade_prompt_view`, `checkout_initiated`, `checkout_completed`, `billing_success_seen`, and `billing_sync_pending`
+  - allowlisted public marketing events use a 180-day HttpOnly `speakace_visitor_id` cookie; product events still require authentication.
+  - `analytics_events.user_id` is nullable and `visitor_id` is indexed so pre-signup activity can be measured without storing direct customer data.
   - `checkout_completed` is emitted server-side only for Lemon `order_created`; `subscription_created` arrives for the same initial sale and must not be counted as a second conversion.
   - `billing_sync_pending` is emitted from the signed-in billing success page only after repeated secure plan-sync checks still return free access; admin reporting counts distinct affected accounts over 7 and 30 days.
   - successful or recovered subscription payments emit `subscription_revenue_received` with Lemon invoice value and currency.
@@ -261,6 +265,8 @@ This is the project-wide “where things live” map.
   - public contact and reply-to fallback use `siteConfig.contactEmail` (`aa.arslan@outlook.com.tr`); keep `EMAIL_FROM` on a provider-verified sending domain rather than replacing it with the Outlook inbox
 - Sequences:
   - `lib/server/email-sequences.ts`
+  - onboarding is intentionally capped at five messages on days 0, 1, 4, 10, and 21.
+  - all lifecycle sends share a persistent daily budget (`EMAIL_LIFECYCLE_DAILY_BUDGET`, default `20`); trial lifecycle messages are reserved ahead of lower-intent tips.
   - password signups receive onboarding only after successful email verification; unverified accounts are excluded from lifecycle marketing
   - onboarding email #2 is sent after one day; activated learners receive a checkout-free, attributed `email_day_one_return` practice link while non-activated learners keep the first-score prompt
   - learners with no speaking sessions receive first-score activation content instead of checkout pressure on day 7/10
@@ -1011,8 +1017,8 @@ Inspect only:
 
 - As verified in the live Lemon Squeezy dashboard on 2026-07-22, no webhook is configured for the store. Subscription events will not reach `app/api/payments/lemon/webhook/route.ts` until `https://speakace.org/api/payments/lemon/webhook` is registered and its signing secret is configured in production as `LEMON_SQUEEZY_WEBHOOK_SECRET`.
 - SpeakAce Plus currently uses a three-day Lemon Squeezy trial. Trial conversion and access depend on preserving the provider's `on_trial` status and `trial_ends_at` value through the webhook billing sync.
-- Live catalog values must be checked against site copy before changing pricing. On 2026-07-22, the Lemon product named Pro Monthly was configured with a weekly interval while the site described it as monthly.
-- Authenticated learner checkout initiation is recorded server-side in `app/api/payments/lemon/checkout/route.ts`. Keep the database event there so navigation cannot drop it, and do not add a second client-side `checkout_initiated` write for links targeting that route.
+- Live catalog values must be checked against site copy before changing pricing. On 2026-07-23, Plus was `$3.99/week`, Plus Annual `$49.99/year`, Pro Monthly was incorrectly `$12/week`, Pro Annual `$99/year`, and Lifetime `$129.99`.
+- Anonymous and authenticated learner checkout initiation is recorded server-side in `app/api/payments/lemon/checkout/route.ts`. Keep the database event there so navigation cannot drop it, and do not add a second client-side `checkout_initiated` write for links targeting that route.
 - Lifecycle baseline before frequency controls on 2026-07-22: 520 daily-tip emails reached 180 recipients in 7 days, while only 43 users had practiced in 30 days; 71 emails reached 23 unverified accounts. Use these as reduction baselines and do not restore all-user daily sends.
 - Retention baseline on 2026-07-22: 34 of 45 recently verified learners uploaded a speaking attempt, but only 5 returned on another day. Prioritize measured day-one return activation before adding more broad acquisition or checkout pressure.
 - The learner dashboard uses a three-day momentum mission for early return behavior. Mission practice links carry `dashboard_momentum_day_*` activation attribution, and trial learners see the same daily-return loop with their remaining trial time.

@@ -93,6 +93,8 @@ export async function POST(request: Request) {
       profile,
       verificationRequired: !autoVerified,
       emailSent: "emailSent" in verification ? verification.emailSent : false,
+      deliveryUnavailable:
+        "deliveryUnavailable" in verification ? verification.deliveryUnavailable : false,
       ...(exposeAuthUrls && "verificationUrl" in verification ? { verificationUrl: verification.verificationUrl } : {}),
       classJoinMessage
     });

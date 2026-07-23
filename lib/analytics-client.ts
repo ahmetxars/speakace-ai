@@ -1,7 +1,8 @@
 import type { AnalyticsEventName } from "@/lib/analytics-store";
+import { canTrackAnalyticsAnonymously } from "@/lib/analytics-policy";
 
 export async function trackClientEvent(input: { userId?: string | null; event: AnalyticsEventName; path?: string }) {
-  if (!input.userId) return;
+  if (!input.userId && !canTrackAnalyticsAnonymously(input.event)) return;
   if (process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === "false") return;
 
   try {

@@ -10,6 +10,7 @@ import { useAppState } from "@/components/providers";
 import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
 import { normalizePublicLanguage, type PublicLanguage } from "@/lib/copy";
 import { clearShareAttribution, getShareAttributionFromStorage } from "@/lib/share-growth";
+import { siteConfig } from "@/lib/site";
 
 type AuthUi = {
   secure: string;
@@ -156,7 +157,15 @@ function AuthPageInner() {
       })
     });
 
-    const data = (await response.json()) as { error?: string; verificationRequired?: boolean; verificationUrl?: string; needsEmailVerification?: boolean; emailSent?: boolean; classJoinMessage?: string };
+    const data = (await response.json()) as {
+      error?: string;
+      verificationRequired?: boolean;
+      verificationUrl?: string;
+      needsEmailVerification?: boolean;
+      emailSent?: boolean;
+      deliveryUnavailable?: boolean;
+      classJoinMessage?: string;
+    };
     if (!response.ok) {
       setError(data.error ?? (tr ? "Kimlik doğrulama işlemi tamamlanamadı." : "Authentication failed."));
       if (data.needsEmailVerification) {
@@ -177,14 +186,18 @@ function AuthPageInner() {
       setSuccessToast(
         data.emailSent
           ? tr ? "Hesabın oluşturuldu. Lütfen hesabını e-posta kutundan onayla." : "Your account was created. Please verify it from your inbox."
-          : tr ? "Hesabın oluşturuldu. Giriş yapmadan önce e-posta doğrulaması gerekiyor." : "Your account was created. Email verification is required."
+          : tr ? "Hesabın oluşturuldu ancak doğrulama maili henüz teslim edilemedi." : "Your account was created, but the verification email could not be delivered yet."
       );
+      const deliveryNotice = !data.emailSent
+        ? tr
+          ? `E-posta teslimatı geçici olarak kullanılamıyor. Biraz sonra tekrar gönder seçeneğini dene veya ${siteConfig.contactEmail} adresine yaz.`
+          : `Email delivery is temporarily unavailable. Retry shortly or contact ${siteConfig.contactEmail}.`
+        : "";
+      setNeedsVerification(!data.emailSent);
       setPassword("");
       setMode("signin");
       window.scrollTo({ top: 0, behavior: "smooth" });
-      if (data.classJoinMessage) {
-        setNotice(data.classJoinMessage);
-      }
+      setNotice([deliveryNotice, data.classJoinMessage].filter(Boolean).join(" "));
       return;
     }
 
@@ -248,17 +261,22 @@ function AuthPageInner() {
       if (!response.ok) {
         setError(data.error ?? (tr ? "Doğrulama maili gönderilemedi." : "Could not send verification email."));
       } else {
-        setNeedsVerification(false);
-        setNotice("");
-        setSuccessToast(
-          data.emailSent
-            ? tr
+        setNeedsVerification(!data.emailSent);
+        if (data.emailSent) {
+          setNotice("");
+          setSuccessToast(
+            tr
               ? "Doğrulama maili gönderildi. Lütfen e-posta kutunu kontrol et."
               : "Verification email sent. Please check your inbox."
-            : tr
-              ? "Hesabın zaten doğrulanmış olabilir. Giriş yapmayı dene."
-              : "Your account may already be verified. Try signing in."
-        );
+          );
+        } else {
+          setSuccessToast("");
+          setNotice(
+            tr
+              ? `Teslimat henüz doğrulanamadı. Biraz sonra tekrar dene veya ${siteConfig.contactEmail} adresine yaz.`
+              : `Delivery could not be confirmed yet. Retry shortly or contact ${siteConfig.contactEmail}.`
+          );
+        }
       }
     } finally {
       setResendingVerification(false);

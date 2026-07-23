@@ -43,7 +43,8 @@ export type AnalyticsEventName =
 
 export type AnalyticsEvent = {
   id: string;
-  userId: string;
+  userId?: string;
+  visitorId?: string;
   event: AnalyticsEventName;
   path?: string;
   createdAt: string;
@@ -78,16 +79,28 @@ function getStore(): AnalyticsStore {
   return globalStore.__speakAceAnalytics;
 }
 
-export async function trackAnalyticsEvent(input: { userId: string; event: AnalyticsEventName; path?: string }) {
-  if (!input.userId) {
+export async function trackAnalyticsEvent(input: {
+  userId?: string | null;
+  visitorId?: string | null;
+  event: AnalyticsEventName;
+  path?: string;
+}) {
+  if (!input.userId && !input.visitorId) {
     return;
   }
 
   if (hasDatabaseUrl()) {
     const sql = getSql();
     await sql`
-      insert into analytics_events (id, user_id, event, path, created_at)
-      values (${crypto.randomUUID()}, ${input.userId}, ${input.event}, ${input.path ?? null}, ${new Date().toISOString()})
+      insert into analytics_events (id, user_id, visitor_id, event, path, created_at)
+      values (
+        ${crypto.randomUUID()},
+        ${input.userId ?? null},
+        ${input.visitorId ?? null},
+        ${input.event},
+        ${input.path ?? null},
+        ${new Date().toISOString()}
+      )
     `;
     return;
   }
@@ -95,7 +108,8 @@ export async function trackAnalyticsEvent(input: { userId: string; event: Analyt
   const store = getStore();
   store.events.push({
     id: crypto.randomUUID(),
-    userId: input.userId,
+    userId: input.userId ?? undefined,
+    visitorId: input.visitorId ?? undefined,
     event: input.event,
     path: input.path,
     createdAt: new Date().toISOString()

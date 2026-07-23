@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getMemberByEmail: vi.fn(),
   getMemberEmailById: vi.fn(),
   recordBillingEvent: vi.fn(),
+  trackAnalyticsEvent: vi.fn(),
   posthogCapture: vi.fn()
 }));
 
@@ -24,6 +25,10 @@ vi.mock("@/lib/store", () => ({
 
 vi.mock("@/lib/posthog-server", () => ({
   getPostHogClient: () => ({ capture: mocks.posthogCapture })
+}));
+
+vi.mock("@/lib/analytics-store", () => ({
+  trackAnalyticsEvent: mocks.trackAnalyticsEvent
 }));
 
 import { POST } from "@/app/api/payments/lemon/webhook/route";
@@ -47,7 +52,12 @@ function plusOrderPayload() {
   return {
     meta: {
       event_name: "order_created",
-      custom_data: { user_id: "user-1", checkout_id: "checkout-1" }
+      custom_data: {
+        user_id: "user-1",
+        checkout_id: "checkout-1",
+        visitor_id: "visitor-1234567890",
+        cta_path: "/pricing/plus/weekly"
+      }
     },
     data: {
       type: "orders",
@@ -102,6 +112,12 @@ describe("Lemon webhook entitlement sync", () => {
     expect(mocks.applyBillingPlanByUserId.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.recordBillingEvent.mock.invocationCallOrder[0]
     );
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith({
+      userId: "user-1",
+      visitorId: "visitor-1234567890",
+      event: "checkout_completed",
+      path: "/pricing/plus/weekly"
+    });
   });
 
   it("preserves the current paid plan for a planless renewal invoice", async () => {
@@ -139,6 +155,7 @@ describe("Lemon webhook entitlement sync", () => {
       plan: "plus",
       providerSubscriptionId: "subscription-22"
     }));
+    expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
   });
 
   it("does not downgrade a Free member when an invoice contains no plan identity", async () => {
