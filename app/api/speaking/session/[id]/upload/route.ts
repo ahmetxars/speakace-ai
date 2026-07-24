@@ -61,6 +61,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     transcript = await transcribeAudio({
       audioBase64,
+      userId: profile.id,
       prompt: [
         `Verbatim English ${existing.examType} speaking transcript.`,
         `Task: ${existing.prompt.title}.`,

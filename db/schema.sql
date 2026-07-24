@@ -182,6 +182,19 @@ create table if not exists analytics_events (
   created_at timestamptz not null default now()
 );
 
+create table if not exists ai_usage_events (
+  id text primary key,
+  user_id text references users(id) on delete set null,
+  feature text not null,
+  model text not null,
+  input_tokens integer not null default 0,
+  output_tokens integer not null default 0,
+  total_tokens integer not null default 0,
+  audio_seconds numeric(10, 2),
+  estimated_cost_usd numeric(12, 8),
+  created_at timestamptz not null default now()
+);
+
 create table if not exists auth_activity (
   id text primary key,
   user_id text not null references users(id) on delete cascade,
@@ -439,6 +452,12 @@ create index if not exists idx_class_shared_study_items_class_created
 
 create index if not exists idx_analytics_events_user_created
   on analytics_events(user_id, created_at desc);
+
+create index if not exists idx_ai_usage_events_created
+  on ai_usage_events(created_at desc);
+
+create index if not exists idx_ai_usage_events_user_created
+  on ai_usage_events(user_id, created_at desc);
 
 create index if not exists idx_analytics_events_visitor_created
   on analytics_events(visitor_id, created_at desc);

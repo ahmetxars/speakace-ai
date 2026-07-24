@@ -26,7 +26,7 @@ export default function IeltsSpeakingAiPage() {
         eyebrow="IELTS speaking AI"
         title="IELTS speaking AI that helps you sound clearer, more fluent, and more exam-ready."
         description="Get transcript review, score-focused feedback, speaking retries, and a better daily practice loop with SpeakAce."
-        focus="SpeakAce is built for learners who specifically want IELTS speaking AI support instead of generic chat or broad English practice apps."
+        focus="AI transcript and retry"
         ctaHref="/app/practice"
       />
     </>

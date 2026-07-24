@@ -18,14 +18,14 @@ const stories = [
 ];
 
 export const metadata: Metadata = {
-  title: "SpeakAce Success Stories",
+  title: "SpeakAce Practice Workflows",
   description:
-    "See how learners and teachers can use SpeakAce to build stronger IELTS and TOEFL speaking routines, feedback loops, and class workflows.",
+    "Explore illustrative SpeakAce workflows for IELTS and TOEFL speaking routines, transcript review, and teacher follow-up.",
   alternates: { canonical: "/success-stories" },
   openGraph: {
-    title: "SpeakAce Success Stories",
+    title: "SpeakAce Practice Workflows",
     description:
-      "Proof-oriented stories about how SpeakAce can support score growth, better self-study, and teacher workflows.",
+      "Illustrative workflows showing how SpeakAce can support self-study and teacher follow-up.",
     url: `${siteConfig.domain}/success-stories`,
     siteName: siteConfig.name,
     type: "website"
@@ -37,12 +37,12 @@ export default function SuccessStoriesPage() {
     <>
       <main className="page-shell section">
         <div className="section-head">
-          <span className="eyebrow">Success stories</span>
+          <span className="eyebrow">Illustrative workflows</span>
           <h1 style={{ fontSize: "clamp(2.7rem, 6vw, 4.8rem)", lineHeight: 0.95 }}>
             Why SpeakAce can feel worth paying for
           </h1>
           <p>
-            This product is built around the parts that make speaking improvement more believable:
+            These are product-use examples, not customer testimonials. SpeakAce is built around
             repeat attempts, visible transcripts, faster feedback, and clearer next steps.
           </p>
         </div>

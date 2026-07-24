@@ -207,7 +207,7 @@ export function buildReactivationSignals(profile: StudentProfile | null, summary
   }
   signals.push({
     title: tr ? "Bildirim ve email döngüsü" : "Notification and email loop",
-    body: tr ? "Homework, risk ve reactivation nudges Action Center'da toplanır. Bu alan comeback trafiğini sıcak tutar." : "Homework, risk, and reactivation nudges are collected in Action Center. This keeps comeback traffic warm.",
+    body: tr ? "Ödev, risk ve geri dönüş hatırlatmaları Action Center'da toplanır; böylece sıradaki görevin tek yerde kalır." : "Homework, risk, and return reminders are collected in Action Center so your next task stays in one place.",
     level: "watch",
     href: "/app/notifications"
   });
@@ -216,25 +216,25 @@ export function buildReactivationSignals(profile: StudentProfile | null, summary
 
 export const proofStories: ProofStory[] = [
   {
-    name: "Aylin",
-    role: "IELTS self-study learner",
-    before: "Band 5.5 answers sounded vague and underdeveloped.",
-    after: "Moved to more stable 6.5-style responses with retry practice.",
-    note: "Used short daily drills, transcript review, and one retry after every weak answer."
+    name: "Self-study example",
+    role: "Illustrative IELTS workflow",
+    before: "Answers are short, general, and hard to review objectively.",
+    after: "Use one prompt, inspect the transcript, and retry with one specific example.",
+    note: "A short daily drill keeps the focus on repeatable practice rather than a guaranteed score change."
   },
   {
-    name: "Emre",
-    role: "TOEFL retake student",
-    before: "Integrated answers were too messy and lost key lecture points.",
-    after: "Built cleaner summaries and a more exam-like speaking rhythm.",
-    note: "Simulation mode plus mistake review created a clearer weekly practice loop."
+    name: "TOEFL retake example",
+    role: "Illustrative integrated-task workflow",
+    before: "Integrated answers lose key reading and lecture points.",
+    after: "Use a compact note template, timed response, and one mistake review.",
+    note: "Simulation mode helps make the weekly practice rhythm closer to the task format."
   },
   {
-    name: "North Bridge English",
-    role: "Small language school",
-    before: "Teachers could not see what students practiced between lessons.",
-    after: "Class analytics, homework, and shared study lists created better follow-up.",
-    note: "Teacher workflows matter most when the student retry loop is visible."
+    name: "Teacher example",
+    role: "Illustrative class workflow",
+    before: "Practice completed between lessons is difficult to review.",
+    after: "Use class activity, homework, and shared study lists for the next lesson.",
+    note: "The teacher workflow is most useful when students complete visible retry tasks."
   }
 ];
 

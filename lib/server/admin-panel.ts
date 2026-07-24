@@ -1,6 +1,7 @@
 import { compare } from "bcryptjs";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { isAdminEmail } from "@/lib/admin";
+import { getAiUsageSummary } from "@/lib/server/ai-usage";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import {
   AdminAuthActivityRecord,
@@ -272,6 +273,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       recentSignIns24h: 0,
       classesCount: 0,
       monthlyRevenueEstimate: 0,
+      aiRequests30d: 0,
+      aiInputTokens30d: 0,
+      aiOutputTokens30d: 0,
+      aiEstimatedCost30d: 0,
       liveUsers5m: 0,
       requests5m: 0,
       pageViews1h: 0,
@@ -1411,6 +1416,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       ? Number(((input.checkoutCompleted / input.checkoutInitiated) * 100).toFixed(1))
       : 0
   });
+  const aiUsage = await getAiUsageSummary();
 
   return {
     totalUsers: row?.total_users ?? 0,
@@ -1423,6 +1429,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     recentSignIns24h: row?.recent_signins_24h ?? 0,
     classesCount: row?.classes_count ?? 0,
     monthlyRevenueEstimate: Number(row?.monthly_revenue_estimate ?? 0),
+    aiRequests30d: aiUsage.requests30d,
+    aiInputTokens30d: aiUsage.inputTokens30d,
+    aiOutputTokens30d: aiUsage.outputTokens30d,
+    aiEstimatedCost30d: aiUsage.estimatedCostUsd30d,
     liveUsers5m: row?.live_users_5m ?? 0,
     requests5m: row?.requests_5m ?? 0,
     pageViews1h: row?.page_views_1h ?? 0,

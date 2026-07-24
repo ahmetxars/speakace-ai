@@ -129,11 +129,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 name: siteConfig.name,
                 url: siteConfig.domain,
                 logo: `${siteConfig.domain}/logo.png`,
-                sameAs: [
-                  "https://twitter.com/speakace",
-                  "https://linkedin.com/company/speakace",
-                  "https://youtube.com/@speakace"
-                ],
                 contactPoint: {
                   "@type": "ContactPoint",
                   email: siteConfig.contactEmail,
@@ -151,15 +146,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 "@type": "WebSite",
                 name: siteConfig.name,
                 url: siteConfig.domain,
-                description: siteConfig.description,
-                potentialAction: {
-                  "@type": "SearchAction",
-                  target: {
-                    "@type": "EntryPoint",
-                    urlTemplate: `${siteConfig.domain}/blog?q={search_term_string}`
-                  },
-                  "query-input": "required name=search_term_string"
-                }
+                description: siteConfig.description
               })
             }}
           />

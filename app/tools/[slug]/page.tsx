@@ -7,6 +7,50 @@ import { siteConfig } from "@/lib/site";
 import { toolPages } from "@/lib/seo-growth";
 import { getToolVisual } from "@/lib/tool-visuals";
 
+const INDEXABLE_TOOL_SLUGS = new Set([
+  "ielts-band-score-calculator",
+  "ielts-cue-card-generator"
+]);
+
+const toolFaqs: Record<string, Array<{ question: string; answer: string }>> = {
+  "ielts-band-score-calculator": [
+    {
+      question: "How is the overall IELTS band calculated?",
+      answer: "Add the Listening, Reading, Writing, and Speaking scores, divide the total by four, then round the average to the nearest whole or half band."
+    },
+    {
+      question: "How does IELTS round an average ending in .25 or .75?",
+      answer: "An average ending in .25 rounds up to the next half band. An average ending in .75 rounds up to the next whole band."
+    },
+    {
+      question: "Can one low section score reduce the overall band?",
+      answer: "Yes. All four section scores have equal weight in the overall average, so a lower score in one section can reduce the final band."
+    },
+    {
+      question: "Is this calculator an official IELTS result?",
+      answer: "No. It applies the public overall-band calculation for planning. Only the score on an official IELTS Test Report Form is authoritative."
+    }
+  ],
+  "ielts-cue-card-generator": [
+    {
+      question: "How long should I speak for an IELTS cue card?",
+      answer: "In IELTS Speaking Part 2 you receive one minute to prepare and should be ready to speak for up to two minutes."
+    },
+    {
+      question: "Do I need to cover every cue-card bullet?",
+      answer: "The bullets are prompts rather than a strict checklist, but using them helps you develop a complete and organized answer."
+    },
+    {
+      question: "Should I write a full script during preparation?",
+      answer: "No. Write short keywords, a simple sequence, and one useful example. A full script is too slow and can make the answer sound memorized."
+    },
+    {
+      question: "How should I practice the same cue card twice?",
+      answer: "Record the first answer, review the transcript, choose one weakness, and repeat the card while applying only that improvement."
+    }
+  ]
+};
+
 function getToolLinks(slug: string) {
   if (slug.includes("toefl")) {
     return [
@@ -54,6 +98,10 @@ export async function generateMetadata({
     title: page.title,
     description: page.description,
     alternates: { canonical: `/tools/${page.slug}` },
+    robots: {
+      index: INDEXABLE_TOOL_SLUGS.has(page.slug),
+      follow: true
+    },
     openGraph: {
       title: `${page.title} | SpeakAce`,
       description: page.description,
@@ -74,6 +122,7 @@ export default async function ToolDetailPage({
   if (!page) notFound();
   const visual = getToolVisual(page.slug);
   const relatedLinks = getToolLinks(page.slug);
+  const faqs = toolFaqs[page.slug] ?? [];
 
   return (
     <>
@@ -89,12 +138,11 @@ export default async function ToolDetailPage({
         </div>
         <ToolWorkbench slug={page.slug} title={page.title} />
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <span className="eyebrow">Intent match</span>
-          <h2 style={{ margin: 0 }}>This page should turn search intent into one clear next step</h2>
+          <span className="eyebrow">How to use this result</span>
+          <h2 style={{ margin: 0 }}>Turn the tool output into one speaking action</h2>
           <p className="practice-copy" style={{ margin: 0 }}>
-            Visitors landing on &quot;{page.title}&quot; usually want something quick and useful first. The
-            best conversion path is simple: give the tool signal immediately, then move the user
-            into one real speaking action while their motivation is still high.
+            Use the {page.title.toLowerCase()} as a starting point, not a final diagnosis. Choose one
+            prompt, speak for the full time, and compare the result with the target you set here.
           </p>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             <Link className="button button-primary" href="/app/practice">
@@ -115,13 +163,26 @@ export default async function ToolDetailPage({
             </article>
           ))}
         </div>
+        {faqs.length ? (
+          <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
+            <span className="eyebrow">FAQ</span>
+            <h2 style={{ margin: 0 }}>Common questions about {page.title.toLowerCase()}</h2>
+            <div className="marketing-grid">
+              {faqs.map((item) => (
+                <article key={item.question} className="card feature-card">
+                  <h3>{item.question}</h3>
+                  <p>{item.answer}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
         <div className="card institution-cta">
           <div>
             <span className="eyebrow">Next step</span>
             <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{page.cta}</h2>
             <p className="practice-copy">
-              Use the tool as a simple entry point, then move into one real speaking attempt while
-              the idea is still fresh.
+              Keep the result nearby and complete one real attempt while the goal is still fresh.
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
@@ -135,6 +196,25 @@ export default async function ToolDetailPage({
             ))}
           </div>
         </div>
+        {faqs.length ? (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: faqs.map((item) => ({
+                  "@type": "Question",
+                  name: item.question,
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: item.answer
+                  }
+                }))
+              })
+            }}
+          />
+        ) : null}
       </main>
     </>
   );

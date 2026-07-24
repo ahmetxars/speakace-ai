@@ -1,4 +1,15 @@
+import { recordAiUsage } from "@/lib/server/ai-usage";
+
 const OPENAI_API_BASE_URL = "https://api.openai.com/v1";
+
+type OpenAiTokenUsage = {
+  input_tokens?: number;
+  output_tokens?: number;
+  total_tokens?: number;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  seconds?: number;
+};
 
 export function hasOpenAiKey() {
   return Boolean(process.env.OPENAI_API_KEY);
@@ -38,10 +49,12 @@ function extensionFromMime(mimeType: string) {
 
 export async function transcribeAudio({
   audioBase64,
-  prompt
+  prompt,
+  userId
 }: {
   audioBase64: string;
   prompt: string;
+  userId?: string;
 }) {
   if (!process.env.OPENAI_API_KEY) {
     return null;
@@ -53,8 +66,9 @@ export async function transcribeAudio({
   });
 
   const formData = new FormData();
+  const model = process.env.OPENAI_TRANSCRIBE_MODEL || "gpt-4o-mini-transcribe";
   formData.append("file", file);
-  formData.append("model", process.env.OPENAI_TRANSCRIBE_MODEL || "gpt-4o-mini-transcribe");
+  formData.append("model", model);
   formData.append("language", "en");
   formData.append("prompt", prompt);
 
@@ -75,7 +89,19 @@ export async function transcribeAudio({
     throw new Error(`OpenAI transcription failed: ${text}`);
   }
 
-  const data = (await response.json()) as { text?: string };
+  const data = (await response.json()) as {
+    text?: string;
+    usage?: OpenAiTokenUsage;
+  };
+  await recordAiUsage({
+    userId,
+    feature: "speaking_transcription",
+    model,
+    inputTokens: data.usage?.input_tokens,
+    outputTokens: data.usage?.output_tokens,
+    totalTokens: data.usage?.total_tokens,
+    audioSeconds: data.usage?.seconds
+  });
   return data.text?.trim() || null;
 }
 
@@ -85,7 +111,8 @@ export async function generateFeedbackReport({
   promptTitle,
   promptText,
   difficulty,
-  transcript
+  transcript,
+  userId
 }: {
   examType: "IELTS" | "TOEFL";
   taskType: string;
@@ -93,6 +120,7 @@ export async function generateFeedbackReport({
   promptText: string;
   difficulty: string;
   transcript: string;
+  userId?: string;
 }) {
   if (!process.env.OPENAI_API_KEY) {
     return null;
@@ -136,6 +164,7 @@ export async function generateFeedbackReport({
 
   const feedbackController = new AbortController();
   const feedbackTimeout = setTimeout(() => feedbackController.abort(), 60_000);
+  const model = process.env.OPENAI_FEEDBACK_MODEL || "gpt-4o-mini";
   const response = await fetch(`${OPENAI_API_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
@@ -144,7 +173,7 @@ export async function generateFeedbackReport({
     },
     signal: feedbackController.signal,
     body: JSON.stringify({
-      model: process.env.OPENAI_FEEDBACK_MODEL || "gpt-4o-mini",
+      model,
       temperature: 0.2,
       response_format: {
         type: "json_schema",
@@ -212,7 +241,16 @@ export async function generateFeedbackReport({
         refusal?: string | null;
       };
     }>;
+    usage?: OpenAiTokenUsage;
   };
+  await recordAiUsage({
+    userId,
+    feature: "speaking_feedback",
+    model,
+    inputTokens: data.usage?.prompt_tokens ?? data.usage?.input_tokens,
+    outputTokens: data.usage?.completion_tokens ?? data.usage?.output_tokens,
+    totalTokens: data.usage?.total_tokens
+  });
 
   const content = data.choices?.[0]?.message?.content;
   if (!content) {
@@ -237,13 +275,15 @@ export async function generateWritingFeedbackReport({
   promptTitle,
   promptText,
   difficulty,
-  draftText
+  draftText,
+  userId
 }: {
   taskType: "ielts-writing-task-1" | "ielts-writing-task-2";
   promptTitle: string;
   promptText: string;
   difficulty: string;
   draftText: string;
+  userId?: string;
 }) {
   if (!process.env.OPENAI_API_KEY) {
     return null;
@@ -251,6 +291,7 @@ export async function generateWritingFeedbackReport({
 
   const writingController = new AbortController();
   const writingTimeout = setTimeout(() => writingController.abort(), 60_000);
+  const model = process.env.OPENAI_FEEDBACK_MODEL || "gpt-4o-mini";
   const response = await fetch(`${OPENAI_API_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
@@ -259,7 +300,7 @@ export async function generateWritingFeedbackReport({
     },
     signal: writingController.signal,
     body: JSON.stringify({
-      model: process.env.OPENAI_FEEDBACK_MODEL || "gpt-4o-mini",
+      model,
       temperature: 0.2,
       response_format: {
         type: "json_schema",
@@ -340,7 +381,16 @@ export async function generateWritingFeedbackReport({
         content?: string;
       };
     }>;
+    usage?: OpenAiTokenUsage;
   };
+  await recordAiUsage({
+    userId,
+    feature: "writing_feedback",
+    model,
+    inputTokens: data.usage?.prompt_tokens ?? data.usage?.input_tokens,
+    outputTokens: data.usage?.completion_tokens ?? data.usage?.output_tokens,
+    totalTokens: data.usage?.total_tokens
+  });
 
   const content = data.choices?.[0]?.message?.content;
   if (!content) return null;

@@ -950,6 +950,14 @@ export function AdminPanel(props: {
                   icon={<CircleDollarSign size={20} color="#34d399" />}
                 />
                 <AdmStatCard
+                  label="AI Cost (30d)"
+                  value={formatMoney(props.overview.aiEstimatedCost30d)}
+                  trend={`${props.overview.aiRequests30d} requests · ${(props.overview.aiInputTokens30d + props.overview.aiOutputTokens30d).toLocaleString("en-US")} tokens`}
+                  trendUp={props.overview.aiEstimatedCost30d <= props.overview.monthlyRevenueEstimate}
+                  iconBg="rgba(96,165,250,0.15)"
+                  icon={<Activity size={20} color="#60a5fa" />}
+                />
+                <AdmStatCard
                   label="Checkout Completion"
                   value={formatPercent(props.overview.monetizationFunnel7d.checkoutToCompletionRate)}
                   trend={`${props.overview.checkoutCompleted7d}/${props.overview.checkoutInitiated7d} completed in 7d`}
@@ -1243,7 +1251,12 @@ export function AdminPanel(props: {
                   { label: "Day-one returns (30d)", value: props.overview.dayOneReturnStarts30d },
                   { label: "Checkout initiated (7d)", value: props.overview.checkoutInitiated7d },
                   { label: "Checkout completed (7d)", value: props.overview.checkoutCompleted7d },
-                  { label: "Access sync pending (7d)", value: props.overview.billingSyncPending7d }
+                  { label: "Access sync pending (7d)", value: props.overview.billingSyncPending7d },
+                  { label: "AI requests (30d)", value: props.overview.aiRequests30d },
+                  {
+                    label: "AI tokens (30d)",
+                    value: props.overview.aiInputTokens30d + props.overview.aiOutputTokens30d
+                  }
                 ].map(({ label, value }) => (
                   <div key={label} className="adm-mini-stat">
                     <strong>{value}</strong>

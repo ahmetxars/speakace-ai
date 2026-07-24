@@ -6,7 +6,7 @@ import { siteConfig } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Free IELTS Speaking Test Online | SpeakAce",
   description:
-    "Take a free IELTS speaking test online, get an AI IELTS band score, transcript, and instant feedback. Practice free ->",
+    "Take a free IELTS speaking practice test, review your transcript, and get an estimated AI band with clear next-step feedback.",
   alternates: { canonical: "/free-ielts-speaking-test" },
   openGraph: {
     title: "Free IELTS Speaking Test Online | SpeakAce",
@@ -56,21 +56,6 @@ const sampleQuestions = {
     "Do you think technology improves speaking skills or weakens them?"
   ]
 };
-
-const testimonialPlaceholders = [
-  {
-    name: "IELTS learner placeholder",
-    text: "I finally understood why my answers sounded weak. The transcript and score estimate made my mistakes visible instead of vague."
-  },
-  {
-    name: "Repeat-practice learner placeholder",
-    text: "The free test gave me a much clearer idea of how to practice. I could see the difference between a short answer and a stronger retry."
-  },
-  {
-    name: "Teacher demo placeholder",
-    text: "This is a useful first step for students who need a simple speaking task before moving into deeper IELTS coaching."
-  }
-];
 
 const faqJsonLd = {
   "@context": "https://schema.org",
@@ -214,15 +199,21 @@ export default function FreeIeltsSpeakingTestPage() {
         </section>
 
         <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
-          <span className="eyebrow">Testimonials</span>
-          <h2 style={{ margin: 0 }}>Early learner feedback placeholders</h2>
+          <span className="eyebrow">Clear limits</span>
+          <h2 style={{ margin: 0 }}>What this free test does and does not claim</h2>
           <div className="marketing-grid">
-            {testimonialPlaceholders.map((item) => (
-              <article key={item.name} className="card feature-card">
-                <h3>{item.name}</h3>
-                <p>{item.text}</p>
-              </article>
-            ))}
+            <article className="card feature-card">
+              <h3>Practice estimate, not an official result</h3>
+              <p>The AI band is directional feedback. Only an authorized IELTS test can issue an official band score.</p>
+            </article>
+            <article className="card feature-card">
+              <h3>Your recording stays tied to your account</h3>
+              <p>Use the transcript and category feedback to review your own answer. We do not publish learner recordings as testimonials.</p>
+            </article>
+            <article className="card feature-card">
+              <h3>No guaranteed band increase</h3>
+              <p>SpeakAce helps you practise and notice patterns, but improvement depends on repeated work and individual performance.</p>
+            </article>
           </div>
         </section>
 

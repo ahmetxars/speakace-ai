@@ -355,7 +355,8 @@ export async function evaluateStoredSession(sessionId: string) {
         promptTitle: session.prompt.title,
         promptText: session.prompt.prompt,
         difficulty: session.difficulty,
-        transcript: cleanedTranscript
+        transcript: cleanedTranscript,
+        userId: session.userId
       });
 
       if (aiReport) {

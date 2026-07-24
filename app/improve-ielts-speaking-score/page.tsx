@@ -26,7 +26,7 @@ export default function ImproveIeltsSpeakingScorePage() {
         eyebrow="Improve IELTS speaking score"
         title="Improve IELTS speaking score with faster retries, clearer feedback, and stronger answer structure."
         description="SpeakAce helps you practice under time pressure, inspect your transcript, and build speaking answers that feel more band-ready."
-        focus="This page is for users actively searching how to improve IELTS speaking score with a product that combines AI feedback, band estimates, and practical daily repetition."
+        focus="Band improvement practice"
         ctaHref="/app/practice"
       />
     </>

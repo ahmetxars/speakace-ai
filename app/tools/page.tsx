@@ -7,12 +7,12 @@ import { getToolVisual } from "@/lib/tool-visuals";
 export const metadata: Metadata = {
   title: "Free IELTS Speaking Tools | SpeakAce",
   description:
-    "Explore free IELTS speaking tools, topic generators, study plans, and score-focused practice helpers. Try a tool free ->",
+    "Explore free IELTS speaking tools, cue-card generators, study planners, and score-focused practice helpers.",
   alternates: { canonical: "/tools" },
   openGraph: {
     title: "Free IELTS Speaking Tools | SpeakAce",
     description:
-      "A hub of free IELTS speaking tools and top-of-funnel pages designed to pull learners into practice.",
+      "Use free IELTS calculators, cue-card generators, timers, and planners to start a focused speaking session.",
     url: `${siteConfig.domain}/tools`,
     siteName: siteConfig.name,
     type: "website"

@@ -26,7 +26,7 @@ export default function SpeakingTestSimulatorIeltsPage() {
         eyebrow="Speaking test simulator IELTS"
         title="Use a speaking test simulator IELTS learners can train with before the real exam."
         description="Timed tasks, transcript review, estimated score support, and retry workflows make SpeakAce a stronger exam-practice environment."
-        focus="This experience is built for students searching for a speaking test simulator IELTS product instead of generic speaking prompts or low-pressure chat apps."
+        focus="Timed mock speaking flow"
         ctaHref="/app/practice"
       />
     </>

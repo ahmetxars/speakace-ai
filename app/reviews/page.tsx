@@ -7,11 +7,11 @@ import { siteConfig } from "@/lib/site";
 
 const reviewGroups = [
   {
-    title: "Students who need faster score movement",
+    title: "For learners targeting a higher band",
     points: [
       "The transcript view makes it easier to see where the answer lost structure.",
-      "Retrying the same prompt helped me move from vague answers to more direct ones.",
-      "It feels lighter than booking repeated mock interviews."
+      "Retrying the same prompt turns vague feedback into a specific revision.",
+      "Short AI practice can support, but does not replace, lessons or official assessment."
     ]
   },
   {
@@ -19,56 +19,28 @@ const reviewGroups = [
     points: [
       "The class workflow is useful between lessons when students need extra speaking practice.",
       "Homework and replay give a clearer picture of who is progressing and who is stalling.",
-      "It is easier to keep students active when they can record and review on their own."
+      "Students can record and review independently before the next live lesson."
     ]
   },
   {
     title: "Self-study learners",
     points: [
       "Daily speaking becomes more realistic when the feedback loop is short.",
-      "Seeing a stronger sample answer helps me understand what a better response sounds like.",
-      "The dashboard gives me a reason to come back instead of guessing what to practice."
+      "A stronger sample answer shows how a response can be developed.",
+      "The dashboard keeps the next task visible instead of leaving practice to guesswork."
     ]
   }
 ];
 
-const reviewTickerItems = [
-  {
-    quote: "The retry loop helps me hear the difference between a weak answer and a more direct one.",
-    author: "IELTS self-study learner",
-    role: "Band score improvement focus"
-  },
-  {
-    quote: "I can finally see what to fix next instead of repeating random speaking practice.",
-    author: "Daily practice student",
-    role: "Fluency and structure"
-  },
-  {
-    quote: "The class workflow makes more sense for schools than using disconnected speaking tools.",
-    author: "Language school teacher",
-    role: "Homework and follow-up"
-  },
-  {
-    quote: "The transcript review is the part that makes the product feel useful after every attempt.",
-    author: "TOEFL learner",
-    role: "Transcript and feedback loop"
-  },
-  {
-    quote: "It feels more motivating when I can retry the same topic with a clearer plan.",
-    author: "Independent learner",
-    role: "Confidence and repetition"
-  }
-];
-
 export const metadata: Metadata = {
-  title: "SpeakAce Reviews",
+  title: "Review SpeakAce by Use Case",
   description:
-    "See why students, teachers, and self-study learners use SpeakAce for IELTS and TOEFL speaking practice.",
+    "Review SpeakAce features for IELTS and TOEFL self-study, band improvement, and teacher workflows before choosing a plan.",
   alternates: { canonical: "/reviews" },
   openGraph: {
-    title: "SpeakAce Reviews",
+    title: "Review SpeakAce by Use Case",
     description:
-      "Read proof-style reviews about SpeakAce, the AI speaking practice platform for IELTS and TOEFL learners.",
+      "Inspect SpeakAce workflows for self-study learners and teachers without anonymous testimonial claims.",
     url: `${siteConfig.domain}/reviews`,
     siteName: siteConfig.name,
     type: "website"
@@ -77,39 +49,19 @@ export const metadata: Metadata = {
 
 export default function ReviewsPage() {
   const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
-  const reviewJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ItemList",
-    itemListElement: reviewGroups.flatMap((group, groupIndex) =>
-      group.points.map((point, pointIndex) => ({
-        "@type": "Review",
-        position: groupIndex * 10 + pointIndex + 1,
-        reviewBody: point,
-        itemReviewed: {
-          "@type": "SoftwareApplication",
-          name: siteConfig.name
-        }
-      }))
-    )
-  };
 
   return (
     <>
       <main className="page-shell section reviews-page">
         <div className="section-head">
-          <span className="eyebrow">Reviews</span>
+          <span className="eyebrow">Product review</span>
           <h1 style={{ fontSize: "clamp(2.5rem, 5vw, 4.5rem)", lineHeight: 0.95 }}>
-            Social proof that sounds closer to real usage than hype.
+            Review the workflow with your own result, not anonymous hype.
           </h1>
           <p>
             SpeakAce is built for learners who want a faster record-review-retry loop, and for
             teachers who want more visibility between lessons.
           </p>
-        </div>
-
-        <div>
-          <span className="eyebrow">Live review flow</span>
-          <ReviewTicker items={reviewTickerItems} />
         </div>
 
         <div className="reviews-grid">
@@ -149,31 +101,7 @@ export default function ReviewsPage() {
             </TrackedLink>
           </div>
         </div>
-
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd) }} />
       </main>
     </>
-  );
-}
-
-function ReviewTicker({
-  items
-}: {
-  items: Array<{ quote: string; author: string; role: string }>;
-}) {
-  const loopItems = [...items, ...items];
-
-  return (
-    <div className="testimonial-ticker-shell">
-      <div className="testimonial-ticker-track">
-        {loopItems.map((item, index) => (
-          <article key={`${item.author}-${index}`} className="card testimonial-ticker-card">
-            <p>&ldquo;{item.quote}&rdquo;</p>
-            <strong>{item.author}</strong>
-            <div className="practice-meta">{item.role}</div>
-          </article>
-        ))}
-      </div>
-    </div>
   );
 }

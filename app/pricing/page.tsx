@@ -512,7 +512,7 @@ export default async function PricingPage() {
                 "The same plan lets teachers show visible score movement while students keep practicing between lessons."
             },
             {
-              title: "Why Plus converts better than a generic plan",
+              title: "What Plus changes in daily practice",
               description:
                 "It is tied to clear outcomes: more speaking, more feedback, stronger scoring insight, and less friction."
             }

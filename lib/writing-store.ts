@@ -252,7 +252,8 @@ export async function evaluateStoredWritingSession(sessionId: string) {
       promptTitle: session.prompt.title,
       promptText: session.prompt.prompt,
       difficulty: session.difficulty,
-      draftText: session.draftText
+      draftText: session.draftText,
+      userId: session.userId
     });
     if (aiReport) {
       report = {

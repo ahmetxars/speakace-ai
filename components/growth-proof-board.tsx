@@ -11,10 +11,10 @@ export function GrowthProofBoard() {
   return (
     <section className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.9rem" }}>
       <div>
-        <span className="eyebrow">Proof layer</span>
-        <h2 style={{ margin: "0.55rem 0 0.2rem" }}>{tr ? "Gerçek kullanım ve gelişim örnekleri" : "Real usage and progress snapshots"}</h2>
+        <span className="eyebrow">{tr ? "Örnek akışlar" : "Example workflows"}</span>
+        <h2 style={{ margin: "0.55rem 0 0.2rem" }}>{tr ? "Farklı hedefler için çalışma modelleri" : "Practice models for different goals"}</h2>
         <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
-          {tr ? "Bu katman, ziyaretçiye SpeakAce'in kimin için çalıştığını ve nasıl dönüşüm yarattığını gösterir." : "This layer shows visitors who SpeakAce works for and what kind of progress it tends to create."}
+          {tr ? "Bunlar müşteri yorumu değil, SpeakAce'i farklı hedeflerde nasıl kullanabileceğini gösteren örnek senaryolardır." : "These are illustrative scenarios, not customer testimonials. Use them to choose a workflow that fits your goal."}
         </p>
       </div>
       <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "0.8rem" }}>
@@ -23,10 +23,10 @@ export function GrowthProofBoard() {
             <strong>{story.name}</strong>
             <span className="practice-meta">{story.role}</span>
             <div style={{ fontSize: "0.92rem", lineHeight: 1.65 }}>
-              <strong>{tr ? "Before:" : "Before:"}</strong> {story.before}
+              <strong>{tr ? "Başlangıç:" : "Starting point:"}</strong> {story.before}
             </div>
             <div style={{ fontSize: "0.92rem", lineHeight: 1.65 }}>
-              <strong>{tr ? "After:" : "After:"}</strong> {story.after}
+              <strong>{tr ? "Hedef akış:" : "Target workflow:"}</strong> {story.after}
             </div>
             <div style={{ color: "var(--muted)", lineHeight: 1.65 }}>{story.note}</div>
           </article>

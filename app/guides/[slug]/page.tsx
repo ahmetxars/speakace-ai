@@ -47,6 +47,7 @@ export async function generateMetadata({
     title: page.title,
     description: page.description,
     alternates: { canonical: `/guides/${page.slug}` },
+    robots: { index: false, follow: true },
     openGraph: {
       title: `${page.title} | SpeakAce`,
       description: page.description,
@@ -84,12 +85,11 @@ export default async function GuideDetailPage({
           ))}
         </div>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <span className="eyebrow">Convert intent</span>
-          <h2 style={{ margin: 0 }}>Turn this guide into a same-day practice action</h2>
+          <span className="eyebrow">Use it today</span>
+          <h2 style={{ margin: 0 }}>Apply one idea in your next answer</h2>
           <p className="practice-copy" style={{ margin: 0 }}>
-            Guide visitors usually arrive with a specific problem, not a buying decision yet. The
-            page performs better when it solves the problem clearly and then offers one concrete
-            next action with low friction.
+            Pick the takeaway that matches your current weakness, answer one related prompt, then
+            listen back once. Focused repetition makes the guidance easier to remember under exam pressure.
           </p>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
             {relatedLinks.map((item) => (
@@ -106,8 +106,7 @@ export default async function GuideDetailPage({
             <span className="eyebrow">Next step</span>
             <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{page.cta}</h2>
             <p className="practice-copy">
-              Better guide content should always point toward an action the visitor can take on the
-              same day.
+              Use a short practice session to turn the method into a habit you can repeat on test day.
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>

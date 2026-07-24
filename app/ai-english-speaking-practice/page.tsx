@@ -26,7 +26,7 @@ export default function AiEnglishSpeakingPracticePage() {
         eyebrow="AI English speaking practice"
         title="AI English speaking practice that feels structured enough to build real confidence."
         description="Use SpeakAce to speak more often, review what you said, and fix weak answers before they become habits."
-        focus="SpeakAce is especially useful for learners who want AI English speaking practice but still care about exam structure, score growth, and daily consistency."
+        focus="Daily structured speaking"
         ctaHref="/app/practice"
       />
     </>

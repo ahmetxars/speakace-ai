@@ -24,7 +24,7 @@ export default function IELTSPage() {
         eyebrow="IELTS speaking practice"
         title="IELTS speaking practice with AI feedback, timed cue cards, and transcript review."
         description="Train for IELTS Speaking Part 1, Part 2, and Part 3 online. Record answers, review transcripts, and improve fluency, coherence, and pronunciation."
-        focus="This page targets IELTS-specific search intent with band-style speaking feedback, cue-card training, speaking simulation, and score-improvement messaging."
+        focus="Part 1, Part 2 and Part 3 practice"
         ctaHref="/app/practice"
       />
     </>

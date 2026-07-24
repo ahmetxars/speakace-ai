@@ -44,14 +44,14 @@ type MarketingPageProps = {
 const sectionCopy = {
   en: {
     badge: "AI-powered speaking practice",
-    badgeLive: "1,000+ learners practicing today",
-    trusted: "Trusted by learners in 50+ countries.",
+    badgeLive: "Free first score available",
+    trusted: "See your first scored attempt before deciding whether to upgrade.",
     cta: "Start Free Test",
-    ctaMicrocopy: "No Credit Card Required · Results in 60s",
+    ctaMicrocopy: "No Credit Card Required · First score in about 5 minutes",
     ctaFree: "Try Free",
     demo: "See how it works",
-    trustBar: "✓ No signup required   ✓ Free forever   ✓ 1,000+ active learners",
-    scoreLabel: "Band score improved",
+    trustBar: "✓ Free plan available   ✓ No card for Free   ✓ Clear renewal terms",
+    scoreLabel: "Example band signal after retry",
     demoEyebrow: "Interactive demo",
     demoTitle: "See the exact learning loop before you commit",
     demoSubtitle: "Pick a real user goal and watch how SpeakAce turns one answer into a stronger retry.",
@@ -107,7 +107,7 @@ const sectionCopy = {
     ],
     segmentEyebrow: "Built for real use cases",
     segmentTitle: "Not just a speaking bot. A workflow for the kind of learner you are.",
-    segmentSubtitle: "SpeakAce adapts better when the page explains exactly where you fit.",
+    segmentSubtitle: "Choose the workflow that matches how you are preparing right now.",
     segments: [
       {
         icon: GraduationCap,
@@ -134,8 +134,8 @@ const sectionCopy = {
         cta: "School workflows"
       }
     ],
-    proofEyebrow: "Why this converts",
-    proofTitle: "The page now answers the three questions serious learners ask first",
+    proofEyebrow: "Before you pay",
+    proofTitle: "Answer three practical questions with one free session",
     proofCards: [
       {
         title: "Will this feel like my exam?",
@@ -147,7 +147,7 @@ const sectionCopy = {
       },
       {
         title: "Is this built for someone like me?",
-        body: "Student, score-improvement, and school paths make the product fit clearer before the first click."
+        body: "Student, score-improvement, and teacher workflows let you choose the path that matches your preparation."
       }
     ],
     whyEyebrow: "Why SpeakAce",
@@ -157,7 +157,7 @@ const sectionCopy = {
       {
         icon: Zap,
         title: "AI-Powered Feedback",
-        body: "Get detailed analysis on every session. Our AI evaluates fluency, pronunciation, grammar, and coherence just like a real examiner."
+        body: "Get an AI practice estimate across fluency, pronunciation, grammar, and coherence. It supports practice and does not replace an official examiner."
       },
       {
         icon: TrendingUp,
@@ -166,8 +166,8 @@ const sectionCopy = {
       },
       {
         icon: BookOpen,
-        title: "500+ Real Questions",
-        body: "Practice with authentic IELTS and TOEFL questions. Retry the same answer, compare improvement, and build a daily rhythm."
+        title: "Exam-shaped question bank",
+        body: "Practice with IELTS- and TOEFL-style prompts. Retry the same answer, compare attempts, and build a daily rhythm."
       }
     ],
     howEyebrow: "How it works",
@@ -179,7 +179,7 @@ const sectionCopy = {
       { step: 3, title: "Review, fix, and retry", body: "Check the transcript, estimated score, and improvement notes, then record again with more control." }
     ],
     howCtaTitle: "Ready to see your score?",
-    howCtaMeta: "Free session · No account needed · Results in 60 seconds",
+    howCtaMeta: "Free session · No card required · First score in about 5 minutes",
     featureEyebrow: "Platform fit",
     featureTitle: "Everything speaks the same language: score improvement",
     featureCards: [
@@ -189,13 +189,13 @@ const sectionCopy = {
       { title: "Daily practice hooks", body: "Tools, prompts, and habits that keep you speaking consistently.", tag: "Habits" }
     ],
     testEyebrow: "Results",
-    testTitle: "Loved by learners worldwide",
-    testSubtitle: "Join thousands of students who improved their IELTS speaking score",
+    testTitle: "Inspect the product before upgrading",
+    testSubtitle: "Use your own transcript and feedback instead of relying on anonymous claims.",
     statsRow: [
-      { value: "50+", label: "Countries" },
-      { value: "1,000+", label: "Daily learners" },
-      { value: "7.2", label: "Avg. band score" },
-      { value: "89%", label: "Satisfaction rate" }
+      { value: "$0", label: "Free plan" },
+      { value: "4", label: "Free sessions per day" },
+      { value: "8 min", label: "Free speaking per day" },
+      { value: "3 days", label: "Plus weekly trial" }
     ],
     faqEyebrow: "FAQ",
     faqTitle: "Frequently asked questions",
@@ -227,14 +227,14 @@ const sectionCopy = {
   },
   tr: {
     badge: "Yapay zekâ destekli speaking practice",
-    badgeLive: "Bugün 1.000+ öğrenci pratik yapıyor",
-    trusted: "50+ ülkedeki öğrenciler tarafından kullanılıyor.",
+    badgeLive: "İlk ücretsiz skor hazır",
+    trusted: "Yükseltmeye karar vermeden önce ilk skorlu denemeni gör.",
     cta: "Ücretsiz Teste Başla",
-    ctaMicrocopy: "Kredi kartı gerekmez · 60 saniyede sonuç",
+    ctaMicrocopy: "Kredi kartı gerekmez · İlk skor yaklaşık 5 dakikada",
     ctaFree: "Ücretsiz Dene",
     demo: "Nasıl çalıştığını gör",
-    trustBar: "✓ Kayıt gerektirmez   ✓ Ücretsiz   ✓ 1.000+ aktif öğrenci",
-    scoreLabel: "Band skoru gelişti",
+    trustBar: "✓ Ücretsiz plan var   ✓ Free için kart gerekmez   ✓ Yenileme koşulları açık",
+    scoreLabel: "Tekrar sonrası örnek band sinyali",
     demoEyebrow: "Etkileşimli demo",
     demoTitle: "Ürünü kullanmadan önce öğrenme döngüsünü gör",
     demoSubtitle: "Gerçek bir kullanıcı hedefi seç ve SpeakAce’in tek cevabı nasıl daha güçlü bir tekrar denemesine çevirdiğini izle.",
@@ -290,7 +290,7 @@ const sectionCopy = {
     ],
     segmentEyebrow: "Gerçek kullanım senaryoları",
     segmentTitle: "Sadece bir speaking bot değil. Senin çalışma biçimine uyan bir akış.",
-    segmentSubtitle: "Sayfa hangi kullanıcıya nasıl uyduğunu net anlattığında dönüşüm daha kolay olur.",
+    segmentSubtitle: "Şu anki hazırlık şekline uyan çalışma akışını seç.",
     segments: [
       {
         icon: GraduationCap,
@@ -317,8 +317,8 @@ const sectionCopy = {
         cta: "Okul akışı"
       }
     ],
-    proofEyebrow: "Neden dönüştürür",
-    proofTitle: "Sayfa artık ciddi kullanıcıların ilk sorduğu üç soruya cevap veriyor",
+    proofEyebrow: "Ödeme öncesi",
+    proofTitle: "Tek ücretsiz denemeyle üç pratik soruyu yanıtla",
     proofCards: [
       {
         title: "Bu gerçekten sınava benziyor mu?",
@@ -340,7 +340,7 @@ const sectionCopy = {
       {
         icon: Zap,
         title: "Yapay Zeka Destekli Geri Bildirim",
-        body: "Her oturumda akıcılık, telaffuz, gramer ve tutarlılık değerlendirmesi alırsın."
+        body: "Akıcılık, telaffuz, gramer ve tutarlılık için AI pratik tahmini alırsın. Bu sonuç resmi sınav puanı değildir."
       },
       {
         icon: TrendingUp,
@@ -349,8 +349,8 @@ const sectionCopy = {
       },
       {
         icon: BookOpen,
-        title: "500+ Gerçek Soru",
-        body: "Gerçek IELTS ve TOEFL sorularıyla çalış. Aynı cevabı tekrar dene, gelişimi karşılaştır."
+        title: "Sınav biçimli soru bankası",
+        body: "IELTS ve TOEFL tarzı promptlarla çalış. Aynı cevabı tekrar dene ve denemelerini karşılaştır."
       }
     ],
     howEyebrow: "Nasıl çalışır",
@@ -362,7 +362,7 @@ const sectionCopy = {
       { step: 3, title: "İncele, düzelt, tekrar dene", body: "Transcript'i, tahmini skoru ve geliştirme notlarını görüp daha kontrollü bir yeni deneme yap." }
     ],
     howCtaTitle: "Skorunu görmeye hazır mısın?",
-    howCtaMeta: "Ücretsiz oturum · Hesap gerekmez · 60 saniyede sonuç",
+    howCtaMeta: "Ücretsiz oturum · Kart gerekmez · İlk skor yaklaşık 5 dakikada",
     featureEyebrow: "Platform uyumu",
     featureTitle: "Buradaki her şey aynı hedefe çalışıyor: skor gelişimi",
     featureCards: [
@@ -372,13 +372,13 @@ const sectionCopy = {
       { title: "Günlük pratik alışkanlığı", body: "Sürekli speaking'e bağlayan araçlar ve prompt'lar.", tag: "Alışkanlık" }
     ],
     testEyebrow: "Sonuçlar",
-    testTitle: "Dünya genelindeki öğrenciler seviyor",
-    testSubtitle: "IELTS speaking skorunu geliştiren binlerce öğrenciye katıl",
+    testTitle: "Yükseltmeden önce ürünü incele",
+    testSubtitle: "Anonim iddialar yerine kendi transcript ve geri bildirimini kullan.",
     statsRow: [
-      { value: "50+", label: "Ülke" },
-      { value: "1.000+", label: "Günlük öğrenci" },
-      { value: "7,2", label: "Ort. band skoru" },
-      { value: "%89", label: "Memnuniyet" }
+      { value: "$0", label: "Ücretsiz plan" },
+      { value: "4", label: "Günlük ücretsiz deneme" },
+      { value: "8 dk", label: "Günlük ücretsiz speaking" },
+      { value: "3 gün", label: "Plus haftalık deneme" }
     ],
     faqEyebrow: "SSS",
     faqTitle: "Sık sorulan sorular",
@@ -409,33 +409,6 @@ const sectionCopy = {
     ctaFinalButton: "Ücretsiz Başla"
   }
 } as const;
-
-const weeklyTestimonials = [
-  {
-    name: "Ayşe T.",
-    country: "🇹🇷 Turkey",
-    score: "5.5 → 7.0",
-    text: "I practiced every morning for 10 days. The transcript review helped me see exactly where I was repeating myself."
-  },
-  {
-    name: "Kenji M.",
-    country: "🇯🇵 Japan",
-    score: "6.0 → 7.5",
-    text: "The retry feature is what makes this different. I could hear the improvement between attempt one and attempt three."
-  },
-  {
-    name: "Priya K.",
-    country: "🇮🇳 India",
-    score: "6.5 → 7.5",
-    text: "SpeakAce shows why your score is low, not just what it is. That changed my Part 2 answers completely."
-  },
-  {
-    name: "Ahmed R.",
-    country: "🇪🇬 Egypt",
-    score: "5.0 → 6.5",
-    text: "Three weeks of daily practice. My fluency improved because the daily prompt habit finally gave me consistency."
-  }
-] as const;
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -1308,77 +1281,6 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                   borderRadius: "50%",
                   opacity: 0.05
                 }} />
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Testimonials ─────────────────────── */}
-      <section style={{ padding: "5rem 1.5rem" }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <motion.div
-            style={{ textAlign: "center", marginBottom: "3rem" }}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-          >
-            <span style={{ display: "inline-block", fontSize: "0.75rem", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.75rem" }}>
-              {t.testEyebrow}
-            </span>
-            <h2 style={{ fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 800, letterSpacing: "-0.02em", marginBottom: "0.75rem" }}>
-              {t.testTitle}
-            </h2>
-            <p style={{ fontSize: "1.0625rem", color: "var(--muted-foreground)" }}>{t.testSubtitle}</p>
-          </motion.div>
-
-          <motion.div
-            style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.25rem" }}
-            className="four-col-grid"
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-          >
-            {weeklyTestimonials.map((item) => (
-              <motion.div
-                key={item.name}
-                variants={itemVariants}
-                whileHover={{ y: -8 }}
-                style={{
-                  background: "var(--card)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "16px",
-                  padding: "1.5rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.875rem"
-                }}
-              >
-                <div style={{ display: "flex", gap: "0.25rem" }}>
-                  {[...Array(5)].map((_, i) => (
-                    <motion.span
-                      key={i}
-                      style={{ fontSize: "0.875rem" }}
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.1 * i }}
-                    >⭐</motion.span>
-                  ))}
-                </div>
-                <p style={{ fontSize: "0.875rem", color: "var(--muted-foreground)", lineHeight: 1.6, flex: 1 }}>
-                  &ldquo;{item.text}&rdquo;
-                </p>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
-                  <div>
-                    <strong style={{ display: "block", fontSize: "0.875rem" }}>{item.name}</strong>
-                    <span style={{ fontSize: "0.75rem", color: "var(--muted-foreground)" }}>{item.country}</span>
-                  </div>
-                  <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--accent)", background: "oklch(0.71 0.18 165.41 / 0.1)", padding: "0.25rem 0.625rem", borderRadius: "100px", whiteSpace: "nowrap" }}>
-                    {item.score}
-                  </span>
-                </div>
               </motion.div>
             ))}
           </motion.div>

@@ -2,13 +2,50 @@
 
 import { useMemo, useState } from "react";
 import { useAppState } from "@/components/providers";
+import { calculateIeltsOverallBand } from "@/lib/ielts-score";
 import { getToolVisual } from "@/lib/tool-visuals";
 
 const cueCards = [
-  "Describe a useful object you use every day.",
-  "Describe a person who helped you during a difficult time.",
-  "Describe a place where you feel relaxed.",
-  "Describe a skill you want to learn in the future."
+  {
+    prompt: "Describe a useful object you use every day.",
+    bullets: ["what the object is", "when you started using it", "how you use it", "why it is useful to you"],
+    followUps: ["Why do people replace useful objects so often?", "How has technology changed everyday objects?"]
+  },
+  {
+    prompt: "Describe a person who helped you during a difficult time.",
+    bullets: ["who the person was", "what difficulty you faced", "how the person helped", "how you felt afterwards"],
+    followUps: ["Why are some people more willing to help others?", "Should schools teach young people how to support each other?"]
+  },
+  {
+    prompt: "Describe a place where you feel relaxed.",
+    bullets: ["where the place is", "how often you go there", "what you do there", "why it helps you relax"],
+    followUps: ["Why are quiet public spaces important?", "Do people find it harder to relax today than in the past?"]
+  },
+  {
+    prompt: "Describe a skill you want to learn in the future.",
+    bullets: ["what the skill is", "why you want to learn it", "how you would learn it", "how it could help you"],
+    followUps: ["Which skills will be most valuable in the future?", "Is learning from a teacher better than learning online?"]
+  },
+  {
+    prompt: "Describe a journey that you remember well.",
+    bullets: ["where you went", "who you travelled with", "what happened on the journey", "why you remember it"],
+    followUps: ["Why do people enjoy travelling?", "How might transport change in the next twenty years?"]
+  },
+  {
+    prompt: "Describe a piece of advice that was useful to you.",
+    bullets: ["who gave you the advice", "what the advice was", "when you used it", "why it was useful"],
+    followUps: ["Why do people sometimes ignore good advice?", "Whose advice do young people trust most?"]
+  },
+  {
+    prompt: "Describe an event you enjoyed with other people.",
+    bullets: ["what the event was", "where it took place", "who was there", "why you enjoyed it"],
+    followUps: ["Why are shared experiences important?", "Will online events become more popular than in-person events?"]
+  },
+  {
+    prompt: "Describe something you did that made you feel proud.",
+    bullets: ["what you did", "how difficult it was", "who knew about it", "why it made you proud"],
+    followUps: ["What makes people feel successful?", "Should children be rewarded for effort or results?"]
+  }
 ];
 
 const part1Questions = [
@@ -134,13 +171,73 @@ const transitions = [
   "That is why I would say..."
 ];
 
+const ieltsBandOptions = Array.from({ length: 19 }, (_, index) => index / 2);
+
+const calculatorCopy = {
+  en: {
+    summary: "Enter all four IELTS section scores to calculate the official overall-band rounding.",
+    listening: "Listening",
+    reading: "Reading",
+    writing: "Writing",
+    speaking: "Speaking",
+    overall: "Overall band",
+    average: "Raw average",
+    rule: "IELTS rounds the four-section average to the nearest whole or half band.",
+    disclaimer: "Planning estimate only. Your Test Report Form is the official result."
+  },
+  tr: {
+    summary: "Resmi genel band yuvarlamasını hesaplamak için dört IELTS bölüm skorunu gir.",
+    listening: "Dinleme",
+    reading: "Okuma",
+    writing: "Yazma",
+    speaking: "Konuşma",
+    overall: "Genel band",
+    average: "Ham ortalama",
+    rule: "IELTS, dört bölüm ortalamasını en yakın tam veya yarım banda yuvarlar.",
+    disclaimer: "Yalnızca planlama içindir. Resmi sonuç Test Report Form belgesidir."
+  },
+  de: {
+    summary: "Gib alle vier IELTS-Teilnoten ein, um die offizielle Gesamtband-Rundung zu berechnen.",
+    listening: "Hören",
+    reading: "Lesen",
+    writing: "Schreiben",
+    speaking: "Sprechen",
+    overall: "Gesamtband",
+    average: "Rohdurchschnitt",
+    rule: "IELTS rundet den Durchschnitt auf die nächste ganze oder halbe Bandstufe.",
+    disclaimer: "Nur zur Planung. Das Test Report Form enthält das offizielle Ergebnis."
+  },
+  es: {
+    summary: "Introduce las cuatro puntuaciones de IELTS para calcular el redondeo de la banda global.",
+    listening: "Comprensión auditiva",
+    reading: "Lectura",
+    writing: "Escritura",
+    speaking: "Expresión oral",
+    overall: "Banda global",
+    average: "Promedio bruto",
+    rule: "IELTS redondea el promedio a la banda entera o media más cercana.",
+    disclaimer: "Solo para planificación. El Test Report Form contiene el resultado oficial."
+  },
+  fr: {
+    summary: "Saisissez les quatre scores IELTS pour calculer l'arrondi officiel de la note globale.",
+    listening: "Compréhension orale",
+    reading: "Lecture",
+    writing: "Écriture",
+    speaking: "Expression orale",
+    overall: "Note globale",
+    average: "Moyenne brute",
+    rule: "L'IELTS arrondit la moyenne à la bande entière ou à la demi-bande la plus proche.",
+    disclaimer: "Estimation de planification. Le Test Report Form reste le résultat officiel."
+  }
+} as const;
+
 export function ToolWorkbench({ slug, title }: { slug: string; title: string }) {
   const { language, currentUser, signedIn } = useAppState();
   const tr = language === "tr";
-  const [fluency, setFluency] = useState(6);
-  const [pronunciation, setPronunciation] = useState(6);
-  const [grammar, setGrammar] = useState(6);
-  const [vocabulary, setVocabulary] = useState(6);
+  const [listening, setListening] = useState(6);
+  const [reading, setReading] = useState(6);
+  const [writing, setWriting] = useState(6);
+  const [speaking, setSpeaking] = useState(6);
   const [minutesPerDay, setMinutesPerDay] = useState(15);
   const [daysPerWeek, setDaysPerWeek] = useState(4);
   const [goalType, setGoalType] = useState<"score" | "fluency" | "consistency">("score");
@@ -151,15 +248,15 @@ export function ToolWorkbench({ slug, title }: { slug: string; title: string }) 
   const [saveMessage, setSaveMessage] = useState("");
   const [tipIndex, setTipIndex] = useState(0);
 
-  const estimatedBand = useMemo(() => {
-    const avg = (fluency + pronunciation + grammar + vocabulary) / 4;
-    return avg.toFixed(1);
-  }, [fluency, pronunciation, grammar, vocabulary]);
+  const calculatorText =
+    calculatorCopy[language as keyof typeof calculatorCopy] ?? calculatorCopy.en;
+  const overallBand = calculateIeltsOverallBand([listening, reading, writing, speaking]);
 
   const visual = useMemo(() => getToolVisual(slug, tr), [slug, tr]);
+  const currentCueCard = cueCards[promptIndex % cueCards.length];
 
   const generatorOutput = useMemo(() => {
-    if (slug.includes("cue-card")) return cueCards[promptIndex % cueCards.length];
+    if (slug.includes("cue-card")) return cueCards[promptIndex % cueCards.length].prompt;
     if (slug.includes("part-1-question")) return part1Questions[promptIndex % part1Questions.length];
     if (slug.includes("follow-up-question")) return followUpQuestions[promptIndex % followUpQuestions.length];
     if (slug.includes("topic-of-the-day")) {
@@ -254,9 +351,7 @@ export function ToolWorkbench({ slug, title }: { slug: string; title: string }) 
 
   const toolSummary = useMemo(() => {
     if (isCalculator) {
-      return tr
-        ? "Skoru gormek yetmez; hangi bileşen seni aşağı çekiyor onu da anlaman gerekir."
-        : "A useful score tool should show what is pulling your band down, not only the final number.";
+      return calculatorText.summary;
     }
     if (isAnswerChecker) {
       return tr
@@ -271,7 +366,7 @@ export function ToolWorkbench({ slug, title }: { slug: string; title: string }) 
     return tr
       ? "Bu araclar boş sayfa korkusunu azaltmak icin hizli speaking baslangici uretir."
       : "These tools reduce blank-page friction and help you start speaking faster.";
-  }, [isAnswerChecker, isCalculator, isPlanBuilder, tr]);
+  }, [calculatorText.summary, isAnswerChecker, isCalculator, isPlanBuilder, tr]);
 
   const studyPlan = useMemo(() => {
     const focus = minutesPerDay >= 20 ? (tr ? "1 tam deneme + 1 tekrar" : "1 full attempt + 1 retry") : tr ? "1 kısa drill + 1 transcript review" : "1 short drill + 1 transcript review";
@@ -383,25 +478,30 @@ export function ToolWorkbench({ slug, title }: { slug: string; title: string }) 
       {isCalculator ? (
         <div className="tool-form-grid">
           {[
-            { label: tr ? "Akicilik" : "Fluency", value: fluency, set: setFluency },
-            { label: tr ? "Telaffuz" : "Pronunciation", value: pronunciation, set: setPronunciation },
-            { label: tr ? "Grammar" : "Grammar", value: grammar, set: setGrammar },
-            { label: tr ? "Kelime" : "Vocabulary", value: vocabulary, set: setVocabulary }
+            { label: calculatorText.listening, value: listening, set: setListening },
+            { label: calculatorText.reading, value: reading, set: setReading },
+            { label: calculatorText.writing, value: writing, set: setWriting },
+            { label: calculatorText.speaking, value: speaking, set: setSpeaking }
           ].map((item) => (
             <label key={item.label} className="card" style={{ padding: "0.95rem", background: "var(--surface-strong)", display: "grid", gap: "0.5rem" }}>
               <strong>{item.label}</strong>
-              <input type="range" min="4" max="9" step="0.5" value={item.value} onChange={(event) => item.set(Number(event.target.value))} />
-              <span className="practice-meta">{item.value.toFixed(1)}</span>
+              <select
+                className="practice-select"
+                value={item.value}
+                onChange={(event) => item.set(Number(event.target.value))}
+              >
+                {ieltsBandOptions.map((score) => (
+                  <option key={score} value={score}>{score.toFixed(1)}</option>
+                ))}
+              </select>
             </label>
           ))}
           <div className="card tool-output">
-            <span className="pill">{tr ? "Tahmini band" : "Estimated band"}</span>
-            <strong>{estimatedBand}</strong>
-            <p>
-              {tr
-                ? "Skoru daha hizli yukari tasiyan sey genelde tek bir alani muthis yapmak degil, dort alani da daha dengeli hale getirmektir."
-                : "The fastest score lift usually comes from balancing all four categories, not from over-fixing only one."}
-            </p>
+            <span className="pill">{calculatorText.overall}</span>
+            <strong>{overallBand.overall.toFixed(1)}</strong>
+            <p>{calculatorText.average}: {overallBand.average.toFixed(2)}</p>
+            <p>{calculatorText.rule}</p>
+            <span className="practice-meta">{calculatorText.disclaimer}</span>
           </div>
         </div>
       ) : null}
@@ -488,6 +588,26 @@ export function ToolWorkbench({ slug, title }: { slug: string; title: string }) 
           <div className="card tool-output">
             <span className="pill">{tr ? "Anlik cikti" : "Instant output"}</span>
             <strong>{generatorOutput}</strong>
+            {slug.includes("cue-card") ? (
+              <div style={{ display: "grid", gap: "0.85rem" }}>
+                <div>
+                  <span className="practice-meta">{tr ? "Şunlardan bahset" : "You should say"}</span>
+                  <ul style={{ margin: "0.55rem 0 0", paddingLeft: "1.2rem", lineHeight: 1.75 }}>
+                    {currentCueCard.bullets.map((bullet) => (
+                      <li key={bullet}>{bullet}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <span className="practice-meta">{tr ? "Part 3 devam soruları" : "Part 3 follow-up questions"}</span>
+                  <ul style={{ margin: "0.55rem 0 0", paddingLeft: "1.2rem", lineHeight: 1.75 }}>
+                    {currentCueCard.followUps.map((question) => (
+                      <li key={question}>{question}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ) : null}
             <p>
               {tr
                 ? "Bunu direkt kopyalayip practice ekraninda speaking denemesi olarak kullanabilirsin."

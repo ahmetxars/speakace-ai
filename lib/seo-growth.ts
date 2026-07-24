@@ -77,7 +77,7 @@ export const comparisonPages: SeoGrowthEntry[] = [
     bullets: [
       "Teacher review, class codes, homework, and analytics matter.",
       "Students need enough self-study structure to keep practicing outside class.",
-      "A platform becomes more sellable when both B2C and B2B use cases work."
+      "The best platform keeps student practice and teacher visibility in one workflow."
     ],
     cta: "Open the teacher demo page to see how SpeakAce supports class workflows."
   }
@@ -87,25 +87,25 @@ export const toolPages: SeoGrowthEntry[] = [
   {
     slug: "ielts-band-score-calculator",
     title: "IELTS Band Score Calculator",
-    description: "Use this IELTS band score calculator guide to understand how speaking performance can move toward a higher score.",
-    intro: "A speaking calculator page attracts strong search intent because students want a simple answer: what might this response score and how do I improve it?",
+    description: "Calculate your overall IELTS band from Listening, Reading, Writing, and Speaking scores with official half-band rounding.",
+    intro: "Enter your four IELTS section scores to calculate the overall band. The calculator averages Listening, Reading, Writing, and Speaking, then rounds the result to the nearest whole or half band.",
     bullets: [
-      "Band prediction becomes more useful when paired with transcript review.",
-      "Students usually need one next step, not only a score.",
-      "The fastest improvement comes from score estimate plus retry."
+      "Each section accepts scores from 0 to 9 in half-band steps.",
+      "An average ending in .25 rounds up to the next half band; .75 rounds up to the next whole band.",
+      "This calculator is for planning only. Your official score comes from an authorized IELTS test."
     ],
-    cta: "Practice one answer in SpeakAce and see an estimated score with improvement guidance.",
+    cta: "Use your target band to choose the speaking score you need, then test one answer for free.",
     actionLabel: "Calculate score"
   },
   {
     slug: "ielts-cue-card-generator",
     title: "IELTS Cue Card Generator",
-    description: "Get IELTS cue card practice ideas, stronger Part 2 prompts, and a simple way to turn them into speaking practice.",
-    intro: "Cue card pages work well because many learners search for fresh Part 2 topics and stronger prompts to practice with every day.",
+    description: "Generate realistic IELTS Speaking Part 2 cue cards with bullet points, follow-up questions, and a two-minute practice structure.",
+    intro: "Generate a realistic IELTS Speaking Part 2 cue card, take one minute to make notes, then speak for up to two minutes. Every card includes planning bullets and Part 3-style follow-up questions.",
     bullets: [
-      "Good cue cards are easier to answer when the structure is simple.",
-      "Part 2 improves quickly when you combine notes, transcript review, and retry.",
-      "A generator page can pull search traffic and convert to active practice."
+      "Use short keywords during the one-minute preparation time instead of writing a script.",
+      "Build the answer around a clear beginning, two details, and a short reflection.",
+      "Retry the same card after reviewing your transcript to improve fluency and structure."
     ],
     cta: "Open the Part 2 topic hub and turn a cue card into a real speaking attempt.",
     actionLabel: "Generate cue card"
@@ -131,7 +131,7 @@ export const toolPages: SeoGrowthEntry[] = [
     bullets: [
       "Part 3 needs deeper examples and clearer logic.",
       "Follow-up style practice helps learners think under pressure.",
-      "A question generator can turn blog traffic into real exam prep."
+      "Follow-up questions make it easier to practise deeper reasons and examples."
     ],
     cta: "Open the Part 3 question guide and practice with a stronger answer structure.",
     actionLabel: "Generate follow-ups"
@@ -140,7 +140,7 @@ export const toolPages: SeoGrowthEntry[] = [
     slug: "english-speaking-topic-generator",
     title: "English Speaking Topic Generator",
     description: "Use an English speaking topic generator to find daily ideas for IELTS-style practice and confidence building.",
-    intro: "Topic generators are strong top-of-funnel pages because many visitors are not ready to buy yet, but they are ready to try one prompt.",
+    intro: "A topic generator removes the hardest part of a short practice session: deciding what to talk about.",
     bullets: [
       "Low-friction prompts increase the chance of first practice.",
       "Topic hubs work well for organic discovery.",
@@ -283,7 +283,7 @@ const extraComparisonPages: SeoGrowthEntry[] = [
     intro: "TestGlider is useful for broader test prep, while SpeakAce goes deeper into repeated speaking attempts, retries, and ongoing student practice.",
     bullets: [
       "SpeakAce is stronger when the goal is frequent speaking repetition.",
-      "Topic hubs and tools create more top-of-funnel entry points for learners.",
+      "Topic hubs and tools make it easier to begin without writing a prompt.",
       "Teacher workflows are easier to integrate into small-group course models."
     ],
     cta: "Use the free speaking test and see if the practice loop fits your style better."
@@ -569,7 +569,7 @@ comparisonPages.push(
     bullets: [
       "Task clarity improves consistency.",
       "Retry loops often matter more than one-off model answers.",
-      "A stronger content ecosystem helps search visitors become users."
+      "Related examples and tools make each task easier to practise independently."
     ],
     cta: "Open a real task inside SpeakAce and compare the daily flow yourself."
   }
@@ -584,7 +584,7 @@ toolPages.push(
     bullets: [
       "A checker is more useful when it points to one next action.",
       "Transcript review turns a generic checker into a learning loop.",
-      "Short answer-check pages are strong top-of-funnel assets."
+      "A short answer check is useful when it ends with one specific revision."
     ],
     cta: "Run one answer through SpeakAce and see the transcript plus feedback.",
     actionLabel: "Check answer"

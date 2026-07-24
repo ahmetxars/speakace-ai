@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 import { getAllBlogSlugs } from "@/lib/blog-content";
-import { comparisonPages, guidePages, toolPages } from "@/lib/seo-growth";
 import { listAllCustomBlogSlugs } from "@/lib/server/custom-blog";
 import { siteConfig } from "@/lib/site";
 import { seoTopicPages } from "@/lib/seo-topics";
@@ -26,9 +25,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/case-studies",
     "/weekly-ielts-speaking-challenge",
     "/ielts-speaking-sample-answers",
-    "/compare",
     "/tools",
-    "/guides",
+    "/tools/ielts-band-score-calculator",
+    "/tools/ielts-cue-card-generator",
     "/ielts-speaking-ai",
     "/improve-ielts-speaking-score",
     "/ai-english-speaking-practice",
@@ -41,9 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/ielts-speaking-part-2-topics",
     "/ielts-speaking-part-3-questions",
     "/english-speaking-confidence",
-    "/blog",
-    "/auth",
-    "/app"
+    "/blog"
   ];
   const blogRoutes = getAllBlogSlugs().map((slug) => `/blog/${slug}`);
   let customBlogRoutes: string[] = [];
@@ -53,10 +50,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("Failed to load custom blog routes for sitemap.", error);
   }
   const topicRoutes = seoTopicPages.map((topic) => `/ielts-speaking-topics/${topic.slug}`);
-  const comparisonRoutes = comparisonPages.map((item) => `/compare/${item.slug}`);
-  const toolRoutes = toolPages.map((item) => `/tools/${item.slug}`);
-  const guideRoutes = guidePages.map((item) => `/guides/${item.slug}`);
-  const allRoutes = [...routes, ...blogRoutes, ...customBlogRoutes, ...topicRoutes, ...comparisonRoutes, ...toolRoutes, ...guideRoutes];
+  const allRoutes = [...new Set([...routes, ...blogRoutes, ...customBlogRoutes, ...topicRoutes])];
 
   const highPriorityRoutes = new Set([
     "",
@@ -75,7 +69,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return allRoutes.map((route) => ({
     url: `${siteConfig.domain}${route}`,
-    lastModified: new Date(),
     changeFrequency: (frequentRoutes.has(route) ? "weekly" : "monthly") as "weekly" | "monthly",
     priority: route === ""
       ? 1
@@ -85,7 +78,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           ? 0.82
           : route.startsWith("/ielts-speaking-topics/")
             ? 0.78
-            : route.startsWith("/compare/") || route.startsWith("/tools/") || route.startsWith("/guides/")
+            : route.startsWith("/tools/")
               ? 0.75
               : 0.8
   }));

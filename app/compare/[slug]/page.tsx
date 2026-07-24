@@ -40,6 +40,7 @@ export async function generateMetadata({
     title: page.title,
     description: page.description,
     alternates: { canonical: `/compare/${page.slug}` },
+    robots: { index: false, follow: true },
     openGraph: {
       title: `${page.title} | SpeakAce`,
       description: page.description,
@@ -77,11 +78,11 @@ export default async function ComparisonDetailPage({
           ))}
         </div>
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
-          <span className="eyebrow">Decision helper</span>
-          <h2 style={{ margin: 0 }}>Comparison traffic converts when the visitor can test the difference fast</h2>
+          <span className="eyebrow">Choose with evidence</span>
+          <h2 style={{ margin: 0 }}>Test the workflow before choosing a speaking tool</h2>
           <p className="practice-copy" style={{ margin: 0 }}>
-            People searching comparison queries are already evaluating options. The strongest next
-            step is a direct hands-on action that lets them feel the workflow instead of reading one more paragraph.
+            Record one real answer, review the transcript and feedback, and check whether the next
+            step is clear enough to act on. A short hands-on test is more useful than feature lists alone.
           </p>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
             {relatedLinks.map((item) => (
@@ -96,8 +97,8 @@ export default async function ComparisonDetailPage({
             <span className="eyebrow">Try it yourself</span>
             <h2 style={{ margin: "0.8rem 0 0.5rem" }}>{page.cta}</h2>
             <p className="practice-copy">
-              Comparison content converts best when it quickly moves the visitor into a real product
-              action instead of stopping at theory.
+              Start with one free answer and decide from your own result. No paid plan is required
+              for the first scored attempt.
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>

@@ -258,6 +258,8 @@ This is the project-wide “where things live” map.
   - `checkout_completed` is emitted server-side only for Lemon `order_created`; `subscription_created` arrives for the same initial sale and must not be counted as a second conversion.
   - `billing_sync_pending` is emitted from the signed-in billing success page only after repeated secure plan-sync checks still return free access; admin reporting counts distinct affected accounts over 7 and 30 days.
   - successful or recovered subscription payments emit `subscription_revenue_received` with Lemon invoice value and currency.
+  - OpenAI transcription and feedback calls write privacy-safe model/token/cost records through `lib/server/ai-usage.ts`; prompts, drafts, transcripts, names, and email addresses are never stored in `ai_usage_events` or sent with the PostHog usage event.
+  - Admin reports 30-day AI request count, token volume, and estimated cost. Known default model rates are built in; custom model deployments must set the matching `OPENAI_*_INPUT_USD_PER_1M` and `OPENAI_*_OUTPUT_USD_PER_1M` env values.
 
 ### Email and lifecycle product
 
@@ -267,11 +269,13 @@ This is the project-wide “where things live” map.
 - Sequences:
   - `lib/server/email-sequences.ts`
   - onboarding is intentionally capped at five messages on days 0, 1, 4, 10, and 21.
+  - an incomplete learner onboarding form is stored per authenticated user in local storage for 30 days and resumes at the last completed step; successful completion clears the draft.
   - all lifecycle sends share a persistent daily budget (`EMAIL_LIFECYCLE_DAILY_BUDGET`, default `20`); trial lifecycle messages are reserved ahead of lower-intent tips.
   - password signups receive onboarding only after successful email verification; unverified accounts are excluded from lifecycle marketing
   - onboarding email #2 is sent after one day; activated learners receive a checkout-free, attributed `email_day_one_return` practice link while non-activated learners keep the first-score prompt
   - learners with no speaking sessions receive first-score activation content instead of checkout pressure on day 7/10
   - the legacy `daily_tip` template is limited to verified learners active in the last 30 days, at most once per 7 days, and never within 24 hours of an onboarding email
+  - verified Free learners with an abandoned checkout can receive one attributed `checkout_recovery` email after 45 minutes and before 72 hours, with a 14-day template dedupe and the shared 24-hour lifecycle cooldown.
   - the lifecycle cron suppresses all provider sends when a current Resend daily/monthly quota failure is present; after a quota upgrade, a successful Admin email test records a recovery probe that clears only older failures without disabling future quota protection
   - Admin reports 24-hour email delivery/failure health, active quota blocking, and attributed day-one practice returns over 30 days
   - email quick-start links retain their attributed `/app/practice` destination through both password and Google sign-in using `lib/auth-redirect.ts`
@@ -593,6 +597,8 @@ Role routing starts in `lib/roles.ts`, while capability enforcement is split acr
   - local writing scoring heuristics and structured guidance
 - `lib/server/openai.ts`
   - OpenAI transcription and structured feedback generation for speaking and writing
+- `lib/server/ai-usage.ts`
+  - best-effort AI request telemetry, model-specific cost estimates, schema compatibility, and 30-day admin summaries
 - `lib/prompts.ts`
   - speaking prompt selection
 - `lib/writing-prompts.ts`
@@ -608,6 +614,10 @@ Role routing starts in `lib/roles.ts`, while capability enforcement is split acr
   - DB-backed custom blog CMS
 - `lib/seo.ts`, `lib/blog-seo.ts`, `lib/seo-growth.ts`, `lib/seo-topics.ts`
   - metadata/SEO helpers
+- authenticated `/app/**` and `/auth` routes are `noindex`; they must not be reintroduced into `app/sitemap.ts`.
+- thin comparison and guide detail pages remain available for navigation but are `noindex` until their content quality is raised.
+- only the IELTS overall band calculator and cue-card generator are currently indexable tool detail pages; other generated tool routes are intentionally excluded from the sitemap and marked `noindex`.
+- the three legacy broken blog URLs for Part 1 sample answers and Part 2 cue-card/sample-answer articles are permanent redirects to their maintained public equivalents.
 
 ### Billing and payments
 
@@ -653,6 +663,7 @@ Main tables in `db/schema.sql`:
 - `study_list_tasks`
 - `study_task_reminders`
 - `analytics_events`
+- `ai_usage_events`
 - `auth_activity`
 - `billing_events`
 - `announcements`
