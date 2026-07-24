@@ -1,6 +1,5 @@
 import { sendEmail } from "@/lib/server/email";
 import { hasDatabaseUrl, getSql } from "@/lib/server/db";
-import { couponCatalog } from "@/lib/commerce";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
 const PRACTICE_URL = `${SITE_URL}/app/practice`;
@@ -8,7 +7,7 @@ const FIRST_SCORE_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interview
 const DAY_ONE_RETURN_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interview&activation=email_day_one_return`;
 const PRICING_URL = `${SITE_URL}/pricing`;
 const BILLING_URL = `${SITE_URL}/app/billing`;
-const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&billing=annual&coupon=LAUNCH20&campaign=onboarding_email`;
+const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&billing=annual&campaign=onboarding_email`;
 const EMAIL_QUOTA_RECOVERY_TEMPLATE = "quota_recovery_probe";
 let emailSequenceSchemaEnsured = false;
 
@@ -677,10 +676,10 @@ function buildEmail12(name: string) {
       ${checkItem("<strong>Full score history and trend tracking</strong> — watch your band arc over time")}
     </div>
 
-    ${highlight("Use code <strong>COMEBACK</strong> at checkout for <strong>20% off your first week</strong>. No expiry on this offer.")}
+    ${highlight("<strong>Start with the free plan if you are not ready to upgrade.</strong> Plus is available whenever you need more daily speaking and deeper feedback.")}
 
     <div style="margin:28px 0;display:flex;gap:12px;flex-wrap:wrap">
-      ${primaryBtn(`${CHECKOUT_URL}&coupon=COMEBACK`, "Claim 20% off Plus &rarr;")}
+      ${primaryBtn(CHECKOUT_URL, "See Plus annual &rarr;")}
       &nbsp;&nbsp;
       ${secondaryBtn(PRACTICE_URL, "Stay on free plan")}
     </div>
@@ -688,9 +687,9 @@ function buildEmail12(name: string) {
     <p style="margin:20px 0 0;color:#9a7060;font-size:0.85em;line-height:1.7">Good luck with your IELTS preparation, whatever path you choose.</p>
   `);
   return {
-    subject: "Last email from SpeakAce — a 20% offer inside",
+    subject: "Last email from SpeakAce — your practice is still here",
     html,
-    text: `Hi ${greeting}, last email from SpeakAce. Use COMEBACK for 20% off Plus: ${CHECKOUT_URL}&coupon=COMEBACK — or stay free: ${PRACTICE_URL}`
+    text: `Hi ${greeting}, last email from SpeakAce. See Plus annual: ${CHECKOUT_URL} — or stay free: ${PRACTICE_URL}`
   };
 }
 
@@ -938,7 +937,6 @@ function buildPracticeLimitRecoveryCheckoutUrl(reason: PracticeLimitRecoveryReas
   const params = new URLSearchParams({
     plan: "plus",
     billing: "weekly",
-    coupon: couponCatalog.LAUNCH20.code,
     campaign: `practice_limit_recovery_${reason}`,
     cta: `/email/practice_limit_recovery/${reason}`,
     cta_event: "checkout_initiated"
@@ -971,7 +969,7 @@ export function buildPracticeLimitRecoveryEmailContent(input: {
       ${checkItem("Keep the full transcript and AI feedback loop moving")}
     </div>
 
-    ${highlight("<strong>3-day Plus trial: $0 today.</strong> The base price is $3.99/week after the trial, and the launch discount is already attached. Checkout shows the exact renewal amount before you confirm.")}
+    ${highlight("<strong>3-day Plus trial: $0 today.</strong> Unless cancelled before the trial ends, the plan renews at $3.99/week. Checkout shows the exact terms before you confirm.")}
 
     <div style="margin:24px 0 10px">
       ${primaryBtn(checkoutUrl, "Continue now for $0 today &rarr;")}
@@ -984,7 +982,7 @@ export function buildPracticeLimitRecoveryEmailContent(input: {
       ? "Continue the answer you just improved"
       : "Continue the practice you started today",
     html,
-    text: `Hi ${greeting}, ${context} Start a 3-day Plus trial for $0 today; the base price is $3.99/week after the trial and the launch discount is attached. Checkout shows the exact renewal amount before confirmation: ${checkoutUrl}. Prefer free? Return when your limit resets: ${PRACTICE_URL}`
+    text: `Hi ${greeting}, ${context} Start a 3-day Plus trial for $0 today. Unless cancelled before the trial ends, it renews at $3.99/week. Checkout shows the exact terms before confirmation: ${checkoutUrl}. Prefer free? Return when your limit resets: ${PRACTICE_URL}`
   };
 }
 

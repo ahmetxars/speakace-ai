@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, Clock3, GraduationCap, School, TrendingUp } from "lucide-react";
+import { CheckCircle2, Clock3, GraduationCap, TrendingUp } from "lucide-react";
 import { MarketingSchema } from "@/components/marketing-schema";
 import { PricingCards } from "@/components/pricing-cards";
 import { TrackedLink } from "@/components/tracked-link";
@@ -8,7 +8,6 @@ import {
   buildPlanCheckoutPath,
   commerceConfig,
   commerceNumbers,
-  couponCatalog,
   formatUsd,
   getAnnualMonthlyEquivalent,
   getPlanComparison
@@ -26,7 +25,7 @@ const pricingCopy = {
     heading: "IELTS speaking practice pricing built around faster score improvement",
     intro:
       "Start free, see your score first, then unlock speaking plus Writing Task 2 feedback, more daily practice time, and a stronger IELTS scoring workflow.",
-    launchOffer: "Launch offer",
+    launchOffer: "Trial terms",
     bestFor: "Best for",
     bestForValue: "Daily IELTS score improvement",
     corePromise: "Core promise",
@@ -48,12 +47,6 @@ const pricingCopy = {
         body: "Best if you want daily speaking volume, deeper feedback, and a retry loop strong enough to move your score faster.",
         fit: "Use this if you want steady band improvement without expensive tutoring."
       },
-      {
-        icon: School,
-        title: "Pro",
-        body: "Best if you need maximum volume, stronger tracking, and a plan that supports heavier practice or coaching workflows.",
-        fit: "Use this if speaking practice is already a serious weekly routine."
-      }
     ],
     roiEyebrow: "Why it pays off",
     roiTitle: "What you are really paying for is repetition with useful feedback",
@@ -82,7 +75,7 @@ const pricingCopy = {
     heading: "IELTS speaking ve writing pratiği için daha hızlı skor gelişimine uygun fiyatlar",
     intro:
       "Ücretsiz başla, önce skorunu gör, sonra speaking ile birlikte Writing Task 2 geri bildirimi, daha fazla günlük pratik süresi ve daha güçlü bir IELTS skorlama akışı aç.",
-    launchOffer: "Tanıtım teklifi",
+    launchOffer: "Deneme koşulları",
     bestFor: "En uygun kullanım",
     bestForValue: "Günlük IELTS skor gelişimi",
     corePromise: "Ana vaat",
@@ -104,12 +97,6 @@ const pricingCopy = {
         body: "Günlük speaking hacmi, daha derin geri bildirim ve skoru daha hızlı hareket ettiren retry döngüsü isteyenler için uygun.",
         fit: "Pahalı özel ders olmadan düzenli band gelişimi istiyorsan bunu kullan."
       },
-      {
-        icon: School,
-        title: "Pro",
-        body: "Daha yüksek hacim, daha güçlü takip ve yoğun pratik ya da koçluk akışı isteyen kullanıcılar için uygun.",
-        fit: "Speaking pratiği zaten ciddi bir haftalık rutine dönüştüyse bunu kullan."
-      }
     ],
     roiEyebrow: "Neden karşılığını verir",
     roiTitle: "Aslında satın aldığın şey, faydalı geri bildirimle tekrar edebilmek",
@@ -419,7 +406,7 @@ export default async function PricingPage() {
         <div className="stats-strip">
           <div className="card stat-strip-card">
             <div className="practice-meta">{copy.launchOffer}</div>
-            <strong>{couponCatalog.LAUNCH20.code} for first checkout</strong>
+            <strong>$0 today, then $3.99/week after the 3-day trial</strong>
           </div>
           <div className="card stat-strip-card">
             <div className="practice-meta">{copy.bestFor}</div>
@@ -504,26 +491,6 @@ export default async function PricingPage() {
         </div>
 
         <PricingCards />
-
-        <div className="card institution-cta">
-          <div>
-            <span className="eyebrow">Teacher and school revenue</span>
-            <h2 style={{ margin: "0.8rem 0 0.5rem" }}>Selling to one student is good. Selling to one teacher cohort is better.</h2>
-            <p className="practice-copy">
-              SpeakAce already includes teacher and institution workflows. If a teacher brings 10 to 30
-              learners onto the platform, that usually outgrows individual sales much faster than waiting
-              for one-by-one upgrades.
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-            <Link className="button button-primary" href="/for-schools">
-              Explore school plans
-            </Link>
-            <Link className="button button-secondary" href="/reviews">
-              See teacher proof
-            </Link>
-          </div>
-        </div>
 
         <div className="card quick-pitch">
           <h2 style={{ marginBottom: "0.6rem" }}>Why most first-time buyers should start with Plus</h2>
@@ -616,14 +583,13 @@ export default async function PricingPage() {
             </Link>
             <TrackedLink
               className="button button-secondary"
-              href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "pricing_bottom" })}
+              href={buildPlanCheckoutPath({ plan: "plus", campaign: "pricing_bottom" })}
               analyticsEvent="checkout_initiated"
               analyticsPath="/pricing/bottom/plus"
               gaEvent="begin_checkout"
               gaParams={{
                 currency: "USD",
                 value: commerceNumbers.plusWeeklyPrice,
-                coupon: couponCatalog.LAUNCH20.code,
                 items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: commerceNumbers.plusWeeklyPrice, quantity: 1 }]
               }}
             >

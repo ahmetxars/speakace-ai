@@ -174,6 +174,11 @@ create table if not exists analytics_events (
   visitor_id text,
   event text not null,
   path text,
+  event_id text,
+  source text,
+  plan text,
+  locale text,
+  occurred_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -340,6 +345,11 @@ alter table users add column if not exists trial_ends_at timestamptz;
 alter table users add column if not exists referral_code_used text;
 alter table analytics_events alter column user_id drop not null;
 alter table analytics_events add column if not exists visitor_id text;
+alter table analytics_events add column if not exists event_id text;
+alter table analytics_events add column if not exists source text;
+alter table analytics_events add column if not exists plan text;
+alter table analytics_events add column if not exists locale text;
+alter table analytics_events add column if not exists occurred_at timestamptz;
 alter table billing_events drop constraint if exists billing_events_plan_check;
 alter table billing_events add constraint billing_events_plan_check check (plan in ('free', 'plus', 'pro', 'lifetime'));
 alter table teacher_classes add column if not exists approval_required boolean not null default true;
@@ -432,6 +442,9 @@ create index if not exists idx_analytics_events_user_created
 
 create index if not exists idx_analytics_events_visitor_created
   on analytics_events(visitor_id, created_at desc);
+
+create unique index if not exists idx_analytics_events_event_id
+  on analytics_events(event_id);
 
 create index if not exists idx_billing_events_email_created
   on billing_events(user_email, created_at desc);

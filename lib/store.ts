@@ -770,6 +770,7 @@ export async function getMemberByEmail(email: string) {
 }
 
 export async function recordBillingEvent(input: {
+  id?: string;
   provider: "lemonsqueezy";
   eventName: string;
   userEmail?: string | null;
@@ -781,20 +782,23 @@ export async function recordBillingEvent(input: {
   payloadJson: unknown;
 }) {
   if (!hasDatabaseUrl()) {
-    return;
+    return true;
   }
 
   const sql = getSql();
-  await sql`
+  const rows = await sql<Array<{ id: string }>>`
     insert into billing_events (
       id, provider, event_name, user_email, user_id, plan, billing_status,
       provider_customer_id, provider_subscription_id, payload_json, created_at
     ) values (
-      ${crypto.randomUUID()}, ${input.provider}, ${input.eventName}, ${input.userEmail ?? null}, ${input.userId ?? null},
+      ${input.id ?? crypto.randomUUID()}, ${input.provider}, ${input.eventName}, ${input.userEmail ?? null}, ${input.userId ?? null},
       ${input.plan}, ${input.billingStatus}, ${input.providerCustomerId ?? null}, ${input.providerSubscriptionId ?? null},
       ${JSON.stringify(input.payloadJson)}, ${new Date().toISOString()}
     )
+    on conflict (id) do nothing
+    returning id
   `;
+  return rows.length > 0;
 }
 
 export async function getActiveBillingPlanForEmail(email: string): Promise<MemberProfile["plan"] | null> {

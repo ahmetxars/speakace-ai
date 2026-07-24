@@ -50,7 +50,11 @@ export async function GET(request: Request) {
       userId: profile?.id,
       visitorId,
       event: "checkout_initiated",
-      path: buildCheckoutAnalyticsPath({ plan, billing, campaign, ctaPath })
+      path: buildCheckoutAnalyticsPath({ plan, billing, campaign, ctaPath }),
+      eventId: checkoutId,
+      source: campaign,
+      plan,
+      occurredAt: new Date().toISOString()
     });
   } catch {
     // Analytics must never block a buyer from reaching checkout.

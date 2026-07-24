@@ -28,7 +28,7 @@ function escapeHtml(str: string): string {
 function getResendConfig() {
   return {
     apiKey: process.env.RESEND_API_KEY ?? "",
-    from: process.env.EMAIL_FROM ?? "",
+    from: process.env.EMAIL_FROM?.trim() || "SpeakAce <info@mail.speakace.org>",
     replyTo: resolveEmailReplyTo()
   };
 }
@@ -168,31 +168,31 @@ export async function sendWelcomePracticeEmail(input: { to: string; name?: strin
   });
 }
 
-export async function sendLaunchOfferEmail(input: { to: string; name?: string; couponCode: string }) {
+export async function sendPlusTrialEmail(input: { to: string; name?: string }) {
   const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
   const pricingUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/pricing`;
-  const checkoutUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/api/payments/lemon/checkout?plan=plus&coupon=${encodeURIComponent(input.couponCode)}&campaign=email_coupon`;
+  const checkoutUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/api/payments/lemon/checkout?plan=plus&billing=weekly&campaign=email_trial`;
 
   return sendEmail({
     to: input.to,
-    subject: `${input.couponCode} is active for SpeakAce Plus`,
+    subject: "Try SpeakAce Plus for 3 days",
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
-        <h2 style="margin:0 0 12px">Your SpeakAce offer is ready</h2>
+        <h2 style="margin:0 0 12px">Your SpeakAce Plus trial is ready</h2>
         <p>Hi ${greeting},</p>
-        <p>You can use <strong>${input.couponCode}</strong> to unlock SpeakAce Plus at a lower launch price.</p>
+        <p>Start with 3 days of Plus for $0 today. Unless you cancel before the trial ends, the plan renews at $3.99 per week.</p>
         <ul>
           <li>More daily speaking minutes</li>
           <li>Deeper transcript and score review</li>
           <li>Stronger retry and progress workflow</li>
         </ul>
         <p style="margin:24px 0">
-          <a href="${checkoutUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Use ${input.couponCode}</a>
+          <a href="${checkoutUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Start the 3-day trial</a>
         </p>
         <p>If you want to compare plans first, open <a href="${pricingUrl}">${pricingUrl}</a>.</p>
       </div>
     `,
-    text: `Hi ${greeting}, your SpeakAce offer is ready. Use ${input.couponCode} here: ${checkoutUrl}`
+    text: `Hi ${greeting}, start SpeakAce Plus for $0 today. Unless cancelled before the 3-day trial ends, it renews at $3.99/week: ${checkoutUrl}`
   });
 }
 

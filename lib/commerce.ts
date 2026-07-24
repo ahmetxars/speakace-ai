@@ -38,9 +38,7 @@ export const commerceConfig = {
   institutionCampusCheckout:
     process.env.LEMON_SQUEEZY_INSTITUTION_CAMPUS_URL ??
     "https://speakace.lemonsqueezy.com/checkout/buy/institution-campus-placeholder",
-  customerPortalUrl: "https://speakace.lemonsqueezy.com/billing",
-  launchOfferLabel: "Launch offer",
-  launchOfferCopy: "Use LAUNCH20 for an early supporter discount."
+  customerPortalUrl: "https://speakace.lemonsqueezy.com/billing"
 } as const;
 
 export type CheckoutBillingInterval = "weekly" | "monthly" | "annual";
@@ -51,19 +49,6 @@ export const commerceNumbers = {
   proMonthlyPrice: 12,
   proAnnualPrice: 99,
   lifetimePrice: 129.99
-} as const;
-
-export const couponCatalog = {
-  LAUNCH20: {
-    code: "LAUNCH20",
-    label: "Launch 20% off",
-    description: "For first buyers during the launch phase."
-  },
-  SPEAKACE10: {
-    code: "SPEAKACE10",
-    label: "Starter 10% off",
-    description: "For visitors who want a smaller first step into Plus."
-  }
 } as const;
 
 export function formatUsd(value: number) {

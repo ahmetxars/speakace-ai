@@ -1249,55 +1249,132 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       paid_count_30d: number;
     }>
   >`
+    with identity_steps as (
+      select
+        coalesce(visitor_id, user_id) as identity_id,
+        min(created_at) filter (
+          where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
+        ) as cta_at,
+        min(created_at) filter (where event = 'signup_completed') as signup_at,
+        min(created_at) filter (where event = 'checkout_initiated') as checkout_at,
+        min(created_at) filter (where event = 'checkout_completed') as paid_at
+      from analytics_events
+      where coalesce(visitor_id, user_id) is not null
+        and created_at > now() - interval '30 days'
+      group by coalesce(visitor_id, user_id)
+    )
     select
-      (
-        select count(*)::int
-        from analytics_events
-        where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
-          and created_at > now() - interval '7 days'
-      ) as cta_clicks_7d,
-      (
-        select count(*)::int
-        from users
-        where created_at > now() - interval '7 days'
-      ) as signup_count_7d,
-      (
-        select count(*)::int
-        from analytics_events
-        where event = 'checkout_cta_click'
-          and created_at > now() - interval '7 days'
-      ) as checkout_clicks_7d,
-      (
-        select count(distinct coalesce(provider_subscription_id, user_id, user_email, id))::int
-        from billing_events
-        where billing_status in ('active', 'on_trial')
-          and event_name = any(${paidEventNames})
-          and created_at > now() - interval '7 days'
-      ) as paid_count_7d,
-      (
-        select count(*)::int
-        from analytics_events
-        where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
-          and created_at > now() - interval '30 days'
-      ) as cta_clicks_30d,
-      (
-        select count(*)::int
-        from users
-        where created_at > now() - interval '30 days'
-      ) as signup_count_30d,
-      (
-        select count(*)::int
-        from analytics_events
-        where event = 'checkout_cta_click'
-          and created_at > now() - interval '30 days'
-      ) as checkout_clicks_30d,
-      (
-        select count(distinct coalesce(provider_subscription_id, user_id, user_email, id))::int
-        from billing_events
-        where billing_status in ('active', 'on_trial')
-          and event_name = any(${paidEventNames})
-          and created_at > now() - interval '30 days'
-      ) as paid_count_30d
+      count(*) filter (where cta_at > now() - interval '7 days')::int as cta_clicks_7d,
+      count(*) filter (
+        where cta_at > now() - interval '7 days'
+          and signup_at >= cta_at
+      )::int as signup_count_7d,
+      count(*) filter (
+        where cta_at > now() - interval '7 days'
+          and signup_at >= cta_at
+          and checkout_at >= signup_at
+      )::int as checkout_clicks_7d,
+      count(*) filter (
+        where cta_at > now() - interval '7 days'
+          and signup_at >= cta_at
+          and checkout_at >= signup_at
+          and paid_at >= checkout_at
+      )::int as paid_count_7d,
+      count(*) filter (where cta_at > now() - interval '30 days')::int as cta_clicks_30d,
+      count(*) filter (
+        where cta_at > now() - interval '30 days'
+          and signup_at >= cta_at
+      )::int as signup_count_30d,
+      count(*) filter (
+        where cta_at > now() - interval '30 days'
+          and signup_at >= cta_at
+          and checkout_at >= signup_at
+      )::int as checkout_clicks_30d,
+      count(*) filter (
+        where cta_at > now() - interval '30 days'
+          and signup_at >= cta_at
+          and checkout_at >= signup_at
+          and paid_at >= checkout_at
+      )::int as paid_count_30d
+    from identity_steps
+  `;
+
+  const [monetizationCohortRow] = await sql<
+    Array<{
+      pricing_views_7d: number;
+      practice_limit_hits_7d: number;
+      upgrade_prompt_views_7d: number;
+      checkout_initiated_7d: number;
+      checkout_completed_7d: number;
+      billing_success_seen_7d: number;
+      pricing_checkout_7d: number;
+      limit_checkout_7d: number;
+      pricing_views_30d: number;
+      practice_limit_hits_30d: number;
+      upgrade_prompt_views_30d: number;
+      checkout_initiated_30d: number;
+      checkout_completed_30d: number;
+      billing_success_seen_30d: number;
+      pricing_checkout_30d: number;
+      limit_checkout_30d: number;
+    }>
+  >`
+    with identity_steps as (
+      select
+        coalesce(visitor_id, user_id) as identity_id,
+        min(created_at) filter (where event = 'pricing_view') as pricing_at,
+        min(created_at) filter (where event = 'practice_limit_hit') as limit_at,
+        min(created_at) filter (where event = 'upgrade_prompt_view') as prompt_at,
+        min(created_at) filter (where event = 'checkout_initiated') as checkout_at,
+        min(created_at) filter (where event = 'checkout_completed') as completed_at,
+        min(created_at) filter (where event = 'billing_success_seen') as success_at
+      from analytics_events
+      where coalesce(visitor_id, user_id) is not null
+        and created_at > now() - interval '30 days'
+      group by coalesce(visitor_id, user_id)
+    )
+    select
+      count(*) filter (where pricing_at > now() - interval '7 days')::int as pricing_views_7d,
+      count(*) filter (where limit_at > now() - interval '7 days')::int as practice_limit_hits_7d,
+      count(*) filter (where prompt_at > now() - interval '7 days')::int as upgrade_prompt_views_7d,
+      count(*) filter (where checkout_at > now() - interval '7 days')::int as checkout_initiated_7d,
+      count(*) filter (
+        where checkout_at > now() - interval '7 days'
+          and completed_at >= checkout_at
+      )::int as checkout_completed_7d,
+      count(*) filter (
+        where checkout_at > now() - interval '7 days'
+          and success_at >= checkout_at
+      )::int as billing_success_seen_7d,
+      count(*) filter (
+        where pricing_at > now() - interval '7 days'
+          and checkout_at >= pricing_at
+      )::int as pricing_checkout_7d,
+      count(*) filter (
+        where limit_at > now() - interval '7 days'
+          and checkout_at >= limit_at
+      )::int as limit_checkout_7d,
+      count(*) filter (where pricing_at > now() - interval '30 days')::int as pricing_views_30d,
+      count(*) filter (where limit_at > now() - interval '30 days')::int as practice_limit_hits_30d,
+      count(*) filter (where prompt_at > now() - interval '30 days')::int as upgrade_prompt_views_30d,
+      count(*) filter (where checkout_at > now() - interval '30 days')::int as checkout_initiated_30d,
+      count(*) filter (
+        where checkout_at > now() - interval '30 days'
+          and completed_at >= checkout_at
+      )::int as checkout_completed_30d,
+      count(*) filter (
+        where checkout_at > now() - interval '30 days'
+          and success_at >= checkout_at
+      )::int as billing_success_seen_30d,
+      count(*) filter (
+        where pricing_at > now() - interval '30 days'
+          and checkout_at >= pricing_at
+      )::int as pricing_checkout_30d,
+      count(*) filter (
+        where limit_at > now() - interval '30 days'
+          and checkout_at >= limit_at
+      )::int as limit_checkout_30d
+    from identity_steps
   `;
 
   const buildFunnel = (input: { ctaClicks: number; signupCount: number; checkoutClicks: number; paidCount: number }) => ({
@@ -1315,13 +1392,20 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     checkoutInitiated: number;
     checkoutCompleted: number;
     billingSuccessSeen: number;
+    pricingCheckout: number;
+    limitCheckout: number;
   }) => ({
-    ...input,
+    pricingViews: input.pricingViews,
+    practiceLimitHits: input.practiceLimitHits,
+    upgradePromptViews: input.upgradePromptViews,
+    checkoutInitiated: input.checkoutInitiated,
+    checkoutCompleted: input.checkoutCompleted,
+    billingSuccessSeen: input.billingSuccessSeen,
     pricingViewToCheckoutRate: input.pricingViews
-      ? Number(((input.checkoutInitiated / input.pricingViews) * 100).toFixed(1))
+      ? Number(((input.pricingCheckout / input.pricingViews) * 100).toFixed(1))
       : 0,
     limitHitToCheckoutRate: input.practiceLimitHits
-      ? Number(((input.checkoutInitiated / input.practiceLimitHits) * 100).toFixed(1))
+      ? Number(((input.limitCheckout / input.practiceLimitHits) * 100).toFixed(1))
       : 0,
     checkoutToCompletionRate: input.checkoutInitiated
       ? Number(((input.checkoutCompleted / input.checkoutInitiated) * 100).toFixed(1))
@@ -1470,20 +1554,24 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       paidCount: item.paid_count
     })),
     monetizationFunnel7d: buildMonetizationFunnel({
-      pricingViews: row?.pricing_views_7d ?? 0,
-      practiceLimitHits: row?.practice_limit_hits_7d ?? 0,
-      upgradePromptViews: row?.upgrade_prompt_views_7d ?? 0,
-      checkoutInitiated: row?.checkout_initiated_7d ?? 0,
-      checkoutCompleted: row?.checkout_completed_7d ?? 0,
-      billingSuccessSeen: row?.billing_success_seen_7d ?? 0
+      pricingViews: monetizationCohortRow?.pricing_views_7d ?? 0,
+      practiceLimitHits: monetizationCohortRow?.practice_limit_hits_7d ?? 0,
+      upgradePromptViews: monetizationCohortRow?.upgrade_prompt_views_7d ?? 0,
+      checkoutInitiated: monetizationCohortRow?.checkout_initiated_7d ?? 0,
+      checkoutCompleted: monetizationCohortRow?.checkout_completed_7d ?? 0,
+      billingSuccessSeen: monetizationCohortRow?.billing_success_seen_7d ?? 0,
+      pricingCheckout: monetizationCohortRow?.pricing_checkout_7d ?? 0,
+      limitCheckout: monetizationCohortRow?.limit_checkout_7d ?? 0
     }),
     monetizationFunnel30d: buildMonetizationFunnel({
-      pricingViews: row?.pricing_views_30d ?? 0,
-      practiceLimitHits: row?.practice_limit_hits_30d ?? 0,
-      upgradePromptViews: row?.upgrade_prompt_views_30d ?? 0,
-      checkoutInitiated: row?.checkout_initiated_30d ?? 0,
-      checkoutCompleted: row?.checkout_completed_30d ?? 0,
-      billingSuccessSeen: row?.billing_success_seen_30d ?? 0
+      pricingViews: monetizationCohortRow?.pricing_views_30d ?? 0,
+      practiceLimitHits: monetizationCohortRow?.practice_limit_hits_30d ?? 0,
+      upgradePromptViews: monetizationCohortRow?.upgrade_prompt_views_30d ?? 0,
+      checkoutInitiated: monetizationCohortRow?.checkout_initiated_30d ?? 0,
+      checkoutCompleted: monetizationCohortRow?.checkout_completed_30d ?? 0,
+      billingSuccessSeen: monetizationCohortRow?.billing_success_seen_30d ?? 0,
+      pricingCheckout: monetizationCohortRow?.pricing_checkout_30d ?? 0,
+      limitCheckout: monetizationCohortRow?.limit_checkout_30d ?? 0
     }),
     funnel7d: buildFunnel({
       ctaClicks: funnelRow?.cta_clicks_7d ?? 0,

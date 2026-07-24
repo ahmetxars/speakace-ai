@@ -6,7 +6,6 @@ import { TrackedLink } from "@/components/tracked-link";
 import {
   buildPlanCheckoutPath,
   commerceNumbers,
-  couponCatalog,
   getAnnualSavingsPercentFromWeekly
 } from "@/lib/commerce";
 import { normalizePublicLanguage } from "@/lib/copy";
@@ -28,7 +27,7 @@ type UpgradeDialogCopy = {
   primary: string;
   annualLead: string;
   annualCta: string;
-  coupon: string;
+  terms: string;
   trust: string;
   dismiss: string;
   cooldownTitle: Record<UpgradePromptReason, string>;
@@ -58,7 +57,7 @@ const copy: Record<"en" | "tr" | "de" | "es" | "fr", UpgradeDialogCopy> = {
     primary: "Start 3-day Plus trial",
     annualLead: "Already planning a longer prep cycle?",
     annualCta: "Choose annual and save {savings}%",
-    coupon: "Launch discount attached to checkout",
+    terms: "No charge today. Cancel before the trial ends to avoid renewal.",
     trust: "Secure checkout by Lemon Squeezy. Manage or cancel from Billing.",
     dismiss: "Not now",
     cooldownTitle: {
@@ -92,7 +91,7 @@ const copy: Record<"en" | "tr" | "de" | "es" | "fr", UpgradeDialogCopy> = {
     primary: "3 günlük Plus denemesini başlat",
     annualLead: "Daha uzun bir hazırlık dönemi mi planlıyorsun?",
     annualCta: "Yıllık seç ve %{savings} tasarruf et",
-    coupon: "Lansman indirimi checkout'a eklendi",
+    terms: "Bugün ücret alınmaz. Yenilemeyi önlemek için deneme bitmeden iptal edebilirsin.",
     trust: "Lemon Squeezy ile güvenli ödeme. Billing'den yönetebilir veya iptal edebilirsin.",
     dismiss: "Şimdi değil",
     cooldownTitle: {
@@ -126,7 +125,7 @@ const copy: Record<"en" | "tr" | "de" | "es" | "fr", UpgradeDialogCopy> = {
     primary: "3-tägige Plus-Testphase starten",
     annualLead: "Planst du eine längere Vorbereitung?",
     annualCta: "Jährlich wählen und {savings}% sparen",
-    coupon: "Launch-Rabatt ist im Checkout hinterlegt",
+    terms: "Heute keine Belastung. Vor Ablauf der Testphase kündigen, um die Verlängerung zu vermeiden.",
     trust: "Sicherer Checkout mit Lemon Squeezy. Im Billing verwalten oder kündigen.",
     dismiss: "Nicht jetzt",
     cooldownTitle: {
@@ -160,7 +159,7 @@ const copy: Record<"en" | "tr" | "de" | "es" | "fr", UpgradeDialogCopy> = {
     primary: "Iniciar prueba Plus de 3 días",
     annualLead: "¿Ya planeas una preparación más larga?",
     annualCta: "Elige anual y ahorra un {savings}%",
-    coupon: "Descuento de lanzamiento aplicado al checkout",
+    terms: "No se cobra hoy. Cancela antes de que termine la prueba para evitar la renovación.",
     trust: "Checkout seguro con Lemon Squeezy. Gestiona o cancela desde Billing.",
     dismiss: "Ahora no",
     cooldownTitle: {
@@ -194,7 +193,7 @@ const copy: Record<"en" | "tr" | "de" | "es" | "fr", UpgradeDialogCopy> = {
     primary: "Démarrer l'essai Plus de 3 jours",
     annualLead: "Tu prévois une préparation plus longue ?",
     annualCta: "Choisir l'annuel et économiser {savings}%",
-    coupon: "Remise de lancement ajoutée au checkout",
+    terms: "Aucun débit aujourd'hui. Annule avant la fin de l'essai pour éviter le renouvellement.",
     trust: "Paiement sécurisé par Lemon Squeezy. Gère ou annule depuis Billing.",
     dismiss: "Pas maintenant",
     cooldownTitle: {
@@ -333,7 +332,6 @@ export function PracticeUpgradeDialog({
             href={buildPlanCheckoutPath({
               plan: "plus",
               billing: "weekly",
-              coupon: couponCatalog.LAUNCH20.code,
               campaign: weeklyCampaign
             })}
             userId={userId}
@@ -343,7 +341,6 @@ export function PracticeUpgradeDialog({
             gaParams={{
               currency: "USD",
               value: commerceNumbers.plusWeeklyPrice,
-              coupon: couponCatalog.LAUNCH20.code,
               items: [{
                 item_id: "plus_weekly",
                 item_name: "SpeakAce Plus - Weekly Trial",
@@ -364,7 +361,7 @@ export function PracticeUpgradeDialog({
             {selectedCopy.primary}
           </TrackedLink>
 
-          <span className="practice-upgrade-coupon">{selectedCopy.coupon}</span>
+          <span className="practice-upgrade-coupon">{selectedCopy.terms}</span>
 
           <div className="practice-upgrade-annual">
             <span>{selectedCopy.annualLead}</span>
@@ -372,7 +369,6 @@ export function PracticeUpgradeDialog({
               href={buildPlanCheckoutPath({
                 plan: "plus",
                 billing: "annual",
-                coupon: couponCatalog.LAUNCH20.code,
                 campaign: annualCampaign
               })}
               userId={userId}
@@ -444,7 +440,6 @@ export function PracticeUpgradeCooldownCard({
           href={buildPlanCheckoutPath({
             plan: "plus",
             billing: "weekly",
-            coupon: couponCatalog.LAUNCH20.code,
             campaign
           })}
           userId={userId}
@@ -454,7 +449,6 @@ export function PracticeUpgradeCooldownCard({
           gaParams={{
             currency: "USD",
             value: commerceNumbers.plusWeeklyPrice,
-            coupon: couponCatalog.LAUNCH20.code,
             items: [{
               item_id: "plus_weekly",
               item_name: "SpeakAce Plus - Weekly Trial",

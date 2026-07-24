@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMarketingLead } from "@/lib/marketing-leads";
-import { sendInstitutionLeadEmail, sendLaunchOfferEmail, sendLeadMagnetEmail, sendTeacherLeadEmail } from "@/lib/server/email";
+import { sendInstitutionLeadEmail, sendLeadMagnetEmail, sendPlusTrialEmail, sendTeacherLeadEmail } from "@/lib/server/email";
 import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
 
 function isValidEmail(email: string) {
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       await sendLeadMagnetEmail({ to: email, name });
     }
     if (source.includes("pricing") || source.includes("coupon") || source.includes("launch")) {
-      await sendLaunchOfferEmail({ to: email, name, couponCode: "LAUNCH20" });
+      await sendPlusTrialEmail({ to: email, name });
     }
   } catch {
     // Non-blocking: lead capture should still succeed if email delivery fails.

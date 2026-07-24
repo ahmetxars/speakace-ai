@@ -6,7 +6,7 @@ import posthog from "posthog-js";
 import { useAppState } from "@/components/providers";
 import { TrackedLink } from "@/components/tracked-link";
 import { trackClientEvent } from "@/lib/analytics-client";
-import { buildPlanCheckoutPath, commerceNumbers, couponCatalog, formatUsd, getAnnualMonthlyEquivalent } from "@/lib/commerce";
+import { buildPlanCheckoutPath, commerceNumbers, formatUsd, getAnnualMonthlyEquivalent } from "@/lib/commerce";
 import { WritingSession, WritingSummary, WritingTaskType } from "@/lib/types";
 
 export function WritingResultView({ session, summary }: { session: WritingSession; summary: WritingSummary }) {
@@ -184,7 +184,7 @@ export function WritingResultView({ session, summary }: { session: WritingSessio
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
               <TrackedLink
                 className="button button-primary"
-                href={buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "writing_result_annual" })}
+                href={buildPlanCheckoutPath({ plan: "plus", billing: "annual", campaign: "writing_result_annual" })}
                 userId={currentUser?.id}
                 analyticsEvent="checkout_initiated"
                 analyticsPath={`/app/writing/results/${session.id}/annual`}
@@ -201,7 +201,7 @@ export function WritingResultView({ session, summary }: { session: WritingSessio
               </TrackedLink>
               <TrackedLink
                 className="button button-secondary"
-                href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "writing_result_weekly" })}
+                href={buildPlanCheckoutPath({ plan: "plus", campaign: "writing_result_weekly" })}
                 userId={currentUser?.id}
                 analyticsEvent="checkout_initiated"
                 analyticsPath={`/app/writing/results/${session.id}/weekly`}
@@ -218,7 +218,9 @@ export function WritingResultView({ session, summary }: { session: WritingSessio
               </TrackedLink>
             </div>
             <div className="practice-meta">
-              {tr ? `Ilk checkout icin ${couponCatalog.LAUNCH20.code} kullanabilirsin.` : `Use ${couponCatalog.LAUNCH20.code} on your first checkout.`}
+              {tr
+                ? "Haftalik planda bugun $0; 3 gun sonra iptal edilmezse haftalik $3.99."
+                : "Weekly costs $0 today, then $3.99/week after 3 days unless cancelled."}
             </div>
           </section>
         ) : null}

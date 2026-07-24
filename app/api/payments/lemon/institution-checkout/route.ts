@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   });
 
   const posthog = getPostHogClient();
-  posthog.capture({ distinctId: profile.id, event: "institution_checkout_initiated", properties: { plan, seat_count: isNaN(seatCount) ? 20 : seatCount, email: profile.email } });
+  posthog.capture({ distinctId: profile.id, event: "institution_checkout_initiated", properties: { plan, seat_count: isNaN(seatCount) ? 20 : seatCount } });
 
   return NextResponse.redirect(checkoutUrl || commerceConfig.institutionStarterCheckout);
 }

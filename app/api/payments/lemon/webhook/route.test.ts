@@ -88,7 +88,7 @@ describe("Lemon webhook entitlement sync", () => {
     mocks.getMemberByEmail.mockResolvedValue({ id: "user-1", email: "buyer@example.com", plan: "free" });
     mocks.applyBillingPlanByUserId.mockResolvedValue({ id: "user-1", plan: "plus" });
     mocks.applyBillingPlanByEmail.mockResolvedValue({ id: "user-1", plan: "plus" });
-    mocks.recordBillingEvent.mockResolvedValue(undefined);
+    mocks.recordBillingEvent.mockResolvedValue(true);
   });
 
   it("grants Plus from the nested order item before writing the audit event", async () => {
@@ -112,12 +112,15 @@ describe("Lemon webhook entitlement sync", () => {
     expect(mocks.applyBillingPlanByUserId.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.recordBillingEvent.mock.invocationCallOrder[0]
     );
-    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith({
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(expect.objectContaining({
       userId: "user-1",
       visitorId: "visitor-1234567890",
       event: "checkout_completed",
-      path: "/pricing/plus/weekly"
-    });
+      path: "/pricing/plus/weekly",
+      eventId: "lemonsqueezy:order:receipt-1",
+      source: null,
+      plan: "plus"
+    }));
   });
 
   it("preserves the current paid plan for a planless renewal invoice", async () => {
@@ -228,5 +231,18 @@ describe("Lemon webhook entitlement sync", () => {
     expect(mocks.applyBillingPlanByUserId.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.recordBillingEvent.mock.invocationCallOrder[0]
     );
+  });
+
+  it("does not emit conversion analytics twice for a duplicate delivery", async () => {
+    mocks.recordBillingEvent.mockResolvedValueOnce(false);
+
+    const response = await POST(signedRequest(plusOrderPayload()));
+    const body = (await response.json()) as { duplicate?: boolean };
+
+    expect(response.status).toBe(200);
+    expect(body.duplicate).toBe(true);
+    expect(mocks.applyBillingPlanByUserId).toHaveBeenCalledWith(expect.objectContaining({ plan: "plus" }));
+    expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
+    expect(mocks.posthogCapture).not.toHaveBeenCalled();
   });
 });

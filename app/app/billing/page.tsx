@@ -9,7 +9,6 @@ import {
   buildPlanCheckoutPath,
   commerceConfig,
   commerceNumbers,
-  couponCatalog,
   formatUsd,
   getAnnualMonthlyEquivalent,
   getAnnualSavingsPercentFromWeekly,
@@ -67,9 +66,9 @@ export default function BillingPage() {
               ? `Once 3 gun boyunca tam geri bildirim ve retry dongusunu dene. Deneme sonrasinda Plus haftalik $3.99 ile devam eder; uzun hazirlik yapacaksan yillik secenek yaklasik %${plusAnnualSavings} tasarruf saglar.`
               : `Try the full feedback and retry loop for 3 days first. Plus then continues at $3.99/week; if you already expect a longer prep cycle, annual saves about ${plusAnnualSavings}%.`,
             ctaLabel: tr ? "3 gunluk Plus denemesini baslat" : "Start the 3-day Plus trial",
-            ctaHref: buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_decision_weekly" }),
+            ctaHref: buildPlanCheckoutPath({ plan: "plus", campaign: "billing_decision_weekly" }),
             secondaryLabel: tr ? "Uzun hazirlik: yillik" : "Longer prep: annual",
-            secondaryHref: buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_decision_annual" })
+            secondaryHref: buildPlanCheckoutPath({ plan: "plus", billing: "annual", campaign: "billing_decision_annual" })
           }
         : currentUser?.plan === "plus"
           ? {
@@ -102,12 +101,12 @@ export default function BillingPage() {
         ? [
             "Checkout ayni hesaba baglanir, yeni hesap acman gerekmez.",
             "3 gunluk deneme sonrasinda plan haftalik $3.99 ile devam eder; billing sayfasindan yonetebilirsin.",
-            "Ilk satin almada LAUNCH20 kodu ile daha yumusak giris yapabilirsin."
+            "Bugun ucret alinmaz. Yenilemeyi istemiyorsan deneme bitmeden iptal edebilirsin."
           ]
         : [
             "Checkout stays on the same account, so you do not need a second login.",
             "After the 3-day trial, the plan continues at $3.99/week and can be managed from billing.",
-            `For a softer first purchase, you can use ${couponCatalog.LAUNCH20.code}.`
+            "There is no charge today. Cancel before the trial ends if you do not want it to renew."
           ],
     [tr]
   );
@@ -155,7 +154,11 @@ export default function BillingPage() {
     <main className="page-shell section billing-page">
       <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
         <span className="eyebrow">{tr ? "Ödeme" : "Billing"}</span>
-        <h1 style={{ margin: 0 }}>{tr ? "SpeakAce Plus veya Pro ile daha fazla speaking pratiği aç" : "Unlock more speaking practice with SpeakAce Plus or Pro"}</h1>
+        <h1 style={{ margin: 0 }}>
+          {currentUser?.plan === "free"
+            ? (tr ? "SpeakAce Plus ile daha fazla speaking pratiği aç" : "Unlock more speaking practice with SpeakAce Plus")
+            : (tr ? "Planını ve speaking erişimini yönet" : "Manage your plan and speaking access")}
+        </h1>
         <p style={{ color: "var(--muted)", maxWidth: 720 }}>
           {tr ? "Ücretli plan, sadece daha fazla limit değil; ayni gun daha fazla speaking denemesi, daha derin AI geri bildirimi ve daha hizli retry dongusu aciyor." : "A paid plan does more than raise limits. It unlocks same-day retries, deeper AI feedback, and a faster improvement loop."}
         </p>
@@ -168,10 +171,12 @@ export default function BillingPage() {
             <strong>{commerceConfig.plusPlanName} · {commerceConfig.plusMonthlyPrice}/week</strong>
             <p>{tr ? `Ilk upgrade icin en net teklif: bugun devam et, daha fazla speaking yap, ayni prompt'u geri bildirimle tekrar dene. Yillik planda aylik maliyet ${formatUsd(plusAnnualMonthlyEquivalent)} seviyesine iner.` : `The clearest first upgrade: continue today, practice more, and retry the same prompt with stronger feedback. On annual billing the monthly equivalent drops to about ${formatUsd(plusAnnualMonthlyEquivalent)}.`}</p>
           </div>
-          <div className="card billing-pro-card" style={{ padding: "1rem" }}>
-            <strong className="billing-pro-price">{commerceConfig.proPlanName} · {commerceConfig.proMonthlyPrice}/month</strong>
-            <p>{tr ? `Daha agir kullanim icin aylik Pro; uzun vadeli hazirlikta ${commerceConfig.proAnnualPrice}/yil secenegi de mevcut.` : `Monthly Pro for heavier usage, with a ${commerceConfig.proAnnualPrice}/year option for longer preparation.`}</p>
-          </div>
+          {currentUser?.plan !== "free" ? (
+            <div className="card billing-pro-card" style={{ padding: "1rem" }}>
+              <strong className="billing-pro-price">{commerceConfig.proPlanName} · {commerceConfig.proMonthlyPrice}/month</strong>
+              <p>{tr ? `Daha agir kullanim icin aylik Pro; uzun vadeli hazirlikta ${commerceConfig.proAnnualPrice}/yil secenegi de mevcut.` : `Monthly Pro for heavier usage, with a ${commerceConfig.proAnnualPrice}/year option for longer preparation.`}</p>
+            </div>
+          ) : null}
         </div>
         <div className="card billing-comparison-card" style={{ padding: "1rem" }}>
           <strong>{tr ? "Free ve Plus karşılaştırması" : "Free vs Plus"}</strong>
@@ -215,10 +220,10 @@ export default function BillingPage() {
                 </p>
               </div>
               <div className="card billing-value-card" style={{ padding: "0.95rem" }}>
-                <strong>{tr ? "Kupon" : "Coupon"}</strong>
-                <div style={{ fontSize: "1.35rem", fontWeight: 700, marginTop: "0.35rem" }}>{couponCatalog.LAUNCH20.code}</div>
+                <strong>{tr ? "Bugun" : "Today"}</strong>
+                <div style={{ fontSize: "1.35rem", fontWeight: 700, marginTop: "0.35rem" }}>$0</div>
                 <p style={{ margin: "0.35rem 0 0", color: "var(--muted)" }}>
-                  {tr ? "Ilk checkout surtunmesini azaltmak icin" : "To soften the first checkout decision"}
+                  {tr ? "3 gunluk Plus denemesi icin" : "For the 3-day Plus trial"}
                 </p>
               </div>
             </div>
@@ -286,7 +291,7 @@ export default function BillingPage() {
             <>
               <TrackedLink
                 className="button button-primary"
-                href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_buy_plus_weekly" })}
+                href={buildPlanCheckoutPath({ plan: "plus", campaign: "billing_buy_plus_weekly" })}
                 userId={currentUser?.id}
                 analyticsEvent="checkout_initiated"
                 analyticsPath="/app/billing/plus/weekly"
@@ -296,7 +301,6 @@ export default function BillingPage() {
                     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
                       currency: 'USD',
                       value: commerceNumbers.plusWeeklyPrice,
-                      coupon: couponCatalog.LAUNCH20.code,
                       items: [{ item_id: 'plus_weekly', item_name: 'SpeakAce Plus - Weekly', price: commerceNumbers.plusWeeklyPrice, quantity: 1 }]
                     });
                   }
@@ -306,7 +310,7 @@ export default function BillingPage() {
               </TrackedLink>
               <TrackedLink
                 className="button button-secondary"
-                href={buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "billing_buy_plus_annual" })}
+                href={buildPlanCheckoutPath({ plan: "plus", billing: "annual", campaign: "billing_buy_plus_annual" })}
                 userId={currentUser?.id}
                 analyticsEvent="checkout_initiated"
                 analyticsPath="/app/billing/plus/annual"
@@ -316,7 +320,6 @@ export default function BillingPage() {
                     (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
                       currency: 'USD',
                       value: commerceNumbers.plusAnnualPrice,
-                      coupon: couponCatalog.LAUNCH20.code,
                       items: [{ item_id: 'plus_annual', item_name: 'SpeakAce Plus - Annual', price: commerceNumbers.plusAnnualPrice, quantity: 1 }]
                     });
                   }
@@ -324,23 +327,6 @@ export default function BillingPage() {
               >
                 {tr ? "Uzun hazirlik: Plus yillik" : "Longer prep: Plus annual"}
               </TrackedLink>
-              <a
-                className="button button-secondary"
-                href={buildPlanCheckoutPath({ plan: "pro", billing: "monthly", campaign: "billing_buy_pro_monthly" })}
-                style={{ borderColor: "var(--billing-gold)", color: "var(--billing-gold-ink)" }}
-                onClick={() => {
-                  posthog.capture("checkout_initiated", { plan: "pro", billing: "monthly", current_plan: currentUser?.plan, campaign: "billing_buy_pro_monthly" });
-                  if (typeof window !== 'undefined' && (window as unknown as { gtag: (...args: unknown[]) => void }).gtag) {
-                    (window as unknown as { gtag: (...args: unknown[]) => void }).gtag('event', 'begin_checkout', {
-                      currency: 'USD',
-                      value: commerceNumbers.proMonthlyPrice,
-                      items: [{ item_id: 'pro_monthly', item_name: 'SpeakAce Pro - Monthly', price: commerceNumbers.proMonthlyPrice, quantity: 1 }]
-                    });
-                  }
-                }}
-              >
-                {tr ? "Aylik Pro'ya bak" : "View Pro Monthly"}
-              </a>
             </>
           ) : currentUser?.plan === "plus" ? (
             <>
@@ -449,7 +435,9 @@ export default function BillingPage() {
           <div className="card billing-checkout-note" style={{ padding: "1rem" }}>
             <strong style={{ display: "block", marginBottom: "0.45rem" }}>{tr ? "Ilk checkout notu" : "First checkout note"}</strong>
             <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
-              {tr ? `Kararsizsan ${couponCatalog.LAUNCH20.code} kuponunu kullan. Asil amac indirim degil, ilk odemeyi risksiz hissettirmek.` : `If you need a softer first step, use ${couponCatalog.LAUNCH20.code}. The point is not the discount alone, but making the first upgrade feel low-risk.`}
+              {tr
+                ? "Haftalik Plus icin bugun ucret alinmaz. 3 gunluk deneme bitmeden iptal etmezsen plan haftalik $3.99 ile yenilenir. Yillik secenekte $49.99 checkout sirasinda tek seferde alinir."
+                : "Weekly Plus costs $0 today. Unless cancelled before the 3-day trial ends, it renews at $3.99/week. Annual Plus is charged once at $49.99 during checkout."}
             </p>
           </div>
         ) : null}

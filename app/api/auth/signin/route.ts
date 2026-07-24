@@ -8,11 +8,13 @@ import {
 } from "@/lib/server/auth";
 import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
 import { getPostHogClient } from "@/lib/posthog-server";
+import { getPrivacySafeAnalyticsId } from "@/lib/server/analytics-identity";
 
 export async function POST(request: Request) {
   const body = await request.json();
   const email = String(body.email ?? "").trim().toLowerCase();
   const posthog = getPostHogClient();
+  const analyticsId = getPrivacySafeAnalyticsId("signin", email);
 
   try {
     const ip = getRequestIp(request);
@@ -21,9 +23,9 @@ export async function POST(request: Request) {
     const limit = { allowed: ipLimit.allowed && emailLimit.allowed, retryAfterSeconds: Math.max(ipLimit.retryAfterSeconds, emailLimit.retryAfterSeconds) };
     if (!limit.allowed) {
       posthog.capture({
-        distinctId: email || `anonymous-signin:${ip}`,
+        distinctId: analyticsId,
         event: "signin_failed",
-        properties: { email, reason: "rate_limited" }
+        properties: { reason: "rate_limited" }
       });
       return rateLimitResponse(limit.retryAfterSeconds, "Too many sign-in attempts. Please try again later.");
     }
@@ -33,17 +35,17 @@ export async function POST(request: Request) {
       password: body.password ?? ""
     });
     const session = await createAuthSession(profile.id);
-    posthog.identify({ distinctId: profile.id, properties: { email: profile.email, name: profile.name } });
-    posthog.capture({ distinctId: profile.id, event: "user_signed_in", properties: { email: profile.email } });
+    posthog.identify({ distinctId: profile.id });
+    posthog.capture({ distinctId: profile.id, event: "user_signed_in" });
     const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), session.token, getSessionCookieOptions(session.expiresAt));
     return NextResponse.json({ profile });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Sign in failed.";
     posthog.capture({
-      distinctId: email || "anonymous-signin",
+      distinctId: analyticsId,
       event: "signin_failed",
-      properties: { email, reason: message }
+      properties: { reason: message }
     });
     return NextResponse.json(
       {

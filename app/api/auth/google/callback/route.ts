@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
-import type { AnalyticsEventName } from "@/lib/analytics-store";
+import { ANALYTICS_VISITOR_COOKIE, normalizeAnalyticsVisitorId } from "@/lib/analytics-policy";
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
 import { addOrgMember, getOrganizationByJoinCode } from "@/lib/server/org-store";
 import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
@@ -37,44 +37,8 @@ interface GoogleUserInfo {
 }
 
 const GOOGLE_OAUTH_STATE_COOKIE = "speakace_google_oauth_state";
-const ANALYTICS_EVENTS: ReadonlySet<AnalyticsEventName> = new Set([
-  "page_view",
-  "practice_start",
-  "result_card_download",
-  "result_share_x",
-  "result_share_whatsapp",
-  "result_share_linkedin",
-  "result_share_native",
-  "result_share_copy",
-  "writing_start",
-  "writing_submitted",
-  "writing_evaluated",
-  "writing_retry",
-  "writing_pdf_export",
-  "recording_uploaded",
-  "simulation_complete",
-  "interview_mode_start",
-  "interview_followup_continue",
-  "pdf_report_export",
-  "target_score_updated",
-  "mock_report_view",
-  "notifications_view",
-  "session_replay_view",
-  "teacher_note_saved",
-  "institution_admin_view",
-  "analytics_dashboard_view",
-  "marketing_cta_click",
-  "pricing_cta_click",
-  "checkout_cta_click",
-  "signup_completed"
-]);
-
 function signGoogleState(payload: string, secret: string) {
   return createHmac("sha256", secret).update(payload).digest("base64url");
-}
-
-function isAnalyticsEventName(value: string): value is AnalyticsEventName {
-  return ANALYTICS_EVENTS.has(value as AnalyticsEventName);
 }
 
 function clearGoogleOAuthStateCookie(response: NextResponse) {
@@ -266,8 +230,6 @@ export async function GET(request: Request) {
     }
 
     const attributionPath = typeof parsedState.cta === "string" ? parsedState.cta : null;
-    const attributionEvent =
-      typeof parsedState.ctaEvent === "string" && isAnalyticsEventName(parsedState.ctaEvent) ? parsedState.ctaEvent : null;
     const inviteReferrerId = typeof parsedState.invite === "string" ? parsedState.invite : null;
     const memberType =
       parsedState.memberType === "teacher" || parsedState.memberType === "school" ? parsedState.memberType : "student";
@@ -284,12 +246,22 @@ export async function GET(request: Request) {
       referralCode,
       inviteReferrerId
     });
-    if (isNewUser && attributionPath) {
-      await trackAnalyticsEvent({
-        userId: profile.id,
-        event: attributionEvent || "signup_completed",
-        path: attributionPath
-      });
+    if (isNewUser) {
+      const visitorId = normalizeAnalyticsVisitorId(cookieStore.get(ANALYTICS_VISITOR_COOKIE)?.value);
+      try {
+        await trackAnalyticsEvent({
+          userId: profile.id,
+          visitorId,
+          event: "signup_completed",
+          eventId: `signup:${profile.id}`,
+          path: attributionPath ?? "/auth/google",
+          source: "google_signup",
+          plan: profile.plan,
+          occurredAt: new Date().toISOString()
+        });
+      } catch {
+        // Analytics must never block account creation.
+      }
     }
     if (isNewUser && classCode && profile.memberType === "student") {
       try {

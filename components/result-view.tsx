@@ -7,7 +7,7 @@ import { useAppState } from "@/components/providers";
 import { TrackedLink } from "@/components/tracked-link";
 import posthog from "posthog-js";
 import { trackClientEvent } from "@/lib/analytics-client";
-import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
+import { buildPlanCheckoutPath } from "@/lib/commerce";
 import { ProgressSummary, SpeakingSession } from "@/lib/types";
 import { readStudyFolders, readStudyItems, writeStudyFolders, writeStudyItems } from "@/lib/study-lists";
 
@@ -566,7 +566,7 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
             <>
               <TrackedLink
                 className="button button-primary"
-                href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "result_view_upgrade" })}
+                href={buildPlanCheckoutPath({ plan: "plus", campaign: "result_view_upgrade" })}
                 userId={currentUser?.id}
                 analyticsEvent="checkout_initiated"
                 analyticsPath="/app/results/upgrade"

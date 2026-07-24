@@ -325,6 +325,56 @@ export function PracticeConsole() {
     setSession(evaluatedSession);
     setMode("done");
 
+    if (currentUser?.id && evaluatedSession.report) {
+      const completedDay = evaluatedSession.createdAt.slice(0, 10);
+      const commonAnalytics = {
+        userId: currentUser.id,
+        source: activationSource ?? "practice",
+        plan: currentUser.plan,
+        locale: language,
+        path: `/app/results/${sessionId}`
+      };
+
+      if (summary.totalSessions === 0) {
+        void trackClientEvent({
+          ...commonAnalytics,
+          event: "first_score",
+          eventId: `first-score:${currentUser.id}`
+        });
+        posthog.capture("first_score", {
+          source: activationSource ?? "practice",
+          plan: currentUser.plan,
+          locale: language,
+          exam_type: evaluatedSession.examType,
+          task_type: evaluatedSession.taskType
+        });
+      } else {
+        const hasPreviousPracticeDay = summary.recentSessions.some(
+          (item) => item.createdAt.slice(0, 10) !== completedDay
+        );
+        const returnStorageKey = `speakace-return-practice-${currentUser.id}-${completedDay}`;
+        const alreadyTracked = typeof window !== "undefined"
+          ? window.localStorage.getItem(returnStorageKey) === "1"
+          : false;
+
+        if (hasPreviousPracticeDay && !alreadyTracked) {
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem(returnStorageKey, "1");
+          }
+          void trackClientEvent({
+            ...commonAnalytics,
+            event: "return_practice",
+            eventId: `return-practice:${currentUser.id}:${completedDay}`
+          });
+          posthog.capture("return_practice", {
+            source: activationSource ?? "practice",
+            plan: currentUser.plan,
+            locale: language
+          });
+        }
+      }
+    }
+
     if (runMode === "simulation" && simulationState) {
       const completedEntry = {
         sessionId,
@@ -406,7 +456,7 @@ export function PracticeConsole() {
     setStatus(tr ? "Sonuç hazır. Sonuç ekranı açılıyor." : "Your result is ready. Opening the full review.");
     router.push(`/app/results/${sessionId}`);
     return evaluatedSession;
-  }, [capturePracticeEvent, currentUser?.id, examType, interviewState?.step, router, runMode, simulationState, tr]);
+  }, [activationSource, capturePracticeEvent, currentUser?.id, currentUser?.plan, examType, interviewState?.step, language, router, runMode, simulationState, summary.recentSessions, summary.totalSessions, tr]);
 
   const prepareMicrophone = useCallback(async (activeSession?: SpeakingSession | null) => {
     setError(null);

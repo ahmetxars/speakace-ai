@@ -7,6 +7,7 @@ import { Suspense, useEffect, useState } from "react";
 import posthog from "posthog-js";
 import { ChevronDown, GraduationCap, LockKeyhole, School, Sparkles, UserRound } from "lucide-react";
 import { useAppState } from "@/components/providers";
+import { trackClientEvent } from "@/lib/analytics-client";
 import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
 import { normalizePublicLanguage, type PublicLanguage } from "@/lib/copy";
 import { clearShareAttribution, getShareAttributionFromStorage } from "@/lib/share-growth";
@@ -165,6 +166,7 @@ function AuthPageInner() {
       emailSent?: boolean;
       deliveryUnavailable?: boolean;
       classJoinMessage?: string;
+      profile?: { id: string; plan?: string };
     };
     if (!response.ok) {
       setError(data.error ?? (tr ? "Kimlik doğrulama işlemi tamamlanamadı." : "Authentication failed."));
@@ -177,9 +179,15 @@ function AuthPageInner() {
 
     if (mode === "signup" && data.verificationRequired) {
       clearShareAttribution();
+      void trackClientEvent({
+        event: "signup_completed",
+        path: effectiveAttributionPath ?? "/auth/signup",
+        source: "password_signup",
+        plan: data.profile?.plan ?? "free",
+        locale: normalizePublicLanguage(language)
+      });
       posthog.capture("user_signed_up", {
         member_type: memberType,
-        email,
         has_referral_code: Boolean(referralCode),
         has_class_code: Boolean(classCode)
       });
@@ -203,16 +211,27 @@ function AuthPageInner() {
 
     if (mode === "signup") {
       clearShareAttribution();
-      posthog.identify(email, { email, member_type: memberType });
+      if (data.profile?.id) {
+        posthog.identify(data.profile.id, { member_type: memberType });
+      }
       posthog.capture("user_signed_up", {
         member_type: memberType,
-        email,
         has_referral_code: Boolean(referralCode),
         has_class_code: Boolean(classCode)
       });
+      void trackClientEvent({
+        userId: data.profile?.id,
+        event: "signup_completed",
+        path: effectiveAttributionPath ?? "/auth/signup",
+        source: "password_signup",
+        plan: data.profile?.plan ?? "free",
+        locale: normalizePublicLanguage(language)
+      });
     } else {
-      posthog.identify(email, { email });
-      posthog.capture("user_signed_in", { email });
+      if (data.profile?.id) {
+        posthog.identify(data.profile.id);
+      }
+      posthog.capture("user_signed_in");
     }
     await refreshSession();
     const requestedNext = mode === "signin" ? resolveSafeAppRedirect(searchParams.get("next")) : null;

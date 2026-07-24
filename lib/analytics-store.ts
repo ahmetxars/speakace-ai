@@ -39,7 +39,9 @@ export type AnalyticsEventName =
   | "marketing_cta_click"
   | "pricing_cta_click"
   | "checkout_cta_click"
-  | "signup_completed";
+  | "signup_completed"
+  | "first_score"
+  | "return_practice";
 
 export type AnalyticsEvent = {
   id: string;
@@ -47,6 +49,11 @@ export type AnalyticsEvent = {
   visitorId?: string;
   event: AnalyticsEventName;
   path?: string;
+  eventId?: string;
+  source?: string;
+  plan?: string;
+  locale?: string;
+  occurredAt?: string;
   createdAt: string;
 };
 
@@ -71,6 +78,20 @@ type AnalyticsStore = {
   events: AnalyticsEvent[];
 };
 
+let analyticsSchemaEnsured = false;
+
+async function ensureAnalyticsSchema() {
+  if (!hasDatabaseUrl() || analyticsSchemaEnsured) return;
+  const sql = getSql();
+  await sql`alter table analytics_events add column if not exists event_id text`;
+  await sql`alter table analytics_events add column if not exists source text`;
+  await sql`alter table analytics_events add column if not exists plan text`;
+  await sql`alter table analytics_events add column if not exists locale text`;
+  await sql`alter table analytics_events add column if not exists occurred_at timestamptz`;
+  await sql`create unique index if not exists idx_analytics_events_event_id on analytics_events(event_id)`;
+  analyticsSchemaEnsured = true;
+}
+
 function getStore(): AnalyticsStore {
   const globalStore = globalThis as typeof globalThis & { __speakAceAnalytics?: AnalyticsStore };
   if (!globalStore.__speakAceAnalytics) {
@@ -84,23 +105,37 @@ export async function trackAnalyticsEvent(input: {
   visitorId?: string | null;
   event: AnalyticsEventName;
   path?: string;
+  eventId?: string | null;
+  source?: string | null;
+  plan?: string | null;
+  locale?: string | null;
+  occurredAt?: string | null;
 }) {
   if (!input.userId && !input.visitorId) {
     return;
   }
 
   if (hasDatabaseUrl()) {
+    await ensureAnalyticsSchema();
     const sql = getSql();
     await sql`
-      insert into analytics_events (id, user_id, visitor_id, event, path, created_at)
+      insert into analytics_events (
+        id, user_id, visitor_id, event, path, event_id, source, plan, locale, occurred_at, created_at
+      )
       values (
         ${crypto.randomUUID()},
         ${input.userId ?? null},
         ${input.visitorId ?? null},
         ${input.event},
         ${input.path ?? null},
+        ${input.eventId ?? null},
+        ${input.source ?? null},
+        ${input.plan ?? null},
+        ${input.locale ?? null},
+        ${input.occurredAt ?? null},
         ${new Date().toISOString()}
       )
+      on conflict (event_id) do nothing
     `;
     return;
   }
@@ -112,6 +147,11 @@ export async function trackAnalyticsEvent(input: {
     visitorId: input.visitorId ?? undefined,
     event: input.event,
     path: input.path,
+    eventId: input.eventId ?? undefined,
+    source: input.source ?? undefined,
+    plan: input.plan ?? undefined,
+    locale: input.locale ?? undefined,
+    occurredAt: input.occurredAt ?? undefined,
     createdAt: new Date().toISOString()
   });
 }

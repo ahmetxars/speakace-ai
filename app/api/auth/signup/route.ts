@@ -10,14 +10,17 @@ import { joinTeacherClassByCode } from "@/lib/classroom-store";
 import { addOrgMember, getOrganizationByJoinCode } from "@/lib/server/org-store";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
+import { ANALYTICS_VISITOR_COOKIE, normalizeAnalyticsVisitorId } from "@/lib/analytics-policy";
 import { isAdminEmail } from "@/lib/admin";
 import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
 import { getPostHogClient } from "@/lib/posthog-server";
+import { getPrivacySafeAnalyticsId } from "@/lib/server/analytics-identity";
 
 export async function POST(request: Request) {
   const body = await request.json();
   const email = String(body.email ?? "").trim().toLowerCase();
   const posthog = getPostHogClient();
+  const analyticsId = getPrivacySafeAnalyticsId("signup", email);
 
   try {
     const exposeAuthUrls = process.env.APP_ENV !== "production";
@@ -29,9 +32,9 @@ export async function POST(request: Request) {
     });
     if (!limit.allowed) {
       posthog.capture({
-        distinctId: email || `anonymous-signup:${ip}`,
+        distinctId: analyticsId,
         event: "signup_failed",
-        properties: { email, member_type: body.memberType ?? "student", reason: "rate_limited" }
+        properties: { member_type: body.memberType ?? "student", reason: "rate_limited" }
       });
       return rateLimitResponse(limit.retryAfterSeconds, "Too many sign-up attempts. Please try again later.");
     }
@@ -74,20 +77,30 @@ export async function POST(request: Request) {
       }
     }
     const autoVerified = isAdminEmail(profile.email);
-    if (typeof body.attributionPath === "string" && body.attributionPath.trim()) {
-      const rawPath = body.attributionPath.trim().slice(0, 500);
-      const safePath = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+    const cookieStore = await cookies();
+    const visitorId = normalizeAnalyticsVisitorId(cookieStore.get(ANALYTICS_VISITOR_COOKIE)?.value);
+    const rawPath = typeof body.attributionPath === "string"
+      ? body.attributionPath.trim().slice(0, 500)
+      : "";
+    const safePath = rawPath ? (rawPath.startsWith("/") ? rawPath : `/${rawPath}`) : "/auth/signup";
+    try {
       await trackAnalyticsEvent({
         userId: profile.id,
+        visitorId,
         event: "signup_completed",
-        path: safePath
+        eventId: `signup:${profile.id}`,
+        path: safePath,
+        source: "password_signup",
+        plan: profile.plan,
+        occurredAt: new Date().toISOString()
       });
+    } catch {
+      // Analytics must never block account creation.
     }
-    posthog.identify({ distinctId: profile.id, properties: { email: profile.email, name: profile.name, member_type: profile.memberType } });
-    posthog.capture({ distinctId: profile.id, event: "user_signed_up", properties: { email: profile.email, member_type: profile.memberType, has_referral_code: Boolean(body.referralCode), has_class_code: Boolean(body.classCode) } });
+    posthog.identify({ distinctId: profile.id, properties: { member_type: profile.memberType } });
+    posthog.capture({ distinctId: profile.id, event: "user_signed_up", properties: { member_type: profile.memberType, has_referral_code: Boolean(body.referralCode), has_class_code: Boolean(body.classCode) } });
 
     const verification = await createEmailVerificationFlow(profile.email);
-    const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), "", getSessionCookieOptions(new Date(0)));
     return NextResponse.json({
       profile,
@@ -100,10 +113,9 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     posthog.capture({
-      distinctId: email || "anonymous-signup",
+      distinctId: analyticsId,
       event: "signup_failed",
       properties: {
-        email,
         member_type: body.memberType ?? "student",
         has_referral_code: Boolean(body.referralCode),
         has_class_code: Boolean(body.classCode),

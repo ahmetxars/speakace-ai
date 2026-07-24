@@ -11,7 +11,6 @@ import { trackClientEvent } from "@/lib/analytics-client";
 import {
   buildPlanCheckoutPath,
   commerceNumbers,
-  couponCatalog,
   formatUsd,
   getAnnualMonthlyEquivalent
 } from "@/lib/commerce";
@@ -1026,14 +1025,14 @@ export function Dashboard() {
                 <strong style={{ display: "block", marginBottom: "0.35rem" }}>{upsellRecommendation}</strong>
                 <span style={{ color: "var(--muted)", lineHeight: 1.6 }}>
                   {tr
-                    ? `Plus: 35 dk/gun, 18 session ve tam feedback. Ilk checkout'ta ${couponCatalog.LAUNCH20.code} aktif.`
-                    : `Plus includes 35 min/day, 18 sessions, and full feedback. ${couponCatalog.LAUNCH20.code} is active on the first checkout.`}
+                    ? "Plus: 35 dk/gun, 18 session ve tam feedback. Haftalik secenekte bugun $0."
+                    : "Plus includes 35 min/day, 18 sessions, and full feedback. Weekly costs $0 today."}
                 </span>
               </div>
               <div className="dashboard-inline-actions">
                 <TrackedLink
                   className="button button-primary"
-                  href={buildPlanCheckoutPath({ billing: recommendedUpsellBilling, coupon: couponCatalog.LAUNCH20.code, campaign: `dashboard_${recommendedUpsellBilling}` })}
+                  href={buildPlanCheckoutPath({ billing: recommendedUpsellBilling, campaign: `dashboard_${recommendedUpsellBilling}` })}
                   userId={currentUser?.id}
                   analyticsEvent="checkout_initiated"
                   analyticsPath={`/app/dashboard/upgrade/${recommendedUpsellBilling}`}
@@ -1050,7 +1049,6 @@ export function Dashboard() {
                   className="button button-secondary"
                   href={buildPlanCheckoutPath({
                     billing: recommendedUpsellBilling === "annual" ? "weekly" : "annual",
-                    coupon: couponCatalog.LAUNCH20.code,
                     campaign: recommendedUpsellBilling === "annual" ? "dashboard_weekly" : "dashboard_annual"
                   })}
                   userId={currentUser?.id}

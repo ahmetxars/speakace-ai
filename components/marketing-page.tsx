@@ -19,7 +19,7 @@ import {
 import { useAppState } from "@/components/providers";
 import { motion } from "@/components/static-motion";
 import { TrackedLink } from "@/components/tracked-link";
-import { buildPlanCheckoutPath, commerceNumbers, couponCatalog, formatUsd, getAnnualMonthlyEquivalent } from "@/lib/commerce";
+import { buildPlanCheckoutPath, commerceNumbers, formatUsd, getAnnualMonthlyEquivalent } from "@/lib/commerce";
 import { buildFaqJsonLd, jsonLdToHtml } from "@/lib/structured-data";
 
 const MiniSpeakingDemo = dynamic(
@@ -458,7 +458,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
   const { language, currentUser } = useAppState();
   const t = sectionCopy[language === "tr" ? "tr" : "en"];
   const primaryHref = ctaHref as Route;
-  const annualHref = buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "homepage_annual" });
+  const annualHref = buildPlanCheckoutPath({ plan: "plus", billing: "annual", campaign: "homepage_annual" });
   const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [activeDemo, setActiveDemo] = useState<(typeof t.demoTabs)[number]["id"]>(t.demoTabs[0].id);

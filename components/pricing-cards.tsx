@@ -10,7 +10,6 @@ import {
   buildPlanCheckoutPath,
   commerceConfig,
   commerceNumbers,
-  couponCatalog,
   formatUsd,
   getAnnualMonthlyEquivalent,
   getAnnualSavingsPercentFromWeekly
@@ -60,7 +59,6 @@ export function PricingCards() {
     window.gtag("event", "begin_checkout", {
       currency: "USD",
       value: isAnnual ? commerceNumbers.plusAnnualPrice : commerceNumbers.plusWeeklyPrice,
-      coupon: couponCatalog.LAUNCH20.code,
       items: [
         {
           item_id: isAnnual ? "plus_annual" : "plus_weekly",
@@ -77,7 +75,6 @@ export function PricingCards() {
     : buildPlanCheckoutPath({
         plan: "plus",
         billing,
-        coupon: couponCatalog.LAUNCH20.code,
         campaign: "pricing_primary"
       });
   const plusCtaLabel = isPaidUser
@@ -238,9 +235,10 @@ export function PricingCards() {
           >
             {plusCtaLabel}
           </TrackedLink>
-          <div className="practice-meta">Launch offer: use {couponCatalog.LAUNCH20.code} for your first checkout.</div>
           <div className="practice-meta">
-            {isAnnual ? "Best for learners who already expect a full exam-prep cycle." : "Cancel anytime. Keep the same account after upgrade."}
+            {isAnnual
+              ? "Charged once per year. Best for learners who already expect a full exam-prep cycle."
+              : "3 days free, then $3.99/week unless cancelled. Keep the same account after upgrade."}
           </div>
           <div className="practice-meta">
             {plusSupportNote}
@@ -248,54 +246,17 @@ export function PricingCards() {
         </article>
       </div>
 
-      <div
-        className="card"
-        style={{
-          padding: "1rem 1.1rem",
-          display: "grid",
-          gap: "0.85rem",
-          background: "linear-gradient(135deg, rgba(201,162,39,0.05) 0%, var(--surface) 100%)"
-        }}
-      >
-        <div>
-          <strong style={{ display: "block", marginBottom: "0.35rem" }}>Need more than Plus?</strong>
+      {isPaidUser ? (
+        <div className="card" style={{ padding: "1rem 1.1rem", display: "grid", gap: "0.45rem" }}>
+          <strong>Already on a paid plan?</strong>
           <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65 }}>
-            Advanced plans stay available if you want heavier usage or a long-term commitment, but most first-time buyers should start with Plus.
+            Manage the plan attached to this account from Billing. Existing Pro and Lifetime access stays unchanged.
           </p>
+          <Link className="button button-secondary" href="/app/billing" style={{ width: "fit-content" }}>
+            Manage billing
+          </Link>
         </div>
-        <div style={{ display: "flex", gap: "0.7rem", flexWrap: "wrap" }}>
-          <a
-            className="button button-secondary"
-            href={buildPlanCheckoutPath({ plan: "pro", billing: "monthly", campaign: "pricing_advanced_pro_monthly" })}
-            onClick={() => {
-              posthog.capture("checkout_initiated", { plan: "pro", billing: "monthly", source: "pricing_advanced_pro_monthly" });
-            }}
-            style={{ borderColor: "#c9a227", color: "#b38600" }}
-          >
-            View Pro Monthly · {commerceConfig.proMonthlyPrice}/month
-          </a>
-          <a
-            className="button button-secondary"
-            href={buildPlanCheckoutPath({ plan: "pro", billing: "annual", campaign: "pricing_advanced_pro_annual" })}
-            onClick={() => {
-              posthog.capture("checkout_initiated", { plan: "pro", billing: "annual", source: "pricing_advanced_pro_annual" });
-            }}
-            style={{ borderColor: "#c9a227", color: "#b38600" }}
-          >
-            View Pro Annual · {commerceConfig.proAnnualPrice}/year
-          </a>
-          <a
-            className="button button-secondary"
-            href={buildPlanCheckoutPath({ plan: "lifetime", campaign: "pricing_advanced_lifetime" })}
-            onClick={() => {
-              posthog.capture("checkout_initiated", { plan: "lifetime", source: "pricing_advanced_lifetime" });
-            }}
-            style={{ borderColor: "oklch(0.55 0.18 165.41)", color: "oklch(0.45 0.18 165.41)" }}
-          >
-            View Lifetime · {commerceConfig.lifetimePrice} once
-          </a>
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 }

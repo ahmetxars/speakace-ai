@@ -50,12 +50,18 @@ describe("Lemon checkout redirect", () => {
     expect(checkoutUrl.href).toContain("speakace.lemonsqueezy.com/checkout/buy/");
     expect(checkoutUrl.searchParams.get("checkout[custom][plan]")).toBe("plus");
     expect(checkoutUrl.searchParams.get("checkout[custom][billing]")).toBe("weekly");
-    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith({
-      userId: "user-1",
-      visitorId: "visitor-1234567890",
-      event: "checkout_initiated",
-      path: "/pricing/plus/weekly"
-    });
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        visitorId: "visitor-1234567890",
+        event: "checkout_initiated",
+        path: "/pricing/plus/weekly",
+        eventId: expect.any(String),
+        source: "pricing_primary",
+        plan: "plus",
+        occurredAt: expect.any(String)
+      })
+    );
   });
 
   it("never blocks checkout when analytics storage fails", async () => {
@@ -69,12 +75,18 @@ describe("Lemon checkout redirect", () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toContain("speakace.lemonsqueezy.com/checkout/buy/");
-    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith({
-      userId: "user-1",
-      visitorId: "visitor-1234567890",
-      event: "checkout_initiated",
-      path: "/api/payments/lemon/checkout?plan=plus&billing=annual&campaign=billing_decision_annual"
-    });
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        visitorId: "visitor-1234567890",
+        event: "checkout_initiated",
+        path: "/api/payments/lemon/checkout?plan=plus&billing=annual&campaign=billing_decision_annual",
+        eventId: expect.any(String),
+        source: "billing_decision_annual",
+        plan: "plus",
+        occurredAt: expect.any(String)
+      })
+    );
   });
 
   it("records anonymous checkout intent with a privacy-safe visitor id", async () => {
@@ -89,12 +101,17 @@ describe("Lemon checkout redirect", () => {
     const checkoutUrl = new URL(response.headers.get("location") ?? "");
     expect(response.status).toBe(307);
     expect(checkoutUrl.searchParams.get("checkout[custom][visitor_id]")).toBe("visitor-1234567890");
-    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith({
-      userId: undefined,
-      visitorId: "visitor-1234567890",
-      event: "checkout_initiated",
-      path: "/pricing/plus/weekly"
-    });
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: undefined,
+        visitorId: "visitor-1234567890",
+        event: "checkout_initiated",
+        path: "/pricing/plus/weekly",
+        eventId: expect.any(String),
+        plan: "plus",
+        occurredAt: expect.any(String)
+      })
+    );
   });
 
   it("routes Pro buyers to the monthly offer by default", async () => {

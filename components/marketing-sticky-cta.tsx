@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { buildPlanCheckoutPath, couponCatalog } from "@/lib/commerce";
+import { buildPlanCheckoutPath } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
 
 export function MarketingStickyCta() {
@@ -27,7 +27,7 @@ export function MarketingStickyCta() {
   const isPricingPage = pathname === "/pricing";
   const isBlogPage = pathname.startsWith("/blog");
   const ctaHref = isPricingPage
-    ? buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "sticky_pricing_weekly" })
+    ? buildPlanCheckoutPath({ plan: "plus", campaign: "sticky_pricing_weekly" })
     : "/free-ielts-speaking-test";
 
   return (
@@ -45,8 +45,8 @@ export function MarketingStickyCta() {
         <span>
           {isPricingPage
             ? tr
-              ? `Deneme sonrasinda haftalik $3.99; ilk checkout icin ${couponCatalog.LAUNCH20.code} kullanabilirsin`
-              : `Then $3.99/week; use ${couponCatalog.LAUNCH20.code} on your first checkout`
+              ? "Bugün $0; 3 gün sonra iptal edilmezse haftalık $3.99"
+              : "$0 today; then $3.99/week after 3 days unless cancelled"
             : isBlogPage
               ? tr
                 ? "Okuduğun konuyu hemen practice ile dene"

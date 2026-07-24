@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { getPostHogClient } from "@/lib/posthog-server";
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
   const checkoutMetadata = getLemonCheckoutMetadata(payload);
   const paymentDetails = getLemonPaymentDetails(payload);
   const posthog = getPostHogClient();
+  const providerEventId = `lemonsqueezy:${createHash("sha256").update(rawBody).digest("hex")}`;
 
   if (!status) {
     return NextResponse.json({ received: true, ignored: true });
@@ -154,7 +156,8 @@ export async function POST(request: Request) {
     }
 
     // Entitlements are applied first so an audit-table outage never leaves a paying user on Free.
-    await recordBillingEvent({
+    const inserted = await recordBillingEvent({
+      id: providerEventId,
       provider: "lemonsqueezy",
       eventName,
       userEmail: email,
@@ -165,6 +168,9 @@ export async function POST(request: Request) {
       providerSubscriptionId,
       payloadJson: payload
     });
+    if (!inserted) {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
   } catch (err) {
     console.error("Lemon webhook DB error:", err);
     return NextResponse.json({ error: "Internal error processing webhook." }, { status: 500 });
@@ -191,7 +197,13 @@ export async function POST(request: Request) {
         userId: matchedUserId,
         visitorId: checkoutMetadata.visitorId ?? checkoutMetadata.checkoutId,
         event: "checkout_completed",
-        path: checkoutMetadata.ctaPath ?? undefined
+        path: checkoutMetadata.ctaPath ?? undefined,
+        eventId: paymentDetails.orderId
+          ? `lemonsqueezy:order:${paymentDetails.orderId}`
+          : providerEventId,
+        source: checkoutMetadata.campaign,
+        plan: eventPlan,
+        occurredAt: new Date().toISOString()
       });
     } catch {
       // Revenue analytics must never make a valid billing webhook retry.

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AdSenseUnit } from "@/components/adsense-unit";
 import { TrackedLink } from "@/components/tracked-link";
-import { buildPlanCheckoutPath, commerceNumbers, couponCatalog, formatUsd, getAnnualMonthlyEquivalent } from "@/lib/commerce";
+import { buildPlanCheckoutPath, commerceNumbers, formatUsd, getAnnualMonthlyEquivalent } from "@/lib/commerce";
 import { siteConfig } from "@/lib/site";
 
 const reviewGroups = [
@@ -141,10 +141,10 @@ export default function ReviewsPage() {
             <Link className="button button-secondary" href="/app/practice">
               Start free practice
             </Link>
-            <TrackedLink className="button button-primary" href={buildPlanCheckoutPath({ plan: "plus", billing: "annual", coupon: couponCatalog.LAUNCH20.code, campaign: "reviews_annual" })}>
+            <TrackedLink className="button button-primary" href={buildPlanCheckoutPath({ plan: "plus", billing: "annual", campaign: "reviews_annual" })}>
               Best value: Plus annual
             </TrackedLink>
-            <TrackedLink className="button button-secondary" href={buildPlanCheckoutPath({ plan: "plus", coupon: couponCatalog.LAUNCH20.code, campaign: "reviews_weekly" })}>
+            <TrackedLink className="button button-secondary" href={buildPlanCheckoutPath({ plan: "plus", campaign: "reviews_weekly" })}>
               Unlock Plus weekly
             </TrackedLink>
           </div>

@@ -10,7 +10,6 @@ import {
   buildPlanCheckoutPath,
   commerceConfig,
   commerceNumbers,
-  couponCatalog,
   formatUsd,
   getAnnualMonthlyEquivalent
 } from "@/lib/commerce";
@@ -449,7 +448,6 @@ function ReadyPlan({
   const recommendedCheckoutPath = buildPlanCheckoutPath({
     plan: "plus",
     billing: recommendedBilling,
-    coupon: couponCatalog.LAUNCH20.code,
     campaign: `onboarding_plan_ready_${recommendedBilling}`
   });
   const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
@@ -566,7 +564,11 @@ function ReadyPlan({
                       ? (tr ? `${commerceConfig.plusAnnualPrice}/yıl · yaklaşık ${formatUsd(annualMonthlyEquivalent)}/ay` : `${commerceConfig.plusAnnualPrice}/year · about ${formatUsd(annualMonthlyEquivalent)}/month`)
                       : (tr ? `${commerceConfig.plusMonthlyPrice} ile düşük ilk ödeme` : `${commerceConfig.plusMonthlyPrice} with a lower first payment`)}
                   </strong>
-                  <p>{tr ? `İlk checkout için ${couponCatalog.LAUNCH20.code} kodu aktif.` : `${couponCatalog.LAUNCH20.code} is active for your first checkout.`}</p>
+                  <p>
+                    {recommendedBilling === "weekly"
+                      ? (tr ? "Bugün $0; 3 günlük deneme sonrasında iptal edilmezse haftalık $3.99." : "$0 today; then $3.99/week after the 3-day trial unless cancelled.")
+                      : (tr ? "Yıllık ücret checkout sırasında tek seferde alınır." : "The annual price is charged once at checkout.")}
+                  </p>
                 </div>
                 <TrackedLink
                   className="button button-primary"

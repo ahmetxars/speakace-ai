@@ -47,7 +47,9 @@ const ALLOWED_EVENTS = new Set<AnalyticsEventName>([
   "marketing_cta_click",
   "pricing_cta_click",
   "checkout_cta_click",
-  "signup_completed"
+  "signup_completed",
+  "first_score",
+  "return_practice"
 ]);
 
 export async function POST(request: Request) {
@@ -81,12 +83,29 @@ export async function POST(request: Request) {
     const visitorId = existingVisitorId ?? crypto.randomUUID();
     const rawPath = typeof body.path === "string" ? body.path.trim() : "";
     const path = rawPath.startsWith("/") ? rawPath.slice(0, 240) : undefined;
+    const eventId = typeof body.eventId === "string" && /^[a-zA-Z0-9:_-]{8,160}$/.test(body.eventId)
+      ? body.eventId
+      : undefined;
+    const source = typeof body.source === "string" ? body.source.trim().slice(0, 100) || undefined : undefined;
+    const plan = ["free", "plus", "pro", "lifetime"].includes(body.plan) ? body.plan : undefined;
+    const locale = typeof body.locale === "string" && /^[a-z]{2}(?:-[A-Z]{2})?$/.test(body.locale)
+      ? body.locale
+      : undefined;
+    const rawOccurredAt = typeof body.occurredAt === "string" ? new Date(body.occurredAt) : null;
+    const occurredAt = rawOccurredAt && !Number.isNaN(rawOccurredAt.getTime())
+      ? rawOccurredAt.toISOString()
+      : new Date().toISOString();
 
     await trackAnalyticsEvent({
       userId: profile?.id,
       visitorId,
       event: analyticsEvent,
-      path
+      path,
+      eventId,
+      source,
+      plan,
+      locale,
+      occurredAt
     });
 
     const response = NextResponse.json({ ok: true });
