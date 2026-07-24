@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCheckoutRecoveryEmailContent,
   buildPracticeLimitRecoveryEmailContent,
   buildOnboardingEmailContent,
   isEmailQuotaFailureRecovered,
@@ -182,5 +183,20 @@ describe("practice limit recovery", () => {
     expect(resolvePracticeLimitRecoveryReason("/app/practice/result_retry_locked/trial_dialog")).toBe("result_retry_locked");
     expect(resolvePracticeLimitRecoveryReason("/app/practice/practice_limit_hit/trial_dialog")).toBe("practice_limit_hit");
     expect(resolvePracticeLimitRecoveryReason(null)).toBe("practice_limit_hit");
+  });
+});
+
+describe("checkout recovery", () => {
+  it("states the exact renewal terms without claiming a charge or discount", () => {
+    const email = buildCheckoutRecoveryEmailContent("Learner");
+
+    expect(email.subject).toContain("checkout");
+    expect(email.html).toContain("Nothing was charged");
+    expect(email.html).toContain("billing=weekly");
+    expect(email.html).toContain("campaign=checkout_recovery");
+    expect(email.html).toContain("$0 today");
+    expect(email.html).toContain("$3.99/week");
+    expect(email.html).not.toContain("LAUNCH20");
+    expect(email.html).not.toContain("discount");
   });
 });

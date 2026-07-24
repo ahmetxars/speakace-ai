@@ -49,12 +49,15 @@ describe("analytics tracking policy", () => {
     const response = await POST(analyticsRequest("pricing_view"));
 
     expect(response.status).toBe(200);
-    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith({
-      userId: undefined,
-      visitorId: "visitor-1234567890",
-      event: "pricing_view",
-      path: "/pricing"
-    });
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: undefined,
+        visitorId: "visitor-1234567890",
+        event: "pricing_view",
+        path: "/pricing",
+        occurredAt: expect.any(String)
+      })
+    );
   });
 
   it("requires authentication for learner product events", async () => {
@@ -79,11 +82,14 @@ describe("analytics tracking policy", () => {
     const response = await POST(analyticsRequest("practice_start", "/app/practice"));
 
     expect(response.status).toBe(200);
-    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith({
-      userId: "user-1",
-      visitorId: "visitor-1234567890",
-      event: "practice_start",
-      path: "/app/practice"
-    });
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        visitorId: "visitor-1234567890",
+        event: "practice_start",
+        path: "/app/practice",
+        occurredAt: expect.any(String)
+      })
+    );
   });
 });

@@ -30,6 +30,27 @@ type Choice = {
   desc: string;
 };
 
+type OnboardingDraft = {
+  step: number;
+  form: FormState;
+  updatedAt: string;
+};
+
+function buildInitialForm(profile: StudentProfileType): FormState {
+  return {
+    ...profile,
+    studyDays: Array.isArray(profile.studyDays) ? profile.studyDays.map(String) : [],
+    englishBackground: profile.englishBackground ?? "",
+    biggestChallenge: profile.biggestChallenge ?? "",
+    estimatedLevel: profile.estimatedLevel ?? "",
+    learningStyle: profile.learningStyle ?? ""
+  };
+}
+
+function getDraftKey(userId: string) {
+  return `speakace:onboarding:${userId}`;
+}
+
 function OptionCard({
   option,
   selected,
@@ -56,19 +77,13 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
   const router = useRouter();
   const { currentUser, language } = useAppState();
   const tr = language === "tr";
-  const [form, setForm] = useState<FormState>({
-    ...profile,
-    studyDays: Array.isArray(profile.studyDays) ? profile.studyDays.map(String) : [],
-    englishBackground: profile.englishBackground ?? "",
-    biggestChallenge: profile.biggestChallenge ?? "",
-    estimatedLevel: profile.estimatedLevel ?? "",
-    learningStyle: profile.learningStyle ?? ""
-  });
+  const [form, setForm] = useState<FormState>(() => buildInitialForm(profile));
   const [error, setError] = useState("");
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [planReady, setPlanReady] = useState(false);
   const [savedProfile, setSavedProfile] = useState<StudentProfileType | null>(null);
+  const [draftLoaded, setDraftLoaded] = useState(false);
 
   const steps = [
     { title: tr ? "Hedefin" : "Your target" },
@@ -178,6 +193,9 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
         biggest_challenge: data.profile.biggestChallenge,
         estimated_level: data.profile.estimatedLevel
       });
+      if (currentUser?.id) {
+        window.localStorage.removeItem(getDraftKey(currentUser.id));
+      }
       setSavedProfile(data.profile);
       setPlanReady(true);
     } catch {
@@ -186,6 +204,47 @@ export function OnboardingWizard({ profile }: { profile: StudentProfileType }) {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!currentUser?.id || draftLoaded) return;
+
+    try {
+      const rawDraft = window.localStorage.getItem(getDraftKey(currentUser.id));
+      if (rawDraft) {
+        const draft = JSON.parse(rawDraft) as Partial<OnboardingDraft>;
+        const updatedAt = typeof draft.updatedAt === "string" ? Date.parse(draft.updatedAt) : NaN;
+        const isRecent =
+          Number.isFinite(updatedAt) &&
+          Date.now() - updatedAt < 30 * 24 * 60 * 60 * 1000;
+
+        if (isRecent && draft.form && typeof draft.form === "object") {
+          setForm({
+            ...buildInitialForm(profile),
+            ...draft.form,
+            studyDays: Array.isArray(draft.form.studyDays) ? draft.form.studyDays.map(String) : []
+          });
+          if (typeof draft.step === "number") {
+            setStep(Math.min(TOTAL_STEPS, Math.max(1, Math.round(draft.step))));
+          }
+        }
+      }
+    } catch {
+      window.localStorage.removeItem(getDraftKey(currentUser.id));
+    } finally {
+      setDraftLoaded(true);
+    }
+  }, [currentUser?.id, draftLoaded, profile]);
+
+  useEffect(() => {
+    if (!currentUser?.id || !draftLoaded || planReady) return;
+
+    const draft: OnboardingDraft = {
+      step,
+      form,
+      updatedAt: new Date().toISOString()
+    };
+    window.localStorage.setItem(getDraftKey(currentUser.id), JSON.stringify(draft));
+  }, [currentUser?.id, draftLoaded, form, planReady, step]);
 
   useEffect(() => {
     if (!planReady || currentUser?.plan !== "free" || !savedProfile) return;

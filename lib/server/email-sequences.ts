@@ -869,6 +869,13 @@ export async function getUsersDueForNextOnboardingEmail(limit = 100): Promise<
     where coalesce(u.onboarding_emails_sent, 0) < ${maxEmailNumber}
       and u.email_verified = true
       and u.billing_status not in ('active', 'on_trial')
+      and not exists (
+        select 1
+        from email_log recent_email
+        where recent_email.user_id = u.id
+          and recent_email.status = 'sent'
+          and recent_email.sent_at >= now() - interval '24 hours'
+      )
     order by u.created_at asc
     limit ${Math.max(limit * 3, limit)}
   `;
@@ -1146,6 +1153,219 @@ export async function sendPracticeLimitRecoveryEmail(
       userId,
       userEmail: user.email,
       template: "practice_limit_recovery",
+      subject: emailContent.subject,
+      status: "failed",
+      errorMessage: err instanceof Error ? err.message : "unknown error"
+    });
+    return { ok: false };
+  }
+}
+
+function buildCheckoutRecoveryUrl() {
+  const params = new URLSearchParams({
+    plan: "plus",
+    billing: "weekly",
+    campaign: "checkout_recovery",
+    cta: "/email/checkout_recovery",
+    cta_event: "checkout_initiated"
+  });
+  return `${SITE_URL}/api/payments/lemon/checkout?${params.toString()}`;
+}
+
+export function buildCheckoutRecoveryEmailContent(name: string): LifecycleEmailContent {
+  const greeting = name.trim() || "there";
+  const checkoutUrl = buildCheckoutRecoveryUrl();
+  const html = layout(`
+    <p style="margin:0 0 6px;color:#d95d39;font-size:0.82em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em">Your SpeakAce plan</p>
+    <h1 style="margin:0 0 20px;font-size:1.45em;color:#1b120d;font-weight:800">Your Plus checkout was not completed</h1>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 18px">Hi ${greeting}, you opened the Plus checkout but did not finish it. Nothing was charged.</p>
+    ${highlight("<strong>Weekly Plus starts with a 3-day trial at $0 today.</strong> Unless cancelled before the trial ends, it renews at $3.99/week. The final checkout screen shows the exact terms before you confirm.")}
+    <div style="margin:24px 0 10px">
+      ${primaryBtn(checkoutUrl, "Return to secure checkout &rarr;")}
+    </div>
+    <p style="margin:12px 0 0;color:#7a5c4a;font-size:0.86em;line-height:1.65">Not ready? Your Free plan remains active and no action is required. You can continue from the <a href="${PRACTICE_URL}" style="color:#1d6f75;font-weight:700">practice page</a>.</p>
+  `);
+
+  return {
+    subject: "Your SpeakAce Plus checkout is still available",
+    html,
+    text: `Hi ${greeting}, your Plus checkout was not completed and nothing was charged. Weekly Plus starts with a 3-day trial at $0 today, then renews at $3.99/week unless cancelled before the trial ends. Return to checkout: ${checkoutUrl}. Keep using Free: ${PRACTICE_URL}`
+  };
+}
+
+export async function getUsersDueForCheckoutRecoveryEmail(
+  limit = 50
+): Promise<Array<{ id: string; checkoutAt: string }>> {
+  if (!hasDatabaseUrl()) return [];
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  const rows = await sql<Array<{ id: string; checkout_at: string | Date }>>`
+    with latest_checkout as (
+      select distinct on (ae.user_id)
+        ae.user_id,
+        ae.created_at
+      from analytics_events ae
+      where ae.event = 'checkout_initiated'
+        and ae.user_id is not null
+        and ae.created_at >= now() - interval '72 hours'
+        and ae.created_at <= now() - interval '45 minutes'
+      order by ae.user_id, ae.created_at desc
+    )
+    select
+      u.id,
+      latest_checkout.created_at as checkout_at
+    from latest_checkout
+    join users u on u.id = latest_checkout.user_id
+    where u.plan = 'free'
+      and coalesce(u.billing_status, 'free') not in ('active', 'on_trial')
+      and u.email_verified = true
+      and u.email_opt_out = false
+      and u.role <> 'guest'
+      and not exists (
+        select 1
+        from analytics_events completed
+        where completed.user_id = u.id
+          and completed.event = 'checkout_completed'
+          and completed.created_at >= latest_checkout.created_at
+      )
+      and not exists (
+        select 1
+        from billing_events billing
+        where billing.user_id = u.id
+          and billing.billing_status in ('active', 'on_trial')
+          and billing.created_at >= latest_checkout.created_at
+      )
+      and not exists (
+        select 1
+        from email_log recovery
+        where recovery.user_id = u.id
+          and recovery.template = 'checkout_recovery'
+          and recovery.status = 'sent'
+          and recovery.sent_at >= now() - interval '14 days'
+      )
+      and not exists (
+        select 1
+        from email_log recent_email
+        where recent_email.user_id = u.id
+          and recent_email.status = 'sent'
+          and recent_email.sent_at >= now() - interval '24 hours'
+      )
+    order by latest_checkout.created_at desc
+    limit ${Math.min(Math.max(limit, 1), 50)}
+  `;
+
+  return rows.map((row) => ({
+    id: row.id,
+    checkoutAt:
+      row.checkout_at instanceof Date
+        ? row.checkout_at.toISOString()
+        : new Date(row.checkout_at).toISOString()
+  }));
+}
+
+export async function sendCheckoutRecoveryEmail(
+  userId: string
+): Promise<{ ok: boolean; skipped?: boolean }> {
+  if (!hasDatabaseUrl()) return { ok: false, skipped: true };
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  const rows = await sql<
+    Array<{
+      email: string;
+      name: string;
+      email_opt_out: boolean;
+      email_verified: boolean;
+      plan: string;
+      billing_status: string;
+      checkout_at: string | Date;
+      completed: boolean;
+      recently_sent: boolean;
+      recent_email: boolean;
+    }>
+  >`
+    select
+      u.email,
+      u.name,
+      u.email_opt_out,
+      u.email_verified,
+      u.plan,
+      u.billing_status,
+      latest_checkout.created_at as checkout_at,
+      exists (
+        select 1
+        from analytics_events completed
+        where completed.user_id = u.id
+          and completed.event = 'checkout_completed'
+          and completed.created_at >= latest_checkout.created_at
+      ) as completed,
+      exists (
+        select 1
+        from email_log recovery
+        where recovery.user_id = u.id
+          and recovery.template = 'checkout_recovery'
+          and recovery.status = 'sent'
+          and recovery.sent_at >= now() - interval '14 days'
+      ) as recently_sent,
+      exists (
+        select 1
+        from email_log recent_email
+        where recent_email.user_id = u.id
+          and recent_email.status = 'sent'
+          and recent_email.sent_at >= now() - interval '24 hours'
+      ) as recent_email
+    from users u
+    join lateral (
+      select ae.created_at
+      from analytics_events ae
+      where ae.user_id = u.id
+        and ae.event = 'checkout_initiated'
+        and ae.created_at >= now() - interval '72 hours'
+        and ae.created_at <= now() - interval '45 minutes'
+      order by ae.created_at desc
+      limit 1
+    ) latest_checkout on true
+    where u.id = ${userId}
+    limit 1
+  `;
+  const user = rows[0];
+  if (
+    !user ||
+    user.email_opt_out ||
+    !user.email_verified ||
+    user.plan !== "free" ||
+    ["active", "on_trial"].includes(user.billing_status) ||
+    user.completed ||
+    user.recently_sent ||
+    user.recent_email
+  ) {
+    return { ok: false, skipped: true };
+  }
+
+  let emailContent = buildCheckoutRecoveryEmailContent(user.name);
+  const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`;
+  emailContent = {
+    ...emailContent,
+    html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${unsubscribeUrl}"`)
+  };
+
+  try {
+    const result = await sendEmail({ to: user.email, ...emailContent });
+    await logEmail({
+      userId,
+      userEmail: user.email,
+      template: "checkout_recovery",
+      subject: emailContent.subject,
+      status: result.ok ? "sent" : "failed",
+      errorMessage: result.ok ? undefined : "send skipped (no transport)"
+    });
+    return result;
+  } catch (err) {
+    await logEmail({
+      userId,
+      userEmail: user.email,
+      template: "checkout_recovery",
       subject: emailContent.subject,
       status: "failed",
       errorMessage: err instanceof Error ? err.message : "unknown error"

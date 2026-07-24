@@ -7,6 +7,8 @@ import {
   sendDailyTipEmail,
   getUsersDueForPracticeLimitRecoveryEmail,
   sendPracticeLimitRecoveryEmail,
+  getUsersDueForCheckoutRecoveryEmail,
+  sendCheckoutRecoveryEmail,
   getUsersDueForTrialLifecycleEmail,
   sendTrialLifecycleEmail,
   getCurrentEmailQuotaBlock,
@@ -39,42 +41,72 @@ export async function GET(request: Request) {
   const dryRun = url.searchParams.get("dryRun") === "1";
   const skipTips = url.searchParams.get("skipTips") === "1";
   const skipRecovery = url.searchParams.get("skipRecovery") === "1";
-  const recoveryEnabled = process.env.ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS === "true";
+  const recoveryEnabled =
+    process.env.ENABLE_REVENUE_RECOVERY_EMAILS === "true" ||
+    process.env.ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS === "true";
   const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 250) : 100;
   const quotaBlock = await getCurrentEmailQuotaBlock();
   const lifecycleBudget = await getEmailLifecycleBudgetStatus();
   let remainingAttempts = lifecycleBudget.remaining;
   const sendingSuppressed = dryRun || Boolean(quotaBlock);
 
-  // ── Onboarding emails ──────────────────────────────────────────────────────
-  let onboardingSent = 0;
-  let onboardingSkipped = 0;
-  let onboardingFailed = 0;
-  const onboardingUsers = await getUsersDueForNextOnboardingEmail(limit);
+  // ── 1. Trial activation and renewal transparency ──────────────────────────
+  let trialSent = 0;
+  let trialSkipped = 0;
+  let trialFailed = 0;
+  const trialUsers = await getUsersDueForTrialLifecycleEmail(limit);
 
-  for (const user of onboardingUsers) {
+  for (const user of trialUsers) {
     try {
       if (sendingSuppressed || remainingAttempts <= 0) {
-        onboardingSkipped++;
+        trialSkipped++;
         continue;
       }
 
       remainingAttempts--;
-      const result = await sendOnboardingEmail(user.id, user.nextEmailNumber);
+      const result = await sendTrialLifecycleEmail(user.id, user.stage);
       if (result.ok) {
-        await markOnboardingEmailSent(user.id, user.nextEmailNumber);
-        onboardingSent++;
+        trialSent++;
       } else if (result.skipped) {
-        onboardingSkipped++;
+        trialSkipped++;
       } else {
-        onboardingFailed++;
+        trialFailed++;
       }
     } catch {
-      onboardingFailed++;
+      trialFailed++;
     }
   }
 
-  // ── High-intent practice limit recovery ─────────────────────────────────────
+  // ── 2. Checkout recovery ───────────────────────────────────────────────────
+  let checkoutRecoverySent = 0;
+  let checkoutRecoverySkipped = 0;
+  let checkoutRecoveryFailed = 0;
+  const checkoutRecoveryUsers = skipRecovery || !recoveryEnabled
+    ? []
+    : await getUsersDueForCheckoutRecoveryEmail(Math.min(limit, 50));
+
+  for (const user of checkoutRecoveryUsers) {
+    try {
+      if (sendingSuppressed || remainingAttempts <= 0) {
+        checkoutRecoverySkipped++;
+        continue;
+      }
+
+      remainingAttempts--;
+      const result = await sendCheckoutRecoveryEmail(user.id);
+      if (result.ok) {
+        checkoutRecoverySent++;
+      } else if (result.skipped) {
+        checkoutRecoverySkipped++;
+      } else {
+        checkoutRecoveryFailed++;
+      }
+    } catch {
+      checkoutRecoveryFailed++;
+    }
+  }
+
+  // ── 3. High-intent practice limit recovery ────────────────────────────────
   let recoverySent = 0;
   let recoverySkipped = 0;
   let recoveryFailed = 0;
@@ -103,19 +135,45 @@ export async function GET(request: Request) {
     }
   }
 
-  // ── Daily tip emails ───────────────────────────────────────────────────────
+  // ── 4. Onboarding progression ──────────────────────────────────────────────
+  let onboardingSent = 0;
+  let onboardingSkipped = 0;
+  let onboardingFailed = 0;
+  const onboardingUsers = await getUsersDueForNextOnboardingEmail(limit);
+
+  for (const user of onboardingUsers) {
+    try {
+      if (sendingSuppressed || remainingAttempts <= 0) {
+        onboardingSkipped++;
+        continue;
+      }
+
+      remainingAttempts--;
+      const result = await sendOnboardingEmail(user.id, user.nextEmailNumber);
+      if (result.ok) {
+        await markOnboardingEmailSent(user.id, user.nextEmailNumber);
+        onboardingSent++;
+      } else if (result.skipped) {
+        onboardingSkipped++;
+      } else {
+        onboardingFailed++;
+      }
+    } catch {
+      onboardingFailed++;
+    }
+  }
+
+  // ── 5. General tips use only the budget left by high-intent messages ───────
   let tipSent = 0;
   let tipSkipped = 0;
   let tipFailed = 0;
-  const trialUsers = await getUsersDueForTrialLifecycleEmail(limit);
 
-  if (!skipTips) {
-    const tipAttemptCap = Math.max(0, remainingAttempts - trialUsers.length);
-    const tipUsers = await getUsersForDailyTip(Math.min(200, tipAttemptCap));
+  if (!skipTips && remainingAttempts > 0) {
+    const tipUsers = await getUsersForDailyTip(Math.min(200, remainingAttempts));
 
     for (const user of tipUsers) {
       try {
-        if (sendingSuppressed || remainingAttempts <= trialUsers.length) {
+        if (sendingSuppressed || remainingAttempts <= 0) {
           tipSkipped++;
           continue;
         }
@@ -132,32 +190,6 @@ export async function GET(request: Request) {
       } catch {
         tipFailed++;
       }
-    }
-  }
-
-  // ── Trial activation and renewal transparency ─────────────────────────────
-  let trialSent = 0;
-  let trialSkipped = 0;
-  let trialFailed = 0;
-
-  for (const user of trialUsers) {
-    try {
-      if (sendingSuppressed || remainingAttempts <= 0) {
-        trialSkipped++;
-        continue;
-      }
-
-      remainingAttempts--;
-      const result = await sendTrialLifecycleEmail(user.id, user.stage);
-      if (result.ok) {
-        trialSent++;
-      } else if (result.skipped) {
-        trialSkipped++;
-      } else {
-        trialFailed++;
-      }
-    } catch {
-      trialFailed++;
     }
   }
 
@@ -179,10 +211,18 @@ export async function GET(request: Request) {
       failed: onboardingFailed,
       sample: onboardingUsers.slice(0, 5).map((u) => ({
         id: u.id,
-        email: u.email,
         nextEmailNumber: u.nextEmailNumber
       }))
     },
+    checkoutRecovery: skipRecovery || !recoveryEnabled
+      ? { skipped: true, enabled: recoveryEnabled }
+      : {
+          enabled: true,
+          queued: checkoutRecoveryUsers.length,
+          sent: checkoutRecoverySent,
+          skipped: checkoutRecoverySkipped,
+          failed: checkoutRecoveryFailed
+        },
     practiceLimitRecovery: skipRecovery || !recoveryEnabled
       ? { skipped: true, enabled: recoveryEnabled }
       : {

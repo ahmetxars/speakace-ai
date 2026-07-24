@@ -10,6 +10,11 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    root: __dirname
+    root: __dirname,
+    setupFiles: ["./vitest.setup.ts"],
+    exclude: ["**/.claude/**", "**/.next/**", "**/node_modules/**"],
+    env: {
+      OPENAI_API_KEY: ""
+    }
   }
 });
