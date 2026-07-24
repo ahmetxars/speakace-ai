@@ -424,13 +424,13 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
 
     return (
       <main className="teacher-workspace-page page-shell">
-        <section className="teacher-workspace">
-          <aside className="teacher-workspace-sidebar">
-            <div className="teacher-workspace-brand">
-              <span>SA</span>
+        <section className="teacher-workspace teacher-workspace-dashboard">
+          <header className="teacher-workspace-toolbar">
+            <div className="teacher-workspace-toolbar-context">
+              <span><LayoutDashboard size={18} /></span>
               <div>
-                <strong>SpeakAce</strong>
-                <small>{tr ? "Öğretmen alanı" : "Teacher workspace"}</small>
+                <strong>{tr ? "Öğretmen alanı" : "Teacher workspace"}</strong>
+                <small>{tr ? "Sınıflar ve öncelikler" : "Classes and priorities"}</small>
               </div>
             </div>
             <nav aria-label={tr ? "Öğretmen menüsü" : "Teacher navigation"}>
@@ -447,7 +447,7 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
                 </button>
               ))}
             </nav>
-            <div className="teacher-workspace-sidebar-foot">
+            <div className="teacher-workspace-toolbar-actions">
               <Link href="/app/teacher/billing">
                 <Settings2 size={17} />
                 <span>{tr ? "Plan ve faturalama" : "Plan and billing"}</span>
@@ -460,7 +460,7 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
                 <span>{tr ? "Yeni sınıf oluştur" : "Create a class"}</span>
               </button>
             </div>
-          </aside>
+          </header>
 
           <section className="teacher-workspace-main">
             <header className="teacher-workspace-head">
@@ -483,6 +483,41 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
               </div>
             )}
 
+            {classes.length === 0 ? (
+              <section className="teacher-workspace-first-class">
+                <div className="teacher-workspace-first-class-copy">
+                  <span>{tr ? "İlk 60 saniye" : "Your first 60 seconds"}</span>
+                  <h2>{tr ? "İlk sınıfını oluştur, gerisini panel düzenlesin." : "Create your first class. The workspace handles the rest."}</h2>
+                  <p>
+                    {tr
+                      ? "Sınıf adını gir. SpeakAce benzersiz katılım kodunu hazırlayacak; öğrenciler geldikçe denemeler, ödevler ve takip gerektiren işler burada düzenlenecek."
+                      : "Name the class and SpeakAce will create its join code. Attempts, assignments, and follow-up work will organize themselves as learners arrive."}
+                  </p>
+                  <div className="teacher-workspace-first-class-steps" aria-label={tr ? "Kurulum adımları" : "Setup steps"}>
+                    <span><i>01</i>{tr ? "Sınıfı oluştur" : "Create the class"}</span>
+                    <span><i>02</i>{tr ? "Kodu paylaş" : "Share the code"}</span>
+                    <span><i>03</i>{tr ? "İlerlemeyi izle" : "Track progress"}</span>
+                  </div>
+                </div>
+                <div className="teacher-workspace-first-class-form">
+                  <label htmlFor="teacher-create-class-name">{tr ? "Sınıf adı" : "Class name"}</label>
+                  <input
+                    id="teacher-create-class-name"
+                    value={newClassName}
+                    onChange={(event) => setNewClassName(event.target.value)}
+                    onKeyDown={(event) => { if (event.key === "Enter") void createClass(); }}
+                    placeholder={tr ? "IELTS Akşam Grubu" : "IELTS Evening Group"}
+                    autoFocus
+                  />
+                  <button type="button" className="button button-primary" onClick={createClass} disabled={!newClassName.trim()}>
+                    <Plus size={16} />
+                    {tr ? "İlk sınıfımı oluştur" : "Create my first class"}
+                  </button>
+                  <small>{tr ? "Katılım kodu otomatik oluşturulur." : "A private join code is created automatically."}</small>
+                </div>
+              </section>
+            ) : (
+              <>
             <section className="teacher-workspace-kpis" aria-label={tr ? "Genel istatistikler" : "Overview metrics"}>
               <TeacherStat label={tr ? "Sınıf" : "Classes"} value={String(dashboardAnalytics?.totalClasses ?? classes.length)} />
               <TeacherStat label={tr ? "Aktif öğrenci" : "Active students"} value={String(dashboardAnalytics?.activeStudents ?? 0)} detail={`${dashboardAnalytics?.totalStudents ?? 0} ${tr ? "toplam" : "total"}`} />
@@ -613,6 +648,8 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
                 </button>
               </div>
             </section>
+              </>
+            )}
           </section>
         </section>
       </main>
@@ -637,22 +674,16 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
 
   return (
     <main className="teacher-workspace-page page-shell">
-      <section className="teacher-workspace">
-        <aside className="teacher-workspace-sidebar">
-          <div className="teacher-workspace-brand">
-            <span>SA</span>
-            <div>
-              <strong>SpeakAce</strong>
-              <small>{tr ? "Öğretmen alanı" : "Teacher workspace"}</small>
+      <section className="teacher-workspace teacher-workspace-class">
+        <header className="teacher-workspace-toolbar teacher-workspace-class-toolbar">
+          <div className="teacher-workspace-toolbar-context">
+            <button type="button" onClick={goBack} className="teacher-workspace-back" aria-label={tr ? "Tüm sınıflar" : "All classes"}>
+              <ArrowLeft size={16} />
+            </button>
+            <div className="teacher-workspace-class-name">
+              <span>{tr ? "Aktif sınıf" : "Active class"}</span>
+              <strong>{selectedClass?.name}</strong>
             </div>
-          </div>
-          <button type="button" onClick={goBack} className="teacher-workspace-back">
-            <ArrowLeft size={16} />
-            <span>{tr ? "Tüm sınıflar" : "All classes"}</span>
-          </button>
-          <div className="teacher-workspace-class-name">
-            <span>{tr ? "Aktif sınıf" : "Active class"}</span>
-            <strong>{selectedClass?.name}</strong>
           </div>
           <nav aria-label={tr ? "Sınıf menüsü" : "Class navigation"}>
             {tabs.map(({ id, label, badge, icon: Icon }) => (
@@ -672,15 +703,7 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
               </button>
             ))}
           </nav>
-          <div className="teacher-workspace-sidebar-foot teacher-workspace-code">
-            <span>{tr ? "Katılım kodu" : "Join code"}</span>
-            <strong>{selectedClass?.joinCode}</strong>
-            <button type="button" onClick={copyJoinCode}>
-              <Copy size={16} />
-              <span>{copiedCode === selectedClass?.joinCode ? (tr ? "Kopyalandı" : "Copied") : (tr ? "Kodu kopyala" : "Copy code")}</span>
-            </button>
-          </div>
-        </aside>
+        </header>
 
         <section className="teacher-workspace-main">
           <header className="teacher-workspace-head">
@@ -1425,21 +1448,6 @@ function TeacherWorkspaceLoading({ tr }: { tr: boolean }) {
   return (
     <main className="teacher-workspace-page page-shell">
       <section className="teacher-workspace teacher-workspace-is-loading" aria-busy="true">
-        <aside className="teacher-workspace-sidebar">
-          <div className="teacher-workspace-brand">
-            <span>SA</span>
-            <div>
-              <strong>SpeakAce</strong>
-              <small>{tr ? "Öğretmen alanı" : "Teacher workspace"}</small>
-            </div>
-          </div>
-          <div className="teacher-workspace-sidebar-skeleton">
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
-        </aside>
         <section className="teacher-workspace-main">
           <HubLoading label={tr ? "Öğretmen paneli hazırlanıyor…" : "Preparing teacher workspace…"} />
         </section>
