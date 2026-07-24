@@ -631,6 +631,7 @@ export function AdminPanel(props: {
   const [memberTypeFilter, setMemberTypeFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
   const [billingFilter, setBillingFilter] = useState("all");
+  const [memberVisibleCount, setMemberVisibleCount] = useState(20);
   const [code, setCode] = useState("");
   const [label, setLabel] = useState("");
   const [trialDays, setTrialDays] = useState("7");
@@ -902,6 +903,11 @@ export function AdminPanel(props: {
         .includes(query);
       });
   }, [billingFilter, memberTypeFilter, planFilter, props.members, search]);
+
+  const visibleMembers = useMemo(
+    () => filteredMembers.slice(0, memberVisibleCount),
+    [filteredMembers, memberVisibleCount]
+  );
 
   const topQuickActions = useMemo(
     () => [
@@ -1291,6 +1297,7 @@ export function AdminPanel(props: {
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
+                  setMemberVisibleCount(20);
                   if (activeTab !== "members") {
                     navigateTo("members");
                   }
@@ -2207,23 +2214,47 @@ export function AdminPanel(props: {
                   <input
                     className="adm-search-input"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setMemberVisibleCount(20);
+                    }}
                     placeholder="İsim, e-posta, kurum veya kod ara..."
                   />
                 </div>
-                <select value={memberTypeFilter} onChange={(e) => setMemberTypeFilter(e.target.value)} className="adm-select">
+                <select
+                  value={memberTypeFilter}
+                  onChange={(e) => {
+                    setMemberTypeFilter(e.target.value);
+                    setMemberVisibleCount(20);
+                  }}
+                  className="adm-select"
+                >
                   <option value="all">Tüm kullanıcı türleri</option>
                   <option value="student">Öğrenciler</option>
                   <option value="teacher">Öğretmenler</option>
                   <option value="school">Okullar</option>
                 </select>
-                <select value={planFilter} onChange={(e) => setPlanFilter(e.target.value)} className="adm-select">
+                <select
+                  value={planFilter}
+                  onChange={(e) => {
+                    setPlanFilter(e.target.value);
+                    setMemberVisibleCount(20);
+                  }}
+                  className="adm-select"
+                >
                   <option value="all">Tüm planlar</option>
                   <option value="free">Ücretsiz</option>
                   <option value="plus">Plus</option>
                   <option value="pro">Pro</option>
                 </select>
-                <select value={billingFilter} onChange={(e) => setBillingFilter(e.target.value)} className="adm-select">
+                <select
+                  value={billingFilter}
+                  onChange={(e) => {
+                    setBillingFilter(e.target.value);
+                    setMemberVisibleCount(20);
+                  }}
+                  className="adm-select"
+                >
                   <option value="all">Tüm ödeme durumları</option>
                   <option value="free">Ücretsiz</option>
                   <option value="active">Aktif</option>
@@ -2240,7 +2271,7 @@ export function AdminPanel(props: {
                 {filteredMembers.length === 0 ? (
                   <div className="adm-table-empty" style={{ padding: "3rem", textAlign: "center" }}>Filtrelerle eşleşen kullanıcı yok.</div>
                 ) : (
-                  filteredMembers.map((member) => (
+                  visibleMembers.map((member) => (
                     <article key={member.id} className="adm-member-card">
                       <div className="adm-member-main">
                         <div className="adm-member-top">
@@ -2254,9 +2285,12 @@ export function AdminPanel(props: {
                           </div>
                           <div className="adm-member-badges">
                             <StatusBadge label={member.memberType} />
-                            <StatusBadge label={member.plan} tone={member.plan === "plus" || member.plan === "pro" ? "accent" : "neutral"} />
                             <StatusBadge
-                              label={member.billingStatus}
+                              label={`Plan: ${translateStatus(member.plan)}`}
+                              tone={member.plan === "plus" || member.plan === "pro" ? "accent" : "neutral"}
+                            />
+                            <StatusBadge
+                              label={`Ödeme: ${translateStatus(member.billingStatus)}`}
                               tone={member.billingStatus === "active" || member.billingStatus === "on_trial" ? "success" : "warning"}
                             />
                           </div>
@@ -2370,6 +2404,20 @@ export function AdminPanel(props: {
                   ))
                 )}
               </div>
+              {visibleMembers.length < filteredMembers.length && (
+                <div className="adm-member-pagination">
+                  <span>
+                    {visibleMembers.length} / {filteredMembers.length} kullanıcı gösteriliyor
+                  </span>
+                  <button
+                    type="button"
+                    className="adm-secondary-btn"
+                    onClick={() => setMemberVisibleCount((current) => current + 20)}
+                  >
+                    20 kullanıcı daha yükle
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

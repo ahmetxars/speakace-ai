@@ -20649,6 +20649,18 @@ body[data-theme="dark"] .adm-shell {
   color: var(--adm-success);
 }
 
+.adm-member-pagination {
+  align-items: center;
+  border-top: 1px solid var(--adm-line);
+  color: var(--adm-muted);
+  display: flex;
+  font-size: 0.7rem;
+  font-weight: 700;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
 .adm-metric-cell {
   background: var(--adm-surface-soft);
 }
@@ -20873,6 +20885,12 @@ body[data-theme="dark"] .adm-shell {
   .adm-form-grid-2,
   .adm-member-metrics {
     grid-template-columns: 1fr;
+  }
+
+  .adm-member-pagination {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.7rem;
   }
 
   .adm-span-2 {
