@@ -15,6 +15,8 @@ import {
   getEmailLifecycleBudgetStatus
 } from "@/lib/server/email-sequences";
 
+export const maxDuration = 300;
+
 function isAuthorized(request: Request) {
   const secret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
@@ -37,14 +39,14 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const limitParam = Number(url.searchParams.get("limit") ?? "100");
+  const limitParam = Number(url.searchParams.get("limit") ?? "500");
   const dryRun = url.searchParams.get("dryRun") === "1";
   const skipTips = url.searchParams.get("skipTips") === "1";
   const skipRecovery = url.searchParams.get("skipRecovery") === "1";
   const recoveryEnabled =
     process.env.ENABLE_REVENUE_RECOVERY_EMAILS === "true" ||
     process.env.ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS === "true";
-  const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 250) : 100;
+  const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 1000) : 500;
   const quotaBlock = await getCurrentEmailQuotaBlock();
   const lifecycleBudget = await getEmailLifecycleBudgetStatus();
   let remainingAttempts = lifecycleBudget.remaining;
@@ -169,7 +171,7 @@ export async function GET(request: Request) {
   let tipFailed = 0;
 
   if (!skipTips && remainingAttempts > 0) {
-    const tipUsers = await getUsersForDailyTip(Math.min(200, remainingAttempts));
+    const tipUsers = await getUsersForDailyTip(Math.min(limit, remainingAttempts));
 
     for (const user of tipUsers) {
       try {

@@ -1,14 +1,17 @@
 import { sendEmail } from "@/lib/server/email";
 import { hasDatabaseUrl, getSql } from "@/lib/server/db";
+import { generateUnsubscribeToken } from "@/lib/server/unsubscribe-token";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
 const PRACTICE_URL = `${SITE_URL}/app/practice`;
 const FIRST_SCORE_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interview&activation=email_first_score`;
 const DAY_ONE_RETURN_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interview&activation=email_day_one_return`;
+const DAILY_TIP_PRACTICE_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interview&activation=email_daily_tip`;
 const PRICING_URL = `${SITE_URL}/pricing`;
 const BILLING_URL = `${SITE_URL}/app/billing`;
 const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&billing=annual&campaign=onboarding_email`;
 const EMAIL_QUOTA_RECOVERY_TEMPLATE = "quota_recovery_probe";
+const EMAIL_CAMPAIGN_TIME_ZONE = process.env.EMAIL_CAMPAIGN_TIME_ZONE?.trim() || "Europe/Amsterdam";
 let emailSequenceSchemaEnsured = false;
 
 export type PracticeLimitRecoveryReason = "practice_limit_hit" | "result_retry_locked";
@@ -17,9 +20,9 @@ export type EmailQuotaKind = "daily" | "monthly";
 export const ONBOARDING_EMAIL_SCHEDULE: Array<{ dayOffset: number; emailNumber: number }> = [
   { dayOffset: 0, emailNumber: 1 },
   { dayOffset: 1, emailNumber: 2 },
-  { dayOffset: 4, emailNumber: 3 },
-  { dayOffset: 10, emailNumber: 4 },
-  { dayOffset: 21, emailNumber: 5 }
+  { dayOffset: 3, emailNumber: 3 },
+  { dayOffset: 5, emailNumber: 4 },
+  { dayOffset: 7, emailNumber: 5 }
 ];
 
 export function resolveEmailQuotaKind(errorMessage: string | null | undefined): EmailQuotaKind | null {
@@ -40,9 +43,9 @@ export function isEmailQuotaFailureRecovered(
 }
 
 export function resolveEmailLifecycleDailyBudget(value = process.env.EMAIL_LIFECYCLE_DAILY_BUDGET) {
-  const parsed = Number(value ?? "20");
-  if (!Number.isFinite(parsed)) return 20;
-  return Math.min(Math.max(Math.floor(parsed), 0), 200);
+  const parsed = Number(value ?? "500");
+  if (!Number.isFinite(parsed)) return 500;
+  return Math.min(Math.max(Math.floor(parsed), 0), 1000);
 }
 
 async function ensureEmailSequenceSchema() {
@@ -368,7 +371,7 @@ function buildDayOneReturnEmail(name: string) {
 function buildEmail3(name: string) {
   const greeting = name.trim() || "there";
   const html = layout(`
-    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 5</p>
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 3</p>
     <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">Your Week 1 IELTS Speaking Checklist</h1>
 
     <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, use these five steps to build a complete feedback loop during your first week.</p>
@@ -396,7 +399,7 @@ function buildEmail3(name: string) {
 
 function buildFirstScoreRecoveryEmail(name: string, emailNumber: number) {
   const greeting = name.trim() || "there";
-  const dayLabel = emailNumber === 4 ? "Day 7" : "Day 10";
+  const dayLabel = emailNumber === 4 ? "Day 5" : "Day 7";
   const html = layout(`
     <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">${dayLabel} · Your first score</p>
     <h1 style="margin:0 0 12px;font-size:1.45em;color:#1b120d;font-weight:800">Your free AI speaking score is still waiting.</h1>
@@ -428,11 +431,11 @@ function buildFirstScoreRecoveryEmail(name: string, emailNumber: number) {
 function buildEmail4(name: string) {
   const greeting = name.trim() || "there";
   const html = layout(`
-    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 7 Milestone</p>
-    <h1 style="margin:0 0 8px;font-size:1.45em;color:#1b120d;font-weight:800">One week in — you're already ahead.</h1>
-    <p style="margin:0 0 24px;color:#7a5c4a;font-size:0.9em">Most people quit before day 7. You didn't.</p>
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 5 Momentum</p>
+    <h1 style="margin:0 0 8px;font-size:1.45em;color:#1b120d;font-weight:800">Keep the habit moving today.</h1>
+    <p style="margin:0 0 24px;color:#7a5c4a;font-size:0.9em">A short return is more valuable than waiting for the perfect study session.</p>
 
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, a week of consistent practice is real momentum. If you want to keep improving the same day instead of stopping at the free cap, here's what SpeakAce Plus adds:</p>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, you already have enough context to make the next answer useful. If you want to keep improving the same day instead of stopping at the free cap, here's what SpeakAce Plus adds:</p>
 
     <div style="margin:0 0 28px">
       ${checkItem("<strong>Keep practicing today</strong> — do not stop when the free daily cap ends")}
@@ -452,14 +455,14 @@ function buildEmail4(name: string) {
   return {
     subject: "Keep practicing today, not tomorrow",
     html,
-    text: `Hi ${greeting}, one week of practice! Upgrade to Plus for more daily volume: ${CHECKOUT_URL} — or keep going free: ${PRACTICE_URL}`
+    text: `Hi ${greeting}, keep your speaking habit moving today. Upgrade to Plus for more daily volume: ${CHECKOUT_URL} — or keep going free: ${PRACTICE_URL}`
   };
 }
 
 function buildEmail5(name: string) {
   const greeting = name.trim() || "there";
   const html = layout(`
-    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 10</p>
+    <p style="margin:0 0 6px;color:#9a7060;font-size:0.82em;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Day 7</p>
     <h1 style="margin:0 0 24px;font-size:1.45em;color:#1b120d;font-weight:800">Turn one practice into a useful retry loop</h1>
 
     <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting}, you have already completed at least one speaking session. The next useful step is not a random new question — it is applying one correction and trying again.</p>
@@ -711,6 +714,20 @@ async function logEmail(params: {
 
 type LifecycleEmailContent = { subject: string; html: string; text: string };
 
+function personalizeLifecycleEmail(emailContent: LifecycleEmailContent, email: string) {
+  const token = generateUnsubscribeToken(email);
+  const query = new URLSearchParams({ email, token }).toString();
+  const pageUrl = `${SITE_URL}/unsubscribe?${query}`;
+
+  return {
+    emailContent: {
+      ...emailContent,
+      html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${pageUrl}"`)
+    },
+    unsubscribeUrl: `${SITE_URL}/api/unsubscribe?${query}`
+  };
+}
+
 export function buildOnboardingEmailContent(input: {
   name: string;
   emailNumber: number;
@@ -770,23 +787,17 @@ export async function sendOnboardingEmail(
   if (!user) return { ok: false };
   if (user.email_opt_out || !user.email_verified) return { ok: false, skipped: true };
 
-  let emailContent = buildOnboardingEmailContent({
+  const content = buildOnboardingEmailContent({
     name: user.name,
     emailNumber,
     speakingSessionCount: user.speaking_session_count
   });
-  if (!emailContent) return { ok: false };
-
-  // Inject user-specific unsubscribe link
-  const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`;
-  emailContent = {
-    ...emailContent,
-    html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${unsubscribeUrl}"`)
-  };
+  if (!content) return { ok: false };
+  const { emailContent, unsubscribeUrl } = personalizeLifecycleEmail(content, user.email);
 
   const templateName = `onboarding_${emailNumber}`;
   try {
-    const result = await sendEmail({ to: user.email, ...emailContent });
+    const result = await sendEmail({ to: user.email, ...emailContent, unsubscribeUrl });
     await logEmail({
       userId,
       userEmail: user.email,
@@ -1130,15 +1141,14 @@ export async function sendPracticeLimitRecoveryEmail(
   }
 
   const reason = resolvePracticeLimitRecoveryReason(user.path);
-  let emailContent = buildPracticeLimitRecoveryEmailContent({ name: user.name, reason });
-  const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`;
-  emailContent = {
-    ...emailContent,
-    html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${unsubscribeUrl}"`)
-  };
+  const personalized = personalizeLifecycleEmail(
+    buildPracticeLimitRecoveryEmailContent({ name: user.name, reason }),
+    user.email
+  );
+  const { emailContent, unsubscribeUrl } = personalized;
 
   try {
-    const result = await sendEmail({ to: user.email, ...emailContent });
+    const result = await sendEmail({ to: user.email, ...emailContent, unsubscribeUrl });
     await logEmail({
       userId,
       userEmail: user.email,
@@ -1343,15 +1353,13 @@ export async function sendCheckoutRecoveryEmail(
     return { ok: false, skipped: true };
   }
 
-  let emailContent = buildCheckoutRecoveryEmailContent(user.name);
-  const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`;
-  emailContent = {
-    ...emailContent,
-    html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${unsubscribeUrl}"`)
-  };
+  const { emailContent, unsubscribeUrl } = personalizeLifecycleEmail(
+    buildCheckoutRecoveryEmailContent(user.name),
+    user.email
+  );
 
   try {
-    const result = await sendEmail({ to: user.email, ...emailContent });
+    const result = await sendEmail({ to: user.email, ...emailContent, unsubscribeUrl });
     await logEmail({
       userId,
       userEmail: user.email,
@@ -1542,15 +1550,13 @@ export async function sendTrialLifecycleEmail(
   `;
   if (alreadySent[0]?.exists) return { ok: false, skipped: true };
 
-  let emailContent = buildTrialLifecycleEmail(user.name, user.trial_ends_at, stage);
-  const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`;
-  emailContent = {
-    ...emailContent,
-    html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${unsubscribeUrl}"`)
-  };
+  const { emailContent, unsubscribeUrl } = personalizeLifecycleEmail(
+    buildTrialLifecycleEmail(user.name, user.trial_ends_at, stage),
+    user.email
+  );
 
   try {
-    const result = await sendEmail({ to: user.email, ...emailContent });
+    const result = await sendEmail({ to: user.email, ...emailContent, unsubscribeUrl });
     await logEmail({
       userId,
       userEmail: user.email,
@@ -1693,17 +1699,17 @@ function buildDailyTipEmail(name: string, tip: DailyTip) {
     <p style="color:#3a2218;line-height:1.75;margin:0 0 28px">Open SpeakAce, try this in your next answer, and see how it changes your AI score.</p>
 
     <div style="margin:0 0 8px">
-      ${primaryBtn(PRACTICE_URL, "Let's try &rarr;")}
+      ${primaryBtn(DAILY_TIP_PRACTICE_URL, "Try it in SpeakAce &rarr;")}
     </div>
   `);
   return {
     subject: tip.subject,
     html,
-    text: `Hi ${greeting}, today's IELTS speaking tip — ${tip.headline}.\n\n${tip.body}\n\nExample: ${tip.example}\n\nLet's try it: ${PRACTICE_URL}`
+    text: `Hi ${greeting}, today's IELTS speaking tip — ${tip.headline}.\n\n${tip.body}\n\nExample: ${tip.example}\n\nTry it in SpeakAce: ${DAILY_TIP_PRACTICE_URL}`
   };
 }
 
-export async function getUsersForDailyTip(limit = 200): Promise<Array<{ id: string; email: string; name: string }>> {
+export async function getUsersForDailyTip(limit = 500): Promise<Array<{ id: string; email: string; name: string }>> {
   if (!hasDatabaseUrl()) return [];
 
   await ensureEmailSequenceSchema();
@@ -1715,27 +1721,28 @@ export async function getUsersForDailyTip(limit = 200): Promise<Array<{ id: stri
     where u.email_opt_out = false
       and u.email_verified = true
       and u.role != 'guest'
-      and coalesce(u.billing_status, 'free') <> 'on_trial'
-      and exists (
-        select 1 from speaking_sessions s
-        where s.user_id = u.id
-          and s.created_at >= now() - interval '30 days'
-      )
-      and not exists (
-        select 1 from email_log el
-        where el.user_id = u.id
-          and el.template = 'daily_tip'
-          and el.sent_at >= now() - interval '7 days'
-      )
+      and u.email not like '%@example.com'
+      and u.email not like '%@speakace.local'
       and not exists (
         select 1 from email_log el
         where el.user_id = u.id
           and el.status = 'sent'
-          and el.sent_at >= now() - interval '24 hours'
+          and (el.sent_at at time zone ${EMAIL_CAMPAIGN_TIME_ZONE})::date =
+              (now() at time zone ${EMAIL_CAMPAIGN_TIME_ZONE})::date
       )
-    order by (
-      select max(s.created_at) from speaking_sessions s where s.user_id = u.id
-    ) desc
+    order by
+      coalesce((
+        select max(el.sent_at)
+        from email_log el
+        where el.user_id = u.id
+          and el.template = 'daily_tip'
+          and el.status = 'sent'
+      ), to_timestamp(0)) asc,
+      coalesce((
+        select max(s.created_at)
+        from speaking_sessions s
+        where s.user_id = u.id
+      ), u.created_at) desc
     limit ${limit}
   `;
 
@@ -1747,24 +1754,21 @@ export async function sendDailyTipEmail(userId: string): Promise<{ ok: boolean; 
 
   await ensureEmailSequenceSchema();
   const sql = getSql();
-  const rows = await sql<Array<{ email: string; name: string; email_opt_out: boolean; billing_status: string }>>`
-    select email, name, email_opt_out, billing_status from users where id = ${userId} limit 1
+  const rows = await sql<Array<{ email: string; name: string; email_opt_out: boolean; email_verified: boolean }>>`
+    select email, name, email_opt_out, email_verified from users where id = ${userId} limit 1
   `;
   const user = rows[0];
   if (!user) return { ok: false };
-  if (user.email_opt_out || user.billing_status === "on_trial") return { ok: false, skipped: true };
+  if (user.email_opt_out || !user.email_verified) return { ok: false, skipped: true };
 
   const tip = getTodaysTip();
-  let emailContent = buildDailyTipEmail(user.name, tip);
-
-  const unsubscribeUrl = `${SITE_URL}/unsubscribe?email=${encodeURIComponent(user.email)}`;
-  emailContent = {
-    ...emailContent,
-    html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${unsubscribeUrl}"`)
-  };
+  const { emailContent, unsubscribeUrl } = personalizeLifecycleEmail(
+    buildDailyTipEmail(user.name, tip),
+    user.email
+  );
 
   try {
-    const result = await sendEmail({ to: user.email, ...emailContent });
+    const result = await sendEmail({ to: user.email, ...emailContent, unsubscribeUrl });
     await logEmail({
       userId,
       userEmail: user.email,

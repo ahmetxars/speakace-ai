@@ -1,9 +1,9 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 function getSecret(): string {
-  const secret = process.env.UNSUBSCRIBE_SECRET;
+  const secret = process.env.UNSUBSCRIBE_SECRET?.trim() || process.env.CRON_SECRET?.trim();
   if (!secret) {
-    throw new Error("UNSUBSCRIBE_SECRET env var is not set. Set it to a strong random value.");
+    throw new Error("UNSUBSCRIBE_SECRET or CRON_SECRET must be set.");
   }
   return secret;
 }

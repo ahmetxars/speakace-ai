@@ -6,6 +6,7 @@ type EmailPayload = {
   subject: string;
   html: string;
   text: string;
+  unsubscribeUrl?: string;
 };
 
 export function resolveEmailReplyTo(configuredValue = process.env.EMAIL_REPLY_TO) {
@@ -56,6 +57,14 @@ export async function sendEmail(payload: EmailPayload) {
       subject: payload.subject,
       html: payload.html,
       text: payload.text,
+      ...(payload.unsubscribeUrl
+        ? {
+            headers: {
+              "List-Unsubscribe": `<${payload.unsubscribeUrl}>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
+            }
+          }
+        : {}),
       ...(config.replyTo ? { reply_to: config.replyTo } : {})
     })
   });

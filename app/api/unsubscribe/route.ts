@@ -15,8 +15,12 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const email = typeof body?.email === "string" ? body.email.toLowerCase().trim() : "";
-  const token = typeof body?.token === "string" ? body.token : "";
+  const queryEmail = req.nextUrl.searchParams.get("email") ?? "";
+  const queryToken = req.nextUrl.searchParams.get("token") ?? "";
+  const emailValue = typeof body?.email === "string" ? body.email : queryEmail;
+  const tokenValue = typeof body?.token === "string" ? body.token : queryToken;
+  const email = emailValue.toLowerCase().trim();
+  const token = tokenValue.trim();
 
   if (!email) {
     return NextResponse.json({ ok: false, error: "missing email" }, { status: 400 });

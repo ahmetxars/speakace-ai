@@ -273,13 +273,14 @@ This is the project-wide “where things live” map.
   - public contact and reply-to use `siteConfig.contactEmail` (`aa.arslan@outlook.com.tr`); the lost legacy `info@speakace.org` reply-to is ignored even if it remains in production env. Keep `EMAIL_FROM` on the provider-verified `info@mail.speakace.org` sending address rather than replacing it with the Outlook inbox
 - Sequences:
   - `lib/server/email-sequences.ts`
-  - onboarding is intentionally capped at five messages on days 0, 1, 4, 10, and 21.
+  - onboarding is capped at five messages on days 0, 1, 3, 5, and 7; the daily tip campaign fills days without a higher-priority lifecycle message.
   - an incomplete learner onboarding form is stored per authenticated user in local storage for 30 days and resumes at the last completed step; successful completion clears the draft.
-  - all lifecycle sends share a persistent daily budget (`EMAIL_LIFECYCLE_DAILY_BUDGET`, default `20`); trial lifecycle messages are reserved ahead of lower-intent tips.
+  - all lifecycle sends share a persistent daily budget (`EMAIL_LIFECYCLE_DAILY_BUDGET`, default `500`, hard cap `1000`); trial lifecycle messages are reserved ahead of lower-intent tips.
   - password signups receive onboarding only after successful email verification; unverified accounts are excluded from lifecycle marketing
   - onboarding email #2 is sent after one day; activated learners receive a checkout-free, attributed `email_day_one_return` practice link while non-activated learners keep the first-score prompt
-  - learners with no speaking sessions receive first-score activation content instead of checkout pressure on day 7/10
-  - the legacy `daily_tip` template is limited to verified learners active in the last 30 days, at most once per 7 days, and never within 24 hours of an onboarding email
+  - learners with no speaking sessions receive first-score activation content instead of checkout pressure on days 5 and 7
+  - `daily_tip` is a daily 09:00 Europe/Amsterdam retention campaign for every verified, non-guest user who has not opted out; it sends at most one successful lifecycle message per local calendar day, gives onboarding/trial/recovery messages priority, and excludes test/local addresses
+  - marketing lifecycle messages carry tokenized footer unsubscribe links plus RFC-compatible one-click `List-Unsubscribe` headers; `UNSUBSCRIBE_SECRET` is preferred and `CRON_SECRET` is the production fallback
   - verified Free learners with an abandoned checkout can receive one attributed `checkout_recovery` email after 45 minutes and before 72 hours, with a 14-day template dedupe and the shared 24-hour lifecycle cooldown.
   - the lifecycle cron suppresses all provider sends when a current Resend daily/monthly quota failure is present; after a quota upgrade, a successful Admin email test records a recovery probe that clears only older failures without disabling future quota protection
   - Admin reports 24-hour email delivery/failure health, active quota blocking, and attributed day-one practice returns over 30 days
@@ -1036,7 +1037,7 @@ Inspect only:
 - SpeakAce Plus currently uses a three-day Lemon Squeezy trial. Trial conversion and access depend on preserving the provider's `on_trial` status and `trial_ends_at` value through the webhook billing sync.
 - Live catalog values must be checked against site copy before changing pricing. On 2026-07-23, Plus was `$3.99/week`, Plus Annual `$49.99/year`, Pro Monthly was corrected to `$12/month`, Pro Annual was `$99/year`, and Lifetime was `$129.99`.
 - Anonymous and authenticated learner checkout initiation is recorded server-side in `app/api/payments/lemon/checkout/route.ts`. Keep the database event there so navigation cannot drop it, and do not add a second client-side `checkout_initiated` write for links targeting that route.
-- Lifecycle baseline before frequency controls on 2026-07-22: 520 daily-tip emails reached 180 recipients in 7 days, while only 43 users had practiced in 30 days; 71 emails reached 23 unverified accounts. Use these as reduction baselines and do not restore all-user daily sends.
+- Lifecycle baseline before the verified-user campaign rebuild on 2026-07-24: 520 daily-tip emails reached 180 recipients in 7 days, while only 43 users had practiced in 30 days; 71 emails reached 23 unverified accounts. The rebuilt campaign intentionally covers the full verified, non-opted-out member base at most once per local day, never sends to unverified accounts, and must retain unsubscribe, bounce, quota, and complaint monitoring.
 - Retention baseline on 2026-07-22: 34 of 45 recently verified learners uploaded a speaking attempt, but only 5 returned on another day. Prioritize measured day-one return activation before adding more broad acquisition or checkout pressure.
 - The learner dashboard uses a three-day momentum mission for early return behavior. Mission practice links carry `dashboard_momentum_day_*` activation attribution, and trial learners see the same daily-return loop with their remaining trial time.
 - Streaks must count distinct UTC days with completed audio uploads, not started sessions. Before this correction on 2026-07-22, 212 learner streaks were inflated; only 4 learners had completed practice on 1-2 distinct days in the prior week and none had reached 3 distinct active days.

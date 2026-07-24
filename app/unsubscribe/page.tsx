@@ -7,18 +7,24 @@ import Link from "next/link";
 function UnsubscribeForm() {
   const searchParams = useSearchParams();
   const emailParam = searchParams.get("email") ?? "";
+  const token = searchParams.get("token") ?? "";
 
   const [email, setEmail] = useState(emailParam);
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!token) {
+      setStatus("error");
+      return;
+    }
+
     setStatus("loading");
     try {
       const res = await fetch("/api/unsubscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email, token })
       });
       if (res.ok) {
         setStatus("done");
@@ -59,6 +65,7 @@ function UnsubscribeForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
+          readOnly={Boolean(token)}
           className="input"
           style={{ width: "100%" }}
         />
@@ -71,7 +78,9 @@ function UnsubscribeForm() {
         </button>
         {status === "error" && (
           <p style={{ color: "var(--color-error, #dc2626)", fontSize: "0.9em" }}>
-            Something went wrong. Please try again.
+            {token
+              ? "Something went wrong. Please try again."
+              : "Please use the unsubscribe link in your latest SpeakAce email."}
           </p>
         )}
       </form>

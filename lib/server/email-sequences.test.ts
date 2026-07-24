@@ -20,9 +20,9 @@ describe("onboarding lifecycle segmentation", () => {
     expect(ONBOARDING_EMAIL_SCHEDULE).toEqual([
       { dayOffset: 0, emailNumber: 1 },
       { dayOffset: 1, emailNumber: 2 },
-      { dayOffset: 4, emailNumber: 3 },
-      { dayOffset: 10, emailNumber: 4 },
-      { dayOffset: 21, emailNumber: 5 }
+      { dayOffset: 3, emailNumber: 3 },
+      { dayOffset: 5, emailNumber: 4 },
+      { dayOffset: 7, emailNumber: 5 }
     ]);
   });
 
@@ -117,12 +117,12 @@ describe("email quota protection", () => {
     expect(resolveEmailQuotaKind(null)).toBeNull();
   });
 
-  it("uses a conservative lifecycle budget and clamps unsafe overrides", () => {
-    expect(resolveEmailLifecycleDailyBudget(undefined)).toBe(20);
+  it("covers the verified member base and clamps unsafe overrides", () => {
+    expect(resolveEmailLifecycleDailyBudget(undefined)).toBe(500);
     expect(resolveEmailLifecycleDailyBudget("35")).toBe(35);
     expect(resolveEmailLifecycleDailyBudget("-1")).toBe(0);
-    expect(resolveEmailLifecycleDailyBudget("1000")).toBe(200);
-    expect(resolveEmailLifecycleDailyBudget("invalid")).toBe(20);
+    expect(resolveEmailLifecycleDailyBudget("1200")).toBe(1000);
+    expect(resolveEmailLifecycleDailyBudget("invalid")).toBe(500);
   });
 
   it("clears only failures that happened before a successful recovery probe", () => {
