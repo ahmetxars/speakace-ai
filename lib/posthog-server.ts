@@ -1,11 +1,28 @@
 import { PostHog } from "posthog-node";
 
-let posthogClient: PostHog | null = null;
+type PostHogCaptureClient = Pick<PostHog, "capture" | "identify">;
 
-export function getPostHogClient(): PostHog {
+const noopPostHogClient: PostHogCaptureClient = {
+  capture: () => undefined,
+  identify: () => undefined
+};
+
+let posthogClient: PostHogCaptureClient | null = null;
+
+export function isPostHogConfigured() {
+  return process.env.NEXT_PUBLIC_ENABLE_ANALYTICS !== "false"
+    && Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim());
+}
+
+export function getPostHogClient(): PostHogCaptureClient {
+  const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim();
+  if (!isPostHogConfigured() || !posthogKey) {
+    return noopPostHogClient;
+  }
+
   if (!posthogClient) {
-    posthogClient = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-      host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    posthogClient = new PostHog(posthogKey, {
+      host: process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || "https://eu.i.posthog.com",
       flushAt: 1,
       flushInterval: 0
     });

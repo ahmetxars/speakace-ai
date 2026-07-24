@@ -192,6 +192,9 @@ export default async function AdminPage() {
       lemonWebhookConfigured: Boolean(process.env.LEMON_SQUEEZY_WEBHOOK_SECRET),
       emailConfigured: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
       analyticsConfigured: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS !== "false",
+      posthogConfigured:
+        process.env.NEXT_PUBLIC_ENABLE_ANALYTICS !== "false"
+        && Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim()),
       lifecycleDailyBudget: resolveEmailLifecycleDailyBudget()
     };
 

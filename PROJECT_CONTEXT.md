@@ -257,6 +257,7 @@ This is the project-wide “where things live” map.
 - External tracking:
   - `instrumentation-client.ts`
   - `lib/posthog-server.ts`
+  - PostHog is optional: when `NEXT_PUBLIC_POSTHOG_KEY` is absent or analytics is disabled, browser and server clients remain no-op while first-party `analytics_events` collection continues. Admin health reports these two channels separately.
   - first-payment funnel events include `pricing_view`, `pricing_plus_click`, `practice_limit_hit`, `upgrade_prompt_view`, `checkout_initiated`, `checkout_completed`, `billing_success_seen`, and `billing_sync_pending`
   - allowlisted public marketing events use a 180-day HttpOnly `speakace_visitor_id` cookie; product events still require authentication.
   - `analytics_events.user_id` is nullable and `visitor_id` is indexed so pre-signup activity can be measured without storing direct customer data.

@@ -66,6 +66,7 @@ type AdminSystemHealth = {
   lemonWebhookConfigured: boolean;
   emailConfigured: boolean;
   analyticsConfigured: boolean;
+  posthogConfigured: boolean;
   lifecycleDailyBudget: number;
 };
 
@@ -426,9 +427,14 @@ function AdminDailyOverview({
       ready: systemHealth.emailConfigured && !overview.emailQuotaBlocked
     },
     {
-      label: "Analitik",
+      label: "Birinci taraf analitik",
       detail: systemHealth.analyticsConfigured ? `${overview.pageViews1h} görüntülenme / son saat` : "Bağlantı eksik",
       ready: systemHealth.analyticsConfigured
+    },
+    {
+      label: "PostHog",
+      detail: systemHealth.posthogConfigured ? "Harici event akışı bağlı" : "Anahtar eksik; birinci taraf verisi çalışıyor",
+      ready: systemHealth.posthogConfigured
     }
   ];
 
@@ -2844,6 +2850,13 @@ export function AdminPanel(props: {
                       detail: props.systemHealth.analyticsConfigured
                         ? "Birinci taraf funnel olayları açık."
                         : "Analitik ortam ayarlarında kapalı."
+                    },
+                    {
+                      label: "PostHog event akışı",
+                      ready: props.systemHealth.posthogConfigured,
+                      detail: props.systemHealth.posthogConfigured
+                        ? "Tarayıcı ve sunucu event aktarımı bağlı."
+                        : "NEXT_PUBLIC_POSTHOG_KEY eksik; birinci taraf funnel verileri etkilenmiyor."
                     }
                   ].map((item) => (
                     <div key={item.label} className="adm-list-row">
