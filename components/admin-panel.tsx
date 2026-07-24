@@ -296,7 +296,10 @@ function AdminDailyOverview({
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
     .slice(0, 5);
   const publishedPosts = customPosts.filter((post) => post.status === "published").length;
-  const checkoutDropOff = Math.max(overview.checkoutInitiated30d - overview.checkoutCompleted30d, 0);
+  const checkoutDropOff = Math.max(
+    overview.monetizationFunnel30d.checkoutInitiated - overview.monetizationFunnel30d.checkoutCompleted,
+    0
+  );
 
   const actions: Array<{
     title: string;
@@ -306,12 +309,18 @@ function AdminDailyOverview({
     severity: "critical" | "warning" | "info";
   }> = [];
 
-  if (!systemHealth.lemonWebhookConfigured || (overview.checkoutInitiated30d > 0 && overview.checkoutCompleted30d === 0)) {
+  if (
+    !systemHealth.lemonWebhookConfigured ||
+    (
+      overview.monetizationFunnel30d.checkoutInitiated > 0 &&
+      overview.monetizationFunnel30d.checkoutCompleted === 0
+    )
+  ) {
     actions.push({
       title: "Ödeme akışını doğrula",
       detail: !systemHealth.lemonWebhookConfigured
         ? "Lemon Squeezy webhook secret canlı ortamda görünmüyor. Ödeme yapan kullanıcıların erişimi otomatik açılmayabilir."
-        : `${overview.checkoutInitiated30d} checkout başlangıcına karşılık tamamlanmış ödeme görünmüyor. Önce canlı test ödeme ve webhook teslimatını kontrol et.`,
+        : `${overview.monetizationFunnel30d.checkoutInitiated} tekil checkout başlangıcına karşılık tamamlanmış ödeme görünmüyor. Önce canlı test ödeme ve webhook teslimatını kontrol et.`,
       label: "Ödemelere git",
       tab: "billing",
       severity: "critical"
@@ -319,7 +328,7 @@ function AdminDailyOverview({
   } else if (checkoutDropOff > 0) {
     actions.push({
       title: "Checkout kaybını azalt",
-      detail: `Son 30 günde checkout başlatan ${overview.checkoutInitiated30d} kişiden ${checkoutDropOff} kişi ödemeyi tamamlamadı.`,
+      detail: `Son 30 günde checkout başlatan ${overview.monetizationFunnel30d.checkoutInitiated} kişiden ${checkoutDropOff} kişi ödemeyi tamamlamadı.`,
       label: "Kaybı incele",
       tab: "billing",
       severity: "warning"
@@ -484,7 +493,9 @@ function AdminDailyOverview({
         </article>
         <article className={`adm-kpi${checkoutDropOff > 0 ? " adm-kpi-alert" : ""}`}>
           <span>Checkout sonucu</span>
-          <strong>{overview.checkoutCompleted30d} / {overview.checkoutInitiated30d}</strong>
+          <strong>
+            {overview.monetizationFunnel30d.checkoutCompleted} / {overview.monetizationFunnel30d.checkoutInitiated}
+          </strong>
           <small>{checkoutDropOff} ödeme adayı kaybedildi</small>
         </article>
       </section>
@@ -963,7 +974,7 @@ export function AdminPanel(props: {
       value: `${missingSuccessViews}`,
       detail:
         missingSuccessViews > 0
-          ? `${props.overview.checkoutCompleted7d} tamamlanmış ödemeden ${props.overview.billingSuccessSeen7d} tanesi başarı ekranına ulaştı. Başarı sayfası ve onboarding devamlılığını düzelt.`
+          ? `${props.overview.monetizationFunnel7d.checkoutCompleted} tamamlanmış ödemeden ${props.overview.monetizationFunnel7d.billingSuccessSeen} tanesi başarı ekranına ulaştı. Başarı sayfası ve onboarding devamlılığını düzelt.`
           : "Tamamlanan checkout'lar başarı durumuna sorunsuz ulaşıyor.",
       tone: missingSuccessViews > 0 ? "warning" : "success"
     });
@@ -1015,9 +1026,7 @@ export function AdminPanel(props: {
 
     return actions;
   }, [
-    props.overview.billingSuccessSeen7d,
     props.overview.billingSyncPending7d,
-    props.overview.checkoutCompleted7d,
     props.overview.dayOneReturnStarts30d,
     props.overview.emailFailed24h,
     props.overview.emailQuotaBlocked,
@@ -1440,7 +1449,7 @@ export function AdminPanel(props: {
                 <AdmStatCard
                   label="Checkout tamamlama"
                   value={formatPercent(props.overview.monetizationFunnel7d.checkoutToCompletionRate)}
-                  trend={`7 günde ${props.overview.checkoutCompleted7d}/${props.overview.checkoutInitiated7d} tamamlandı`}
+                  trend={`7 günde ${props.overview.monetizationFunnel7d.checkoutCompleted}/${props.overview.monetizationFunnel7d.checkoutInitiated} tekil checkout tamamlandı`}
                   trendUp={
                     props.overview.monetizationFunnel7d.checkoutToCompletionRate >=
                     props.overview.monetizationFunnel30d.checkoutToCompletionRate
@@ -2535,7 +2544,7 @@ export function AdminPanel(props: {
                 <AdmSignalCard
                   label="Checkout tamamlama"
                   value={formatPercent(props.overview.monetizationFunnel7d.checkoutToCompletionRate)}
-                  detail={`Son 7 günde ${props.overview.checkoutCompleted7d}/${props.overview.checkoutInitiated7d} checkout tamamlandı.`}
+                  detail={`Son 7 günde ${props.overview.monetizationFunnel7d.checkoutCompleted}/${props.overview.monetizationFunnel7d.checkoutInitiated} tekil checkout tamamlandı.`}
                   tone={
                     props.overview.monetizationFunnel7d.checkoutToCompletionRate >= 40
                       ? "success"
@@ -2546,9 +2555,14 @@ export function AdminPanel(props: {
                 />
                 <AdmSignalCard
                   label="Başarı sayfasına ulaşım"
-                  value={`${props.overview.billingSuccessSeen7d}/${props.overview.checkoutCompleted7d}`}
+                  value={`${props.overview.monetizationFunnel7d.billingSuccessSeen}/${props.overview.monetizationFunnel7d.checkoutCompleted}`}
                   detail="Son 7 günde ödeme tamamlayanların kaçı başarı durumuna ulaştı."
-                  tone={props.overview.billingSuccessSeen7d >= props.overview.checkoutCompleted7d ? "success" : "warning"}
+                  tone={
+                    props.overview.monetizationFunnel7d.billingSuccessSeen >=
+                    props.overview.monetizationFunnel7d.checkoutCompleted
+                      ? "success"
+                      : "warning"
+                  }
                 />
                 <AdmSignalCard
                   label="Bekleyen erişim senkronu"
