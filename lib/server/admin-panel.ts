@@ -272,6 +272,13 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       activeSessions: 0,
       recentSignIns24h: 0,
       classesCount: 0,
+      newUsers7d: 0,
+      newUsers30d: 0,
+      activatedNewUsers30d: 0,
+      retainedNewUsers30d: 0,
+      weeklyActivePracticeUsers: 0,
+      activationRate30d: 0,
+      retentionRate30d: 0,
       monthlyRevenueEstimate: 0,
       aiRequests30d: 0,
       aiInputTokens30d: 0,
@@ -404,6 +411,11 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       active_sessions: number;
       recent_signins_24h: number;
       classes_count: number;
+      new_users_7d: number;
+      new_users_30d: number;
+      activated_new_users_30d: number;
+      retained_new_users_30d: number;
+      weekly_active_practice_users: number;
       monthly_revenue_estimate: number;
       live_users_5m: number;
       requests_5m: number;
@@ -487,6 +499,50 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         where event_type = 'signin' and occurred_at > now() - interval '24 hours'
       ) as recent_signins_24h,
       (select count(*)::int from teacher_classes) as classes_count,
+      (
+        select count(*)::int
+        from users recent_user
+        where recent_user.created_at > now() - interval '7 days'
+          and recent_user.member_type = 'student'
+      ) as new_users_7d,
+      (
+        select count(*)::int
+        from users recent_user
+        where recent_user.created_at > now() - interval '30 days'
+          and recent_user.member_type = 'student'
+      ) as new_users_30d,
+      (
+        select count(distinct recent_user.id)::int
+        from users recent_user
+        join speaking_sessions recent_session on recent_session.user_id = recent_user.id
+        join feedback_reports recent_report on recent_report.session_id = recent_session.id
+        where recent_user.created_at > now() - interval '30 days'
+          and recent_user.member_type = 'student'
+      ) as activated_new_users_30d,
+      (
+        select count(*)::int
+        from (
+          select recent_user.id
+          from users recent_user
+          join speaking_sessions recent_session on recent_session.user_id = recent_user.id
+          where recent_user.created_at > now() - interval '30 days'
+            and recent_user.member_type = 'student'
+          group by recent_user.id
+          having count(distinct (recent_session.created_at at time zone 'UTC')::date) >= 2
+        ) retained_user
+      ) as retained_new_users_30d,
+      (
+        select count(distinct active_practice.user_id)::int
+        from (
+          select user_id
+          from speaking_sessions
+          where created_at > now() - interval '7 days'
+          union
+          select user_id
+          from writing_sessions
+          where created_at > now() - interval '7 days'
+        ) active_practice
+      ) as weekly_active_practice_users,
       (
         select count(distinct user_id)::int
         from recent_analytics
@@ -1099,6 +1155,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     from click_paths
     left join signup_paths on signup_paths.path = click_paths.path
     left join paid_paths on paid_paths.path = click_paths.path
+    where coalesce(paid_paths.paid_count, 0) > 0
     order by paid_count desc, signups desc, clicks desc, click_paths.path asc
     limit 8
   `;
@@ -1178,6 +1235,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     from click_paths
     left join signup_paths on signup_paths.path = click_paths.path
     left join paid_paths on paid_paths.path = click_paths.path
+    where coalesce(paid_paths.paid_count, 0) > 0
     order by paid_count desc, signups desc, clicks desc, click_paths.path asc
     limit 1
   `;
@@ -1382,13 +1440,22 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     from identity_steps
   `;
 
-  const buildFunnel = (input: { ctaClicks: number; signupCount: number; checkoutClicks: number; paidCount: number }) => ({
-    ...input,
-    clickToSignupRate: input.ctaClicks ? Number(((input.signupCount / input.ctaClicks) * 100).toFixed(1)) : 0,
-    signupToCheckoutRate: input.signupCount ? Number(((input.checkoutClicks / input.signupCount) * 100).toFixed(1)) : 0,
-    checkoutToPaidRate: input.checkoutClicks ? Number(((input.paidCount / input.checkoutClicks) * 100).toFixed(1)) : 0,
-    clickToPaidRate: input.ctaClicks ? Number(((input.paidCount / input.ctaClicks) * 100).toFixed(1)) : 0
-  });
+  const buildFunnel = (input: { ctaClicks: number; signupCount: number; checkoutClicks: number; paidCount: number }) => {
+    const ctaClicks = Math.max(input.ctaClicks, 0);
+    const signupCount = Math.min(Math.max(input.signupCount, 0), ctaClicks);
+    const checkoutClicks = Math.min(Math.max(input.checkoutClicks, 0), signupCount);
+    const paidCount = Math.min(Math.max(input.paidCount, 0), checkoutClicks);
+    return {
+      ctaClicks,
+      signupCount,
+      checkoutClicks,
+      paidCount,
+      clickToSignupRate: ctaClicks ? Number(((signupCount / ctaClicks) * 100).toFixed(1)) : 0,
+      signupToCheckoutRate: signupCount ? Number(((checkoutClicks / signupCount) * 100).toFixed(1)) : 0,
+      checkoutToPaidRate: checkoutClicks ? Number(((paidCount / checkoutClicks) * 100).toFixed(1)) : 0,
+      clickToPaidRate: ctaClicks ? Number(((paidCount / ctaClicks) * 100).toFixed(1)) : 0
+    };
+  };
 
   const buildMonetizationFunnel = (input: {
     pricingViews: number;
@@ -1399,23 +1466,32 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     billingSuccessSeen: number;
     pricingCheckout: number;
     limitCheckout: number;
-  }) => ({
-    pricingViews: input.pricingViews,
-    practiceLimitHits: input.practiceLimitHits,
-    upgradePromptViews: input.upgradePromptViews,
-    checkoutInitiated: input.checkoutInitiated,
-    checkoutCompleted: input.checkoutCompleted,
-    billingSuccessSeen: input.billingSuccessSeen,
-    pricingViewToCheckoutRate: input.pricingViews
-      ? Number(((input.pricingCheckout / input.pricingViews) * 100).toFixed(1))
+  }) => {
+    const pricingViews = Math.max(input.pricingViews, 0);
+    const practiceLimitHits = Math.max(input.practiceLimitHits, 0);
+    const checkoutInitiated = Math.max(input.checkoutInitiated, 0);
+    const checkoutCompleted = Math.min(Math.max(input.checkoutCompleted, 0), checkoutInitiated);
+    const billingSuccessSeen = Math.min(Math.max(input.billingSuccessSeen, 0), checkoutCompleted);
+    const pricingCheckout = Math.min(Math.max(input.pricingCheckout, 0), pricingViews);
+    const limitCheckout = Math.min(Math.max(input.limitCheckout, 0), practiceLimitHits);
+    return {
+      pricingViews,
+      practiceLimitHits,
+      upgradePromptViews: Math.max(input.upgradePromptViews, 0),
+      checkoutInitiated,
+      checkoutCompleted,
+      billingSuccessSeen,
+      pricingViewToCheckoutRate: pricingViews
+      ? Number(((pricingCheckout / pricingViews) * 100).toFixed(1))
       : 0,
-    limitHitToCheckoutRate: input.practiceLimitHits
-      ? Number(((input.limitCheckout / input.practiceLimitHits) * 100).toFixed(1))
+      limitHitToCheckoutRate: practiceLimitHits
+      ? Number(((limitCheckout / practiceLimitHits) * 100).toFixed(1))
       : 0,
-    checkoutToCompletionRate: input.checkoutInitiated
-      ? Number(((input.checkoutCompleted / input.checkoutInitiated) * 100).toFixed(1))
+      checkoutToCompletionRate: checkoutInitiated
+      ? Number(((checkoutCompleted / checkoutInitiated) * 100).toFixed(1))
       : 0
-  });
+    };
+  };
   const aiUsage = await getAiUsageSummary();
 
   return {
@@ -1428,6 +1504,17 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     activeSessions: row?.active_sessions ?? 0,
     recentSignIns24h: row?.recent_signins_24h ?? 0,
     classesCount: row?.classes_count ?? 0,
+    newUsers7d: row?.new_users_7d ?? 0,
+    newUsers30d: row?.new_users_30d ?? 0,
+    activatedNewUsers30d: row?.activated_new_users_30d ?? 0,
+    retainedNewUsers30d: row?.retained_new_users_30d ?? 0,
+    weeklyActivePracticeUsers: row?.weekly_active_practice_users ?? 0,
+    activationRate30d: row?.new_users_30d
+      ? Number((((row?.activated_new_users_30d ?? 0) / row.new_users_30d) * 100).toFixed(1))
+      : 0,
+    retentionRate30d: row?.new_users_30d
+      ? Number((((row?.retained_new_users_30d ?? 0) / row.new_users_30d) * 100).toFixed(1))
+      : 0,
     monthlyRevenueEstimate: Number(row?.monthly_revenue_estimate ?? 0),
     aiRequests30d: aiUsage.requests30d,
     aiInputTokens30d: aiUsage.inputTokens30d,
@@ -1530,25 +1617,35 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     bestPerformingCtas: bestPerformingCtaRows.map((item) => ({
       path: item.path ?? "Unknown CTA",
       clicks: item.clicks,
-      signups: item.signups,
-      paidCount: item.paid_count,
-      clickToSignupRate: item.clicks ? Number(((item.signups / item.clicks) * 100).toFixed(1)) : 0,
-      clickToPaidRate: item.clicks ? Number(((item.paid_count / item.clicks) * 100).toFixed(1)) : 0
+      signups: Math.min(item.signups, item.clicks),
+      paidCount: Math.min(item.paid_count, item.clicks),
+      clickToSignupRate: item.clicks
+        ? Number(((Math.min(item.signups, item.clicks) / item.clicks) * 100).toFixed(1))
+        : 0,
+      clickToPaidRate: item.clicks
+        ? Number(((Math.min(item.paid_count, item.clicks) / item.clicks) * 100).toFixed(1))
+        : 0
     })),
     topCheckoutSources: topCheckoutSourceRows.map((item) => ({
       path: item.path ?? "Unknown source",
       initiated: item.initiated,
       completed: item.completed,
-      completionRate: item.initiated ? Number(((item.completed / item.initiated) * 100).toFixed(1)) : 0
+      completionRate: item.initiated
+        ? Number(((Math.min(item.completed, item.initiated) / item.initiated) * 100).toFixed(1))
+        : 0
     })),
     winnerCta7d: winnerCtaRow
       ? {
           path: winnerCtaRow.path ?? "Unknown CTA",
           clicks: winnerCtaRow.clicks,
-          signups: winnerCtaRow.signups,
-          paidCount: winnerCtaRow.paid_count,
-          clickToSignupRate: winnerCtaRow.clicks ? Number(((winnerCtaRow.signups / winnerCtaRow.clicks) * 100).toFixed(1)) : 0,
-          clickToPaidRate: winnerCtaRow.clicks ? Number(((winnerCtaRow.paid_count / winnerCtaRow.clicks) * 100).toFixed(1)) : 0
+          signups: Math.min(winnerCtaRow.signups, winnerCtaRow.clicks),
+          paidCount: Math.min(winnerCtaRow.paid_count, winnerCtaRow.clicks),
+          clickToSignupRate: winnerCtaRow.clicks
+            ? Number(((Math.min(winnerCtaRow.signups, winnerCtaRow.clicks) / winnerCtaRow.clicks) * 100).toFixed(1))
+            : 0,
+          clickToPaidRate: winnerCtaRow.clicks
+            ? Number(((Math.min(winnerCtaRow.paid_count, winnerCtaRow.clicks) / winnerCtaRow.clicks) * 100).toFixed(1))
+            : 0
         }
       : null,
     topCtaPages: topPageRows.map((item) => ({

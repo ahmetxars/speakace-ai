@@ -221,6 +221,11 @@ This is the project-wide “where things live” map.
   - `lib/server/admin-panel.ts`
   - `lib/server/custom-blog.ts`
   - `lib/server/editable-pages.ts`
+- The admin workspace separates daily decisions from raw reporting:
+  - `Genel bakış` prioritizes the `$100` monthly revenue target, new-user activation/return cohorts, checkout loss, weekly practice activity, AI cost, system readiness, and a short action queue.
+  - `Detaylı raporlar` retains the full funnel, feature, sharing, CTA, and attribution reports for deeper analysis.
+- Admin conversion rates use identity-sequenced funnel cohorts and guard against impossible rates above `100%`; winner/source recommendations require at least one completed payment.
+- Admin styling is owned by the final `ADMIN WORKSPACE V2` `.adm-*` block in `app/globals.css`, including its light/dark tokens and mobile navigation drawer.
 
 ### Billing product
 

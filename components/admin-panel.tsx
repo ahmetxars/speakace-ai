@@ -23,7 +23,10 @@ import {
   Rocket,
   CircleDollarSign,
   ShieldCheck,
-  MailCheck
+  MailCheck,
+  Menu,
+  X,
+  BarChart3
 } from "lucide-react";
 import {
   AdminAuthActivityRecord,
@@ -34,7 +37,37 @@ import {
   ReferralCodeRecord
 } from "@/lib/types";
 
-type AdminTab = "overview" | "members" | "billing" | "institutions" | "content" | "referrals" | "activity" | "system";
+type AdminTab =
+  | "overview"
+  | "members"
+  | "billing"
+  | "institutions"
+  | "content"
+  | "referrals"
+  | "activity"
+  | "analytics"
+  | "system";
+
+type AdminBillingEvent = {
+  id: string;
+  event_name: string;
+  user_email: string | null;
+  plan: string;
+  billing_status: string;
+  created_at: string;
+};
+
+type AdminSystemHealth = {
+  nodeEnv: string;
+  siteUrl: string;
+  vercelEnv: string;
+  region: string;
+  databaseConfigured: boolean;
+  lemonWebhookConfigured: boolean;
+  emailConfigured: boolean;
+  analyticsConfigured: boolean;
+  lifecycleDailyBudget: number;
+};
 
 function formatDate(value?: string | null) {
   if (!value) return "—";
@@ -55,20 +88,50 @@ function formatCtaLabel(path: string) {
     .replace(/^#/, "")
     .replace(/[:/#?-]+/g, " ")
     .replace(/\s+/g, " ")
-    .trim() || "unknown";
+    .trim() || "bilinmiyor";
 }
 
 function formatRelativeDate(value?: string | null) {
-  if (!value) return "No recent requests";
+  if (!value) return "Henüz istek yok";
   const date = new Date(value);
   const diffMs = Date.now() - date.getTime();
   const diffMin = Math.max(0, Math.round(diffMs / 60000));
-  if (diffMin < 1) return "Just now";
-  if (diffMin === 1) return "1 minute ago";
-  if (diffMin < 60) return `${diffMin} minutes ago`;
+  if (diffMin < 1) return "Az önce";
+  if (diffMin === 1) return "1 dakika önce";
+  if (diffMin < 60) return `${diffMin} dakika önce`;
   const diffHours = Math.round(diffMin / 60);
-  if (diffHours === 1) return "1 hour ago";
-  return `${diffHours} hours ago`;
+  if (diffHours === 1) return "1 saat önce";
+  if (diffHours < 24) return `${diffHours} saat önce`;
+  const diffDays = Math.round(diffHours / 24);
+  if (diffDays === 1) return "1 gün önce";
+  if (diffDays < 30) return `${diffDays} gün önce`;
+  const diffMonths = Math.round(diffDays / 30);
+  return diffMonths === 1 ? "1 ay önce" : `${diffMonths} ay önce`;
+}
+
+function translateStatus(label: string) {
+  const labels: Record<string, string> = {
+    student: "öğrenci",
+    teacher: "öğretmen",
+    school: "okul",
+    active: "aktif",
+    inactive: "pasif",
+    free: "ücretsiz",
+    on_trial: "denemede",
+    trialing: "denemede",
+    cancelled: "iptal",
+    expired: "süresi doldu",
+    paused: "duraklatıldı",
+    past_due: "ödeme gecikti",
+    refunded: "iade edildi",
+    signin: "giriş",
+    signout: "çıkış",
+    published: "yayında",
+    draft: "taslak",
+    ready: "hazır",
+    "needs action": "aksiyon gerekli"
+  };
+  return labels[label.toLowerCase()] ?? label;
 }
 
 function StatusBadge({ label, tone = "neutral" }: { label: string; tone?: "neutral" | "success" | "warning" | "accent" }) {
@@ -78,7 +141,7 @@ function StatusBadge({ label, tone = "neutral" }: { label: string; tone?: "neutr
     warning: "adm-badge-warning",
     accent: "adm-badge-accent"
   };
-  return <span className={`adm-badge ${classes[tone]}`}>{label}</span>;
+  return <span className={`adm-badge ${classes[tone]}`}>{translateStatus(label)}</span>;
 }
 
 function AdmStatCard({
@@ -110,7 +173,7 @@ function AdmStatCard({
       {trend && (
         <div className={`adm-stat-trend ${trendUp ? "is-up" : "is-down"}`}>
           {trendUp ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-          <span>{trend} vs last month</span>
+          <span>{trend}</span>
         </div>
       )}
     </div>
@@ -157,51 +220,395 @@ function AdmSignalCard({
   );
 }
 
-const navItems: Array<{ id: AdminTab | null; label: string; icon: React.FC<{ size?: number; className?: string }> }> = [
-  { id: "overview", label: "Dashboard", icon: LayoutDashboard },
-  { id: "members", label: "Users", icon: Users },
-  { id: "activity", label: "Sessions", icon: Mic2 },
-  { id: "content", label: "Blog Posts", icon: FileText },
-  { id: "billing" as AdminTab, label: "Billing", icon: TrendingUp },
-  { id: "institutions" as AdminTab, label: "Institutions", icon: Building2 },
-  { id: "referrals", label: "Referrals", icon: Tag },
-  { id: "system", label: "System", icon: Settings }
+const navGroups: Array<{
+  label: string;
+  items: Array<{ id: AdminTab; label: string; icon: React.FC<{ size?: number; className?: string }> }>;
+}> = [
+  {
+    label: "Günlük yönetim",
+    items: [
+      { id: "overview", label: "Genel bakış", icon: LayoutDashboard },
+      { id: "billing", label: "Gelir ve ödemeler", icon: CircleDollarSign },
+      { id: "members", label: "Kullanıcılar", icon: Users }
+    ]
+  },
+  {
+    label: "Ürün",
+    items: [
+      { id: "activity", label: "Kullanım hareketleri", icon: Mic2 },
+      { id: "content", label: "İçerikler", icon: FileText },
+      { id: "analytics", label: "Detaylı raporlar", icon: BarChart3 }
+    ]
+  },
+  {
+    label: "Operasyon",
+    items: [
+      { id: "referrals", label: "Kupon ve davetler", icon: Tag },
+      { id: "institutions", label: "Kurumlar", icon: Building2 },
+      { id: "system", label: "Sistem sağlığı", icon: Settings }
+    ]
+  }
 ];
 
 const tabTitles: Record<AdminTab, string> = {
-  overview: "Dashboard",
-  members: "Users",
-  billing: "Billing Events",
-  institutions: "Institutions",
-  content: "Blog Posts",
-  referrals: "Referrals",
-  activity: "Sessions",
-  system: "System Status"
+  overview: "Genel bakış",
+  members: "Kullanıcılar",
+  billing: "Gelir ve ödemeler",
+  institutions: "Kurumlar",
+  content: "İçerikler",
+  referrals: "Kupon ve davetler",
+  activity: "Kullanım hareketleri",
+  analytics: "Detaylı raporlar",
+  system: "Sistem sağlığı"
 };
+
+const tabDescriptions: Record<AdminTab, string> = {
+  overview: "Bugün neye odaklanman gerektiğini tek ekranda gör.",
+  members: "Hesapları bul, planları incele ve erişim durumunu yönet.",
+  billing: "Checkout kayıplarını, ödeme olaylarını ve abonelik durumunu izle.",
+  institutions: "Öğretmen ve okul hesaplarının genel durumunu incele.",
+  content: "SEO içeriklerini taslak olarak hazırla ve yayınla.",
+  referrals: "Deneme ve kampanya kodlarını oluştur, kullanımlarını takip et.",
+  activity: "Son girişleri ve kullanıcı hareketlerini incele.",
+  analytics: "Ham metrikleri ve ayrıntılı ürün raporlarını gerektiğinde aç.",
+  system: "Veritabanı, ödeme, e-posta ve analitik bağlantılarını doğrula."
+};
+
+function AdminDailyOverview({
+  overview,
+  members,
+  billingEvents,
+  customPosts,
+  systemHealth,
+  onNavigate
+}: {
+  overview: AdminOverview;
+  members: AdminMemberRecord[];
+  billingEvents: AdminBillingEvent[];
+  customPosts: AdminCustomPostRecord[];
+  systemHealth: AdminSystemHealth;
+  onNavigate: (tab: AdminTab) => void;
+}) {
+  const revenueGoal = 100;
+  const revenueProgress = Math.min((overview.monthlyRevenueEstimate / revenueGoal) * 100, 100);
+  const netRevenueEstimate = overview.monthlyRevenueEstimate - overview.aiEstimatedCost30d;
+  const recentMembers = [...members]
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .slice(0, 5);
+  const publishedPosts = customPosts.filter((post) => post.status === "published").length;
+  const checkoutDropOff = Math.max(overview.checkoutInitiated30d - overview.checkoutCompleted30d, 0);
+
+  const actions: Array<{
+    title: string;
+    detail: string;
+    label: string;
+    tab: AdminTab;
+    severity: "critical" | "warning" | "info";
+  }> = [];
+
+  if (!systemHealth.lemonWebhookConfigured || (overview.checkoutInitiated30d > 0 && overview.checkoutCompleted30d === 0)) {
+    actions.push({
+      title: "Ödeme akışını doğrula",
+      detail: !systemHealth.lemonWebhookConfigured
+        ? "Lemon Squeezy webhook secret canlı ortamda görünmüyor. Ödeme yapan kullanıcıların erişimi otomatik açılmayabilir."
+        : `${overview.checkoutInitiated30d} checkout başlangıcına karşılık tamamlanmış ödeme görünmüyor. Önce canlı test ödeme ve webhook teslimatını kontrol et.`,
+      label: "Ödemelere git",
+      tab: "billing",
+      severity: "critical"
+    });
+  } else if (checkoutDropOff > 0) {
+    actions.push({
+      title: "Checkout kaybını azalt",
+      detail: `Son 30 günde checkout başlatan ${overview.checkoutInitiated30d} kişiden ${checkoutDropOff} kişi ödemeyi tamamlamadı.`,
+      label: "Kaybı incele",
+      tab: "billing",
+      severity: "warning"
+    });
+  }
+
+  if (overview.retentionRate30d < 15) {
+    actions.push({
+      title: "İkinci gün geri dönüşünü yükselt",
+      detail: `Yeni kullanıcıların yalnızca ${formatPercent(overview.retentionRate30d)} kadarı farklı bir günde pratiğe döndü. İlk hedef %15.`,
+      label: "Kohortu aç",
+      tab: "analytics",
+      severity: "warning"
+    });
+  }
+
+  if (overview.activationRate30d < 60) {
+    actions.push({
+      title: "İlk skor adımını sadeleştir",
+      detail: `${overview.newUsers30d} yeni öğrencinin ${overview.activatedNewUsers30d} tanesi ilk skorunu aldı. Kayıt sonrası yönlendirmeyi gözden geçir.`,
+      label: "Kullanıcıları gör",
+      tab: "members",
+      severity: "warning"
+    });
+  }
+
+  if (overview.emailQuotaBlocked || overview.emailFailed24h > 0 || !systemHealth.emailConfigured) {
+    actions.push({
+      title: "E-posta teslimatını düzelt",
+      detail: !systemHealth.emailConfigured
+        ? "Resend bağlantısı canlı ortamda yapılandırılmamış görünüyor."
+        : `${overview.emailSent24h} gönderim başarılı, ${overview.emailFailed24h} gönderim başarısız. Yaşam döngüsü maillerinin kullanıcıya ulaştığını doğrula.`,
+      label: "Sistemi kontrol et",
+      tab: "system",
+      severity: overview.emailQuotaBlocked ? "critical" : "warning"
+    });
+  }
+
+  if (actions.length < 3 && publishedPosts === 0) {
+    actions.push({
+      title: "İlk organik içerikleri yayınla",
+      detail: "Henüz yayında özel içerik görünmüyor. Satın alma niyeti yüksek bir IELTS rehberiyle organik trafik akışını başlat.",
+      label: "İçeriklere git",
+      tab: "content",
+      severity: "info"
+    });
+  }
+
+  if (actions.length === 0) {
+    actions.push({
+      title: "Temel sistemler sağlıklı",
+      detail: "Bugün kritik bir blokaj görünmüyor. Dönüşümü büyütmek için en iyi trafik ve checkout kaynaklarını ayrıntılı raporlardan takip et.",
+      label: "Raporları aç",
+      tab: "analytics",
+      severity: "info"
+    });
+  }
+
+  const journeySteps = [
+    {
+      label: "Yeni öğrenci",
+      value: overview.newUsers30d,
+      detail: `${overview.newUsers7d} son 7 günde`
+    },
+    {
+      label: "İlk skor",
+      value: overview.activatedNewUsers30d,
+      detail: formatPercent(overview.activationRate30d)
+    },
+    {
+      label: "Farklı gün dönüş",
+      value: overview.retainedNewUsers30d,
+      detail: `${formatPercent(overview.retentionRate30d)} · hedef %15`
+    }
+  ];
+
+  const systemRows = [
+    {
+      label: "Veritabanı",
+      detail: systemHealth.databaseConfigured ? "Canlı bağlantı hazır" : "Bağlantı eksik",
+      ready: systemHealth.databaseConfigured
+    },
+    {
+      label: "Lemon webhook",
+      detail: systemHealth.lemonWebhookConfigured ? "İmza secretı hazır" : "Canlı secret eksik",
+      ready: systemHealth.lemonWebhookConfigured
+    },
+    {
+      label: "E-posta",
+      detail: overview.emailQuotaBlocked
+        ? "Sağlayıcı kotası bloklu"
+        : systemHealth.emailConfigured
+          ? `${overview.emailSent24h} gönderim / 24 saat`
+          : "Resend bağlantısı eksik",
+      ready: systemHealth.emailConfigured && !overview.emailQuotaBlocked
+    },
+    {
+      label: "Analitik",
+      detail: systemHealth.analyticsConfigured ? `${overview.pageViews1h} görüntülenme / son saat` : "Bağlantı eksik",
+      ready: systemHealth.analyticsConfigured
+    }
+  ];
+
+  return (
+    <div className="adm-daily">
+      <section className="adm-daily-hero">
+        <div className="adm-daily-intro">
+          <span className="adm-eyebrow">30 günlük gelir hedefi</span>
+          <h2>
+            İlk <strong>$100</strong> için bugün ne yapmalıyız?
+          </h2>
+          <p>Gelir, kullanıcı davranışı ve sistem riskleri tek bir öncelik sırasına indirildi.</p>
+          <div className="adm-daily-actions">
+            <button type="button" className="adm-primary-btn" onClick={() => onNavigate("billing")}>
+              Gelir akışını aç <ArrowUpRight size={16} />
+            </button>
+            <button type="button" className="adm-secondary-btn" onClick={() => onNavigate("analytics")}>
+              Detaylı raporlar
+            </button>
+          </div>
+        </div>
+        <div className="adm-goal-card">
+          <div className="adm-goal-head">
+            <span>Tahmini aylık gelir</span>
+            <strong>{formatMoney(overview.monthlyRevenueEstimate)}</strong>
+          </div>
+          <div className="adm-goal-track" aria-label={`100 dolar hedefinin yüzde ${Math.round(revenueProgress)} kadarı`}>
+            <span style={{ width: `${revenueProgress}%` }} />
+          </div>
+          <div className="adm-goal-foot">
+            <span>{formatPercent(revenueProgress)} tamamlandı</span>
+            <span>{formatMoney(Math.max(revenueGoal - overview.monthlyRevenueEstimate, 0))} kaldı</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="adm-kpi-grid" aria-label="Temel işletme göstergeleri">
+        <article className="adm-kpi adm-kpi-featured">
+          <span>Net gelir tahmini</span>
+          <strong>{formatMoney(netRevenueEstimate)}</strong>
+          <small>{formatMoney(overview.aiEstimatedCost30d)} yapay zeka maliyeti düşüldü</small>
+        </article>
+        <article className="adm-kpi">
+          <span>Yeni öğrenci</span>
+          <strong>{overview.newUsers30d}</strong>
+          <small>{overview.newUsers7d} öğrenci son 7 günde geldi</small>
+        </article>
+        <article className="adm-kpi">
+          <span>İlk skor aktivasyonu</span>
+          <strong>{formatPercent(overview.activationRate30d)}</strong>
+          <small>{overview.activatedNewUsers30d} / {overview.newUsers30d} yeni öğrenci</small>
+        </article>
+        <article className={`adm-kpi${overview.retentionRate30d < 15 ? " adm-kpi-alert" : ""}`}>
+          <span>Farklı gün geri dönüş</span>
+          <strong>{formatPercent(overview.retentionRate30d)}</strong>
+          <small>Hedef %15 · {overview.retainedNewUsers30d} kullanıcı döndü</small>
+        </article>
+        <article className="adm-kpi">
+          <span>Haftalık aktif pratik</span>
+          <strong>{overview.weeklyActivePracticeUsers}</strong>
+          <small>İlk hedef 15 aktif kullanıcı</small>
+        </article>
+        <article className={`adm-kpi${checkoutDropOff > 0 ? " adm-kpi-alert" : ""}`}>
+          <span>Checkout sonucu</span>
+          <strong>{overview.checkoutCompleted30d} / {overview.checkoutInitiated30d}</strong>
+          <small>{checkoutDropOff} ödeme adayı kaybedildi</small>
+        </article>
+      </section>
+
+      <div className="adm-daily-grid adm-daily-grid-wide">
+        <section className="adm-panel-card adm-priority-panel">
+          <div className="adm-panel-card-head">
+            <div>
+              <span className="adm-eyebrow">Öncelik sırası</span>
+              <h3>Bugünün aksiyonları</h3>
+            </div>
+            <span className="adm-count-pill">{actions.length} konu</span>
+          </div>
+          <div className="adm-action-list">
+            {actions.slice(0, 4).map((action, index) => (
+              <article className={`adm-action-item is-${action.severity}`} key={action.title}>
+                <span className="adm-action-index">{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <h4>{action.title}</h4>
+                  <p>{action.detail}</p>
+                </div>
+                <button type="button" onClick={() => onNavigate(action.tab)}>
+                  {action.label} <ArrowUpRight size={14} />
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="adm-panel-card">
+          <div className="adm-panel-card-head">
+            <div>
+              <span className="adm-eyebrow">Yeni kullanıcı kohortu</span>
+              <h3>Kayıttan alışkanlığa</h3>
+            </div>
+            <span className="adm-period-pill">Son 30 gün</span>
+          </div>
+          <div className="adm-journey">
+            {journeySteps.map((step, index) => (
+              <div className="adm-journey-step" key={step.label}>
+                <span className="adm-journey-number">{index + 1}</span>
+                <div>
+                  <span>{step.label}</span>
+                  <strong>{step.value}</strong>
+                  <small>{step.detail}</small>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button type="button" className="adm-text-button" onClick={() => onNavigate("analytics")}>
+            Kohort ayrıntısını incele <ArrowUpRight size={14} />
+          </button>
+        </section>
+      </div>
+
+      <div className="adm-daily-grid">
+        <section className="adm-panel-card">
+          <div className="adm-panel-card-head">
+            <div>
+              <span className="adm-eyebrow">Operasyon</span>
+              <h3>Sistem hazır mı?</h3>
+            </div>
+            <button type="button" className="adm-text-button" onClick={() => onNavigate("system")}>
+              Tümünü aç
+            </button>
+          </div>
+          <div className="adm-system-list">
+            {systemRows.map((row) => (
+              <div className="adm-system-row" key={row.label}>
+                <span className={`adm-status-dot${row.ready ? " is-ready" : " is-blocked"}`} />
+                <div>
+                  <strong>{row.label}</strong>
+                  <span>{row.detail}</span>
+                </div>
+                <span className={`adm-health-label${row.ready ? " is-ready" : " is-blocked"}`}>
+                  {row.ready ? "Hazır" : "Kontrol et"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="adm-panel-card">
+          <div className="adm-panel-card-head">
+            <div>
+              <span className="adm-eyebrow">Son hareket</span>
+              <h3>Yeni kullanıcılar</h3>
+            </div>
+            <button type="button" className="adm-text-button" onClick={() => onNavigate("members")}>
+              Tümünü aç
+            </button>
+          </div>
+          <div className="adm-recent-list">
+            {recentMembers.map((member) => (
+              <div className="adm-recent-member" key={member.id}>
+                <span className="adm-member-avatar">{member.name.slice(0, 2).toUpperCase()}</span>
+                <div>
+                  <strong>{member.name}</strong>
+                  <span>{translateStatus(member.memberType)} · {formatRelativeDate(member.createdAt)}</span>
+                </div>
+                <StatusBadge
+                  label={member.plan}
+                  tone={member.plan === "free" ? "neutral" : member.billingStatus === "active" ? "success" : "warning"}
+                />
+              </div>
+            ))}
+            {recentMembers.length === 0 && <p className="adm-empty-copy">Henüz yeni kullanıcı yok.</p>}
+          </div>
+          <div className="adm-recent-summary">
+            <span>{billingEvents.length} ödeme olayı</span>
+            <span>{publishedPosts} içerik yayında</span>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
 
 export function AdminPanel(props: {
   sessionLabel: string;
-  systemHealth: {
-    nodeEnv: string;
-    siteUrl: string;
-    vercelEnv: string;
-    region: string;
-    databaseConfigured: boolean;
-    lemonWebhookConfigured: boolean;
-    emailConfigured: boolean;
-    analyticsConfigured: boolean;
-    lifecycleDailyBudget: number;
-  };
+  systemHealth: AdminSystemHealth;
   overview: AdminOverview;
   members: AdminMemberRecord[];
-  billingEvents: Array<{
-    id: string;
-    event_name: string;
-    user_email: string | null;
-    plan: string;
-    billing_status: string;
-    created_at: string;
-  }>;
+  billingEvents: AdminBillingEvent[];
   authActivity: AdminAuthActivityRecord[];
   referralCodes: ReferralCodeRecord[];
   institutions: AdminInstitutionRecord[];
@@ -231,6 +638,7 @@ export function AdminPanel(props: {
   const [emailTestMessage, setEmailTestMessage] = useState("");
   const [emailTestError, setEmailTestError] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [memberDrafts, setMemberDrafts] = useState<Record<string, { plan: string; billingStatus: string; trialDays: string }>>(
     () =>
       Object.fromEntries(
@@ -250,6 +658,11 @@ export function AdminPanel(props: {
     body: "## What this guide covers\n\nAdd the first key explanation here.\n\n## Common mistakes\n\nExplain what usually goes wrong.\n\n## Better answer pattern\n\nShow what a stronger answer sounds like.\n\n## How to practice it\n\nGive the learner a repeatable action plan.",
     status: "draft"
   });
+
+  const navigateTo = (tab: AdminTab) => {
+    setActiveTab(tab);
+    setMobileNavOpen(false);
+  };
 
   const referralOverview = useMemo(() => {
     const totalCodes = props.referralCodes.length;
@@ -335,27 +748,40 @@ export function AdminPanel(props: {
     const candidates = [
       {
         key: "pricing",
-        label: "Pricing to checkout",
+        label: "Fiyat sayfasından checkout'a",
         rate: props.overview.monetizationFunnel7d.pricingViewToCheckoutRate,
-        detail: "Visitors are seeing pricing, but too few are starting checkout."
+        detail: "Fiyatı gören kullanıcıların yeterli bölümü ödeme adımına geçmiyor.",
+        sampleSize: props.overview.monetizationFunnel7d.pricingViews
       },
       {
         key: "paywall",
-        label: "Paywall to checkout",
+        label: "Kullanım limitinden checkout'a",
         rate: props.overview.monetizationFunnel7d.limitHitToCheckoutRate,
-        detail: "Free users hit the cap, but the upgrade prompt is not converting hard enough."
+        detail: "Ücretsiz limite ulaşan kullanıcılar yükseltme teklifine yeterince yanıt vermiyor.",
+        sampleSize: props.overview.monetizationFunnel7d.practiceLimitHits
       },
       {
         key: "checkout",
-        label: "Checkout completion",
+        label: "Checkout tamamlama",
         rate: props.overview.monetizationFunnel7d.checkoutToCompletionRate,
-        detail: "Intent exists, but buyers are falling off before payment completes."
+        detail: "Satın alma niyeti var ancak ödeme tamamlanmadan kayıp yaşanıyor.",
+        sampleSize: props.overview.monetizationFunnel7d.checkoutInitiated
       }
     ];
-    return [...candidates].sort((a, b) => a.rate - b.rate)[0];
+    const measuredCandidates = candidates.filter((candidate) => candidate.sampleSize > 0);
+    return measuredCandidates.sort((a, b) => a.rate - b.rate)[0] ?? {
+      key: "data",
+      label: "Ölçüm bekleniyor",
+      rate: 0,
+      detail: "Güvenilir bir darboğaz seçmek için yeterli örnek henüz oluşmadı.",
+      sampleSize: 0
+    };
   }, [
+    props.overview.monetizationFunnel7d.checkoutInitiated,
     props.overview.monetizationFunnel7d.checkoutToCompletionRate,
     props.overview.monetizationFunnel7d.limitHitToCheckoutRate,
+    props.overview.monetizationFunnel7d.practiceLimitHits,
+    props.overview.monetizationFunnel7d.pricingViews,
     props.overview.monetizationFunnel7d.pricingViewToCheckoutRate
   ]);
 
@@ -364,74 +790,80 @@ export function AdminPanel(props: {
     const checkoutCompletion = props.overview.monetizationFunnel7d.checkoutToCompletionRate;
     if (paidRate >= 4 && checkoutCompletion >= 45) {
       return {
-        label: "Healthy",
+        label: "Sağlıklı",
         tone: "success" as const,
-        summary: "Conversion engine is working and payment completion is holding up."
+        summary: "Dönüşüm ve ödeme tamamlama akışı sağlıklı çalışıyor."
       };
     }
     if (paidRate >= 2 && checkoutCompletion >= 25) {
       return {
-        label: "Watch closely",
+        label: "Yakından izle",
         tone: "warning" as const,
-        summary: "Revenue flow is moving, but the funnel still has visible friction."
+        summary: "Gelir akışı hareketli ancak funnel içinde hâlâ görünür sürtünme var."
       };
     }
     return {
-      label: "Needs attention",
+      label: "Aksiyon gerekli",
       tone: "neutral" as const,
-      summary: "The revenue funnel is active, but one or more core steps are underperforming."
+      summary: "Gelir funnelındaki bir veya daha fazla temel adım hedefin altında."
     };
   }, [props.overview.funnel7d.clickToPaidRate, props.overview.monetizationFunnel7d.checkoutToCompletionRate]);
 
   const revenueActionPlan = useMemo(() => {
-    const bestCheckoutSource = props.overview.topCheckoutSources[0];
+    const bestCheckoutSource = props.overview.topCheckoutSources.find((source) => source.completed > 0);
     const winnerCta = props.overview.winnerCta7d;
     const actions: Array<{ title: string; detail: string; tone: "success" | "warning" | "neutral" }> = [];
 
     if (monetizationBottleneck.key === "pricing") {
       actions.push({
-        title: "Tighten pricing CTA pressure",
-        detail: `${formatPercent(props.overview.monetizationFunnel7d.pricingViewToCheckoutRate)} pricing→checkout in 7d. Keep testing pricing copy, CTA clarity, and account-state messaging first.`,
+        title: "Fiyat teklifini netleştir",
+        detail: `Son 7 günde fiyat→checkout oranı ${formatPercent(props.overview.monetizationFunnel7d.pricingViewToCheckoutRate)}. Önce fiyat metni, CTA ve hesap durumunu sadeleştir.`,
         tone: "warning"
       });
     } else if (monetizationBottleneck.key === "paywall") {
       actions.push({
-        title: "Push harder on paywall recovery",
-        detail: `${formatPercent(props.overview.monetizationFunnel7d.limitHitToCheckoutRate)} limit-hit→checkout in 7d. Focus on practice/result retry walls because intent already exists there.`,
+        title: "Limit sonrası geri kazanımı güçlendir",
+        detail: `Son 7 günde limit→checkout oranı ${formatPercent(props.overview.monetizationFunnel7d.limitHitToCheckoutRate)}. Niyetin yüksek olduğu pratik ve sonuç ekranlarına odaklan.`,
+        tone: "warning"
+      });
+    } else if (monetizationBottleneck.key === "checkout") {
+      actions.push({
+        title: "Checkout kaybını kapat",
+        detail: `Son 7 günde checkout tamamlama oranı ${formatPercent(props.overview.monetizationFunnel7d.checkoutToCompletionRate)}. Başlatılan ödeme ile satın alma arasındaki kaybı azalt.`,
         tone: "warning"
       });
     } else {
       actions.push({
-        title: "Fix checkout completion leakage",
-        detail: `${formatPercent(props.overview.monetizationFunnel7d.checkoutToCompletionRate)} checkout completion in 7d. The next gains come from reducing drop-off between initiated and paid.`,
-        tone: "warning"
+        title: "Önce güvenilir veri topla",
+        detail: "Darboğaz seçmek için yeterli hacim yok. Yeni deney açmadan önce mevcut checkout ve satın alma olaylarını doğrula.",
+        tone: "neutral"
       });
     }
 
     if (bestCheckoutSource) {
       actions.push({
-        title: "Scale the best checkout source",
-        detail: `${formatCtaLabel(bestCheckoutSource.path)} is leading with ${formatPercent(bestCheckoutSource.completionRate)} completion from ${bestCheckoutSource.completed} paid checkouts.`,
+        title: "En iyi checkout kaynağını büyüt",
+        detail: `${formatCtaLabel(bestCheckoutSource.path)}, ${bestCheckoutSource.completed} tamamlanmış ödemede ${formatPercent(bestCheckoutSource.completionRate)} oranla önde.`,
         tone: "success"
       });
     } else {
       actions.push({
-        title: "Wait for stronger checkout signal",
-        detail: "There is not enough completed checkout attribution yet. Keep collecting source-level data before choosing a page winner.",
+        title: "Checkout kazananı seçmek için erken",
+        detail: "Tamamlanmış ödeme atfı henüz yeterli değil. Bir sayfayı kazanan ilan etmeden önce kaynak bazlı ödeme verisi topla.",
         tone: "neutral"
       });
     }
 
     if (winnerCta) {
       actions.push({
-        title: "Reuse the strongest CTA language",
-        detail: `${formatCtaLabel(winnerCta.path)} is the current weekly CTA winner with ${formatPercent(winnerCta.clickToPaidRate)} click→paid.`,
+        title: "En güçlü CTA dilini tekrar kullan",
+        detail: `${formatCtaLabel(winnerCta.path)}, ${formatPercent(winnerCta.clickToPaidRate)} tıklama→ödeme oranıyla haftanın kazananı.`,
         tone: "success"
       });
     } else {
       actions.push({
-        title: "Insufficient CTA attribution this week",
-        detail: "Weekly CTA attribution is still thin, so keep prioritizing high-intent surfaces instead of broad page experiments.",
+        title: "CTA atfı henüz yetersiz",
+        detail: "Geniş sayfa deneyleri yerine satın alma niyeti yüksek ekranlardan veri toplamaya devam et.",
         tone: "neutral"
       });
     }
@@ -463,22 +895,22 @@ export function AdminPanel(props: {
   const topQuickActions = useMemo(
     () => [
       {
-        label: "Open members",
-        detail: `${filteredMembers.length} visible users`,
+        label: "Kullanıcıları aç",
+        detail: `${filteredMembers.length} görünür hesap`,
         onClick: () => setActiveTab("members")
       },
       {
-        label: "Review billing",
-        detail: `${props.billingEvents.length} billing events`,
+        label: "Geliri incele",
+        detail: `${props.billingEvents.length} ödeme olayı`,
         onClick: () => setActiveTab("billing")
       },
       {
-        label: "School pipeline",
-        detail: `${props.institutions.length} institutions`,
-        onClick: () => setActiveTab("institutions")
+        label: "Sistem durumunu aç",
+        detail: `${props.overview.emailFailed24h} e-posta hatası`,
+        onClick: () => setActiveTab("system")
       }
     ],
-    [filteredMembers.length, props.billingEvents.length, props.institutions.length]
+    [filteredMembers.length, props.billingEvents.length, props.overview.emailFailed24h]
   );
 
   const billingOverview = useMemo(() => {
@@ -513,58 +945,58 @@ export function AdminPanel(props: {
       props.overview.monetizationFunnel7d.checkoutCompleted - props.overview.monetizationFunnel7d.billingSuccessSeen,
       0
     );
-    const bestCheckoutSource = props.overview.topCheckoutSources[0];
+    const bestCheckoutSource = props.overview.topCheckoutSources.find((source) => source.completed > 0);
     const actions: Array<{ title: string; value: string; detail: string; tone: "success" | "warning" | "neutral" }> = [];
 
     actions.push({
-      title: "Checkout leak to recover",
+      title: "Kurtarılacak checkout kaybı",
       value: `${droppedCheckouts}`,
       detail:
         droppedCheckouts > 0
-          ? `${props.overview.monetizationFunnel7d.checkoutInitiated} initiated vs ${props.overview.monetizationFunnel7d.checkoutCompleted} completed in 7d. Prioritize payment-dropoff fixes first.`
-          : "No checkout drop-off was recorded in the last 7 days.",
+          ? `Son 7 günde ${props.overview.monetizationFunnel7d.checkoutInitiated} başlangıca karşılık ${props.overview.monetizationFunnel7d.checkoutCompleted} ödeme tamamlandı. Önce ödeme kaybını düzelt.`
+          : "Son 7 günde checkout kaybı kaydedilmedi.",
       tone: droppedCheckouts > 0 ? "warning" : "success"
     });
 
     actions.push({
-      title: "Post-payment follow-through",
+      title: "Ödeme sonrası devamlılık",
       value: `${missingSuccessViews}`,
       detail:
         missingSuccessViews > 0
-          ? `${props.overview.billingSuccessSeen7d} billing success views from ${props.overview.checkoutCompleted7d} completed checkouts. Tighten success-page delivery and onboarding continuity.`
-          : "Completed checkouts are reaching the success state cleanly.",
+          ? `${props.overview.checkoutCompleted7d} tamamlanmış ödemeden ${props.overview.billingSuccessSeen7d} tanesi başarı ekranına ulaştı. Başarı sayfası ve onboarding devamlılığını düzelt.`
+          : "Tamamlanan checkout'lar başarı durumuna sorunsuz ulaşıyor.",
       tone: missingSuccessViews > 0 ? "warning" : "success"
     });
 
     actions.push({
-      title: "Paid access sync pending",
+      title: "Ücretli erişim senkronu",
       value: `${props.overview.billingSyncPending7d}`,
       detail:
         props.overview.billingSyncPending7d > 0
-          ? `${props.overview.billingSyncPending7d} distinct buyer account(s) returned from checkout but still had free access after repeated sync checks in 7d. Review payment delivery before asking anyone to purchase again.`
-          : "No buyer reached the payment-return page with access still unsynced in the last 7 days.",
+          ? `Son 7 günde ${props.overview.billingSyncPending7d} alıcı checkout'tan döndüğü halde ücretsiz erişimde kaldı. Yeni satın alma istemeden önce ödeme teslimatını düzelt.`
+          : "Son 7 günde erişimi senkronlanmamış alıcı görünmüyor.",
       tone: props.overview.billingSyncPending7d > 0 ? "warning" : "success"
     });
 
     actions.push({
-      title: "Lifecycle delivery",
-      value: props.overview.emailQuotaBlocked ? "Blocked" : `${props.overview.emailSent24h} sent`,
+      title: "Yaşam döngüsü e-postaları",
+      value: props.overview.emailQuotaBlocked ? "Bloklu" : `${props.overview.emailSent24h} gönderildi`,
       detail: props.overview.emailQuotaBlocked
-        ? `Email provider quota is blocking lifecycle delivery; ${props.overview.emailFailed24h} failed attempt(s) were logged in 24h. The cron circuit breaker prevents another retry storm until the quota resets or an override is configured.`
-        : `${props.overview.emailSent24h} lifecycle email(s) sent and ${props.overview.emailFailed24h} failed in 24h. ${props.overview.dayOneReturnStarts30d} learner(s) returned through the day-one path in 30d.`,
+        ? `Sağlayıcı kotası gönderimi engelliyor; son 24 saatte ${props.overview.emailFailed24h} deneme başarısız. Kota sıfırlanana kadar tekrar fırtınası engellendi.`
+        : `Son 24 saatte ${props.overview.emailSent24h} e-posta gönderildi, ${props.overview.emailFailed24h} gönderim başarısız. 30 günde ${props.overview.dayOneReturnStarts30d} kullanıcı ilk gün dönüş akışından geldi.`,
       tone: props.overview.emailQuotaBlocked || props.overview.emailFailed24h > 0 ? "warning" : "success"
     });
 
     actions.push({
-      title: "Practice-limit recovery",
+      title: "Pratik limiti geri kazanımı",
       value: props.overview.practiceLimitRecoveryEnabled
         ? `${props.overview.practiceLimitRecoveryCheckoutStarts7d}/${props.overview.practiceLimitRecoverySent7d}`
-        : "Off",
+        : "Kapalı",
       detail: !props.overview.practiceLimitRecoveryEnabled
-        ? "Safely staged. Keep this off until the live Lemon webhook is configured and signed delivery is verified."
+        ? "Hazır fakat güvenli biçimde kapalı. Canlı Lemon webhook ve imzalı teslimat doğrulanana kadar açma."
         : props.overview.practiceLimitRecoverySent7d > 0
-          ? `${props.overview.practiceLimitRecoverySent7d} recovery email(s) sent and ${props.overview.practiceLimitRecoveryCheckoutStarts7d} authenticated checkout(s) started in 7d.`
-          : "Recovery is enabled, but no eligible high-intent learner has been emailed in the last 7 days.",
+          ? `7 günde ${props.overview.practiceLimitRecoverySent7d} kurtarma e-postası gönderildi ve ${props.overview.practiceLimitRecoveryCheckoutStarts7d} checkout başlatıldı.`
+          : "Geri kazanım açık ancak son 7 günde uygun yüksek niyetli kullanıcı bulunmadı.",
       tone: !props.overview.practiceLimitRecoveryEnabled
         ? "neutral"
         : props.overview.practiceLimitRecoveryCheckoutStarts7d > 0
@@ -573,11 +1005,11 @@ export function AdminPanel(props: {
     });
 
     actions.push({
-      title: "Source worth scaling",
-      value: bestCheckoutSource ? formatCtaLabel(bestCheckoutSource.path) : "No signal yet",
+      title: "Büyütülecek checkout kaynağı",
+      value: bestCheckoutSource ? formatCtaLabel(bestCheckoutSource.path) : "Henüz sinyal yok",
       detail: bestCheckoutSource
-        ? `${formatPercent(bestCheckoutSource.completionRate)} completion rate with ${bestCheckoutSource.completed} completed checkouts attributed to this path.`
-        : "Once more attributed checkout data lands, the strongest source will appear here.",
+        ? `${bestCheckoutSource.completed} tamamlanmış checkout ile ${formatPercent(bestCheckoutSource.completionRate)} başarı oranı.`
+        : "Atfedilmiş tamamlanmış ödeme verisi geldiğinde en güçlü kaynak burada görünecek.",
       tone: bestCheckoutSource ? "success" : "neutral"
     });
 
@@ -622,10 +1054,10 @@ export function AdminPanel(props: {
     const data = (await response.json()) as { error?: string };
     setBusy(false);
     if (!response.ok) {
-      setError(data.error ?? "Could not create referral code.");
+      setError(data.error ?? "Davet kodu oluşturulamadı.");
       return;
     }
-    setMessage("Referral code created.");
+    setMessage("Davet kodu oluşturuldu.");
     setCode("");
     setLabel("");
     setUsageLimit("");
@@ -664,10 +1096,10 @@ export function AdminPanel(props: {
     const data = (await response.json()) as { error?: string };
     setMemberBusyId(null);
     if (!response.ok) {
-      setMemberError(data.error ?? "Could not update member.");
+      setMemberError(data.error ?? "Kullanıcı erişimi güncellenemedi.");
       return;
     }
-    setMemberMessage("Member access updated.");
+    setMemberMessage("Kullanıcı erişimi güncellendi.");
     router.refresh();
   };
 
@@ -683,10 +1115,10 @@ export function AdminPanel(props: {
     const data = (await response.json()) as { error?: string };
     setContentBusy(false);
     if (!response.ok) {
-      setContentError(data.error ?? "Could not create post.");
+      setContentError(data.error ?? "İçerik kaydedilemedi.");
       return;
     }
-    setContentMessage("Custom blog post saved.");
+    setContentMessage("Blog içeriği kaydedildi.");
     setNewPost({
       language: "en",
       title: "",
@@ -712,10 +1144,10 @@ export function AdminPanel(props: {
     const data = (await response.json()) as { error?: string };
     setContentBusyId(null);
     if (!response.ok) {
-      setContentError(data.error ?? "Could not update post status.");
+      setContentError(data.error ?? "İçerik durumu güncellenemedi.");
       return;
     }
-    setContentMessage(status === "published" ? "Post published." : "Post moved to draft.");
+    setContentMessage(status === "published" ? "İçerik yayınlandı." : "İçerik taslağa taşındı.");
     router.refresh();
   };
 
@@ -737,97 +1169,131 @@ export function AdminPanel(props: {
 
     setEmailTestBusy(false);
     if (!response.ok || !data.ok) {
-      setEmailTestError(data.error ?? "Email delivery test failed.");
+      setEmailTestError(data.error ?? "E-posta teslimat testi başarısız oldu.");
       return;
     }
 
     setEmailTestMessage(
       data.quotaRecoveryRecorded
-        ? "Test sent and the stale provider quota block was cleared."
-        : "Test sent, but the quota recovery marker could not be recorded."
+        ? "Test gönderildi ve eski sağlayıcı kota blokajı temizlendi."
+        : "Test gönderildi ancak kota kurtarma kaydı oluşturulamadı."
     );
     router.refresh();
   };
 
   return (
-    <div className={`adm-shell${sidebarCollapsed ? " adm-collapsed" : ""}`}>
+    <div
+      className={`adm-shell${sidebarCollapsed ? " adm-collapsed" : ""}${mobileNavOpen ? " adm-mobile-open" : ""}`}
+    >
       {/* ── Sidebar ─────────────────────────────── */}
       <aside className="adm-sidebar">
         <div className="adm-brand">
           <div className="adm-brand-icon">
-            <Mic2 size={18} color="#a78bfa" />
+            <Mic2 size={18} />
           </div>
-          {!sidebarCollapsed && <span className="adm-brand-name">SpeakAce</span>}
+          {!sidebarCollapsed && (
+            <div className="adm-brand-copy">
+              <span className="adm-brand-name">SpeakAce</span>
+              <small>Yönetim</small>
+            </div>
+          )}
+          <button
+            type="button"
+            className="adm-sidebar-close"
+            onClick={() => setMobileNavOpen(false)}
+            aria-label="Menüyü kapat"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         <nav className="adm-nav">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = item.id === activeTab;
-            return (
-              <button
-                key={item.label}
-                type="button"
-                className={`adm-nav-item${isActive ? " is-active" : ""}${item.id === null ? " adm-nav-disabled" : ""}`}
-                onClick={() => item.id && setActiveTab(item.id)}
-                title={sidebarCollapsed ? item.label : undefined}
-              >
-                <Icon size={18} className="adm-nav-icon-svg" />
-                {!sidebarCollapsed && <span>{item.label}</span>}
-              </button>
-            );
-          })}
+          {navGroups.map((group) => (
+            <div className="adm-nav-group" key={group.label}>
+              {!sidebarCollapsed && <span className="adm-nav-group-label">{group.label}</span>}
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = item.id === activeTab;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`adm-nav-item${isActive ? " is-active" : ""}`}
+                    onClick={() => navigateTo(item.id)}
+                    title={sidebarCollapsed ? item.label : undefined}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <Icon size={18} className="adm-nav-icon-svg" />
+                    {!sidebarCollapsed && <span>{item.label}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="adm-sidebar-foot">
-          <Link href="/" className="adm-back-link" title="Back to Site">
+          <Link href="/" className="adm-back-link" title="Siteye dön">
             <ExternalLink size={15} />
-            {!sidebarCollapsed && <span>Back to Site</span>}
+            {!sidebarCollapsed && <span>Siteye dön</span>}
           </Link>
           <button
             type="button"
             className="adm-collapse-btn"
             onClick={() => setSidebarCollapsed((v) => !v)}
-            title={sidebarCollapsed ? "Expand" : "Collapse"}
+            title={sidebarCollapsed ? "Menüyü genişlet" : "Menüyü daralt"}
           >
             <ChevronLeft size={15} className={sidebarCollapsed ? "adm-icon-rotated" : ""} />
-            {!sidebarCollapsed && <span>Collapse</span>}
+            {!sidebarCollapsed && <span>Menüyü daralt</span>}
           </button>
         </div>
       </aside>
+      <button
+        type="button"
+        className="adm-mobile-backdrop"
+        onClick={() => setMobileNavOpen(false)}
+        aria-label="Menüyü kapat"
+      />
 
       {/* ── Main ─────────────────────────────────── */}
       <div className="adm-main">
         {/* Header */}
         <header className="adm-header">
-          <div>
+          <div className="adm-header-title-wrap">
+            <button
+              type="button"
+              className="adm-mobile-menu"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Yönetim menüsünü aç"
+            >
+              <Menu size={20} />
+            </button>
+            <div>
             <h1 className="adm-page-title">{tabTitles[activeTab]}</h1>
-            <p className="adm-header-subtitle">
-              {activeTab === "overview"
-                ? "Revenue, conversion, product usage, and operations in one place."
-                : `Manage ${tabTitles[activeTab].toLowerCase()} without leaving the admin console.`}
-            </p>
+              <p className="adm-header-subtitle">{tabDescriptions[activeTab]}</p>
+            </div>
           </div>
           <div className="adm-header-right">
             <div className="adm-search-wrap">
               <Search size={15} className="adm-search-icon" />
               <input
                 className="adm-search-input"
-                placeholder="Search members, orgs, referrals..."
+                placeholder="Kullanıcı ara..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
                   if (activeTab !== "members") {
-                    setActiveTab("members");
+                    navigateTo("members");
                   }
                 }}
+                aria-label="Kullanıcı ara"
               />
             </div>
             <div className="adm-session-chip" title={props.sessionLabel}>
               <ShieldCheck size={14} />
               <span>{props.sessionLabel}</span>
             </div>
-            <button type="button" className="adm-header-icon-btn" onClick={logout} title="Sign out">
+            <button type="button" className="adm-header-icon-btn" onClick={logout} title="Çıkış yap">
               <LogOut size={18} />
             </button>
             <div className="adm-user-avatar" title={props.sessionLabel}>
@@ -841,14 +1307,26 @@ export function AdminPanel(props: {
 
           {/* ── OVERVIEW TAB ─────────────────────── */}
           {activeTab === "overview" && (
+            <AdminDailyOverview
+              overview={props.overview}
+              members={props.members}
+              billingEvents={props.billingEvents}
+              customPosts={props.customPosts}
+              systemHealth={props.systemHealth}
+              onNavigate={navigateTo}
+            />
+          )}
+
+          {/* ── DETAILED ANALYTICS TAB ───────────── */}
+          {activeTab === "analytics" && (
             <>
               <section className="adm-command-center">
                 <div className="adm-command-main">
                   <div className="adm-command-kicker">
                     <StatusBadge label={adminHealth.label} tone={adminHealth.tone} />
-                    <span>Revenue command center</span>
+                    <span>Gelir analiz merkezi</span>
                   </div>
-                  <h2>Know what changed, what is blocked, and where money is leaking.</h2>
+                  <h2>Neyin değiştiğini, neyin engellendiğini ve gelirin nerede kaybolduğunu gör.</h2>
                   <p>{adminHealth.summary}</p>
                   <div className="adm-command-actions">
                     {topQuickActions.map((item) => (
@@ -861,56 +1339,58 @@ export function AdminPanel(props: {
                 </div>
                 <div className="adm-command-side">
                   <AdmHeroMetric
-                    label="MRR estimate"
+                    label="Aylık gelir tahmini"
                     value={formatMoney(props.overview.monthlyRevenueEstimate)}
-                    hint={`${props.overview.paidMembers} paying members`}
+                    hint={`${props.overview.paidMembers} ücretli kullanıcı`}
                   />
                   <AdmHeroMetric
-                    label="Paid conversion"
+                    label="Ödeme dönüşümü"
                     value={formatPercent(props.overview.funnel7d.clickToPaidRate)}
-                    hint="click to paid in 7 days"
+                    hint="son 7 günde tıklamadan ödemeye"
                   />
                   <AdmHeroMetric
-                    label="ARPPU"
+                    label="Ücretli kullanıcı değeri"
                     value={formatMoney(revenuePerPaidMember)}
-                    hint="avg monthly value per paid member"
+                    hint="kullanıcı başına aylık ortalama"
                   />
                 </div>
               </section>
 
               <div className="adm-signal-grid">
                 <AdmSignalCard
-                  label="Primary bottleneck"
+                  label="Ana darboğaz"
                   value={monetizationBottleneck.label}
-                  detail={`${formatPercent(monetizationBottleneck.rate)} in the last 7 days. ${monetizationBottleneck.detail}`}
+                  detail={`Son 7 günde ${formatPercent(monetizationBottleneck.rate)}. ${monetizationBottleneck.detail}`}
                   tone="warning"
                 />
                 <AdmSignalCard
-                  label="Best checkout source"
-                  value={props.overview.topCheckoutSources[0]?.path ? formatCtaLabel(props.overview.topCheckoutSources[0].path) : "No signal yet"}
+                  label="En iyi checkout kaynağı"
+                  value={props.overview.topCheckoutSources.find((source) => source.completed > 0)?.path
+                    ? formatCtaLabel(props.overview.topCheckoutSources.find((source) => source.completed > 0)?.path ?? "")
+                    : "Henüz sinyal yok"}
                   detail={
-                    props.overview.topCheckoutSources[0]
-                      ? `${formatPercent(props.overview.topCheckoutSources[0].completionRate)} completion rate from ${props.overview.topCheckoutSources[0].completed} completed checkouts.`
-                      : "Once checkout data accumulates, the strongest source will appear here."
+                    props.overview.topCheckoutSources.find((source) => source.completed > 0)
+                      ? `${props.overview.topCheckoutSources.find((source) => source.completed > 0)?.completed} tamamlanmış ödemede ${formatPercent(props.overview.topCheckoutSources.find((source) => source.completed > 0)?.completionRate ?? 0)} başarı.`
+                      : "Tamamlanmış ödeme verisi biriktiğinde en güçlü kaynak burada görünecek."
                   }
                   tone="success"
                 />
                 <AdmSignalCard
-                  label="Growth pressure"
-                  value={`${props.overview.liveUsers5m} live · ${props.overview.recentSignIns24h} sign-ins`}
-                  detail={`Traffic is ${props.overview.pageViews1h} page views in the last hour, with ${props.overview.requests5m} recent requests.`}
+                  label="Canlı hareket"
+                  value={`${props.overview.liveUsers5m} canlı · ${props.overview.recentSignIns24h} giriş`}
+                  detail={`Son saatte ${props.overview.pageViews1h} sayfa görüntülenmesi ve son 5 dakikada ${props.overview.requests5m} istek var.`}
                   tone="neutral"
                 />
               </div>
 
               <div className="adm-panel-card" style={{ marginBottom: "1rem" }}>
                 <div className="adm-panel-card-head">
-                  <h3>Revenue Action Plan</h3>
-                  <p>The next three moves based on current conversion data, not guesswork.</p>
+                  <h3>Gelir aksiyon planı</h3>
+                  <p>Tahmine değil mevcut dönüşüm verisine göre sonraki üç hareket.</p>
                 </div>
                 <div className="adm-signal-grid">
                   {revenueActionPlan.map((item) => (
-                    <AdmSignalCard key={item.title} label={item.title} value={item.tone === "success" ? "Scale" : item.tone === "warning" ? "Fix" : "Watch"} detail={item.detail} tone={item.tone} />
+                    <AdmSignalCard key={item.title} label={item.title} value={item.tone === "success" ? "Büyüt" : item.tone === "warning" ? "Düzelt" : "İzle"} detail={item.detail} tone={item.tone} />
                   ))}
                 </div>
               </div>
@@ -918,49 +1398,49 @@ export function AdminPanel(props: {
               {/* Stat Cards */}
               <div className="adm-stats-row">
                 <AdmStatCard
-                  label="Total Users"
+                  label="Toplam kullanıcı"
                   value={props.overview.totalUsers}
-                  trend={`${props.overview.paidMembers} paid · ${props.overview.trialMembers} trial`}
+                  trend={`${props.overview.paidMembers} ücretli · ${props.overview.trialMembers} denemede`}
                   trendUp={props.overview.paidMembers > 0}
                   iconBg="rgba(96,165,250,0.15)"
                   icon={<Users size={20} color="#60a5fa" />}
                 />
                 <AdmStatCard
-                  label="Auth Activity"
+                  label="Aktif oturum"
                   value={props.overview.activeSessions}
-                  trend={`${props.overview.recentSignIns24h} sign-ins in last 24h`}
+                  trend={`Son 24 saatte ${props.overview.recentSignIns24h} giriş`}
                   trendUp={props.overview.recentSignIns24h > 0}
                   iconBg="rgba(52,211,153,0.15)"
                   icon={<Activity size={20} color="#34d399" />}
                 />
                 <AdmStatCard
-                  label="Published Posts"
+                  label="Yayındaki içerik"
                   value={props.customPosts.filter((p) => p.status === "published").length}
-                  trend={`${props.customPosts.length} total · ${props.customPosts.filter((p) => p.status === "draft").length} drafts`}
+                  trend={`${props.customPosts.length} toplam · ${props.customPosts.filter((p) => p.status === "draft").length} taslak`}
                   trendUp={props.customPosts.filter((p) => p.status === "published").length > 0}
                   iconBg="rgba(129,140,248,0.15)"
                   icon={<FileText size={20} color="#818cf8" />}
                 />
                 <AdmStatCard
-                  label="Monthly Revenue Est."
+                  label="Aylık gelir tahmini"
                   value={formatMoney(props.overview.monthlyRevenueEstimate)}
-                  trend={`${props.overview.paidMembers} paying subscribers`}
+                  trend={`${props.overview.paidMembers} ücretli abone`}
                   trendUp={props.overview.paidMembers > 0}
                   iconBg="rgba(52,211,153,0.15)"
                   icon={<CircleDollarSign size={20} color="#34d399" />}
                 />
                 <AdmStatCard
-                  label="AI Cost (30d)"
+                  label="AI maliyeti (30 gün)"
                   value={formatMoney(props.overview.aiEstimatedCost30d)}
-                  trend={`${props.overview.aiRequests30d} requests · ${(props.overview.aiInputTokens30d + props.overview.aiOutputTokens30d).toLocaleString("en-US")} tokens`}
+                  trend={`${props.overview.aiRequests30d} istek · ${(props.overview.aiInputTokens30d + props.overview.aiOutputTokens30d).toLocaleString("tr-TR")} token`}
                   trendUp={props.overview.aiEstimatedCost30d <= props.overview.monthlyRevenueEstimate}
                   iconBg="rgba(96,165,250,0.15)"
                   icon={<Activity size={20} color="#60a5fa" />}
                 />
                 <AdmStatCard
-                  label="Checkout Completion"
+                  label="Checkout tamamlama"
                   value={formatPercent(props.overview.monetizationFunnel7d.checkoutToCompletionRate)}
-                  trend={`${props.overview.checkoutCompleted7d}/${props.overview.checkoutInitiated7d} completed in 7d`}
+                  trend={`7 günde ${props.overview.checkoutCompleted7d}/${props.overview.checkoutInitiated7d} tamamlandı`}
                   trendUp={
                     props.overview.monetizationFunnel7d.checkoutToCompletionRate >=
                     props.overview.monetizationFunnel30d.checkoutToCompletionRate
@@ -969,9 +1449,9 @@ export function AdminPanel(props: {
                   icon={<Rocket size={20} color="#fbbf24" />}
                 />
                 <AdmStatCard
-                  label="Pricing → Checkout"
+                  label="Fiyat → Checkout"
                   value={formatPercent(props.overview.monetizationFunnel7d.pricingViewToCheckoutRate)}
-                  trend={`${props.overview.pricingViews7d} pricing views in 7d`}
+                  trend={`7 günde ${props.overview.pricingViews7d} fiyat görüntülenmesi`}
                   trendUp={
                     props.overview.monetizationFunnel7d.pricingViewToCheckoutRate >=
                     props.overview.monetizationFunnel30d.pricingViewToCheckoutRate
@@ -986,24 +1466,24 @@ export function AdminPanel(props: {
                 {/* Recent Users */}
                 <div className="adm-table-card">
                   <div className="adm-table-card-head">
-                    <h3>Recent Users</h3>
+                    <h3>Son kullanıcılar</h3>
                     <button type="button" className="adm-view-all-btn" onClick={() => setActiveTab("members")}>
-                      View all <ArrowUpRight size={13} />
+                      Tümünü aç <ArrowUpRight size={13} />
                     </button>
                   </div>
                   <table className="adm-table">
                     <thead>
                       <tr>
-                        <th>NAME ↕</th>
-                        <th>ROLE ↕</th>
-                        <th>PLAN ↕</th>
-                        <th>JOINED ↕</th>
+                        <th>İSİM</th>
+                        <th>ROL</th>
+                        <th>PLAN</th>
+                        <th>KAYIT</th>
                       </tr>
                     </thead>
                     <tbody>
                       {props.members.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="adm-table-empty">No users yet</td>
+                          <td colSpan={4} className="adm-table-empty">Henüz kullanıcı yok.</td>
                         </tr>
                       ) : (
                         props.members.slice(0, 6).map((m) => (
@@ -1030,24 +1510,24 @@ export function AdminPanel(props: {
                 {/* Recent Sessions */}
                 <div className="adm-table-card">
                   <div className="adm-table-card-head">
-                    <h3>Recent Sessions</h3>
+                    <h3>Son oturumlar</h3>
                     <button type="button" className="adm-view-all-btn" onClick={() => setActiveTab("activity")}>
-                      View all <ArrowUpRight size={13} />
+                      Tümünü aç <ArrowUpRight size={13} />
                     </button>
                   </div>
                   <table className="adm-table">
                     <thead>
                       <tr>
-                        <th>USER ↕</th>
-                        <th>TYPE ↕</th>
-                        <th>EVENT ↕</th>
-                        <th>DATE ↕</th>
+                        <th>KULLANICI</th>
+                        <th>TÜR</th>
+                        <th>OLAY</th>
+                        <th>TARİH</th>
                       </tr>
                     </thead>
                     <tbody>
                       {props.authActivity.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="adm-table-empty">No sessions yet</td>
+                          <td colSpan={4} className="adm-table-empty">Henüz oturum yok.</td>
                         </tr>
                       ) : (
                         props.authActivity.slice(0, 6).map((item) => (
@@ -1076,49 +1556,49 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Live Activity</h3>
+                    <h3>Canlı hareket</h3>
                   </div>
                   <div className="adm-overview-list">
                     <div className="adm-overview-item">
                       <strong>{props.overview.liveUsers5m}</strong>
-                      <span>Active users in the last 5 minutes</span>
+                      <span>Son 5 dakikadaki aktif kullanıcı</span>
                     </div>
                     <div className="adm-overview-item">
                       <strong>{props.overview.recentSignIns24h}</strong>
-                      <span>Sign-ins in the last 24 hours</span>
+                      <span>Son 24 saatteki giriş</span>
                     </div>
                     <div className="adm-overview-item">
                       <strong>{props.overview.requests5m}</strong>
-                      <span>Requests in last 5 min · {formatRelativeDate(props.overview.lastRequestAt)}</span>
+                      <span>Son 5 dakikadaki istek · {formatRelativeDate(props.overview.lastRequestAt)}</span>
                     </div>
                     <div className="adm-overview-item">
                       <strong>{props.overview.pageViews1h}</strong>
-                      <span>Page views in the last hour</span>
+                      <span>Son saatteki sayfa görüntülenmesi</span>
                     </div>
                     <div className="adm-overview-item">
                       <strong>{props.overview.classesCount}</strong>
-                      <span>Active teacher classes</span>
+                      <span>Aktif öğretmen sınıfı</span>
                     </div>
                     <div className="adm-overview-item">
                       <strong>{props.customPosts.filter((p) => p.status === "published").length}</strong>
-                      <span>Published custom blog posts</span>
+                      <span>Yayındaki özel blog içeriği</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Recent Billing</h3>
+                    <h3>Son ödemeler</h3>
                   </div>
                   <div className="adm-stack-list">
                     {props.billingEvents.length === 0 ? (
-                      <p className="adm-muted">No billing events yet.</p>
+                      <p className="adm-muted">Henüz ödeme olayı yok.</p>
                     ) : (
                       props.billingEvents.slice(0, 6).map((event) => (
                         <div key={event.id} className="adm-list-row">
                           <div>
                             <div className="adm-table-name">{event.event_name}</div>
-                            <div className="adm-table-email">{event.user_email ?? "Unknown"}</div>
+                            <div className="adm-table-email">{event.user_email ?? "Bilinmiyor"}</div>
                           </div>
                           <div className="adm-list-side">
                             <StatusBadge label={event.plan} tone="accent" />
@@ -1129,7 +1609,7 @@ export function AdminPanel(props: {
                     )}
                   </div>
                   <div className="adm-revenue-total">
-                    <span className="adm-muted">Monthly revenue estimate</span>
+                    <span className="adm-muted">Aylık gelir tahmini</span>
                     <strong>{formatMoney(props.overview.monthlyRevenueEstimate)}</strong>
                   </div>
                 </div>
@@ -1138,22 +1618,22 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Top Shared Speaking Prompts</h3>
-                    <p>Shows which speaking result pages create the most social sharing pressure in the last 30 days.</p>
+                    <h3>En çok paylaşılan konuşma soruları</h3>
+                    <p>Son 30 günde sosyal paylaşımı en çok üreten konuşma sonuçlarını gösterir.</p>
                   </div>
                   <div className="adm-stack-list">
                     {props.overview.topSharedSpeakingPrompts.length === 0 ? (
-                      <p className="adm-muted">No speaking share activity recorded yet.</p>
+                      <p className="adm-muted">Henüz konuşma paylaşımı kaydedilmedi.</p>
                     ) : (
                       props.overview.topSharedSpeakingPrompts.map((item) => (
                         <div key={item.promptTitle} className="adm-list-row" style={{ alignItems: "stretch" }}>
                           <div style={{ display: "grid", gap: "0.3rem", flex: 1 }}>
                             <strong>{item.promptTitle}</strong>
                             <span className="adm-muted">
-                              {item.totalShares} total shares · X {item.xShares} · WhatsApp {item.whatsappShares} · LinkedIn {item.linkedInShares}
+                              {item.totalShares} toplam · X {item.xShares} · WhatsApp {item.whatsappShares} · LinkedIn {item.linkedInShares}
                             </span>
                           </div>
-                          <StatusBadge label={`${item.totalShares} shares`} tone="accent" />
+                          <StatusBadge label={`${item.totalShares} paylaşım`} tone="accent" />
                         </div>
                       ))
                     )}
@@ -1162,22 +1642,22 @@ export function AdminPanel(props: {
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Top Shared Badges</h3>
-                    <p>Reveals which result-card badge labels are producing the strongest share behavior in the last 30 days.</p>
+                    <h3>En çok paylaşılan rozetler</h3>
+                    <p>Son 30 günde hangi sonuç rozeti etiketlerinin en güçlü paylaşımı ürettiğini gösterir.</p>
                   </div>
                   <div className="adm-stack-list">
                     {props.overview.topSharedBadges.length === 0 ? (
-                      <p className="adm-muted">No badge-linked share activity recorded yet.</p>
+                      <p className="adm-muted">Henüz rozete bağlı paylaşım kaydedilmedi.</p>
                     ) : (
                       props.overview.topSharedBadges.map((item) => (
                         <div key={item.badgeLabel} className="adm-list-row" style={{ alignItems: "stretch" }}>
                           <div style={{ display: "grid", gap: "0.3rem", flex: 1 }}>
                             <strong>{item.badgeLabel}</strong>
                             <span className="adm-muted">
-                              {item.totalShares} total shares · X {item.xShares} · WhatsApp {item.whatsappShares} · LinkedIn {item.linkedInShares}
+                              {item.totalShares} toplam · X {item.xShares} · WhatsApp {item.whatsappShares} · LinkedIn {item.linkedInShares}
                             </span>
                           </div>
-                          <StatusBadge label={`${item.totalShares} shares`} tone="success" />
+                          <StatusBadge label={`${item.totalShares} paylaşım`} tone="success" />
                         </div>
                       ))
                     )}
@@ -1188,19 +1668,19 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Top Share Segments</h3>
-                    <p>Shows which badge + country + streak combinations generate the highest share momentum in the last 30 days.</p>
+                    <h3>En iyi paylaşım segmentleri</h3>
+                    <p>Son 30 günde en yüksek paylaşımı üreten rozet, ülke ve seri kombinasyonlarını gösterir.</p>
                   </div>
                   <div className="adm-stack-list">
                     {props.overview.topSharedIdentitySegments.length === 0 ? (
-                      <p className="adm-muted">No segment-level share activity recorded yet.</p>
+                      <p className="adm-muted">Henüz segment düzeyinde paylaşım kaydedilmedi.</p>
                     ) : (
                       props.overview.topSharedIdentitySegments.map((item) => (
                         <div key={item.segmentLabel} className="adm-list-row" style={{ alignItems: "stretch" }}>
                           <div style={{ display: "grid", gap: "0.3rem", flex: 1 }}>
                             <strong>{item.segmentLabel}</strong>
                             <span className="adm-muted">
-                              {item.totalShares} total shares · X {item.xShares} · WhatsApp {item.whatsappShares} · LinkedIn {item.linkedInShares}
+                              {item.totalShares} toplam · X {item.xShares} · WhatsApp {item.whatsappShares} · LinkedIn {item.linkedInShares}
                             </span>
                           </div>
                           <div className="adm-list-side">
@@ -1217,19 +1697,19 @@ export function AdminPanel(props: {
               {/* ── SECTION: CTA & CONVERSION ─────────────────────────────── */}
               <div style={{ padding: "0.25rem 0 0.1rem", borderBottom: "1px solid var(--line)", marginBottom: "0.5rem" }}>
                 <span className="adm-muted" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
-                  CTA &amp; Conversion Funnel
+                  CTA ve dönüşüm funnelı
                 </span>
               </div>
 
               {/* CTA raw counts quick-stats */}
               <div className="adm-stats-row adm-stats-sm" style={{ marginBottom: "0.25rem" }}>
                 {[
-                  { label: "CTA clicks (7d)", value: props.overview.ctaClicks7d },
-                  { label: "CTA clicks (30d)", value: props.overview.ctaClicks30d },
-                  { label: "Checkout clicks (7d)", value: props.overview.checkoutClicks7d },
-                  { label: "Checkout clicks (30d)", value: props.overview.checkoutClicks30d },
-                  { label: "Signups (7d)", value: props.overview.funnel7d.signupCount },
-                  { label: "Signups (30d)", value: props.overview.funnel30d.signupCount }
+                  { label: "CTA tıklaması (7 gün)", value: props.overview.ctaClicks7d },
+                  { label: "CTA tıklaması (30 gün)", value: props.overview.ctaClicks30d },
+                  { label: "Checkout tıklaması (7 gün)", value: props.overview.checkoutClicks7d },
+                  { label: "Checkout tıklaması (30 gün)", value: props.overview.checkoutClicks30d },
+                  { label: "Kayıt (7 gün)", value: props.overview.funnel7d.signupCount },
+                  { label: "Kayıt (30 gün)", value: props.overview.funnel30d.signupCount }
                 ].map(({ label, value }) => (
                   <div key={label} className="adm-mini-stat">
                     <strong>{value}</strong>
@@ -1240,21 +1720,21 @@ export function AdminPanel(props: {
 
               <div className="adm-stats-row adm-stats-sm" style={{ marginBottom: "0.5rem" }}>
                 {[
-                  { label: "Pricing views (7d)", value: props.overview.pricingViews7d },
-                  { label: "Pricing Plus clicks (7d)", value: props.overview.pricingPlusClicks7d },
-                  { label: "Limit hits (7d)", value: props.overview.practiceLimitHits7d },
-                  { label: "Upgrade prompts (7d)", value: props.overview.upgradePromptViews7d },
-                  { label: "Recovery emails (7d)", value: props.overview.practiceLimitRecoverySent7d },
-                  { label: "Recovery checkouts (7d)", value: props.overview.practiceLimitRecoveryCheckoutStarts7d },
-                  { label: "Email sent (24h)", value: props.overview.emailSent24h },
-                  { label: "Email failed (24h)", value: props.overview.emailFailed24h },
-                  { label: "Day-one returns (30d)", value: props.overview.dayOneReturnStarts30d },
-                  { label: "Checkout initiated (7d)", value: props.overview.checkoutInitiated7d },
-                  { label: "Checkout completed (7d)", value: props.overview.checkoutCompleted7d },
-                  { label: "Access sync pending (7d)", value: props.overview.billingSyncPending7d },
-                  { label: "AI requests (30d)", value: props.overview.aiRequests30d },
+                  { label: "Fiyat görüntülenmesi (7 gün)", value: props.overview.pricingViews7d },
+                  { label: "Plus tıklaması (7 gün)", value: props.overview.pricingPlusClicks7d },
+                  { label: "Limit teması (7 gün)", value: props.overview.practiceLimitHits7d },
+                  { label: "Yükseltme teklifi (7 gün)", value: props.overview.upgradePromptViews7d },
+                  { label: "Kurtarma e-postası (7 gün)", value: props.overview.practiceLimitRecoverySent7d },
+                  { label: "Kurtarma checkout'u (7 gün)", value: props.overview.practiceLimitRecoveryCheckoutStarts7d },
+                  { label: "Gönderilen e-posta (24 saat)", value: props.overview.emailSent24h },
+                  { label: "Hatalı e-posta (24 saat)", value: props.overview.emailFailed24h },
+                  { label: "İlk gün dönüşü (30 gün)", value: props.overview.dayOneReturnStarts30d },
+                  { label: "Checkout başlangıcı (7 gün)", value: props.overview.checkoutInitiated7d },
+                  { label: "Tamamlanan checkout (7 gün)", value: props.overview.checkoutCompleted7d },
+                  { label: "Bekleyen erişim (7 gün)", value: props.overview.billingSyncPending7d },
+                  { label: "AI isteği (30 gün)", value: props.overview.aiRequests30d },
                   {
-                    label: "AI tokens (30d)",
+                    label: "AI tokenı (30 gün)",
                     value: props.overview.aiInputTokens30d + props.overview.aiOutputTokens30d
                   }
                 ].map(({ label, value }) => (
@@ -1269,26 +1749,26 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Conversion Funnel</h3>
-                    <p>CTA clicks → signups → checkout → paid. 7-day rate compared against 30-day baseline.</p>
+                    <h3>Dönüşüm funnelı</h3>
+                    <p>CTA tıklaması → kayıt → checkout → ödeme. 7 günlük oran, 30 günlük tabanla karşılaştırılır.</p>
                   </div>
                   <div className="adm-overview-list">
                     {[
-                      { label: "Click → signup", v7: props.overview.funnel7d.clickToSignupRate, v30: props.overview.funnel30d.clickToSignupRate, delta: funnelLift.signupDelta },
-                      { label: "Signup → checkout", v7: props.overview.funnel7d.signupToCheckoutRate, v30: props.overview.funnel30d.signupToCheckoutRate, delta: funnelLift.checkoutDelta },
-                      { label: "Checkout → paid", v7: props.overview.funnel7d.checkoutToPaidRate, v30: props.overview.funnel30d.checkoutToPaidRate, delta: props.overview.funnel7d.checkoutToPaidRate - props.overview.funnel30d.checkoutToPaidRate },
-                      { label: "Click → paid (overall)", v7: props.overview.funnel7d.clickToPaidRate, v30: props.overview.funnel30d.clickToPaidRate, delta: funnelLift.clickDelta }
+                      { label: "Tıklama → kayıt", v7: props.overview.funnel7d.clickToSignupRate, v30: props.overview.funnel30d.clickToSignupRate, delta: funnelLift.signupDelta },
+                      { label: "Kayıt → checkout", v7: props.overview.funnel7d.signupToCheckoutRate, v30: props.overview.funnel30d.signupToCheckoutRate, delta: funnelLift.checkoutDelta },
+                      { label: "Checkout → ödeme", v7: props.overview.funnel7d.checkoutToPaidRate, v30: props.overview.funnel30d.checkoutToPaidRate, delta: props.overview.funnel7d.checkoutToPaidRate - props.overview.funnel30d.checkoutToPaidRate },
+                      { label: "Tıklama → ödeme (genel)", v7: props.overview.funnel7d.clickToPaidRate, v30: props.overview.funnel30d.clickToPaidRate, delta: funnelLift.clickDelta }
                     ].map((item) => (
                       <div key={item.label} className="adm-overview-item">
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
                           <span>{item.label}</span>
-                          <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30d: {formatPercent(item.v30)}</span>
+                          <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30 gün: {formatPercent(item.v30)}</span>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
                           <strong style={{ fontSize: "1.1rem" }}>{formatPercent(item.v7)}</strong>
                           <span className={`adm-stat-trend ${item.delta >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
                             {item.delta >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                            {formatPercent(Math.abs(item.delta))} vs 30d avg
+                            30 gün ortalamasına göre {formatPercent(Math.abs(item.delta))}
                           </span>
                         </div>
                       </div>
@@ -1298,8 +1778,8 @@ export function AdminPanel(props: {
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>CTA Trend (14 days)</h3>
-                    <p>Daily clicks, signups, checkout intent, and paid conversions.</p>
+                    <h3>CTA eğilimi (14 gün)</h3>
+                    <p>Günlük tıklama, kayıt, checkout niyeti ve ödeme dönüşümü.</p>
                   </div>
                   <div style={{ display: "grid", gap: "0.85rem" }}>
                     {props.overview.ctaTrend14d.map((item) => (
@@ -1312,10 +1792,10 @@ export function AdminPanel(props: {
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.45rem" }}>
                           {[
-                            { label: "Clicks", value: item.ctaClicks, color: "var(--primary)" },
-                            { label: "Signups", value: item.signupCount, color: "var(--accent)" },
+                            { label: "Tıklama", value: item.ctaClicks, color: "var(--primary)" },
+                            { label: "Kayıt", value: item.signupCount, color: "var(--accent)" },
                             { label: "Checkout", value: item.checkoutClicks, color: "#f59e0b" },
-                            { label: "Paid", value: item.paidCount, color: "#22c55e" }
+                            { label: "Ödeme", value: item.paidCount, color: "#22c55e" }
                           ].map((series) => (
                             <div key={series.label} style={{ display: "grid", gap: "0.3rem" }}>
                               <div style={{ height: 8, borderRadius: 999, background: "var(--surface-strong)", overflow: "hidden" }}>
@@ -1334,23 +1814,23 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>First-Payment Funnel</h3>
-                    <p>Shows where self-serve monetization is breaking between pricing, paywall, checkout, and success.</p>
+                    <h3>İlk ödeme funnelı</h3>
+                    <p>Fiyatlandırma, limit, checkout ve başarı arasında gelirin nerede koptuğunu gösterir.</p>
                   </div>
                   <div className="adm-overview-list">
                     {[
                       {
-                        label: "Pricing view → checkout",
+                        label: "Fiyat görüntülenmesi → checkout",
                         v7: props.overview.monetizationFunnel7d.pricingViewToCheckoutRate,
                         v30: props.overview.monetizationFunnel30d.pricingViewToCheckoutRate
                       },
                       {
-                        label: "Limit hit → checkout",
+                        label: "Limit teması → checkout",
                         v7: props.overview.monetizationFunnel7d.limitHitToCheckoutRate,
                         v30: props.overview.monetizationFunnel30d.limitHitToCheckoutRate
                       },
                       {
-                        label: "Checkout → completion",
+                        label: "Checkout → tamamlama",
                         v7: props.overview.monetizationFunnel7d.checkoutToCompletionRate,
                         v30: props.overview.monetizationFunnel30d.checkoutToCompletionRate
                       }
@@ -1358,30 +1838,30 @@ export function AdminPanel(props: {
                       <div key={item.label} className="adm-overview-item">
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
                           <span>{item.label}</span>
-                          <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30d: {formatPercent(item.v30)}</span>
+                          <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30 gün: {formatPercent(item.v30)}</span>
                         </div>
                         <strong style={{ fontSize: "1.1rem" }}>{formatPercent(item.v7)}</strong>
                       </div>
                     ))}
                     <div className="adm-overview-item">
                       <strong>{props.overview.billingSuccessSeen7d}</strong>
-                      <span>Billing success screens seen in the last 7 days</span>
+                      <span>Son 7 günde görülen ödeme başarı ekranı</span>
                     </div>
                     <div className="adm-overview-item">
                       <strong>{props.overview.billingSyncPending7d}</strong>
-                      <span>Distinct buyers still waiting for paid access in 7d (30d: {props.overview.billingSyncPending30d})</span>
+                      <span>7 günde hâlâ ücretli erişim bekleyen alıcı (30 gün: {props.overview.billingSyncPending30d})</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Top Checkout Sources</h3>
-                    <p>Best-performing `checkout_initiated` paths over the last 30 days.</p>
+                    <h3>En iyi checkout kaynakları</h3>
+                    <p>Son 30 gündeki en iyi checkout başlangıç yolları.</p>
                   </div>
                   <div className="adm-stack-list">
                     {props.overview.topCheckoutSources.length === 0 ? (
-                      <p className="adm-muted">No first-payment checkout sources recorded yet.</p>
+                      <p className="adm-muted">Henüz ilk ödeme checkout kaynağı kaydedilmedi.</p>
                     ) : (
                       props.overview.topCheckoutSources.map((item) => (
                         <div key={item.path} className="adm-list-row" style={{ alignItems: "stretch" }}>
@@ -1389,13 +1869,13 @@ export function AdminPanel(props: {
                             <div className="adm-table-name">{formatCtaLabel(item.path)}</div>
                             <div className="adm-table-email">{item.path}</div>
                             <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                              <StatusBadge label={`${item.initiated} initiated`} />
-                              <StatusBadge label={`${item.completed} completed`} tone="success" />
+                              <StatusBadge label={`${item.initiated} başlangıç`} />
+                              <StatusBadge label={`${item.completed} tamamlandı`} tone="success" />
                             </div>
                           </div>
                           <div className="adm-list-side" style={{ alignItems: "flex-end" }}>
                             <strong>{formatPercent(item.completionRate)}</strong>
-                            <span className="adm-table-muted" style={{ fontSize: "0.75rem" }}>complete rate</span>
+                            <span className="adm-table-muted" style={{ fontSize: "0.75rem" }}>tamamlama oranı</span>
                           </div>
                         </div>
                       ))
@@ -1408,12 +1888,12 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Best Converting CTAs</h3>
-                    <p>Ranked by paid conversions attributed in the last 30 days.</p>
+                    <h3>En iyi dönüşen CTA&apos;lar</h3>
+                    <p>Son 30 günde atfedilen ödemelere göre sıralanır.</p>
                   </div>
                   <div className="adm-stack-list">
                     {props.overview.bestPerformingCtas.length === 0 ? (
-                      <p className="adm-muted">Attribution data will appear as new signups and checkouts come in.</p>
+                      <p className="adm-muted">Yeni kayıt ve checkout geldikçe atıf verisi burada görünecek.</p>
                     ) : (
                       props.overview.bestPerformingCtas.map((item) => (
                         <div key={item.path} className="adm-list-row" style={{ alignItems: "stretch" }}>
@@ -1421,15 +1901,15 @@ export function AdminPanel(props: {
                             <div className="adm-table-name">{formatCtaLabel(item.path)}</div>
                             <div className="adm-table-email">{item.path}</div>
                             <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-                              <StatusBadge label={`${item.clicks} clicks`} />
-                              <StatusBadge label={`${item.signups} signups`} tone="success" />
-                              <StatusBadge label={`${item.paidCount} paid`} tone="accent" />
+                              <StatusBadge label={`${item.clicks} tıklama`} />
+                              <StatusBadge label={`${item.signups} kayıt`} tone="success" />
+                              <StatusBadge label={`${item.paidCount} ödeme`} tone="accent" />
                             </div>
                           </div>
                           <div className="adm-list-side" style={{ alignItems: "flex-end" }}>
                             <strong>{formatPercent(item.clickToPaidRate)}</strong>
-                            <span className="adm-table-muted" style={{ fontSize: "0.75rem" }}>click→paid</span>
-                            <span className="adm-table-muted" style={{ fontSize: "0.75rem" }}>{formatPercent(item.clickToSignupRate)} click→signup</span>
+                            <span className="adm-table-muted" style={{ fontSize: "0.75rem" }}>tıklama→ödeme</span>
+                            <span className="adm-table-muted" style={{ fontSize: "0.75rem" }}>{formatPercent(item.clickToSignupRate)} tıklama→kayıt</span>
                           </div>
                         </div>
                       ))
@@ -1439,12 +1919,12 @@ export function AdminPanel(props: {
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Top CTA Pages</h3>
-                    <p>Page groups by CTA pressure and checkout intent in the last 30 days.</p>
+                    <h3>En iyi CTA sayfaları</h3>
+                    <p>Son 30 günde CTA tıklaması ve checkout niyetine göre sayfa grupları.</p>
                   </div>
                   <div className="adm-stack-list">
                     {props.overview.topCtaPages.length === 0 ? (
-                      <p className="adm-muted">No CTA clicks recorded yet.</p>
+                      <p className="adm-muted">Henüz CTA tıklaması kaydedilmedi.</p>
                     ) : (
                       props.overview.topCtaPages.map((item) => (
                         <div key={item.page} className="adm-list-row" style={{ alignItems: "stretch" }}>
@@ -1456,7 +1936,7 @@ export function AdminPanel(props: {
                             <div style={{ height: 8, borderRadius: 999, background: "var(--surface-strong)", overflow: "hidden" }}>
                               <div style={{ width: `${Math.max((item.clicks / topPageMax) * 100, item.clicks > 0 ? 6 : 0)}%`, height: "100%", borderRadius: 999, background: "linear-gradient(90deg, var(--primary), var(--accent))" }} />
                             </div>
-                            <div className="adm-table-email">{item.checkoutClicks} checkout clicks</div>
+                            <div className="adm-table-email">{item.checkoutClicks} checkout tıklaması</div>
                           </div>
                         </div>
                       ))
@@ -1469,8 +1949,8 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Winner CTA This Week</h3>
-                    <p>Strongest paid conversion outcome over the last 7 days.</p>
+                    <h3>Haftanın kazanan CTA&apos;sı</h3>
+                    <p>Son 7 gündeki en güçlü ödeme dönüşümü.</p>
                   </div>
                   {props.overview.winnerCta7d ? (
                     <div className="adm-overview-list">
@@ -1480,10 +1960,10 @@ export function AdminPanel(props: {
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginTop: "0.5rem" }}>
                         {[
-                          { label: "Paid conversions", value: String(props.overview.winnerCta7d.paidCount) },
-                          { label: "Attributed signups", value: String(props.overview.winnerCta7d.signups) },
-                          { label: "Click → paid", value: formatPercent(props.overview.winnerCta7d.clickToPaidRate) },
-                          { label: "Click → signup", value: formatPercent(props.overview.winnerCta7d.clickToSignupRate) }
+                          { label: "Ödeme dönüşümü", value: String(props.overview.winnerCta7d.paidCount) },
+                          { label: "Atfedilen kayıt", value: String(props.overview.winnerCta7d.signups) },
+                          { label: "Tıklama → ödeme", value: formatPercent(props.overview.winnerCta7d.clickToPaidRate) },
+                          { label: "Tıklama → kayıt", value: formatPercent(props.overview.winnerCta7d.clickToSignupRate) }
                         ].map(({ label, value }) => (
                           <div key={label} className="adm-mini-stat">
                             <strong>{value}</strong>
@@ -1493,18 +1973,18 @@ export function AdminPanel(props: {
                       </div>
                     </div>
                   ) : (
-                    <p className="adm-muted">Not enough attributed data yet for a weekly winner.</p>
+                    <p className="adm-muted">Haftalık kazanan seçmek için yeterli atıf verisi yok.</p>
                   )}
                 </div>
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Top CTAs by Click Volume</h3>
-                    <p>Most-clicked CTA paths from homepage and pricing in the last 30 days.</p>
+                    <h3>Tıklamaya göre en iyi CTA&apos;lar</h3>
+                    <p>Son 30 günde ana sayfa ve fiyatlandırmadaki en çok tıklanan CTA yolları.</p>
                   </div>
                   <div className="adm-stack-list">
                     {props.overview.topCtas.length === 0 ? (
-                      <p className="adm-muted">No CTA clicks recorded yet.</p>
+                      <p className="adm-muted">Henüz CTA tıklaması kaydedilmedi.</p>
                     ) : (
                       props.overview.topCtas.map((item) => (
                         <div key={`${item.event}-${item.path}`} className="adm-list-row">
@@ -1526,35 +2006,35 @@ export function AdminPanel(props: {
               {/* ── SECTION: FEATURE USAGE ─────────────────────────────────── */}
               <div style={{ padding: "0.25rem 0 0.1rem", borderBottom: "1px solid var(--line)", marginBottom: "0.5rem" }}>
                 <span className="adm-muted" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
-                  Feature Usage &amp; Writing Funnel
+                  Özellik kullanımı ve writing funnelı
                 </span>
               </div>
 
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Feature Usage</h3>
-                    <p>Speaking and writing feature engagement, 7-day vs 30-day.</p>
+                    <h3>Özellik kullanımı</h3>
+                    <p>Speaking ve writing kullanımının 7 ve 30 günlük karşılaştırması.</p>
                   </div>
                   <table className="adm-table">
                     <thead>
                       <tr>
-                        <th>FEATURE</th>
-                        <th style={{ textAlign: "right" }}>7 DAYS</th>
-                        <th style={{ textAlign: "right" }}>30 DAYS</th>
+                        <th>ÖZELLİK</th>
+                        <th style={{ textAlign: "right" }}>7 GÜN</th>
+                        <th style={{ textAlign: "right" }}>30 GÜN</th>
                       </tr>
                     </thead>
                     <tbody>
                       {[
-                        { label: "Interview starts", v7: props.overview.interviewStarts7d, v30: props.overview.interviewStarts30d },
-                        { label: "Interview follow-ups", v7: props.overview.interviewFollowUps7d, v30: props.overview.interviewFollowUps30d },
-                        { label: "Speaking PDF exports", v7: props.overview.pdfExports7d, v30: props.overview.pdfExports30d },
-                        { label: "Result card downloads", v7: props.overview.resultCardDownloads7d, v30: props.overview.resultCardDownloads30d },
-                        { label: "Result shares", v7: props.overview.resultShares7d, v30: props.overview.resultShares30d },
-                        { label: "Writing starts", v7: props.overview.writingStarts7d, v30: props.overview.writingStarts30d },
-                        { label: "Writing evaluations", v7: props.overview.writingEvaluations7d, v30: props.overview.writingEvaluations30d },
-                        { label: "Writing retries", v7: props.overview.writingRetries7d, v30: props.overview.writingRetries30d },
-                        { label: "Writing PDF exports", v7: props.overview.writingPdfExports7d, v30: props.overview.writingPdfExports30d }
+                        { label: "Mülakat başlangıcı", v7: props.overview.interviewStarts7d, v30: props.overview.interviewStarts30d },
+                        { label: "Mülakat takip sorusu", v7: props.overview.interviewFollowUps7d, v30: props.overview.interviewFollowUps30d },
+                        { label: "Speaking PDF dışa aktarımı", v7: props.overview.pdfExports7d, v30: props.overview.pdfExports30d },
+                        { label: "Sonuç kartı indirme", v7: props.overview.resultCardDownloads7d, v30: props.overview.resultCardDownloads30d },
+                        { label: "Sonuç paylaşımı", v7: props.overview.resultShares7d, v30: props.overview.resultShares30d },
+                        { label: "Writing başlangıcı", v7: props.overview.writingStarts7d, v30: props.overview.writingStarts30d },
+                        { label: "Writing değerlendirmesi", v7: props.overview.writingEvaluations7d, v30: props.overview.writingEvaluations30d },
+                        { label: "Writing tekrarı", v7: props.overview.writingRetries7d, v30: props.overview.writingRetries30d },
+                        { label: "Writing PDF dışa aktarımı", v7: props.overview.writingPdfExports7d, v30: props.overview.writingPdfExports30d }
                       ].map(({ label, v7, v30 }) => (
                         <tr key={label}>
                           <td>{label}</td>
@@ -1568,34 +2048,34 @@ export function AdminPanel(props: {
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Writing Conversion Funnel</h3>
-                    <p>Whether learners finish evaluation, retry, and export. 7-day rate vs 30-day baseline.</p>
+                    <h3>Writing dönüşüm funnelı</h3>
+                    <p>Kullanıcıların değerlendirme, tekrar ve dışa aktarım adımlarını tamamlayıp tamamlamadığını gösterir.</p>
                   </div>
                   <div className="adm-overview-list">
                     <div className="adm-overview-item">
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
-                        <span>Writing starts</span>
-                        <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30d: {props.overview.writingStarts30d}</span>
+                        <span>Writing başlangıcı</span>
+                        <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30 gün: {props.overview.writingStarts30d}</span>
                       </div>
                       <strong style={{ fontSize: "1.1rem" }}>{props.overview.writingStarts7d}</strong>
                     </div>
                     {[
-                      { label: "Start → evaluated", v7: writingFunnel.startToEval7d, v30: writingFunnel.startToEval30d },
-                      { label: "Evaluated → retry", v7: writingFunnel.evalToRetry7d, v30: writingFunnel.evalToRetry30d },
-                      { label: "Evaluated → PDF export", v7: writingFunnel.evalToPdf7d, v30: writingFunnel.evalToPdf30d }
+                      { label: "Başlangıç → değerlendirme", v7: writingFunnel.startToEval7d, v30: writingFunnel.startToEval30d },
+                      { label: "Değerlendirme → tekrar", v7: writingFunnel.evalToRetry7d, v30: writingFunnel.evalToRetry30d },
+                      { label: "Değerlendirme → PDF", v7: writingFunnel.evalToPdf7d, v30: writingFunnel.evalToPdf30d }
                     ].map((item) => {
                       const delta = item.v7 - item.v30;
                       return (
                         <div key={item.label} className="adm-overview-item">
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
                             <span>{item.label}</span>
-                            <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30d: {formatPercent(item.v30)}</span>
+                            <span className="adm-muted" style={{ fontSize: "0.8rem" }}>30 gün: {formatPercent(item.v30)}</span>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
                             <strong style={{ fontSize: "1.1rem" }}>{formatPercent(item.v7)}</strong>
                             <span className={`adm-stat-trend ${delta >= 0 ? "is-up" : "is-down"}`} style={{ width: "fit-content" }}>
                               {delta >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                              {formatPercent(Math.abs(delta))} vs 30d avg
+                              30 gün ortalamasına göre {formatPercent(Math.abs(delta))}
                             </span>
                           </div>
                         </div>
@@ -1608,7 +2088,7 @@ export function AdminPanel(props: {
               {/* ── SECTION: SHARING ──────────────────────────────────────── */}
               <div style={{ padding: "0.25rem 0 0.1rem", borderBottom: "1px solid var(--line)", marginBottom: "0.5rem" }}>
                 <span className="adm-muted" style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
-                  Speaking Share Funnel &amp; Virality
+                  Speaking paylaşımı ve organik yayılım
                 </span>
               </div>
 
@@ -1616,30 +2096,30 @@ export function AdminPanel(props: {
               <div className="adm-grid-2">
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Speaking Share Funnel</h3>
-                    <p>Result card downloads → shares across channels. 7-day vs 30-day.</p>
+                    <h3>Speaking paylaşım funnelı</h3>
+                    <p>Sonuç kartı indirmeden kanal bazlı paylaşıma geçişin 7 ve 30 günlük karşılaştırması.</p>
                   </div>
                   <table className="adm-table">
                     <thead>
                       <tr>
-                        <th>METRIC</th>
-                        <th style={{ textAlign: "right" }}>7 DAYS</th>
-                        <th style={{ textAlign: "right" }}>30 DAYS</th>
+                        <th>METRİK</th>
+                        <th style={{ textAlign: "right" }}>7 GÜN</th>
+                        <th style={{ textAlign: "right" }}>30 GÜN</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
-                        <td>Card downloads</td>
+                        <td>Kart indirme</td>
                         <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.resultCardDownloads7d}</td>
                         <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.resultCardDownloads30d}</td>
                       </tr>
                       <tr>
-                        <td>Total shares</td>
+                        <td>Toplam paylaşım</td>
                         <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.resultShares7d}</td>
                         <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.resultShares30d}</td>
                       </tr>
                       <tr>
-                        <td>Download → share rate</td>
+                        <td>İndirme → paylaşım oranı</td>
                         <td style={{ textAlign: "right", fontWeight: 600 }}>
                           <span style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "0.3rem" }}>
                             {formatPercent(speakingShareFunnel.cardToShare7d)}
@@ -1649,22 +2129,22 @@ export function AdminPanel(props: {
                         <td style={{ textAlign: "right" }} className="adm-table-muted">{formatPercent(speakingShareFunnel.cardToShare30d)}</td>
                       </tr>
                       <tr>
-                        <td>X (Twitter) shares</td>
+                        <td>X (Twitter) paylaşımı</td>
                         <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.resultShareX7d}</td>
                         <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.resultShareX30d}</td>
                       </tr>
                       <tr>
-                        <td>WhatsApp shares</td>
+                        <td>WhatsApp paylaşımı</td>
                         <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.resultShareWhatsApp7d}</td>
                         <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.resultShareWhatsApp30d}</td>
                       </tr>
                       <tr>
-                        <td>LinkedIn shares</td>
+                        <td>LinkedIn paylaşımı</td>
                         <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.resultShareLinkedIn7d}</td>
                         <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.resultShareLinkedIn30d}</td>
                       </tr>
                       <tr>
-                        <td>Share-attributed signups</td>
+                        <td>Paylaşıma atfedilen kayıt</td>
                         <td style={{ textAlign: "right", fontWeight: 600 }}>{props.overview.shareAttributedSignups7d}</td>
                         <td style={{ textAlign: "right" }} className="adm-table-muted">{props.overview.shareAttributedSignups30d}</td>
                       </tr>
@@ -1674,12 +2154,12 @@ export function AdminPanel(props: {
 
                 <div className="adm-panel-card">
                   <div className="adm-panel-card-head">
-                    <h3>Top Share Signup Sources</h3>
-                    <p>Public result pages turning social sharing into account creation (last 30 days).</p>
+                    <h3>Kayıt getiren paylaşım kaynakları</h3>
+                    <p>Son 30 günde sosyal paylaşımı kullanıcı kaydına dönüştüren herkese açık sonuç sayfaları.</p>
                   </div>
                   <div className="adm-stack-list">
                     {props.overview.topShareSignupSources.length === 0 ? (
-                      <p className="adm-muted">No signup attribution from shared result pages yet.</p>
+                      <p className="adm-muted">Paylaşılan sonuç sayfalarından henüz kayıt atfı yok.</p>
                     ) : (
                       props.overview.topShareSignupSources.map((item) => (
                         <div key={item.sharePath} className="adm-list-row" style={{ alignItems: "stretch" }}>
@@ -1687,7 +2167,7 @@ export function AdminPanel(props: {
                             <strong>{item.promptTitle}</strong>
                             <span className="adm-muted">{item.learnerName} · {item.sharePath}</span>
                           </div>
-                          <StatusBadge label={`${item.signups} signups`} tone="success" />
+                          <StatusBadge label={`${item.signups} kayıt`} tone="success" />
                         </div>
                       ))
                     )}
@@ -1702,11 +2182,11 @@ export function AdminPanel(props: {
             <div className="adm-panel-card">
               <div className="adm-panel-card-head">
                 <div>
-                  <h3>Member Roster</h3>
-                  <p className="adm-muted">Manage plans, billing status, and trial access. Passwords are never shown.</p>
+                  <h3>Kullanıcı listesi</h3>
+                  <p className="adm-muted">Plan, ödeme ve deneme erişimini yönet. Parolalar hiçbir zaman gösterilmez.</p>
                 </div>
                 <div className="adm-inline-feedback">
-                  <span className="adm-muted">{filteredMembers.length} members</span>
+                  <span className="adm-muted">{filteredMembers.length} kullanıcı</span>
                   {memberMessage && <span className="adm-success">{memberMessage}</span>}
                   {memberError && <span className="adm-error">{memberError}</span>}
                 </div>
@@ -1719,37 +2199,37 @@ export function AdminPanel(props: {
                     className="adm-search-input"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search by name, email, org, referral..."
+                    placeholder="İsim, e-posta, kurum veya kod ara..."
                   />
                 </div>
                 <select value={memberTypeFilter} onChange={(e) => setMemberTypeFilter(e.target.value)} className="adm-select">
-                  <option value="all">All types</option>
-                  <option value="student">Students</option>
-                  <option value="teacher">Teachers</option>
-                  <option value="school">Schools</option>
+                  <option value="all">Tüm kullanıcı türleri</option>
+                  <option value="student">Öğrenciler</option>
+                  <option value="teacher">Öğretmenler</option>
+                  <option value="school">Okullar</option>
                 </select>
                 <select value={planFilter} onChange={(e) => setPlanFilter(e.target.value)} className="adm-select">
-                  <option value="all">All plans</option>
-                  <option value="free">Free</option>
+                  <option value="all">Tüm planlar</option>
+                  <option value="free">Ücretsiz</option>
                   <option value="plus">Plus</option>
                   <option value="pro">Pro</option>
                 </select>
                 <select value={billingFilter} onChange={(e) => setBillingFilter(e.target.value)} className="adm-select">
-                  <option value="all">All billing</option>
-                  <option value="free">Free</option>
-                  <option value="active">Active</option>
-                  <option value="on_trial">On trial</option>
-                  <option value="paused">Paused</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="past_due">Past due</option>
-                  <option value="expired">Expired</option>
-                  <option value="refunded">Refunded</option>
+                  <option value="all">Tüm ödeme durumları</option>
+                  <option value="free">Ücretsiz</option>
+                  <option value="active">Aktif</option>
+                  <option value="on_trial">Denemede</option>
+                  <option value="paused">Duraklatıldı</option>
+                  <option value="cancelled">İptal</option>
+                  <option value="past_due">Ödeme gecikti</option>
+                  <option value="expired">Süresi doldu</option>
+                  <option value="refunded">İade edildi</option>
                 </select>
               </div>
 
               <div className="adm-member-list">
                 {filteredMembers.length === 0 ? (
-                  <div className="adm-table-empty" style={{ padding: "3rem", textAlign: "center" }}>No members match the filters.</div>
+                  <div className="adm-table-empty" style={{ padding: "3rem", textAlign: "center" }}>Filtrelerle eşleşen kullanıcı yok.</div>
                 ) : (
                   filteredMembers.map((member) => (
                     <article key={member.id} className="adm-member-card">
@@ -1775,12 +2255,12 @@ export function AdminPanel(props: {
 
                         <div className="adm-member-metrics">
                           {[
-                            { label: "Monthly value", value: formatMoney(member.monthlyValue) },
-                            { label: "Sessions", value: member.totalPracticeSessions },
-                            { label: "Avg score", value: member.averageScore ?? "—" },
-                            { label: "Teacher notes", value: member.teacherNoteCount },
-                            { label: "Last sign in", value: formatDate(member.lastSignInAt) },
-                            { label: "Last sign out", value: formatDate(member.lastSignOutAt) }
+                            { label: "Aylık değer", value: formatMoney(member.monthlyValue) },
+                            { label: "Pratik", value: member.totalPracticeSessions },
+                            { label: "Ort. skor", value: member.averageScore ?? "—" },
+                            { label: "Öğretmen notu", value: member.teacherNoteCount },
+                            { label: "Son giriş", value: formatDate(member.lastSignInAt) },
+                            { label: "Son çıkış", value: formatDate(member.lastSignOutAt) }
                           ].map(({ label, value }) => (
                             <div key={label} className="adm-metric-cell">
                               <span className="adm-muted">{label}</span>
@@ -1791,9 +2271,9 @@ export function AdminPanel(props: {
 
                         {(member.referralCodeUsed || member.trialEndsAt) && (
                           <div className="adm-member-foot">
-                            {member.referralCodeUsed && <span className="adm-muted">Referral: <strong>{member.referralCodeUsed}</strong></span>}
-                            {member.trialEndsAt && <span className="adm-muted">Trial ends: <strong>{formatDate(member.trialEndsAt)}</strong></span>}
-                            <span className="adm-muted">Password: <strong>{member.passwordStatus === "protected" ? "Protected" : "None"}</strong></span>
+                            {member.referralCodeUsed && <span className="adm-muted">Davet kodu: <strong>{member.referralCodeUsed}</strong></span>}
+                            {member.trialEndsAt && <span className="adm-muted">Deneme bitişi: <strong>{formatDate(member.trialEndsAt)}</strong></span>}
+                            <span className="adm-muted">Parola: <strong>{member.passwordStatus === "protected" ? "Korumalı" : "Yok"}</strong></span>
                           </div>
                         )}
                       </div>
@@ -1804,7 +2284,7 @@ export function AdminPanel(props: {
                           onChange={(e) => updateMemberDraft(member.id, { plan: e.target.value })}
                           className="adm-select"
                         >
-                          <option value="free">Free</option>
+                          <option value="free">Ücretsiz</option>
                           <option value="plus">Plus</option>
                           <option value="pro">Pro</option>
                         </select>
@@ -1813,19 +2293,19 @@ export function AdminPanel(props: {
                           onChange={(e) => updateMemberDraft(member.id, { billingStatus: e.target.value })}
                           className="adm-select"
                         >
-                          <option value="free">Free</option>
-                          <option value="active">Active</option>
-                          <option value="on_trial">On trial</option>
-                          <option value="paused">Paused</option>
-                          <option value="cancelled">Cancelled</option>
-                          <option value="past_due">Past due</option>
-                          <option value="expired">Expired</option>
-                          <option value="refunded">Refunded</option>
+                          <option value="free">Ücretsiz</option>
+                          <option value="active">Aktif</option>
+                          <option value="on_trial">Denemede</option>
+                          <option value="paused">Duraklatıldı</option>
+                          <option value="cancelled">İptal</option>
+                          <option value="past_due">Ödeme gecikti</option>
+                          <option value="expired">Süresi doldu</option>
+                          <option value="refunded">İade edildi</option>
                         </select>
                         <input
                           value={memberDrafts[member.id]?.trialDays ?? "7"}
                           onChange={(e) => updateMemberDraft(member.id, { trialDays: e.target.value })}
-                          placeholder="Trial days"
+                          placeholder="Deneme günü"
                           className="adm-input"
                         />
                         <button
@@ -1834,49 +2314,42 @@ export function AdminPanel(props: {
                           disabled={memberBusyId === member.id}
                           onClick={() => saveMember(member.id)}
                         >
-                          {memberBusyId === member.id ? "Saving..." : "Save access"}
+                          {memberBusyId === member.id ? "Kaydediliyor..." : "Erişimi kaydet"}
                         </button>
                       </div>
 
                       {member.emailLog && member.emailLog.length > 0 && (
                         <div className="adm-email-log">
-                          <p className="adm-muted" style={{ marginBottom: "0.5rem", fontWeight: 600 }}>Email history</p>
-                          <table style={{ width: "100%", fontSize: "0.8rem", borderCollapse: "collapse" }}>
+                          <p className="adm-muted" style={{ marginBottom: "0.5rem", fontWeight: 600 }}>E-posta geçmişi</p>
+                          <table className="adm-email-log-table">
                             <thead>
-                              <tr style={{ textAlign: "left", color: "#888" }}>
-                                <th style={{ padding: "4px 8px" }}>Template</th>
-                                <th style={{ padding: "4px 8px" }}>Subject</th>
-                                <th style={{ padding: "4px 8px" }}>Status</th>
-                                <th style={{ padding: "4px 8px" }}>Sent</th>
+                              <tr>
+                                <th>Şablon</th>
+                                <th>Konu</th>
+                                <th>Durum</th>
+                                <th>Gönderim</th>
                               </tr>
                             </thead>
                             <tbody>
                               {member.emailLog.map((log) => {
                                 const templateLabels: Record<string, string> = {
-                                  onboarding_1: "Welcome",
-                                  onboarding_2: "Day 1 return",
-                                  onboarding_3: "Week 1 checklist",
-                                  onboarding_4: "1-week milestone",
-                                  onboarding_5: "Daily practice"
+                                  onboarding_1: "Hoş geldin",
+                                  onboarding_2: "1. gün dönüş",
+                                  onboarding_3: "İlk hafta listesi",
+                                  onboarding_4: "1. hafta başarısı",
+                                  onboarding_5: "Günlük pratik"
                                 };
                                 const templateLabel = templateLabels[log.template] ?? log.template;
                                 return (
-                                  <tr key={log.id} style={{ borderTop: "1px solid #f0ece8" }}>
-                                    <td style={{ padding: "4px 8px" }}>{templateLabel}</td>
-                                    <td style={{ padding: "4px 8px", color: "#555" }}>{log.subject}</td>
-                                    <td style={{ padding: "4px 8px" }}>
-                                      <span style={{
-                                        padding: "2px 8px",
-                                        borderRadius: "999px",
-                                        fontSize: "0.75rem",
-                                        fontWeight: 600,
-                                        background: log.status === "sent" ? "#d1fae5" : "#fee2e2",
-                                        color: log.status === "sent" ? "#065f46" : "#991b1b"
-                                      }}>
-                                        {log.status === "sent" ? "Sent" : "Failed"}
+                                  <tr key={log.id}>
+                                    <td>{templateLabel}</td>
+                                    <td>{log.subject}</td>
+                                    <td>
+                                      <span className={`adm-email-state ${log.status === "sent" ? "is-sent" : "is-failed"}`}>
+                                        {log.status === "sent" ? "Gönderildi" : "Başarısız"}
                                       </span>
                                     </td>
-                                    <td style={{ padding: "4px 8px", color: "#888" }}>{formatDate(log.sentAt)}</td>
+                                    <td>{formatDate(log.sentAt)}</td>
                                   </tr>
                                 );
                               })}
@@ -1897,8 +2370,8 @@ export function AdminPanel(props: {
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
                   <div>
-                    <h3>Add Custom Blog Post</h3>
-                    <p className="adm-muted">Published posts appear in the public blog automatically.</p>
+                    <h3>Blog içeriği ekle</h3>
+                    <p className="adm-muted">Yayınlanan içerikler otomatik olarak herkese açık blogda görünür.</p>
                   </div>
                   <div className="adm-inline-feedback">
                     {contentMessage && <span className="adm-success">{contentMessage}</span>}
@@ -1915,34 +2388,34 @@ export function AdminPanel(props: {
                     <option value="es">Español</option>
                   </select>
                   <select className="adm-select" value={newPost.status} onChange={(e) => setNewPost((c) => ({ ...c, status: e.target.value }))}>
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
+                    <option value="draft">Taslak</option>
+                    <option value="published">Yayında</option>
                   </select>
-                  <input className="adm-input adm-span-2" value={newPost.title} onChange={(e) => setNewPost((c) => ({ ...c, title: e.target.value }))} placeholder="Post title" />
+                  <input className="adm-input adm-span-2" value={newPost.title} onChange={(e) => setNewPost((c) => ({ ...c, title: e.target.value }))} placeholder="İçerik başlığı" />
                   <input className="adm-input" value={newPost.slug} onChange={(e) => setNewPost((c) => ({ ...c, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") }))} placeholder="post-slug" />
-                  <input className="adm-input adm-span-2" value={newPost.description} onChange={(e) => setNewPost((c) => ({ ...c, description: e.target.value }))} placeholder="Meta description" />
-                  <input className="adm-input adm-span-2" value={newPost.keywords} onChange={(e) => setNewPost((c) => ({ ...c, keywords: e.target.value }))} placeholder="Keywords, separated by commas" />
-                  <textarea className="adm-textarea adm-span-2" value={newPost.intro} onChange={(e) => setNewPost((c) => ({ ...c, intro: e.target.value }))} placeholder="Intro paragraph" />
-                  <textarea className="adm-textarea adm-span-2 adm-textarea-lg" value={newPost.body} onChange={(e) => setNewPost((c) => ({ ...c, body: e.target.value }))} placeholder="Use ## headings and paragraphs" />
+                  <input className="adm-input adm-span-2" value={newPost.description} onChange={(e) => setNewPost((c) => ({ ...c, description: e.target.value }))} placeholder="Meta açıklaması" />
+                  <input className="adm-input adm-span-2" value={newPost.keywords} onChange={(e) => setNewPost((c) => ({ ...c, keywords: e.target.value }))} placeholder="Anahtar kelimeler, virgülle ayır" />
+                  <textarea className="adm-textarea adm-span-2" value={newPost.intro} onChange={(e) => setNewPost((c) => ({ ...c, intro: e.target.value }))} placeholder="Giriş paragrafı" />
+                  <textarea className="adm-textarea adm-span-2 adm-textarea-lg" value={newPost.body} onChange={(e) => setNewPost((c) => ({ ...c, body: e.target.value }))} placeholder="## başlıklarını ve paragrafları kullan" />
                 </div>
 
                 <div className="adm-inline-feedback" style={{ marginTop: "1rem" }}>
                   <button className="adm-save-btn" type="button" disabled={contentBusy} onClick={createPost}>
-                    {contentBusy ? "Saving..." : "Save custom post"}
+                    {contentBusy ? "Kaydediliyor..." : "İçeriği kaydet"}
                   </button>
                   <a className="adm-secondary-btn" href="/blog" target="_blank" rel="noreferrer">
-                    Open blog <ExternalLink size={13} />
+                    Blogu aç <ExternalLink size={13} />
                   </a>
                 </div>
               </div>
 
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
-                  <h3>Published Posts</h3>
+                  <h3>Blog içerikleri</h3>
                 </div>
                 <div className="adm-stack-list">
                   {props.customPosts.length === 0 ? (
-                    <p className="adm-muted">No custom posts yet.</p>
+                    <p className="adm-muted">Henüz özel içerik yok.</p>
                   ) : (
                     props.customPosts.map((post) => (
                       <div key={post.id} className="adm-list-row">
@@ -1960,7 +2433,7 @@ export function AdminPanel(props: {
                             disabled={contentBusyId === post.id}
                             onClick={() => updatePostStatus(post.id, post.status === "published" ? "draft" : "published")}
                           >
-                            {contentBusyId === post.id ? "Saving..." : post.status === "published" ? "→ Draft" : "Publish"}
+                            {contentBusyId === post.id ? "Kaydediliyor..." : post.status === "published" ? "Taslağa al" : "Yayınla"}
                           </button>
                           <a className="adm-secondary-btn" href={`/blog/${post.slug}`} target="_blank" rel="noreferrer">
                             <ExternalLink size={13} />
@@ -1980,40 +2453,40 @@ export function AdminPanel(props: {
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
                   <div>
-                    <h3>Create Referral Code</h3>
-                    <p className="adm-muted">Share codes to open trial access automatically.</p>
+                    <h3>Davet kodu oluştur</h3>
+                    <p className="adm-muted">Paylaşılan kodlar kullanıcıya otomatik deneme erişimi açar.</p>
                   </div>
                 </div>
 
                 <div className="adm-stats-row adm-stats-sm">
                   <div className="adm-mini-stat">
                     <strong>{referralOverview.totalCodes}</strong>
-                    <span>Total codes</span>
+                    <span>Toplam kod</span>
                   </div>
                   <div className="adm-mini-stat">
                     <strong>{referralOverview.activeCodes}</strong>
-                    <span>Active</span>
+                    <span>Aktif</span>
                   </div>
                   <div className="adm-mini-stat">
                     <strong>{referralOverview.totalUses}</strong>
-                    <span>Total uses</span>
+                    <span>Toplam kullanım</span>
                   </div>
                   <div className="adm-mini-stat">
                     <strong>{referralOverview.remainingSeats}</strong>
-                    <span>Remaining seats</span>
+                    <span>Kalan hak</span>
                   </div>
                 </div>
 
                 <div className="adm-form-grid adm-form-grid-2">
                   <input className="adm-input" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="CODE" />
-                  <input className="adm-input" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label" />
-                  <input className="adm-input" value={trialDays} onChange={(e) => setTrialDays(e.target.value)} placeholder="Trial days" />
-                  <input className="adm-input" value={usageLimit} onChange={(e) => setUsageLimit(e.target.value)} placeholder="Usage limit (optional)" />
+                  <input className="adm-input" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Açıklama" />
+                  <input className="adm-input" value={trialDays} onChange={(e) => setTrialDays(e.target.value)} placeholder="Deneme günü" />
+                  <input className="adm-input" value={usageLimit} onChange={(e) => setUsageLimit(e.target.value)} placeholder="Kullanım sınırı (isteğe bağlı)" />
                 </div>
 
                 <div className="adm-inline-feedback" style={{ marginTop: "1rem" }}>
                   <button className="adm-save-btn" type="button" disabled={busy} onClick={createCode}>
-                    {busy ? "Creating..." : "Create referral code"}
+                    {busy ? "Oluşturuluyor..." : "Davet kodu oluştur"}
                   </button>
                   {message && <span className="adm-success">{message}</span>}
                   {error && <span className="adm-error">{error}</span>}
@@ -2022,22 +2495,22 @@ export function AdminPanel(props: {
 
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
-                  <h3>Existing Codes</h3>
+                  <h3>Mevcut kodlar</h3>
                 </div>
                 <div className="adm-stack-list">
                   {props.referralCodes.length === 0 ? (
-                    <p className="adm-muted">No referral codes yet.</p>
+                    <p className="adm-muted">Henüz davet kodu yok.</p>
                   ) : (
                     props.referralCodes.map((item) => (
                       <div key={item.id} className="adm-list-row">
                         <div>
                           <div className="adm-table-name" style={{ fontFamily: "monospace" }}>{item.code}</div>
-                          <div className="adm-table-email">{item.label || "No label"}</div>
+                          <div className="adm-table-email">{item.label || "Açıklama yok"}</div>
                         </div>
                         <div className="adm-list-side">
                           <StatusBadge label={`${item.trialDays}d`} tone="accent" />
                           <span className="adm-table-email">
-                            {item.usageCount}{item.usageLimit ? ` / ${item.usageLimit}` : ""} uses
+                            {item.usageCount}{item.usageLimit ? ` / ${item.usageLimit}` : ""} kullanım
                           </span>
                           <StatusBadge label={item.active ? "active" : "inactive"} tone={item.active ? "success" : "warning"} />
                         </div>
@@ -2054,15 +2527,15 @@ export function AdminPanel(props: {
             <div style={{ display: "grid", gap: "1rem", gridColumn: "1 / -1" }}>
               <div className="adm-signal-grid">
                 <AdmSignalCard
-                  label="Active subscriptions"
+                  label="Aktif abonelik"
                   value={String(billingOverview.activeCount)}
-                  detail={`${billingOverview.trialingCount} trialing and ${billingOverview.churnedCount} churned billing records currently visible.`}
+                  detail={`${billingOverview.trialingCount} denemede, ${billingOverview.churnedCount} iptal veya süresi dolmuş ödeme kaydı var.`}
                   tone={billingOverview.activeCount > billingOverview.churnedCount ? "success" : "warning"}
                 />
                 <AdmSignalCard
-                  label="Checkout completion"
+                  label="Checkout tamamlama"
                   value={formatPercent(props.overview.monetizationFunnel7d.checkoutToCompletionRate)}
-                  detail={`${props.overview.checkoutCompleted7d}/${props.overview.checkoutInitiated7d} checkouts completed in the last 7 days.`}
+                  detail={`Son 7 günde ${props.overview.checkoutCompleted7d}/${props.overview.checkoutInitiated7d} checkout tamamlandı.`}
                   tone={
                     props.overview.monetizationFunnel7d.checkoutToCompletionRate >= 40
                       ? "success"
@@ -2072,28 +2545,28 @@ export function AdminPanel(props: {
                   }
                 />
                 <AdmSignalCard
-                  label="Success-page reach"
+                  label="Başarı sayfasına ulaşım"
                   value={`${props.overview.billingSuccessSeen7d}/${props.overview.checkoutCompleted7d}`}
-                  detail="How many completed buyers actually reached the billing success state in the last 7 days."
+                  detail="Son 7 günde ödeme tamamlayanların kaçı başarı durumuna ulaştı."
                   tone={props.overview.billingSuccessSeen7d >= props.overview.checkoutCompleted7d ? "success" : "warning"}
                 />
                 <AdmSignalCard
-                  label="Access sync pending"
+                  label="Bekleyen erişim senkronu"
                   value={String(props.overview.billingSyncPending7d)}
-                  detail={`${props.overview.billingSyncPending30d} distinct buyer account(s) reached a pending access state in the last 30 days.`}
+                  detail={`Son 30 günde ${props.overview.billingSyncPending30d} alıcı hesabı bekleyen erişim durumuna düştü.`}
                   tone={props.overview.billingSyncPending7d > 0 ? "warning" : "success"}
                 />
                 <AdmSignalCard
-                  label="Limit-recovery email"
+                  label="Limit kurtarma e-postası"
                   value={
                     props.overview.practiceLimitRecoveryEnabled
                       ? `${props.overview.practiceLimitRecoveryCheckoutStarts7d}/${props.overview.practiceLimitRecoverySent7d}`
-                      : "Off"
+                      : "Kapalı"
                   }
                   detail={
                     props.overview.practiceLimitRecoveryEnabled
-                      ? `${props.overview.practiceLimitRecoverySent30d} sent and ${props.overview.practiceLimitRecoveryCheckoutStarts30d} authenticated checkout(s) started in 30d.`
-                      : "Waiting for verified Lemon webhook delivery before activation."
+                      ? `30 günde ${props.overview.practiceLimitRecoverySent30d} gönderildi ve ${props.overview.practiceLimitRecoveryCheckoutStarts30d} checkout başlatıldı.`
+                      : "Etkinleştirmek için doğrulanmış Lemon webhook teslimatı bekleniyor."
                   }
                   tone={props.overview.practiceLimitRecoveryCheckoutStarts7d > 0 ? "success" : "neutral"}
                 />
@@ -2101,8 +2574,8 @@ export function AdminPanel(props: {
 
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
-                  <h3>Billing Action Queue</h3>
-                  <p>Use this to decide where the next revenue lift will come from.</p>
+                  <h3>Ödeme aksiyon kuyruğu</h3>
+                  <p>Bir sonraki gelir artışının nereden geleceğini burada önceliklendir.</p>
                 </div>
                 <div className="adm-signal-grid">
                   {billingActionQueue.map((item) => (
@@ -2114,20 +2587,20 @@ export function AdminPanel(props: {
               <div className="adm-tables-row">
                 <div className="adm-table-card">
                   <div className="adm-table-card-head">
-                    <h3>Billing Status Mix</h3>
-                    <span className="adm-badge adm-badge-neutral">{props.billingEvents.length} total</span>
+                    <h3>Ödeme durumu dağılımı</h3>
+                    <span className="adm-badge adm-badge-neutral">{props.billingEvents.length} toplam</span>
                   </div>
                   <div className="adm-stack-list">
                     {Object.keys(billingOverview.statusCounts).length === 0 ? (
-                      <p className="adm-muted">No billing events yet.</p>
+                      <p className="adm-muted">Henüz ödeme olayı yok.</p>
                     ) : (
                       Object.entries(billingOverview.statusCounts)
                         .sort((left, right) => right[1] - left[1])
                         .map(([status, count]) => (
                           <div key={status} className="adm-list-row">
                             <div>
-                              <div className="adm-table-name">{status.replace(/_/g, " ")}</div>
-                              <div className="adm-table-email">{formatPercent(props.billingEvents.length ? (count / props.billingEvents.length) * 100 : 0)} of billing records</div>
+                              <div className="adm-table-name">{translateStatus(status)}</div>
+                              <div className="adm-table-email">Ödeme kayıtlarının {formatPercent(props.billingEvents.length ? (count / props.billingEvents.length) * 100 : 0)} kadarı</div>
                             </div>
                             <div className="adm-list-side">
                               <StatusBadge
@@ -2143,12 +2616,12 @@ export function AdminPanel(props: {
 
                 <div className="adm-table-card">
                   <div className="adm-table-card-head">
-                    <h3>Plan Mix</h3>
-                    <span className="adm-badge adm-badge-neutral">{Object.keys(billingOverview.planCounts).length} plans</span>
+                    <h3>Plan dağılımı</h3>
+                    <span className="adm-badge adm-badge-neutral">{Object.keys(billingOverview.planCounts).length} plan</span>
                   </div>
                   <div className="adm-stack-list">
                     {Object.keys(billingOverview.planCounts).length === 0 ? (
-                      <p className="adm-muted">No plan signals yet.</p>
+                      <p className="adm-muted">Henüz plan sinyali yok.</p>
                     ) : (
                       Object.entries(billingOverview.planCounts)
                         .sort((left, right) => right[1] - left[1])
@@ -2157,11 +2630,11 @@ export function AdminPanel(props: {
                             <div>
                               <div className="adm-table-name">{plan}</div>
                               <div className="adm-table-email">
-                                {formatPercent(props.billingEvents.length ? (count / props.billingEvents.length) * 100 : 0)} of billing records
+                                Ödeme kayıtlarının {formatPercent(props.billingEvents.length ? (count / props.billingEvents.length) * 100 : 0)} kadarı
                               </div>
                             </div>
                             <div className="adm-list-side">
-                              <StatusBadge label={`${count} events`} tone={plan === "plus" || plan === "pro" ? "accent" : "neutral"} />
+                              <StatusBadge label={`${count} olay`} tone={plan === "plus" || plan === "pro" ? "accent" : "neutral"} />
                             </div>
                           </div>
                         ))
@@ -2172,24 +2645,24 @@ export function AdminPanel(props: {
 
               <div className="adm-table-card">
                 <div className="adm-table-card-head">
-                  <h3>Recent Billing Events</h3>
-                  <span className="adm-badge adm-badge-neutral">{billingOverview.recentEvents.length} latest</span>
+                  <h3>Son ödeme olayları</h3>
+                  <span className="adm-badge adm-badge-neutral">{billingOverview.recentEvents.length} kayıt</span>
                 </div>
               </div>
               {props.billingEvents.length === 0 ? (
                 <div className="adm-table-card">
-                  <p className="adm-table-muted" style={{ padding: "1rem" }}>No billing events yet.</p>
+                  <p className="adm-table-muted" style={{ padding: "1rem" }}>Henüz ödeme olayı yok.</p>
                 </div>
               ) : (
                 <div className="adm-table-card">
                   <table className="adm-table">
                     <thead>
                       <tr>
-                        <th>EVENT</th>
-                        <th>EMAIL</th>
+                        <th>OLAY</th>
+                        <th>E-POSTA</th>
                         <th>PLAN</th>
-                        <th>STATUS</th>
-                        <th>DATE</th>
+                        <th>DURUM</th>
+                        <th>TARİH</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2213,21 +2686,21 @@ export function AdminPanel(props: {
           {activeTab === "institutions" && (
             <div className="adm-table-card" style={{ gridColumn: "1 / -1" }}>
               <div className="adm-table-card-head">
-                <h3>Institutions</h3>
-                <span className="adm-badge adm-badge-neutral">{props.institutions.length} total</span>
+                <h3>Kurumlar</h3>
+                <span className="adm-badge adm-badge-neutral">{props.institutions.length} toplam</span>
               </div>
               {props.institutions.length === 0 ? (
-                <p className="adm-table-muted" style={{ padding: "1rem" }}>No institutions yet.</p>
+                <p className="adm-table-muted" style={{ padding: "1rem" }}>Henüz kurum yok.</p>
               ) : (
                 <table className="adm-table">
                   <thead>
                     <tr>
-                      <th>ORGANIZATION</th>
-                      <th>TEACHERS</th>
-                      <th>STUDENTS</th>
-                      <th>SCHOOLS</th>
-                      <th>AVG SCORE</th>
-                      <th>TOTAL SESSIONS</th>
+                      <th>KURUM</th>
+                      <th>ÖĞRETMEN</th>
+                      <th>ÖĞRENCİ</th>
+                      <th>OKUL</th>
+                      <th>ORT. SKOR</th>
+                      <th>TOPLAM PRATİK</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2257,7 +2730,7 @@ export function AdminPanel(props: {
             <div className="adm-grid-2">
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
-                  <h3>Environment</h3>
+                  <h3>Ortam bilgisi</h3>
                 </div>
                 <div className="adm-overview-list">
                   {[
@@ -2266,7 +2739,7 @@ export function AdminPanel(props: {
                     { label: "Site URL", value: props.systemHealth.siteUrl },
                     { label: "Vercel env", value: props.systemHealth.vercelEnv },
                     { label: "Region", value: props.systemHealth.region },
-                    { label: "Admin session", value: props.sessionLabel }
+                    { label: "Yönetici oturumu", value: props.sessionLabel }
                   ].map(({ label, value }) => (
                     <div key={label} className="adm-overview-item">
                       <strong style={{ fontFamily: "monospace", fontSize: "0.8rem" }}>{label}</strong>
@@ -2278,37 +2751,37 @@ export function AdminPanel(props: {
 
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
-                  <h3>Revenue Infrastructure</h3>
+                  <h3>Gelir altyapısı</h3>
                 </div>
                 <div className="adm-stack-list">
                   {[
                     {
-                      label: "Production database",
+                      label: "Canlı veritabanı",
                       ready: props.systemHealth.databaseConfigured,
-                      detail: props.systemHealth.databaseConfigured ? "Persistent product data is connected." : "DATABASE_URL is missing."
+                      detail: props.systemHealth.databaseConfigured ? "Kalıcı ürün verisi bağlı." : "DATABASE_URL eksik."
                     },
                     {
                       label: "Lemon webhook",
                       ready: props.systemHealth.lemonWebhookConfigured,
                       detail: props.systemHealth.lemonWebhookConfigured
-                        ? "Signed billing events can update access."
-                        : "Billing events cannot update paid access until the secret is configured."
+                        ? "İmzalı ödeme olayları erişimi güncelleyebilir."
+                        : "Secret eklenene kadar ödeme olayları ücretli erişimi açamaz."
                     },
                     {
-                      label: "Email delivery",
+                      label: "E-posta teslimatı",
                       ready: props.systemHealth.emailConfigured && !props.overview.emailQuotaBlocked,
                       detail: props.overview.emailQuotaBlocked
-                        ? "Provider quota is currently blocking lifecycle delivery."
+                        ? "Sağlayıcı kotası yaşam döngüsü gönderimlerini engelliyor."
                         : props.systemHealth.emailConfigured
-                          ? `Configured with a ${props.systemHealth.lifecycleDailyBudget}/day lifecycle budget.`
-                          : "RESEND_API_KEY or EMAIL_FROM is missing."
+                          ? `Günlük ${props.systemHealth.lifecycleDailyBudget} gönderim bütçesiyle hazır.`
+                          : "RESEND_API_KEY veya EMAIL_FROM eksik."
                     },
                     {
-                      label: "Product analytics",
+                      label: "Ürün analitiği",
                       ready: props.systemHealth.analyticsConfigured,
                       detail: props.systemHealth.analyticsConfigured
-                        ? "First-party funnel events are enabled."
-                        : "Analytics is disabled by environment configuration."
+                        ? "Birinci taraf funnel olayları açık."
+                        : "Analitik ortam ayarlarında kapalı."
                     }
                   ].map((item) => (
                     <div key={item.label} className="adm-list-row">
@@ -2317,7 +2790,7 @@ export function AdminPanel(props: {
                         <span className="adm-table-email">{item.detail}</span>
                       </div>
                       <StatusBadge
-                        label={item.ready ? "Ready" : "Needs action"}
+                        label={item.ready ? "Hazır" : "Aksiyon gerekli"}
                         tone={item.ready ? "success" : "warning"}
                       />
                     </div>
@@ -2327,20 +2800,20 @@ export function AdminPanel(props: {
 
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
-                  <h3>Platform Overview</h3>
+                  <h3>Platform özeti</h3>
                 </div>
                 <div className="adm-overview-list">
                   {[
-                    { label: "Total users", value: String(props.overview.totalUsers) },
-                    { label: "Students", value: String(props.overview.totalStudents) },
-                    { label: "Teachers", value: String(props.overview.totalTeachers) },
-                    { label: "Schools", value: String(props.overview.totalSchools) },
-                    { label: "Paid members", value: String(props.overview.paidMembers) },
-                    { label: "On trial", value: String(props.overview.trialMembers) },
-                    { label: "Active sessions", value: String(props.overview.activeSessions) },
-                    { label: "Monthly revenue est.", value: formatMoney(props.overview.monthlyRevenueEstimate) },
-                    { label: "Live users (5m)", value: String(props.overview.liveUsers5m) },
-                    { label: "Last request", value: formatRelativeDate(props.overview.lastRequestAt) }
+                    { label: "Toplam kullanıcı", value: String(props.overview.totalUsers) },
+                    { label: "Öğrenci", value: String(props.overview.totalStudents) },
+                    { label: "Öğretmen", value: String(props.overview.totalTeachers) },
+                    { label: "Okul", value: String(props.overview.totalSchools) },
+                    { label: "Ücretli kullanıcı", value: String(props.overview.paidMembers) },
+                    { label: "Denemede", value: String(props.overview.trialMembers) },
+                    { label: "Aktif oturum", value: String(props.overview.activeSessions) },
+                    { label: "Aylık gelir tahmini", value: formatMoney(props.overview.monthlyRevenueEstimate) },
+                    { label: "Canlı kullanıcı (5 dk)", value: String(props.overview.liveUsers5m) },
+                    { label: "Son istek", value: formatRelativeDate(props.overview.lastRequestAt) }
                   ].map(({ label, value }) => (
                     <div key={label} className="adm-overview-item">
                       <strong>{label}</strong>
@@ -2352,14 +2825,14 @@ export function AdminPanel(props: {
 
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
-                  <h3>Quick Actions</h3>
+                  <h3>Hızlı işlemler</h3>
                 </div>
                 <div className="adm-stack-list">
                   <div className="adm-list-row">
                     <div>
-                      <span className="adm-table-name">Email delivery test</span>
+                      <span className="adm-table-name">E-posta teslimat testi</span>
                       <span className="adm-table-email">
-                        Send one production message to the configured SpeakAce contact inbox.
+                        Yapılandırılmış SpeakAce adresine tek bir canlı test mesajı gönder.
                       </span>
                     </div>
                     <button
@@ -2369,21 +2842,21 @@ export function AdminPanel(props: {
                       disabled={emailTestBusy || !props.systemHealth.emailConfigured}
                     >
                       <MailCheck size={13} />
-                      {emailTestBusy ? "Sending..." : "Send test"}
+                      {emailTestBusy ? "Gönderiliyor..." : "Test gönder"}
                     </button>
                   </div>
                   {emailTestMessage && <span className="adm-success">{emailTestMessage}</span>}
                   {emailTestError && <span className="adm-error">{emailTestError}</span>}
                   {[
-                    { label: "View public site", href: "/" },
-                    { label: "Open blog", href: "/blog" },
-                    { label: "Pricing page", href: "/pricing" },
-                    { label: "Admin login", href: "/admin/login" }
+                    { label: "Herkese açık site", href: "/" },
+                    { label: "Blog", href: "/blog" },
+                    { label: "Fiyatlandırma", href: "/pricing" },
+                    { label: "Yönetici girişi", href: "/admin/login" }
                   ].map(({ label, href }) => (
                     <div key={label} className="adm-list-row">
                       <span className="adm-table-name">{label}</span>
                       <a className="adm-secondary-btn" href={href} target="_blank" rel="noreferrer">
-                        Open <ExternalLink size={13} />
+                        Aç <ExternalLink size={13} />
                       </a>
                     </div>
                   ))}
@@ -2392,17 +2865,17 @@ export function AdminPanel(props: {
 
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
-                  <h3>Data Summary</h3>
+                  <h3>Veri özeti</h3>
                 </div>
                 <div className="adm-overview-list">
                   {[
-                    { label: "Members loaded", value: String(props.members.length) },
-                    { label: "Billing events", value: String(props.billingEvents.length) },
-                    { label: "Auth activity records", value: String(props.authActivity.length) },
-                    { label: "Referral codes", value: String(props.referralCodes.length) },
-                    { label: "Institutions", value: String(props.institutions.length) },
-                    { label: "Custom blog posts", value: String(props.customPosts.length) },
-                    { label: "Published posts", value: String(props.customPosts.filter((p) => p.status === "published").length) }
+                    { label: "Yüklenen kullanıcı", value: String(props.members.length) },
+                    { label: "Ödeme olayı", value: String(props.billingEvents.length) },
+                    { label: "Oturum hareketi", value: String(props.authActivity.length) },
+                    { label: "Davet kodu", value: String(props.referralCodes.length) },
+                    { label: "Kurum", value: String(props.institutions.length) },
+                    { label: "Özel blog içeriği", value: String(props.customPosts.length) },
+                    { label: "Yayındaki içerik", value: String(props.customPosts.filter((p) => p.status === "published").length) }
                   ].map(({ label, value }) => (
                     <div key={label} className="adm-overview-item">
                       <strong>{label}</strong>
@@ -2419,11 +2892,11 @@ export function AdminPanel(props: {
             <div className="adm-grid-2">
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
-                  <h3>Sign-in / Sign-out Activity</h3>
+                  <h3>Giriş ve çıkış hareketleri</h3>
                 </div>
                 <div className="adm-stack-list">
                   {props.authActivity.length === 0 ? (
-                    <p className="adm-muted">No activity recorded yet.</p>
+                    <p className="adm-muted">Henüz hareket kaydedilmedi.</p>
                   ) : (
                     props.authActivity.map((item) => (
                       <div key={item.id} className="adm-list-row">
@@ -2444,18 +2917,18 @@ export function AdminPanel(props: {
 
               <div className="adm-panel-card">
                 <div className="adm-panel-card-head">
-                  <h3>Institutions</h3>
+                  <h3>Kurum hareketleri</h3>
                 </div>
                 <div className="adm-stack-list">
                   {props.institutions.length === 0 ? (
-                    <p className="adm-muted">No institutions recorded.</p>
+                    <p className="adm-muted">Henüz kurum kaydı yok.</p>
                   ) : (
                     props.institutions.map((item) => (
                       <div key={item.organizationName} className="adm-list-row">
                         <div>
                           <div className="adm-table-name">{item.organizationName}</div>
                           <div className="adm-table-email">
-                            {item.teachers} teachers · {item.students} students · {item.schools} schools
+                            {item.teachers} öğretmen · {item.students} öğrenci · {item.schools} okul
                           </div>
                         </div>
                         <Building2 size={18} color="#8b949e" />

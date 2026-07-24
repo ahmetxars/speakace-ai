@@ -505,6 +505,13 @@ export interface AdminOverview {
   activeSessions: number;
   recentSignIns24h: number;
   classesCount: number;
+  newUsers7d: number;
+  newUsers30d: number;
+  activatedNewUsers30d: number;
+  retainedNewUsers30d: number;
+  weeklyActivePracticeUsers: number;
+  activationRate30d: number;
+  retentionRate30d: number;
   monthlyRevenueEstimate: number;
   aiRequests30d: number;
   aiInputTokens30d: number;
