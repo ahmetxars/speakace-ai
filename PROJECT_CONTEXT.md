@@ -241,6 +241,7 @@ This is the project-wide “where things live” map.
   - `lib/commerce.ts`
   - `app/api/account/plan/route.ts` is also the signed-in billing-state sync endpoint used by client refresh flows.
   - learner checkouts carry generated `checkout_id` and privacy-safe `visitor_id` values through the Lemon custom payload so anonymous starts can be joined to server-confirmed orders.
+  - checkout analytics counts only user-activated document navigations marked with a `verified_navigation:` source; Next.js prefetches and email/security scanners still reach the redirect safely but are excluded from conversion reporting.
   - Pro defaults to the `$12/month` checkout, while an explicit `billing=annual` request uses the `$99/year` variant.
 
 ### Analytics product

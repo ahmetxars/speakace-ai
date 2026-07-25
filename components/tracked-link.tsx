@@ -93,7 +93,10 @@ export function TrackedLink({
     trackGaEvent(gaEvent, gaParams);
   };
 
-  if (typeof resolvedHref === "string" && isExternalHref(resolvedHref)) {
+  if (
+    typeof resolvedHref === "string"
+    && (isExternalHref(resolvedHref) || isServerTrackedCheckout)
+  ) {
     return (
       <a href={resolvedHref} className={className} style={style} target={target} rel={rel} onClick={handleClick}>
         {children}
@@ -102,7 +105,14 @@ export function TrackedLink({
   }
 
   return (
-    <Link href={resolvedHref} className={className} style={style} target={target} rel={rel} onClick={handleClick}>
+    <Link
+      href={resolvedHref}
+      className={className}
+      style={style}
+      target={target}
+      rel={rel}
+      onClick={handleClick}
+    >
       {children}
     </Link>
   );

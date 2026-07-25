@@ -25,6 +25,22 @@ function buildCheckoutAnalyticsPath(input: {
   return `/api/payments/lemon/checkout?${params.toString()}`;
 }
 
+function isVerifiedCheckoutNavigation(request: Request) {
+  const purpose = request.headers.get("purpose") ?? request.headers.get("sec-purpose");
+  const isPrefetch = purpose?.toLowerCase().includes("prefetch")
+    || request.headers.has("next-router-prefetch");
+
+  return !isPrefetch
+    && request.headers.get("sec-fetch-mode") === "navigate"
+    && request.headers.get("sec-fetch-dest") === "document"
+    && request.headers.get("sec-fetch-user") === "?1";
+}
+
+function buildCheckoutAnalyticsSource(campaign?: string) {
+  const safeCampaign = campaign?.trim().slice(0, 80);
+  return `verified_navigation:${safeCampaign || "direct"}`;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const rawPlan = searchParams.get("plan");
@@ -45,19 +61,21 @@ export async function GET(request: Request) {
   );
   const visitorId = existingVisitorId ?? crypto.randomUUID();
 
-  try {
-    await trackAnalyticsEvent({
-      userId: profile?.id,
-      visitorId,
-      event: "checkout_initiated",
-      path: buildCheckoutAnalyticsPath({ plan, billing, campaign, ctaPath }),
-      eventId: checkoutId,
-      source: campaign,
-      plan,
-      occurredAt: new Date().toISOString()
-    });
-  } catch {
-    // Analytics must never block a buyer from reaching checkout.
+  if (isVerifiedCheckoutNavigation(request)) {
+    try {
+      await trackAnalyticsEvent({
+        userId: profile?.id,
+        visitorId,
+        event: "checkout_initiated",
+        path: buildCheckoutAnalyticsPath({ plan, billing, campaign, ctaPath }),
+        eventId: checkoutId,
+        source: buildCheckoutAnalyticsSource(campaign),
+        plan,
+        occurredAt: new Date().toISOString()
+      });
+    } catch {
+      // Analytics must never block a buyer from reaching checkout.
+    }
   }
 
   const checkoutUrl = buildLemonCheckoutUrl(

@@ -687,6 +687,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         select count(*)::int
         from recent_analytics
         where event = 'checkout_initiated'
+          and source like 'verified_navigation:%'
           and path like '/email/practice_limit_recovery/%'
           and created_at > now() - interval '7 days'
       ) as practice_limit_recovery_checkout_starts_7d,
@@ -694,6 +695,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         select count(*)::int
         from recent_analytics
         where event = 'checkout_initiated'
+          and source like 'verified_navigation:%'
           and path like '/email/practice_limit_recovery/%'
           and created_at > now() - interval '30 days'
       ) as practice_limit_recovery_checkout_starts_30d,
@@ -701,12 +703,14 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         select count(*)::int
         from recent_analytics
         where event = 'checkout_initiated'
+          and source like 'verified_navigation:%'
           and created_at > now() - interval '7 days'
       ) as checkout_initiated_7d,
       (
         select count(*)::int
         from recent_analytics
         where event = 'checkout_initiated'
+          and source like 'verified_navigation:%'
           and created_at > now() - interval '30 days'
       ) as checkout_initiated_30d,
       (
@@ -1171,6 +1175,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       select path, count(*)::int as initiated
       from analytics_events
       where event = 'checkout_initiated'
+        and source like 'verified_navigation:%'
         and path is not null
         and created_at > now() - interval '30 days'
       group by path
@@ -1319,7 +1324,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
           where event in ('marketing_cta_click', 'pricing_cta_click', 'checkout_cta_click')
         ) as cta_at,
         min(created_at) filter (where event = 'signup_completed') as signup_at,
-        min(created_at) filter (where event = 'checkout_initiated') as checkout_at,
+        min(created_at) filter (
+          where event = 'checkout_initiated'
+            and source like 'verified_navigation:%'
+        ) as checkout_at,
         min(created_at) filter (where event = 'checkout_completed') as paid_at
       from analytics_events
       where coalesce(visitor_id, user_id) is not null
@@ -1388,7 +1396,10 @@ export async function getAdminOverview(): Promise<AdminOverview> {
         min(created_at) filter (where event = 'pricing_view') as pricing_at,
         min(created_at) filter (where event = 'practice_limit_hit') as limit_at,
         min(created_at) filter (where event = 'upgrade_prompt_view') as prompt_at,
-        min(created_at) filter (where event = 'checkout_initiated') as checkout_at,
+        min(created_at) filter (
+          where event = 'checkout_initiated'
+            and source like 'verified_navigation:%'
+        ) as checkout_at,
         min(created_at) filter (where event = 'checkout_completed') as completed_at,
         min(created_at) filter (where event = 'billing_success_seen') as success_at
       from analytics_events

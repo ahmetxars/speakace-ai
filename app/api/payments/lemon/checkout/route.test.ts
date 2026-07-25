@@ -21,6 +21,16 @@ vi.mock("@/lib/analytics-store", () => ({
 
 import { GET } from "@/app/api/payments/lemon/checkout/route";
 
+function checkoutNavigationRequest(url: string) {
+  return new Request(url, {
+    headers: {
+      "sec-fetch-mode": "navigate",
+      "sec-fetch-dest": "document",
+      "sec-fetch-user": "?1"
+    }
+  });
+}
+
 describe("Lemon checkout redirect", () => {
   beforeEach(() => {
     mocks.cookieGet.mockReset();
@@ -40,7 +50,7 @@ describe("Lemon checkout redirect", () => {
 
   it("records an authenticated checkout from its attributed CTA", async () => {
     const response = await GET(
-      new Request(
+      checkoutNavigationRequest(
         "https://speakace.org/api/payments/lemon/checkout?plan=plus&cta=%2Fpricing%2Fplus%2Fweekly&campaign=pricing_primary"
       )
     );
@@ -57,7 +67,7 @@ describe("Lemon checkout redirect", () => {
         event: "checkout_initiated",
         path: "/pricing/plus/weekly",
         eventId: expect.any(String),
-        source: "pricing_primary",
+        source: "verified_navigation:pricing_primary",
         plan: "plus",
         occurredAt: expect.any(String)
       })
@@ -68,7 +78,7 @@ describe("Lemon checkout redirect", () => {
     mocks.trackAnalyticsEvent.mockRejectedValueOnce(new Error("analytics unavailable"));
 
     const response = await GET(
-      new Request(
+      checkoutNavigationRequest(
         "https://speakace.org/api/payments/lemon/checkout?plan=plus&billing=annual&campaign=billing_decision_annual"
       )
     );
@@ -82,7 +92,7 @@ describe("Lemon checkout redirect", () => {
         event: "checkout_initiated",
         path: "/api/payments/lemon/checkout?plan=plus&billing=annual&campaign=billing_decision_annual",
         eventId: expect.any(String),
-        source: "billing_decision_annual",
+        source: "verified_navigation:billing_decision_annual",
         plan: "plus",
         occurredAt: expect.any(String)
       })
@@ -93,7 +103,7 @@ describe("Lemon checkout redirect", () => {
     mocks.getAuthenticatedUser.mockResolvedValue(null);
 
     const response = await GET(
-      new Request(
+      checkoutNavigationRequest(
         "https://speakace.org/api/payments/lemon/checkout?plan=plus&cta=%2Fpricing%2Fplus%2Fweekly"
       )
     );
@@ -112,6 +122,25 @@ describe("Lemon checkout redirect", () => {
         occurredAt: expect.any(String)
       })
     );
+  });
+
+  it("redirects prefetches and scanners without counting checkout intent", async () => {
+    const response = await GET(
+      new Request(
+        "https://speakace.org/api/payments/lemon/checkout?plan=plus&campaign=homepage_annual",
+        {
+          headers: {
+            purpose: "prefetch",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-dest": "empty"
+          }
+        }
+      )
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toContain("speakace.lemonsqueezy.com/checkout/buy/");
+    expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
   });
 
   it("routes Pro buyers to the monthly offer by default", async () => {
