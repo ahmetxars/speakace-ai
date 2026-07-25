@@ -482,7 +482,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
       from institution_billing
     ),
     recent_analytics as (
-      select user_id, event, path, created_at
+      select user_id, event, path, source, created_at
       from analytics_events
     )
     select
