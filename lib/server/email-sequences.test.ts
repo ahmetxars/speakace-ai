@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCheckoutRecoveryEmailContent,
+  buildDailyTipEmailContent,
   buildPracticeLimitRecoveryEmailContent,
   buildOnboardingEmailContent,
   isEmailQuotaFailureRecovered,
@@ -10,6 +11,13 @@ import {
   resolvePracticeLimitRecoveryReason,
   resolveTrialLifecycleStage
 } from "@/lib/server/email-sequences";
+
+const dailyTip = {
+  subject: "Speaking tip: Build a stronger example",
+  headline: "Use one specific example",
+  body: "A concrete example makes an answer easier to follow.",
+  example: "\"Last weekend, I practised this during a mock interview.\""
+};
 
 describe("onboarding lifecycle segmentation", () => {
   it("schedules the first retention follow-up one day after signup", () => {
@@ -131,6 +139,56 @@ describe("email quota protection", () => {
     expect(isEmailQuotaFailureRecovered(failureAt, "2026-07-23T05:00:00.000Z")).toBe(true);
     expect(isEmailQuotaFailureRecovered(failureAt, "2026-07-23T04:00:00.000Z")).toBe(false);
     expect(isEmailQuotaFailureRecovered(failureAt, null)).toBe(false);
+  });
+});
+
+describe("daily speaking tip personalization", () => {
+  it("turns the latest weak category into a focused five-minute return", () => {
+    const email = buildDailyTipEmailContent({
+      name: "Learner",
+      tip: dailyTip,
+      focus: {
+        label: "Fluency and Coherence",
+        score: 5.5,
+        nextExercise: "Retry one Part 2 answer with fewer filler words."
+      }
+    });
+
+    expect(email.subject).toContain("Fluency and Coherence");
+    expect(email.html).toContain("Your latest feedback");
+    expect(email.html).toContain("Fluency and Coherence · 5.5");
+    expect(email.html).toContain("Retry one Part 2 answer with fewer filler words.");
+    expect(email.html).toContain("activation=email_daily_tip");
+    expect(email.html).not.toContain("api/payments/lemon/checkout");
+  });
+
+  it("keeps the generic tip for learners without a scored session", () => {
+    const email = buildDailyTipEmailContent({
+      name: "Learner",
+      tip: dailyTip
+    });
+
+    expect(email.subject).toBe(dailyTip.subject);
+    expect(email.html).toContain(dailyTip.headline);
+    expect(email.html).toContain("Try it in SpeakAce");
+    expect(email.html).not.toContain("Your latest feedback");
+  });
+
+  it("escapes report text before inserting it into email HTML", () => {
+    const email = buildDailyTipEmailContent({
+      name: "<Learner>",
+      tip: dailyTip,
+      focus: {
+        label: "<script>alert(1)</script>",
+        score: 4,
+        nextExercise: "<img src=x onerror=alert(1)>"
+      }
+    });
+
+    expect(email.html).not.toContain("<script>");
+    expect(email.html).not.toContain("<img src=x");
+    expect(email.html).toContain("&lt;script&gt;");
+    expect(email.html).toContain("&lt;img src=x onerror=alert(1)&gt;");
   });
 });
 

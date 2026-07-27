@@ -1581,11 +1581,17 @@ export async function sendTrialLifecycleEmail(
 
 // ─── Daily Speaking Tips ───────────────────────────────────────────────────────
 
-interface DailyTip {
+export interface DailyTip {
   subject: string;
   headline: string;
   body: string;
   example: string;
+}
+
+export interface DailyTipFocus {
+  label: string;
+  score: number;
+  nextExercise: string;
 }
 
 const DAILY_TIPS: DailyTip[] = [
@@ -1682,30 +1688,64 @@ export function getTodaysTip(): DailyTip {
   return DAILY_TIPS[dayOfYear % DAILY_TIPS.length];
 }
 
-function buildDailyTipEmail(name: string, tip: DailyTip) {
-  const greeting = name.trim() || "there";
+function escapeEmailHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+export function buildDailyTipEmailContent(input: {
+  name: string;
+  tip: DailyTip;
+  focus?: DailyTipFocus | null;
+}) {
+  const greeting = escapeEmailHtml(input.name.trim() || "there");
+  const focus = input.focus;
+  const safeFocusLabel = focus ? escapeEmailHtml(focus.label.trim().slice(0, 80)) : "";
+  const safeNextExercise = focus ? escapeEmailHtml(focus.nextExercise.trim().slice(0, 500)) : "";
+  const focusScore = focus && Number.isFinite(focus.score) ? focus.score.toFixed(1) : null;
+  const focusBlock = focus && safeFocusLabel && safeNextExercise && focusScore
+    ? `
+      <div style="background:#edf7f5;border:1px solid #c8e5df;border-radius:12px;padding:20px 24px;margin:0 0 24px">
+        <p style="margin:0 0 8px;font-size:0.8em;font-weight:700;color:#1d6f75;text-transform:uppercase;letter-spacing:0.06em">Your latest feedback</p>
+        <p style="margin:0 0 8px;color:#173f42;font-size:1.05em;font-weight:800">${safeFocusLabel} · ${focusScore}</p>
+        <p style="margin:0;color:#315f61;font-size:0.93em;line-height:1.7">${safeNextExercise}</p>
+      </div>
+    `
+    : "";
+  const subject = focus && safeFocusLabel
+    ? `${focus.label.trim().slice(0, 60)}: your next 5-minute speaking focus`
+    : input.tip.subject;
   const html = layout(`
     <p style="margin:0 0 6px;color:#d95d39;font-size:0.82em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em">Daily Speaking Tip</p>
-    <h1 style="margin:0 0 24px;font-size:1.4em;color:#1b120d;font-weight:800;line-height:1.3">${tip.headline}</h1>
+    <h1 style="margin:0 0 24px;font-size:1.4em;color:#1b120d;font-weight:800;line-height:1.3">${focus && safeFocusLabel ? `Your next score lever: ${safeFocusLabel}` : input.tip.headline}</h1>
 
     <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting},</p>
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">${tip.body}</p>
+    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">${focus && safeFocusLabel ? `Your latest SpeakAce feedback points to <strong>${safeFocusLabel}</strong> as the clearest place to improve today. Use the focused exercise below, then apply today&apos;s technique in one answer.` : input.tip.body}</p>
 
-    <div style="background:#f9f4f0;border-radius:12px;padding:20px 24px;margin:0 0 24px">
-      <p style="margin:0 0 8px;font-size:0.8em;font-weight:700;color:#9a7060;text-transform:uppercase;letter-spacing:0.06em">Example</p>
-      <p style="margin:0;color:#3a2218;font-size:0.93em;line-height:1.75;font-style:italic">${tip.example}</p>
-    </div>
+    ${focusBlock}
 
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 28px">Open SpeakAce, try this in your next answer, and see how it changes your AI score.</p>
+    ${highlight(`
+      <strong style="display:block;margin-bottom:8px;color:#d95d39">Today's technique: ${input.tip.headline}</strong>
+      <span style="display:block;margin-bottom:8px">${input.tip.body}</span>
+      <span style="display:block;font-style:italic">${input.tip.example}</span>
+    `)}
+
+    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">Open the ready-made prompt, complete one natural answer, and compare the result with your latest feedback.</p>
 
     <div style="margin:0 0 8px">
-      ${primaryBtn(DAILY_TIP_PRACTICE_URL, "Try it in SpeakAce &rarr;")}
+      ${primaryBtn(DAILY_TIP_PRACTICE_URL, focus ? "Start my focused 5-minute answer &rarr;" : "Try it in SpeakAce &rarr;")}
     </div>
   `);
   return {
-    subject: tip.subject,
+    subject,
     html,
-    text: `Hi ${greeting}, today's IELTS speaking tip — ${tip.headline}.\n\n${tip.body}\n\nExample: ${tip.example}\n\nTry it in SpeakAce: ${DAILY_TIP_PRACTICE_URL}`
+    text: focus
+      ? `Hi ${input.name.trim() || "there"}, your latest feedback points to ${focus.label} (${focusScore}) as today's focus.\n\nNext exercise: ${focus.nextExercise}\n\nToday's technique — ${input.tip.headline}: ${input.tip.body}\n\nExample: ${input.tip.example}\n\nStart your focused 5-minute answer: ${DAILY_TIP_PRACTICE_URL}`
+      : `Hi ${input.name.trim() || "there"}, today's IELTS speaking tip — ${input.tip.headline}.\n\n${input.tip.body}\n\nExample: ${input.tip.example}\n\nTry it in SpeakAce: ${DAILY_TIP_PRACTICE_URL}`
   };
 }
 
@@ -1754,16 +1794,68 @@ export async function sendDailyTipEmail(userId: string): Promise<{ ok: boolean; 
 
   await ensureEmailSequenceSchema();
   const sql = getSql();
-  const rows = await sql<Array<{ email: string; name: string; email_opt_out: boolean; email_verified: boolean }>>`
-    select email, name, email_opt_out, email_verified from users where id = ${userId} limit 1
+  const rows = await sql<Array<{
+    email: string;
+    name: string;
+    email_opt_out: boolean;
+    email_verified: boolean;
+    focus_label: string | null;
+    focus_score: string | number | null;
+    next_exercise: string | null;
+  }>>`
+    select
+      u.email,
+      u.name,
+      u.email_opt_out,
+      u.email_verified,
+      latest_focus.focus_label,
+      latest_focus.focus_score,
+      latest_focus.next_exercise
+    from users u
+    left join lateral (
+      select
+        category ->> 'label' as focus_label,
+        nullif(category ->> 'score', '')::numeric as focus_score,
+        latest_report.next_exercise
+      from (
+        select fr.categories_json, fr.next_exercise
+        from feedback_reports fr
+        join speaking_sessions s on s.id = fr.session_id
+        where s.user_id = u.id
+        order by fr.created_at desc
+        limit 1
+      ) latest_report
+      cross join lateral jsonb_array_elements(
+        case
+          when jsonb_typeof(latest_report.categories_json) = 'array'
+            then latest_report.categories_json
+          when jsonb_typeof(latest_report.categories_json) = 'string'
+            then (latest_report.categories_json #>> '{}')::jsonb
+          else '[]'::jsonb
+        end
+      ) category
+      where nullif(category ->> 'score', '') is not null
+      order by nullif(category ->> 'score', '')::numeric asc
+      limit 1
+    ) latest_focus on true
+    where u.id = ${userId}
+    limit 1
   `;
   const user = rows[0];
   if (!user) return { ok: false };
   if (user.email_opt_out || !user.email_verified) return { ok: false, skipped: true };
 
   const tip = getTodaysTip();
+  const parsedFocusScore = Number(user.focus_score);
+  const focus = user.focus_label?.trim() && user.next_exercise?.trim() && Number.isFinite(parsedFocusScore)
+    ? {
+        label: user.focus_label,
+        score: parsedFocusScore,
+        nextExercise: user.next_exercise
+      }
+    : null;
   const { emailContent, unsubscribeUrl } = personalizeLifecycleEmail(
-    buildDailyTipEmail(user.name, tip),
+    buildDailyTipEmailContent({ name: user.name, tip, focus }),
     user.email
   );
 
