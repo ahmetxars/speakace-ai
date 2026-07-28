@@ -174,6 +174,19 @@ describe("daily speaking tip personalization", () => {
     expect(email.html).not.toContain("Your latest feedback");
   });
 
+  it("uses an opaque tracked CTA when the sender provides one", () => {
+    const trackedUrl = "https://speakace.org/api/email/continue?token=opaque-token";
+    const email = buildDailyTipEmailContent({
+      name: "Learner",
+      tip: dailyTip,
+      ctaUrl: trackedUrl
+    });
+
+    expect(email.html).toContain(trackedUrl);
+    expect(email.text).toContain(trackedUrl);
+    expect(email.html).not.toContain("activation=email_daily_tip");
+  });
+
   it("escapes report text before inserting it into email HTML", () => {
     const email = buildDailyTipEmailContent({
       name: "<Learner>",

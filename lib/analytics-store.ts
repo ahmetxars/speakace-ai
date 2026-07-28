@@ -39,6 +39,7 @@ export type AnalyticsEventName =
   | "marketing_cta_click"
   | "pricing_cta_click"
   | "checkout_cta_click"
+  | "email_cta_click"
   | "signup_completed"
   | "first_score"
   | "return_practice";

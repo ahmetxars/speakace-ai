@@ -1,5 +1,6 @@
 import { sendEmail } from "@/lib/server/email";
 import { hasDatabaseUrl, getSql } from "@/lib/server/db";
+import { buildLifecycleEmailClickUrl } from "@/lib/server/lifecycle-email-link";
 import { generateUnsubscribeToken } from "@/lib/server/unsubscribe-token";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
@@ -1701,9 +1702,11 @@ export function buildDailyTipEmailContent(input: {
   name: string;
   tip: DailyTip;
   focus?: DailyTipFocus | null;
+  ctaUrl?: string;
 }) {
   const greeting = escapeEmailHtml(input.name.trim() || "there");
   const focus = input.focus;
+  const ctaUrl = input.ctaUrl?.trim() || DAILY_TIP_PRACTICE_URL;
   const safeFocusLabel = focus ? escapeEmailHtml(focus.label.trim().slice(0, 80)) : "";
   const safeNextExercise = focus ? escapeEmailHtml(focus.nextExercise.trim().slice(0, 500)) : "";
   const focusScore = focus && Number.isFinite(focus.score) ? focus.score.toFixed(1) : null;
@@ -1737,15 +1740,15 @@ export function buildDailyTipEmailContent(input: {
     <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">Open the ready-made prompt, complete one natural answer, and compare the result with your latest feedback.</p>
 
     <div style="margin:0 0 8px">
-      ${primaryBtn(DAILY_TIP_PRACTICE_URL, focus ? "Start my focused 5-minute answer &rarr;" : "Try it in SpeakAce &rarr;")}
+      ${primaryBtn(ctaUrl, focus ? "Start my focused 5-minute answer &rarr;" : "Try it in SpeakAce &rarr;")}
     </div>
   `);
   return {
     subject,
     html,
     text: focus
-      ? `Hi ${input.name.trim() || "there"}, your latest feedback points to ${focus.label} (${focusScore}) as today's focus.\n\nNext exercise: ${focus.nextExercise}\n\nToday's technique — ${input.tip.headline}: ${input.tip.body}\n\nExample: ${input.tip.example}\n\nStart your focused 5-minute answer: ${DAILY_TIP_PRACTICE_URL}`
-      : `Hi ${input.name.trim() || "there"}, today's IELTS speaking tip — ${input.tip.headline}.\n\n${input.tip.body}\n\nExample: ${input.tip.example}\n\nTry it in SpeakAce: ${DAILY_TIP_PRACTICE_URL}`
+      ? `Hi ${input.name.trim() || "there"}, your latest feedback points to ${focus.label} (${focusScore}) as today's focus.\n\nNext exercise: ${focus.nextExercise}\n\nToday's technique — ${input.tip.headline}: ${input.tip.body}\n\nExample: ${input.tip.example}\n\nStart your focused 5-minute answer: ${ctaUrl}`
+      : `Hi ${input.name.trim() || "there"}, today's IELTS speaking tip — ${input.tip.headline}.\n\n${input.tip.body}\n\nExample: ${input.tip.example}\n\nTry it in SpeakAce: ${ctaUrl}`
   };
 }
 
@@ -1854,8 +1857,12 @@ export async function sendDailyTipEmail(userId: string): Promise<{ ok: boolean; 
         nextExercise: user.next_exercise
       }
     : null;
+  const ctaUrl = buildLifecycleEmailClickUrl({
+    userId,
+    campaign: "daily_tip"
+  });
   const { emailContent, unsubscribeUrl } = personalizeLifecycleEmail(
-    buildDailyTipEmailContent({ name: user.name, tip, focus }),
+    buildDailyTipEmailContent({ name: user.name, tip, focus, ctaUrl }),
     user.email
   );
 
