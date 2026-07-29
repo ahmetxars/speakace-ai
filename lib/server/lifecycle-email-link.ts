@@ -22,7 +22,7 @@ const TOKEN_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 14;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
 
 const CAMPAIGN_DESTINATIONS: Record<LifecycleEmailCampaign, string> = {
-  daily_tip: "/app/practice?quickStart=1&runMode=interview&activation=email_daily_tip"
+  daily_tip: "/app/practice?quickStart=1&runMode=drill&activation=email_daily_tip"
 };
 
 function getEncryptionKey() {

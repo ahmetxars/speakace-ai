@@ -47,6 +47,7 @@ describe("lifecycle email redirect", () => {
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toContain("/app/practice?");
     expect(response.headers.get("location")).toContain("activation=email_daily_tip");
+    expect(response.headers.get("location")).toContain("runMode=drill");
     expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "user-123",

@@ -40,6 +40,8 @@ describe("lifecycle email links", () => {
       issuedAt: now.getTime()
     });
     expect(getLifecycleEmailDestination("daily_tip")).toContain("activation=email_daily_tip");
+    expect(getLifecycleEmailDestination("daily_tip")).toContain("runMode=drill");
+    expect(getLifecycleEmailDestination("daily_tip")).not.toContain("runMode=interview");
   });
 
   it("rejects tampered and expired tokens", () => {

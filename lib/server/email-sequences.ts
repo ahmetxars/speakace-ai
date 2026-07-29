@@ -7,7 +7,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
 const PRACTICE_URL = `${SITE_URL}/app/practice`;
 const FIRST_SCORE_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interview&activation=email_first_score`;
 const DAY_ONE_RETURN_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interview&activation=email_day_one_return`;
-const DAILY_TIP_PRACTICE_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=interview&activation=email_daily_tip`;
+const DAILY_TIP_PRACTICE_URL = `${SITE_URL}/app/practice?quickStart=1&runMode=drill&activation=email_daily_tip`;
 const PRICING_URL = `${SITE_URL}/pricing`;
 const BILLING_URL = `${SITE_URL}/app/billing`;
 const CHECKOUT_URL = `${SITE_URL}/api/payments/lemon/checkout?plan=plus&billing=annual&campaign=onboarding_email`;
@@ -231,12 +231,15 @@ export async function getEmailLifecycleBudgetStatus(): Promise<{
 
 // ─── Email layout helper ───────────────────────────────────────────────────────
 
-function layout(body: string): string {
+function layout(body: string, preheader = ""): string {
+  const safePreheader = escapeEmailHtml(preheader.trim().slice(0, 160));
+
   return `
     <!DOCTYPE html>
     <html lang="en">
     <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
     <body style="margin:0;padding:0;background:#fdf6f0">
+      ${safePreheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all">${safePreheader}</div>` : ""}
       <div style="background:#fdf6f0;padding:36px 16px 48px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif">
         <div style="max-width:560px;margin:0 auto">
 
@@ -1704,51 +1707,57 @@ export function buildDailyTipEmailContent(input: {
   focus?: DailyTipFocus | null;
   ctaUrl?: string;
 }) {
-  const greeting = escapeEmailHtml(input.name.trim() || "there");
+  const displayName = input.name.trim() || "there";
+  const greeting = escapeEmailHtml(displayName);
   const focus = input.focus;
   const ctaUrl = input.ctaUrl?.trim() || DAILY_TIP_PRACTICE_URL;
   const safeFocusLabel = focus ? escapeEmailHtml(focus.label.trim().slice(0, 80)) : "";
   const safeNextExercise = focus ? escapeEmailHtml(focus.nextExercise.trim().slice(0, 500)) : "";
+  const safeTipHeadline = escapeEmailHtml(input.tip.headline);
+  const safeTipBody = escapeEmailHtml(input.tip.body);
+  const safeTipExample = escapeEmailHtml(input.tip.example);
   const focusScore = focus && Number.isFinite(focus.score) ? focus.score.toFixed(1) : null;
   const focusBlock = focus && safeFocusLabel && safeNextExercise && focusScore
     ? `
-      <div style="background:#edf7f5;border:1px solid #c8e5df;border-radius:12px;padding:20px 24px;margin:0 0 24px">
-        <p style="margin:0 0 8px;font-size:0.8em;font-weight:700;color:#1d6f75;text-transform:uppercase;letter-spacing:0.06em">Your latest feedback</p>
+      <div style="background:#edf7f5;border:1px solid #c8e5df;border-radius:12px;padding:18px 20px;margin:0 0 20px">
+        <p style="margin:0 0 6px;font-size:0.78em;font-weight:700;color:#1d6f75;text-transform:uppercase;letter-spacing:0.06em">Your score to beat</p>
         <p style="margin:0 0 8px;color:#173f42;font-size:1.05em;font-weight:800">${safeFocusLabel} · ${focusScore}</p>
-        <p style="margin:0;color:#315f61;font-size:0.93em;line-height:1.7">${safeNextExercise}</p>
+        <p style="margin:0;color:#315f61;font-size:0.92em;line-height:1.6">${safeNextExercise}</p>
       </div>
     `
     : "";
   const subject = focus && safeFocusLabel
-    ? `${focus.label.trim().slice(0, 60)}: your next 5-minute speaking focus`
-    : input.tip.subject;
+    ? `${focus.label.trim().slice(0, 54)}: one 60-second retry`
+    : "Your free speaking score takes one answer";
+  const preheader = focus && safeFocusLabel
+    ? `Beat your ${focus.label.trim().slice(0, 70)} score with one short answer.`
+    : `Try ${input.tip.headline.toLowerCase()} in one short answer.`;
   const html = layout(`
-    <p style="margin:0 0 6px;color:#d95d39;font-size:0.82em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em">Daily Speaking Tip</p>
-    <h1 style="margin:0 0 24px;font-size:1.4em;color:#1b120d;font-weight:800;line-height:1.3">${focus && safeFocusLabel ? `Your next score lever: ${safeFocusLabel}` : input.tip.headline}</h1>
+    <p style="margin:0 0 6px;color:#d95d39;font-size:0.82em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em">Today's 60-second challenge</p>
+    <h1 style="margin:0 0 22px;font-size:1.55em;color:#1b120d;font-weight:800;line-height:1.25">${focus && safeFocusLabel ? `Beat your ${safeFocusLabel} score with one answer.` : "Get your first speaking score in one answer."}</h1>
 
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">Hi ${greeting},</p>
-    <p style="color:#3a2218;line-height:1.75;margin:0 0 20px">${focus && safeFocusLabel ? `Your latest SpeakAce feedback points to <strong>${safeFocusLabel}</strong> as the clearest place to improve today. Use the focused exercise below, then apply today&apos;s technique in one answer.` : input.tip.body}</p>
+    <p style="color:#3a2218;line-height:1.65;margin:0 0 16px">Hi ${greeting},</p>
+    <p style="color:#3a2218;line-height:1.65;margin:0 0 20px">${focus && safeFocusLabel ? "No full mock test today. Use the feedback below once in a short answer and see whether your score moves." : "You do not need a full mock test. Answer one prompt for about 60 seconds and SpeakAce will show you what to improve next."}</p>
 
     ${focusBlock}
 
-    ${highlight(`
-      <strong style="display:block;margin-bottom:8px;color:#d95d39">Today's technique: ${input.tip.headline}</strong>
-      <span style="display:block;margin-bottom:8px">${input.tip.body}</span>
-      <span style="display:block;font-style:italic">${input.tip.example}</span>
-    `)}
-
-    <p style="color:#3a2218;line-height:1.75;margin:20px 0 28px">Open the ready-made prompt, complete one natural answer, and compare the result with your latest feedback.</p>
+    <div style="background:#fff3ec;border-left:4px solid #d95d39;border-radius:0 10px 10px 0;padding:16px 18px;margin:0 0 24px;color:#4a2c1a;font-size:0.93em;line-height:1.6">
+      <strong style="display:block;margin-bottom:6px;color:#d95d39">${safeTipHeadline}</strong>
+      <span style="display:block;margin-bottom:8px">${safeTipBody}</span>
+      <span style="display:block;font-style:italic">${safeTipExample}</span>
+    </div>
 
     <div style="margin:0 0 8px">
-      ${primaryBtn(ctaUrl, focus ? "Start my focused 5-minute answer &rarr;" : "Try it in SpeakAce &rarr;")}
+      ${primaryBtn(ctaUrl, focus ? "Start my 60-second retry &rarr;" : "Get my first free score &rarr;")}
     </div>
-  `);
+    <p style="margin:12px 0 0;color:#8b7468;font-size:0.8em;line-height:1.5">No preparation needed. This opens directly in practice.</p>
+  `, preheader);
   return {
     subject,
     html,
     text: focus
-      ? `Hi ${input.name.trim() || "there"}, your latest feedback points to ${focus.label} (${focusScore}) as today's focus.\n\nNext exercise: ${focus.nextExercise}\n\nToday's technique — ${input.tip.headline}: ${input.tip.body}\n\nExample: ${input.tip.example}\n\nStart your focused 5-minute answer: ${ctaUrl}`
-      : `Hi ${input.name.trim() || "there"}, today's IELTS speaking tip — ${input.tip.headline}.\n\n${input.tip.body}\n\nExample: ${input.tip.example}\n\nTry it in SpeakAce: ${ctaUrl}`
+      ? `Hi ${displayName}, beat your ${focus.label} score (${focusScore}) with one short answer.\n\nYour next exercise: ${focus.nextExercise}\n\nToday's technique — ${input.tip.headline}: ${input.tip.body}\n\nExample: ${input.tip.example}\n\nStart your 60-second retry: ${ctaUrl}`
+      : `Hi ${displayName}, get your first speaking score with one short answer.\n\nToday's technique — ${input.tip.headline}: ${input.tip.body}\n\nExample: ${input.tip.example}\n\nGet your first free score: ${ctaUrl}`
   };
 }
 

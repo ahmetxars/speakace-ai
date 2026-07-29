@@ -143,7 +143,7 @@ describe("email quota protection", () => {
 });
 
 describe("daily speaking tip personalization", () => {
-  it("turns the latest weak category into a focused five-minute return", () => {
+  it("turns the latest weak category into a focused sixty-second return", () => {
     const email = buildDailyTipEmailContent({
       name: "Learner",
       tip: dailyTip,
@@ -155,23 +155,28 @@ describe("daily speaking tip personalization", () => {
     });
 
     expect(email.subject).toContain("Fluency and Coherence");
-    expect(email.html).toContain("Your latest feedback");
+    expect(email.subject).toContain("one 60-second retry");
+    expect(email.html).toContain("Your score to beat");
     expect(email.html).toContain("Fluency and Coherence · 5.5");
     expect(email.html).toContain("Retry one Part 2 answer with fewer filler words.");
     expect(email.html).toContain("activation=email_daily_tip");
+    expect(email.html).toContain("runMode=drill");
+    expect(email.html).not.toContain("runMode=interview");
+    expect(email.html).toContain("Start my 60-second retry");
+    expect(email.html).toContain("display:none");
     expect(email.html).not.toContain("api/payments/lemon/checkout");
   });
 
-  it("keeps the generic tip for learners without a scored session", () => {
+  it("offers a single free score to learners without a scored session", () => {
     const email = buildDailyTipEmailContent({
       name: "Learner",
       tip: dailyTip
     });
 
-    expect(email.subject).toBe(dailyTip.subject);
+    expect(email.subject).toBe("Your free speaking score takes one answer");
     expect(email.html).toContain(dailyTip.headline);
-    expect(email.html).toContain("Try it in SpeakAce");
-    expect(email.html).not.toContain("Your latest feedback");
+    expect(email.html).toContain("Get my first free score");
+    expect(email.html).not.toContain("Your score to beat");
   });
 
   it("uses an opaque tracked CTA when the sender provides one", () => {
