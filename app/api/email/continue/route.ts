@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   const token = new URL(request.url).searchParams.get("token") ?? "";
   const payload = verifyLifecycleEmailToken(token);
   const verifiedNavigation = Boolean(payload && isVerifiedEmailNavigation(request));
-  const destination = payload && verifiedNavigation
+  const destination = payload
     ? getLifecycleEmailDestination(payload.campaign)
     : "/app/practice";
 

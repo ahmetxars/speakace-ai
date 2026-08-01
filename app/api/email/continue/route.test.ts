@@ -60,7 +60,7 @@ describe("lifecycle email redirect", () => {
     );
   });
 
-  it("redirects security scanners without counting a click", async () => {
+  it("preserves the attributed challenge for scanners without counting a click", async () => {
     const token = generateLifecycleEmailToken({
       userId: "user-123",
       campaign: "daily_tip"
@@ -76,7 +76,28 @@ describe("lifecycle email redirect", () => {
     );
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://speakace.org/app/practice");
+    expect(response.headers.get("location")).toContain("activation=email_daily_tip");
+    expect(response.headers.get("location")).toContain("runMode=drill");
+    expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
+  });
+
+  it("preserves quick start when an email browser omits Sec-Fetch-User", async () => {
+    const token = generateLifecycleEmailToken({
+      userId: "user-123",
+      campaign: "daily_tip"
+    });
+    const response = await GET(
+      new Request(`https://speakace.org/api/email/continue?token=${token}`, {
+        headers: {
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-dest": "document"
+        }
+      })
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toContain("activation=email_daily_tip");
+    expect(response.headers.get("location")).toContain("quickStart=1");
     expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
   });
 
