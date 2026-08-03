@@ -99,7 +99,7 @@ describe("Lemon checkout redirect", () => {
     );
   });
 
-  it("records anonymous checkout intent with a privacy-safe visitor id", async () => {
+  it("preserves anonymous checkout intent while requiring an account", async () => {
     mocks.getAuthenticatedUser.mockResolvedValue(null);
 
     const response = await GET(
@@ -108,9 +108,17 @@ describe("Lemon checkout redirect", () => {
       )
     );
 
-    const checkoutUrl = new URL(response.headers.get("location") ?? "");
+    const authUrl = new URL(response.headers.get("location") ?? "");
     expect(response.status).toBe(307);
-    expect(checkoutUrl.searchParams.get("checkout[custom][visitor_id]")).toBe("visitor-1234567890");
+    expect(authUrl.pathname).toBe("/auth");
+    expect(authUrl.searchParams.get("mode")).toBe("signup");
+    expect(authUrl.searchParams.get("intent")).toBe("checkout");
+    const next = new URL(authUrl.searchParams.get("next") ?? "", "https://speakace.org");
+    expect(next.pathname).toBe("/api/payments/lemon/checkout");
+    expect(next.searchParams.get("plan")).toBe("plus");
+    expect(next.searchParams.get("billing")).toBe("weekly");
+    expect(next.searchParams.get("cta")).toBe("/pricing/plus/weekly");
+    expect(next.searchParams.get("checkout_id")).toMatch(/^[0-9a-f-]{36}$/i);
     expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: undefined,
@@ -121,6 +129,23 @@ describe("Lemon checkout redirect", () => {
         plan: "plus",
         occurredAt: expect.any(String)
       })
+    );
+  });
+
+  it("reuses the checkout id after authentication for purchase deduplication", async () => {
+    const checkoutId = "0f4c0fe4-7760-4ced-a724-ecb5de2ea4d7";
+    const response = await GET(
+      checkoutNavigationRequest(
+        `https://speakace.org/api/payments/lemon/checkout?plan=plus&checkout_id=${checkoutId}`
+      )
+    );
+
+    const checkoutUrl = new URL(response.headers.get("location") ?? "");
+    expect(checkoutUrl.searchParams.get("checkout[custom][checkout_id]")).toBe(checkoutId);
+    expect(checkoutUrl.searchParams.get("checkout[custom][user_id]")).toBe("user-1");
+    expect(checkoutUrl.searchParams.get("checkout[email]")).toBe("learner@example.com");
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: checkoutId })
     );
   });
 

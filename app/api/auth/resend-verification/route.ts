@@ -3,6 +3,7 @@ import { createEmailVerificationFlow } from "@/lib/server/auth";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
 import { getPrivacySafeAnalyticsId } from "@/lib/server/analytics-identity";
+import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -31,7 +32,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await createEmailVerificationFlow(email);
+    const result = await createEmailVerificationFlow(
+      email,
+      resolveSafeAppRedirect(typeof body.next === "string" ? body.next : null)
+    );
     posthog.capture({
       distinctId: analyticsId,
       event: "email_verification_requested",

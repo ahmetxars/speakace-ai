@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { compare, hash } from "bcryptjs";
 import { cookies } from "next/headers";
 import { isAdminEmail, withAdminPrivileges } from "@/lib/admin";
+import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
 import { createMemberProfile } from "@/lib/membership";
 import { buildInviteReferralCode, getInviteReferrer } from "@/lib/referrals";
 import { recordAuthActivity, validateReferralCode } from "@/lib/server/admin-panel";
@@ -652,7 +653,7 @@ async function getUnverifiedUserByEmail(email: string) {
   return withAdminPrivileges(profile);
 }
 
-export async function createEmailVerificationFlow(email: string) {
+export async function createEmailVerificationFlow(email: string, nextPath?: string | null) {
   const user = await getUnverifiedUserByEmail(email);
   if (!user) {
     return { ok: true as const };
@@ -664,7 +665,12 @@ export async function createEmailVerificationFlow(email: string) {
     ttlMs: VERIFY_TOKEN_TTL_MS
   });
 
-  const verificationUrl = buildAppUrl(`/auth?verify=${token}`);
+  const verificationParams = new URLSearchParams({ verify: token });
+  const safeNextPath = resolveSafeAppRedirect(nextPath);
+  if (safeNextPath) {
+    verificationParams.set("next", safeNextPath);
+  }
+  const verificationUrl = buildAppUrl(`/auth?${verificationParams.toString()}`);
   const transportAvailable = hasEmailTransport();
   let emailSent = false;
   let deliveryUnavailable = !transportAvailable;

@@ -15,6 +15,7 @@ import { isAdminEmail } from "@/lib/admin";
 import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { getPrivacySafeAnalyticsId } from "@/lib/server/analytics-identity";
+import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -100,7 +101,10 @@ export async function POST(request: Request) {
     posthog.identify({ distinctId: profile.id, properties: { member_type: profile.memberType } });
     posthog.capture({ distinctId: profile.id, event: "user_signed_up", properties: { member_type: profile.memberType, has_referral_code: Boolean(body.referralCode), has_class_code: Boolean(body.classCode) } });
 
-    const verification = await createEmailVerificationFlow(profile.email);
+    const verification = await createEmailVerificationFlow(
+      profile.email,
+      resolveSafeAppRedirect(typeof body.next === "string" ? body.next : null)
+    );
     cookieStore.set(getSessionCookieName(), "", getSessionCookieOptions(new Date(0)));
     return NextResponse.json({
       profile,

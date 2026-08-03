@@ -41,6 +41,83 @@ function buildCheckoutAnalyticsSource(campaign?: string) {
   return `verified_navigation:${safeCampaign || "direct"}`;
 }
 
+function normalizeCheckoutId(value: string | null) {
+  const normalized = value?.trim() ?? "";
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalized)
+    ? normalized
+    : null;
+}
+
+function normalizeCheckoutParam(value: string | null, maxLength: number) {
+  const normalized = value?.trim() ?? "";
+  return normalized ? normalized.slice(0, maxLength) : undefined;
+}
+
+function buildCheckoutResumePath(input: {
+  plan: "plus" | "pro" | "lifetime";
+  billing: CheckoutBillingInterval;
+  coupon?: string;
+  campaign?: string;
+  ctaPath?: string;
+  ctaEvent?: string;
+  checkoutId: string;
+}) {
+  const params = new URLSearchParams({
+    plan: input.plan,
+    billing: input.billing,
+    checkout_id: input.checkoutId
+  });
+  if (input.coupon) params.set("coupon", input.coupon);
+  if (input.campaign) params.set("campaign", input.campaign);
+  if (input.ctaPath) params.set("cta", input.ctaPath);
+  if (input.ctaEvent) params.set("cta_event", input.ctaEvent);
+  return `/api/payments/lemon/checkout?${params.toString()}`;
+}
+
+function applyCheckoutCookies(input: {
+  response: NextResponse;
+  existingVisitorId: string | null;
+  visitorId: string;
+  ctaPath?: string;
+  ctaEvent?: string;
+  campaign?: string;
+  rawPlan: string | null;
+  plan: "plus" | "pro" | "lifetime";
+  billing: CheckoutBillingInterval;
+  checkoutId: string;
+}) {
+  if (!input.existingVisitorId) {
+    input.response.cookies.set(ANALYTICS_VISITOR_COOKIE, input.visitorId, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.APP_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 180
+    });
+  }
+  if (input.ctaPath || input.campaign || input.rawPlan) {
+    input.response.cookies.set(
+      "speakace_checkout_attribution",
+      JSON.stringify({
+        ctaPath: input.ctaPath ?? null,
+        ctaEvent: input.ctaEvent ?? null,
+        campaign: input.campaign ?? null,
+        plan: input.plan,
+        billing: input.billing,
+        checkoutId: input.checkoutId
+      }),
+      {
+        httpOnly: false,
+        sameSite: "lax",
+        secure: process.env.APP_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 6
+      }
+    );
+  }
+  return input.response;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const rawPlan = searchParams.get("plan");
@@ -48,11 +125,11 @@ export async function GET(request: Request) {
   const rawBilling = searchParams.get("billing");
   const billing: CheckoutBillingInterval =
     rawBilling === "annual" ? "annual" : plan === "pro" ? "monthly" : "weekly";
-  const coupon = searchParams.get("coupon") ?? undefined;
-  const campaign = searchParams.get("campaign") ?? undefined;
-  const ctaPath = searchParams.get("cta") ?? undefined;
-  const ctaEvent = searchParams.get("cta_event") ?? undefined;
-  const checkoutId = crypto.randomUUID();
+  const coupon = normalizeCheckoutParam(searchParams.get("coupon"), 80);
+  const campaign = normalizeCheckoutParam(searchParams.get("campaign"), 80);
+  const ctaPath = normalizeCheckoutParam(searchParams.get("cta"), 240);
+  const ctaEvent = normalizeCheckoutParam(searchParams.get("cta_event"), 80);
+  const checkoutId = normalizeCheckoutId(searchParams.get("checkout_id")) ?? crypto.randomUUID();
   const cookieStore = await cookies();
   const token = cookieStore.get(getSessionCookieName())?.value;
   const profile = await getAuthenticatedUser(token);
@@ -78,54 +155,65 @@ export async function GET(request: Request) {
     }
   }
 
+  if (!profile) {
+    const resumePath = buildCheckoutResumePath({
+      plan,
+      billing,
+      coupon,
+      campaign,
+      ctaPath,
+      ctaEvent,
+      checkoutId
+    });
+    const authParams = new URLSearchParams({
+      mode: "signup",
+      intent: "checkout",
+      next: resumePath
+    });
+    if (ctaPath) authParams.set("cta", ctaPath);
+    if (ctaEvent) authParams.set("cta_event", ctaEvent);
+    const response = NextResponse.redirect(new URL(`/auth?${authParams.toString()}`, request.url));
+    return applyCheckoutCookies({
+      response,
+      existingVisitorId,
+      visitorId,
+      ctaPath,
+      ctaEvent,
+      campaign,
+      rawPlan,
+      plan,
+      billing,
+      checkoutId
+    });
+  }
+
   const checkoutUrl = buildLemonCheckoutUrl(
-    profile
-      ? {
-          plan,
-          billing,
-          email: profile.email,
-          name: profile.name,
-          userId: profile.id,
-          coupon,
-          campaign,
-          ctaPath,
-          ctaEvent,
-          checkoutId,
-          visitorId
-        }
-      : { plan, billing, coupon, campaign, ctaPath, ctaEvent, checkoutId, visitorId }
+    {
+      plan,
+      billing,
+      email: profile.email,
+      name: profile.name,
+      userId: profile.id,
+      coupon,
+      campaign,
+      ctaPath,
+      ctaEvent,
+      checkoutId,
+      visitorId
+    }
   );
 
   const response = NextResponse.redirect(checkoutUrl || commerceConfig.plusMonthlyCheckout);
-  if (!existingVisitorId) {
-    response.cookies.set(ANALYTICS_VISITOR_COOKIE, visitorId, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.APP_ENV === "production",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 180
-    });
-  }
-  if (ctaPath || campaign || rawPlan) {
-    response.cookies.set(
-      "speakace_checkout_attribution",
-      JSON.stringify({
-        ctaPath: ctaPath ?? null,
-        ctaEvent: ctaEvent ?? null,
-        campaign: campaign ?? null,
-        plan,
-        billing,
-        checkoutId
-      }),
-      {
-        httpOnly: false,
-        sameSite: "lax",
-        secure: process.env.APP_ENV === "production",
-        path: "/",
-        maxAge: 60 * 60 * 6
-      }
-    );
-  }
-
-  return response;
+  return applyCheckoutCookies({
+    response,
+    existingVisitorId,
+    visitorId,
+    ctaPath,
+    ctaEvent,
+    campaign,
+    rawPlan,
+    plan,
+    billing,
+    checkoutId
+  });
 }

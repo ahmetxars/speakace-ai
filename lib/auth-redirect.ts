@@ -6,7 +6,9 @@ export function resolveSafeAppRedirect(value: string | null | undefined) {
   try {
     const url = new URL(value, "https://speakace.org");
     if (url.origin !== "https://speakace.org") return null;
-    if (url.pathname !== "/app" && !url.pathname.startsWith("/app/")) return null;
+    const isAppPath = url.pathname === "/app" || url.pathname.startsWith("/app/");
+    const isCheckoutPath = url.pathname === "/api/payments/lemon/checkout";
+    if (!isAppPath && !isCheckoutPath) return null;
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return null;

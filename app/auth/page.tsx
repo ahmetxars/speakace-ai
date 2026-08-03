@@ -76,6 +76,44 @@ const authUi: Record<PublicLanguage, AuthUi> = {
   }
 };
 
+const checkoutIntentUi: Record<PublicLanguage, {
+  signupTitle: string;
+  signinTitle: string;
+  signupBody: string;
+  signinBody: string;
+}> = {
+  en: {
+    signupTitle: "Create your account to continue.",
+    signinTitle: "Sign in to continue.",
+    signupBody: "Your offer is saved. After email verification, we will return you to checkout with this account attached.",
+    signinBody: "Your offer is saved. Sign in and we will take you straight back to secure checkout."
+  },
+  tr: {
+    signupTitle: "Devam etmek için hesabını oluştur.",
+    signinTitle: "Devam etmek için giriş yap.",
+    signupBody: "Teklifin kaydedildi. E-posta doğrulamasından sonra bu hesaba bağlı ödeme ekranına döneceksin.",
+    signinBody: "Teklifin kaydedildi. Giriş yaptıktan sonra doğrudan güvenli ödeme ekranına döneceksin."
+  },
+  de: {
+    signupTitle: "Erstelle dein Konto, um fortzufahren.",
+    signinTitle: "Melde dich an, um fortzufahren.",
+    signupBody: "Dein Angebot ist gespeichert. Nach der E-Mail-Bestätigung kehrst du mit diesem Konto zum Checkout zurück.",
+    signinBody: "Dein Angebot ist gespeichert. Nach der Anmeldung geht es direkt zurück zum sicheren Checkout."
+  },
+  es: {
+    signupTitle: "Crea tu cuenta para continuar.",
+    signinTitle: "Inicia sesión para continuar.",
+    signupBody: "Tu oferta está guardada. Tras verificar el email, volverás al pago con esta cuenta vinculada.",
+    signinBody: "Tu oferta está guardada. Al iniciar sesión, volverás directamente al pago seguro."
+  },
+  fr: {
+    signupTitle: "Crée ton compte pour continuer.",
+    signinTitle: "Connecte-toi pour continuer.",
+    signupBody: "Ton offre est enregistrée. Après la vérification de l'e-mail, tu reviendras au paiement avec ce compte associé.",
+    signinBody: "Ton offre est enregistrée. Après connexion, tu reviendras directement au paiement sécurisé."
+  }
+};
+
 export default function AuthPage() {
   return (
     <Suspense fallback={null}>
@@ -88,7 +126,12 @@ function AuthPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { refreshSession, language } = useAppState();
-  const ui = authUi[normalizePublicLanguage(language)];
+  const publicLanguage = normalizePublicLanguage(language);
+  const ui = authUi[publicLanguage];
+  const checkoutUi = checkoutIntentUi[publicLanguage];
+  const safeNext = resolveSafeAppRedirect(searchParams.get("next"));
+  const isCheckoutIntent = searchParams.get("intent") === "checkout"
+    && safeNext?.startsWith("/api/payments/lemon/checkout") === true;
   const tr = language === "tr";
   const authError = searchParams.get("error");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -153,6 +196,7 @@ function AuthPageInner() {
         organizationName,
         referralCode,
         inviteReferrerId,
+        next: safeNext,
         attributionPath: effectiveAttributionPath,
         attributionEvent: searchParams.get("cta_event") ?? null
       })
@@ -234,7 +278,11 @@ function AuthPageInner() {
       posthog.capture("user_signed_in");
     }
     await refreshSession();
-    const requestedNext = mode === "signin" ? resolveSafeAppRedirect(searchParams.get("next")) : null;
+    const requestedNext = resolveSafeAppRedirect(searchParams.get("next"));
+    if (requestedNext?.startsWith("/api/payments/lemon/checkout")) {
+      window.location.assign(requestedNext);
+      return;
+    }
     router.push((requestedNext ?? (mode === "signup" && memberType === "student" ? "/app/onboarding" : "/app")) as Route);
   };
 
@@ -257,14 +305,20 @@ function AuthPageInner() {
         if (data.authenticated) {
           await refreshSession();
           posthog.capture("signup_activated", { source: "email_verification" });
-          router.replace("/app/practice?quickStart=1&runMode=interview&activation=verified_signup");
+          if (safeNext?.startsWith("/api/payments/lemon/checkout")) {
+            window.location.replace(safeNext);
+            return;
+          }
+          router.replace(
+            (safeNext ?? "/app/practice?quickStart=1&runMode=interview&activation=verified_signup") as Route
+          );
           return;
         }
         setSuccessToast(tr ? "E-posta adresin doğrulandı. Artık giriş yapabilirsin." : "Your email address has been verified. You can now sign in.");
         setMode("signin");
       })
       .finally(() => setVerifying(false));
-  }, [handledVerifyToken, refreshSession, router, searchParams, tr, verifying]);
+  }, [handledVerifyToken, refreshSession, router, safeNext, searchParams, tr, verifying]);
 
   const resendVerification = async () => {
     if (!email || resendingVerification) return;
@@ -274,7 +328,10 @@ function AuthPageInner() {
       const response = await fetch("/api/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({
+          email,
+          next: safeNext
+        })
       });
       const data = (await response.json()) as { error?: string; emailSent?: boolean };
       if (!response.ok) {
@@ -328,7 +385,6 @@ function AuthPageInner() {
   const resetToken = searchParams.get("reset");
   const isResetMode = Boolean(resetToken);
   const isSignup = !isResetMode && mode === "signup";
-  const safeNext = resolveSafeAppRedirect(searchParams.get("next"));
   const googleParams = new URLSearchParams();
   googleParams.set("mode", mode);
   if (safeNext) {
@@ -393,9 +449,19 @@ function AuthPageInner() {
       <div className="auth-entry-frame">
         <section className="auth-entry-story">
           <span className="auth-entry-chip"><LockKeyhole size={14} />{ui.secure}</span>
-          <h1>{isResetMode ? ui.resetTitle : isSignup ? ui.signupTitle : ui.signinTitle}</h1>
+          <h1>
+            {isResetMode
+              ? ui.resetTitle
+              : isCheckoutIntent
+                ? isSignup ? checkoutUi.signupTitle : checkoutUi.signinTitle
+                : isSignup ? ui.signupTitle : ui.signinTitle}
+          </h1>
           <p className="auth-entry-story-copy">
-            {isResetMode ? ui.resetBody : isSignup ? ui.signupBody : ui.signinBody}
+            {isResetMode
+              ? ui.resetBody
+              : isCheckoutIntent
+                ? isSignup ? checkoutUi.signupBody : checkoutUi.signinBody
+                : isSignup ? ui.signupBody : ui.signinBody}
           </p>
 
           <div className="auth-entry-benefits">
