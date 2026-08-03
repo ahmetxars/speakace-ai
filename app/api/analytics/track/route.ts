@@ -44,6 +44,7 @@ const ALLOWED_EVENTS = new Set<AnalyticsEventName>([
   "teacher_note_saved",
   "institution_admin_view",
   "analytics_dashboard_view",
+  "lead_magnet_requested",
   "marketing_cta_click",
   "pricing_cta_click",
   "checkout_cta_click",

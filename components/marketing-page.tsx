@@ -1372,15 +1372,15 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                 Free test
               </TrackedLink>
               <TrackedLink
-                href="/blog"
+                href="/guides/ielts-speaking-band-6-to-7"
                 userId={currentUser?.id}
                 analyticsEvent="marketing_cta_click"
-                analyticsPath="/#inline-promo-guides"
+                analyticsPath="/#inline-promo-band-7-guide"
                 gaEvent="select_content"
-                gaParams={{ content_type: "cta", item_id: "inline_promo_guides", destination: "/blog" }}
+                gaParams={{ content_type: "cta", item_id: "inline_promo_band_7_guide", destination: "/guides/ielts-speaking-band-6-to-7" }}
                 style={{ display: "inline-flex", alignItems: "center", padding: "0.75rem 1.5rem", fontSize: "0.9375rem", fontWeight: 600, color: "var(--foreground)", background: "oklch(1 0 0 / 8%)", border: "1px solid oklch(1 0 0 / 12%)", borderRadius: "10px", textDecoration: "none" }}
               >
-                Read guides →
+                Band 7 retry guide →
               </TrackedLink>
             </div>
           </motion.div>

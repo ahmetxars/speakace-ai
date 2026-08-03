@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   buildCheckoutRecoveryEmailContent,
   buildDailyTipEmailContent,
@@ -6,6 +6,13 @@ import {
   buildOnboardingEmailContent,
   isEmailQuotaFailureRecovered,
   ONBOARDING_EMAIL_SCHEDULE,
+  EMAIL_RESERVATION_RETRY_AFTER_MS,
+  EMAIL_RESERVATION_RETRY_CUTOFF_MS,
+  completeEmailLifecycleReservation,
+  personalizeLifecycleEmail,
+  releaseEmailLifecycleReservation,
+  reserveEmailLifecycleSend,
+  resetEmailLifecycleReservationMemoryStoreForTests,
   resolveEmailLifecycleDailyBudget,
   resolveEmailQuotaKind,
   resolvePracticeLimitRecoveryReason,
@@ -115,6 +122,39 @@ describe("onboarding lifecycle segmentation", () => {
     expect(dayFortyFive?.html).not.toContain("real story");
     expect(dayFortyFive?.html).not.toContain("SpeakAce user");
   });
+
+  it("includes the legal sender identity and opt-out in HTML and plain text", () => {
+    const previous = {
+      legalName: process.env.COMPANY_LEGAL_NAME,
+      postalAddress: process.env.COMPANY_POSTAL_ADDRESS,
+      unsubscribeSecret: process.env.UNSUBSCRIBE_SECRET
+    };
+    process.env.COMPANY_LEGAL_NAME = "SpeakAce Example & Co";
+    process.env.COMPANY_POSTAL_ADDRESS = "Example Street 1, Amsterdam";
+    process.env.UNSUBSCRIBE_SECRET = "lifecycle-compliance-test-secret";
+
+    try {
+      const content = buildOnboardingEmailContent({
+        name: "Learner",
+        emailNumber: 4,
+        speakingSessionCount: 1
+      });
+      expect(content).not.toBeNull();
+      const personalized = personalizeLifecycleEmail(content!, "learner@example.test");
+
+      expect(personalized.emailContent.html).toContain("Commercial practice email from SpeakAce Example &amp; Co");
+      expect(personalized.emailContent.html).toContain("Example Street 1, Amsterdam");
+      expect(personalized.emailContent.text).toContain("Commercial practice email from SpeakAce Example & Co, Example Street 1, Amsterdam.");
+      expect(personalized.emailContent.text).toContain("Unsubscribe: https://speakace.org/unsubscribe?");
+    } finally {
+      if (previous.legalName === undefined) delete process.env.COMPANY_LEGAL_NAME;
+      else process.env.COMPANY_LEGAL_NAME = previous.legalName;
+      if (previous.postalAddress === undefined) delete process.env.COMPANY_POSTAL_ADDRESS;
+      else process.env.COMPANY_POSTAL_ADDRESS = previous.postalAddress;
+      if (previous.unsubscribeSecret === undefined) delete process.env.UNSUBSCRIBE_SECRET;
+      else process.env.UNSUBSCRIBE_SECRET = previous.unsubscribeSecret;
+    }
+  });
 });
 
 describe("email quota protection", () => {
@@ -139,6 +179,91 @@ describe("email quota protection", () => {
     expect(isEmailQuotaFailureRecovered(failureAt, "2026-07-23T05:00:00.000Z")).toBe(true);
     expect(isEmailQuotaFailureRecovered(failureAt, "2026-07-23T04:00:00.000Z")).toBe(false);
     expect(isEmailQuotaFailureRecovered(failureAt, null)).toBe(false);
+  });
+});
+
+describe("email quota reservations", () => {
+  const originalDatabaseUrl = process.env.DATABASE_URL;
+  const originalBudget = process.env.EMAIL_LIFECYCLE_DAILY_BUDGET;
+
+  beforeEach(() => {
+    delete process.env.DATABASE_URL;
+    process.env.EMAIL_LIFECYCLE_DAILY_BUDGET = "1";
+    resetEmailLifecycleReservationMemoryStoreForTests();
+  });
+
+  afterEach(() => {
+    if (originalDatabaseUrl === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = originalDatabaseUrl;
+    if (originalBudget === undefined) delete process.env.EMAIL_LIFECYCLE_DAILY_BUDGET;
+    else process.env.EMAIL_LIFECYCLE_DAILY_BUDGET = originalBudget;
+    resetEmailLifecycleReservationMemoryStoreForTests();
+  });
+
+  it("deduplicates in-flight and sent messages while enforcing the daily budget", async () => {
+    await expect(reserveEmailLifecycleSend("message-a")).resolves.toEqual({
+      reserved: true,
+      reason: "reserved"
+    });
+    await expect(reserveEmailLifecycleSend("message-a")).resolves.toEqual({
+      reserved: false,
+      reason: "in_flight"
+    });
+    await expect(reserveEmailLifecycleSend("message-b")).resolves.toEqual({
+      reserved: false,
+      reason: "budget_exhausted"
+    });
+
+    await releaseEmailLifecycleReservation("message-a");
+    await expect(reserveEmailLifecycleSend("message-b")).resolves.toEqual({
+      reserved: true,
+      reason: "reserved"
+    });
+    await completeEmailLifecycleReservation("message-b");
+    await expect(reserveEmailLifecycleSend("message-b")).resolves.toEqual({
+      reserved: false,
+      reason: "already_sent"
+    });
+  });
+
+  it("retries an ambiguous reservation inside the provider idempotency window", async () => {
+    const startedAt = new Date("2026-08-03T08:00:00.000Z");
+    await expect(reserveEmailLifecycleSend("ambiguous-message", startedAt)).resolves.toEqual({
+      reserved: true,
+      reason: "reserved"
+    });
+    await expect(reserveEmailLifecycleSend(
+      "ambiguous-message",
+      new Date(startedAt.getTime() + EMAIL_RESERVATION_RETRY_AFTER_MS - 1)
+    )).resolves.toEqual({ reserved: false, reason: "in_flight" });
+    await expect(reserveEmailLifecycleSend(
+      "ambiguous-message",
+      new Date(startedAt.getTime() + EMAIL_RESERVATION_RETRY_AFTER_MS)
+    )).resolves.toEqual({ reserved: true, reason: "retry" });
+    await expect(reserveEmailLifecycleSend(
+      "ambiguous-message",
+      new Date(startedAt.getTime() + EMAIL_RESERVATION_RETRY_CUTOFF_MS)
+    )).resolves.toEqual({ reserved: false, reason: "in_flight" });
+  });
+
+  it("charges a cross-day retry against the new day's atomic budget", async () => {
+    const firstAttempt = new Date("2026-08-03T23:50:00.000Z");
+    const retryAttempt = new Date("2026-08-04T00:10:00.000Z");
+    await expect(reserveEmailLifecycleSend("cross-day-message", firstAttempt)).resolves.toEqual({
+      reserved: true,
+      reason: "reserved"
+    });
+    await expect(reserveEmailLifecycleSend("cross-day-message", retryAttempt)).resolves.toEqual({
+      reserved: true,
+      reason: "retry"
+    });
+    await expect(reserveEmailLifecycleSend(
+      "new-message-on-retry-day",
+      new Date("2026-08-04T00:11:00.000Z")
+    )).resolves.toEqual({
+      reserved: false,
+      reason: "budget_exhausted"
+    });
   });
 });
 

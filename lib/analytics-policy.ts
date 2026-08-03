@@ -4,6 +4,7 @@ export const ANALYTICS_VISITOR_COOKIE = "speakace_visitor_id";
 
 const ANONYMOUS_ANALYTICS_EVENTS = new Set<AnalyticsEventName>([
   "page_view",
+  "lead_magnet_requested",
   "pricing_view",
   "pricing_plus_click",
   "marketing_cta_click",

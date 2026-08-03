@@ -25,8 +25,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/case-studies",
     "/weekly-ielts-speaking-challenge",
     "/ielts-speaking-sample-answers",
+    "/guides/ielts-speaking-band-6-to-7",
     "/tools",
     "/tools/ielts-band-score-calculator",
+    "/tools/ielts-speaking-band-score-calculator",
     "/tools/ielts-cue-card-generator",
     "/ielts-speaking-ai",
     "/improve-ielts-speaking-score",
@@ -66,6 +68,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]);
 
   const frequentRoutes = new Set(["", "/blog", "/daily-ielts-speaking-prompt", "/weekly-ielts-speaking-challenge"]);
+  const growthRoutes = new Set([
+    "/guides/ielts-speaking-band-6-to-7",
+    "/tools/ielts-speaking-band-score-calculator"
+  ]);
 
   return allRoutes.map((route) => ({
     url: `${siteConfig.domain}${route}`,
@@ -74,12 +80,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ? 1
       : highPriorityRoutes.has(route)
         ? 0.95
-        : route.startsWith("/blog/")
-          ? 0.82
-          : route.startsWith("/ielts-speaking-topics/")
-            ? 0.78
-            : route.startsWith("/tools/")
-              ? 0.75
-              : 0.8
+        : growthRoutes.has(route)
+          ? 0.9
+          : route.startsWith("/blog/")
+            ? 0.82
+            : route.startsWith("/ielts-speaking-topics/")
+              ? 0.78
+              : route.startsWith("/tools/")
+                ? 0.75
+                : 0.8
   }));
 }

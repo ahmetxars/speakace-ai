@@ -60,6 +60,21 @@ describe("analytics tracking policy", () => {
     );
   });
 
+  it("records a consented lead magnet request without requiring an account", async () => {
+    const response = await POST(analyticsRequest("lead_magnet_requested", "/resources"));
+
+    expect(response.status).toBe(200);
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: undefined,
+        visitorId: "visitor-1234567890",
+        event: "lead_magnet_requested",
+        path: "/resources",
+        occurredAt: expect.any(String)
+      })
+    );
+  });
+
   it("requires authentication for learner product events", async () => {
     const response = await POST(analyticsRequest("practice_start", "/app/practice"));
 

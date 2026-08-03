@@ -232,8 +232,63 @@ create table if not exists marketing_leads (
   email text not null unique,
   name text,
   source text not null default 'site',
+  magnet text not null default 'ielts-speaking-score-diagnostic',
+  consent_version text not null default 'legacy-unconfirmed',
+  consent_granted_at timestamptz,
+  consent_revoked_at timestamptz,
+  suppressed_at timestamptz,
+  suppression_reason text,
+  followup_verified_at timestamptz,
+  followup_verification_nonce_hash text,
+  followup_verification_issued_at timestamptz,
+  locale text,
+  landing_path text,
+  referrer_host text,
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  utm_content text,
+  utm_term text,
+  lead_magnet_sent_at timestamptz,
+  lead_magnet_claimed_at timestamptz,
+  nurture_step integer not null default 0,
+  nurture_last_sent_at timestamptz,
+  nurture_claimed_step integer,
+  nurture_claimed_at timestamptz,
+  updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
+
+alter table marketing_leads add column if not exists magnet text not null default 'ielts-speaking-score-diagnostic';
+alter table marketing_leads add column if not exists consent_version text not null default 'legacy-unconfirmed';
+alter table marketing_leads add column if not exists consent_granted_at timestamptz;
+alter table marketing_leads add column if not exists consent_revoked_at timestamptz;
+alter table marketing_leads add column if not exists suppressed_at timestamptz;
+alter table marketing_leads add column if not exists suppression_reason text;
+alter table marketing_leads add column if not exists followup_verified_at timestamptz;
+alter table marketing_leads add column if not exists followup_verification_nonce_hash text;
+alter table marketing_leads add column if not exists followup_verification_issued_at timestamptz;
+alter table marketing_leads add column if not exists locale text;
+alter table marketing_leads add column if not exists landing_path text;
+alter table marketing_leads add column if not exists referrer_host text;
+alter table marketing_leads add column if not exists utm_source text;
+alter table marketing_leads add column if not exists utm_medium text;
+alter table marketing_leads add column if not exists utm_campaign text;
+alter table marketing_leads add column if not exists utm_content text;
+alter table marketing_leads add column if not exists utm_term text;
+alter table marketing_leads add column if not exists lead_magnet_sent_at timestamptz;
+alter table marketing_leads add column if not exists lead_magnet_claimed_at timestamptz;
+alter table marketing_leads add column if not exists nurture_step integer not null default 0;
+alter table marketing_leads add column if not exists nurture_last_sent_at timestamptz;
+alter table marketing_leads add column if not exists nurture_claimed_step integer;
+alter table marketing_leads add column if not exists nurture_claimed_at timestamptz;
+alter table marketing_leads add column if not exists updated_at timestamptz not null default now();
+
+create index if not exists idx_marketing_leads_nurture_due
+  on marketing_leads (nurture_step, created_at)
+  where consent_granted_at is not null
+    and consent_revoked_at is null
+    and suppressed_at is null;
 
 create table if not exists referral_codes (
   id text primary key,
@@ -574,8 +629,36 @@ create table if not exists email_log (
   subject text not null,
   status text not null default 'sent',
   error_message text,
+  reservation_key text,
   sent_at timestamptz not null default now()
 );
+
+alter table email_log add column if not exists reservation_key text;
+
+create table if not exists email_lifecycle_daily_budget (
+  budget_day date primary key,
+  reserved_count integer not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists email_lifecycle_reservations (
+  reservation_key text primary key,
+  budget_day date not null,
+  status text not null check (status in ('pending', 'reserved', 'sent')),
+  reserved_at timestamptz not null default now(),
+  last_attempt_at timestamptz not null default now(),
+  sent_at timestamptz
+);
+
+alter table email_lifecycle_reservations
+  add column if not exists last_attempt_at timestamptz;
+update email_lifecycle_reservations
+  set last_attempt_at = reserved_at
+  where last_attempt_at is null;
+alter table email_lifecycle_reservations
+  alter column last_attempt_at set default now();
+alter table email_lifecycle_reservations
+  alter column last_attempt_at set not null;
 
 create index if not exists idx_email_log_user_id
   on email_log(user_id, sent_at desc);

@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   description:
     "Read practical IELTS speaking guides for band growth, pronunciation, fluency, answer structure, and vocabulary improvement.",
   alternates: { canonical: "/guides" },
+  robots: { index: false, follow: true },
   openGraph: {
     title: "IELTS Speaking Guides | SpeakAce",
     description:

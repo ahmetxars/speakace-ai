@@ -17,6 +17,8 @@ The product combines:
 - PostHog plus internal event tracking
 - Vercel deployment and scheduled cron routes
 
+Email suppression is enforced in two layers: `users.email_opt_out` prevents the app's lifecycle senders, while Resend's account-level Suppressions list blocks delivery by the provider. Use both for a complete recipient-level opt-out, especially when a send could originate outside the lifecycle cron.
+
 ## Tech stack
 
 - Framework: Next.js 15 App Router
@@ -125,6 +127,8 @@ This is the project-wide “where things live” map.
   - `lib/blog-seo.ts`
   - `lib/seo-growth.ts`
   - `lib/seo-topics.ts`
+  - `/guides/ielts-speaking-band-6-to-7` is the indexable Band 6-to-7 retry guide; `/tools/ielts-speaking-band-score-calculator` is the matching four-criterion planning calculator.
+  - `public/og-image.png` is the shared 1200x630 Open Graph/Twitter asset. `app/sitemap.ts` is the single `/sitemap.xml` source; do not recreate `app/sitemap.xml/route.ts`.
 - Content-route styling:
   - Resources uses `.resource-hub-*` and `.resource-library-*`.
   - Blog index/detail use `.blog-index-*`, `.blog-library-*`, and `.blog-article-*`.
@@ -277,7 +281,7 @@ This is the project-wide “where things live” map.
   - `lib/server/email-sequences.ts`
   - onboarding is capped at five messages on days 0, 1, 3, 5, and 7; the daily tip campaign fills days without a higher-priority lifecycle message.
   - an incomplete learner onboarding form is stored per authenticated user in local storage for 30 days and resumes at the last completed step; successful completion clears the draft.
-  - all lifecycle sends share a persistent daily budget (`EMAIL_LIFECYCLE_DAILY_BUDGET`, default `500`, hard cap `1000`); trial lifecycle messages are reserved ahead of lower-intent tips.
+  - lifecycle sends consult a shared daily budget (`EMAIL_LIFECYCLE_DAILY_BUDGET`, default `500`, configured maximum `1000`); marketing lead guide/nurture paths reserve it atomically, while legacy onboarding/trial/tip paths still use a snapshot and therefore the setting is not a strict cross-cron concurrency cap.
   - password signups receive onboarding only after successful email verification; unverified accounts are excluded from lifecycle marketing
   - onboarding email #2 is sent after one day; activated learners receive a checkout-free, attributed `email_day_one_return` practice link while non-activated learners keep the first-score prompt
   - learners with no speaking sessions receive first-score activation content instead of checkout pressure on days 5 and 7
@@ -286,6 +290,13 @@ This is the project-wide “where things live” map.
   - daily-tip CTA links pass through `/api/email/continue` with an encrypted, 14-day user/campaign token; every valid token preserves the attributed quick-start `drill` destination so mobile email browsers cannot lose the challenge, while only verified top-level human navigations emit `email_cta_click` and invalid tokens use the safe non-autostart practice fallback
   - production `feedback_reports.categories_json` includes legacy rows stored as a JSONB string containing the category array; lifecycle queries must accept both that shape and a native JSONB array
   - marketing lifecycle messages carry tokenized footer unsubscribe links plus RFC-compatible one-click `List-Unsubscribe` headers; `UNSUBSCRIBE_SECRET` is preferred and `CRON_SECRET` is the production fallback
+  - anonymous lead capture is create-once per email address: repeated public submissions cannot rewrite recipient identity, source/magnet, attribution, consent epoch, or a durable unsubscribe decision
+  - the requested score-diagnostic guide is the only immediate learner lead email; a signed confirmation link opens a read-only GET page and requires an explicit POST before the day 2/4/7 follow-up sequence is activated, preventing link scanners from opting recipients in
+  - signed unsubscribe updates anonymous-lead and account opt-out state atomically in database mode, clears optional lead name and visit/campaign attribution, and retains only the minimal email/consent/suppression/delivery audit needed to honor the opt-out
+  - marketing guide and nurture sends use deterministic Resend idempotency keys plus persistent atomic daily-budget reservations; production lead capture, cron processing, and unsubscribe fail closed when `DATABASE_URL` is unavailable
+  - ambiguous provider attempts retry immediately at the transport layer and can reclaim the same reservation after 15 minutes while it remains inside a 23-hour safety cutoff, always with the identical deterministic provider key/payload; a retry crossing into a new UTC day atomically consumes that day's lifecycle budget. Any Resend idempotency conflict stays ambiguous and is never auto-released. After the cutoff, operators must run `npm run reconcile:email -- --list`, verify the exact message in Resend, and explicitly mark it sent or release it. Definite provider rejections release the reservation safely
+  - unconfirmed lead identity/attribution is minimized after 30 days, completed learner-sequence identity/attribution after 90 days, and marketing delivery audit rows after 365 days; the minimal address/consent suppression record remains to honor opt-out
+  - commercial lead, teacher, school, nurture, onboarding, trial, tip, and recovery email delivery fails closed unless real `COMPANY_LEGAL_NAME` and `COMPANY_POSTAL_ADDRESS` values are configured; lifecycle HTML and plain text include that identity, the physical address, and opt-out information. Never replace them with invented placeholders
   - verified Free learners with an abandoned checkout can receive one attributed `checkout_recovery` email after 45 minutes and before 72 hours, with a 14-day template dedupe and the shared 24-hour lifecycle cooldown.
   - the lifecycle cron suppresses all provider sends when a current Resend daily/monthly quota failure is present; after a quota upgrade, a successful Admin email test records a recovery probe that clears only older failures without disabling future quota protection
   - Admin reports 24-hour email delivery/failure health, active quota blocking, and attributed day-one practice returns over 30 days
@@ -293,9 +304,11 @@ This is the project-wide “where things live” map.
 - Cron:
   - `app/api/cron/onboarding-emails/route.ts`
   - `app/api/cron/study-task-reminders/route.ts`
+  - `app/api/cron/marketing-lead-nurture/route.ts`
 - Campaign tooling:
   - `scripts/send-campaign.mjs`
   - `public/email-assets/**`
+  - `content/social-content-queue.json` contains the human-review-only four-week TikTok/Instagram/LinkedIn draft queue; `scripts/export-social-content.mjs` validates it and exports deterministic CSV/JSON with per-post UTMs, but never publishes to a platform.
 
 ## Main route groups
 
@@ -308,6 +321,8 @@ Examples:
 - `/about`
 - `/contact`
 - `/resources`
+- `/guides/ielts-speaking-band-6-to-7`
+- `/tools/ielts-speaking-band-score-calculator`
 - `/reviews`
 - `/success-stories`
 - `/for-students`
@@ -381,7 +396,6 @@ Sub-groups worth treating as separate mini-products:
 - `app/manifest.ts`
 - `app/robots.ts`
 - `app/sitemap.ts`
-- `app/sitemap.xml/route.ts`
 - `app/share/[slug]/opengraph-image.tsx`
 
 ## API surface by domain
@@ -627,7 +641,8 @@ Role routing starts in `lib/roles.ts`, while capability enforcement is split acr
   - metadata/SEO helpers
 - authenticated `/app/**` and `/auth` routes are `noindex`; they must not be reintroduced into `app/sitemap.ts`.
 - thin comparison and guide detail pages remain available for navigation but are `noindex` until their content quality is raised.
-- only the IELTS overall band calculator and cue-card generator are currently indexable tool detail pages; other generated tool routes are intentionally excluded from the sitemap and marked `noindex`.
+- the substantive Band 6-to-7 retry guide is indexable; other thin generated guide detail pages remain `noindex`.
+- the IELTS overall band calculator, IELTS Speaking four-criterion calculator, and cue-card generator are currently indexable tool detail pages; other generated tool routes are intentionally excluded from the sitemap and marked `noindex`.
 - the three legacy broken blog URLs for Part 1 sample answers and Part 2 cue-card/sample-answer articles are permanent redirects to their maintained public equivalents.
 
 ### Billing and payments
@@ -651,6 +666,10 @@ Important caution:
   - Resend transport and transactional email templates
 - `lib/server/email-sequences.ts`
   - onboarding and daily tip workflows
+- `lib/server/marketing-lead-nurture.ts`, `lib/marketing-leads.ts`
+  - consented anonymous score-diagnostic capture, attribution, the requested first email, verified follow-up nurture, suppression, and account-conversion stopping rules
+- `app/api/cron/marketing-lead-nurture/route.ts`
+  - retries queued score diagnostics and runs the day 2/4/7 lead sequence within the shared lifecycle budget; production requires persistent Postgres plus the documented email/cron secrets
 - `scripts/send-campaign.mjs`
   - one-off email campaign sender from `public/email-assets/<campaign>/preview.html`
 
@@ -766,7 +785,7 @@ Fast debugging split:
 
 1. Vercel invokes cron endpoints from `vercel.json`.
 2. Routes authorize using `CRON_SECRET` or Vercel cron header fallback outside production.
-3. Reminder and onboarding/email sequence jobs execute from store/server-email logic.
+3. Reminder, onboarding, and verified marketing-lead jobs execute from store/server-email logic.
 
 ## Entry points and important files
 

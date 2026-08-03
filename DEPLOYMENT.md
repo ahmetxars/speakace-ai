@@ -82,9 +82,18 @@ ADMIN_PANEL_PASSWORD=...
 LEMON_SQUEEZY_STORE_URL=https://speakace.lemonsqueezy.com
 LEMON_SQUEEZY_WEBHOOK_SECRET=whsec_...
 RESEND_API_KEY=re_...
-EMAIL_FROM=noreply@speakace.org
+EMAIL_FROM=SpeakAce <info@mail.speakace.org>
 EMAIL_REPLY_TO=aa.arslan@outlook.com.tr
+COMPANY_LEGAL_NAME=your-real-legal-entity-name
+COMPANY_POSTAL_ADDRESS=your-real-postal-address
+# Optional; set only if formally appointed/applicable
+PRIVACY_EU_REPRESENTATIVE=
+PRIVACY_DPO_EMAIL=
 EMAIL_LIFECYCLE_DAILY_BUDGET=20
+ENABLE_MARKETING_LEAD_NURTURE=true
+CRON_SECRET=replace-with-a-long-random-secret
+UNSUBSCRIBE_SECRET=replace-with-a-separate-long-random-secret
+MARKETING_LEAD_CONFIRMATION_SECRET=replace-with-another-long-random-secret
 NEXT_PUBLIC_ENABLE_ANALYTICS=true
 ENABLE_PRACTICE_LIMIT_RECOVERY_EMAILS=false
 GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
@@ -94,6 +103,10 @@ GOOGLE_SITE_VERIFICATION=google_verification_code
 ADMIN_EMAILS=admin@example.com
 TEACHER_EMAILS=teacher@example.com
 ```
+
+`COMPANY_LEGAL_NAME` and `COMPANY_POSTAL_ADDRESS` must contain the real sender/controller identity. Commercial lead and nurture messages and the production privacy page deliberately fail closed when either value is missing. Run `npm run db:push` before enabling lead delivery so the lead, consent, retention, and atomic email-budget tables are present.
+
+Idempotent marketing sends retry short-lived network ambiguity with the same provider payload. If a reservation is still unresolved after 23 hours, run `npm run reconcile:email -- --list`, verify the recipient, subject, and timestamp in Resend, then use the command's explicit `--mark-sent` or `--release` form. Never release an ambiguous reservation until Resend confirms the original message was not accepted; its idempotency window is 24 hours.
 
 ### 3. Deploy
 

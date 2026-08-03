@@ -12,6 +12,7 @@ type ClientAnalyticsInput = {
 };
 
 const GA_EVENT_MAP: Partial<Record<AnalyticsEventName, string>> = {
+  lead_magnet_requested: "generate_lead",
   signup_completed: "sign_up",
   first_score: "first_score",
   return_practice: "return_practice",

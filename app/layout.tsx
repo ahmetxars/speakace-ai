@@ -112,7 +112,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           </>
         ) : null}
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {/* Prevent flash of wrong theme — runs synchronously before React hydration */}
         <script
           dangerouslySetInnerHTML={{
@@ -128,7 +128,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 "@type": "Organization",
                 name: siteConfig.name,
                 url: siteConfig.domain,
-                logo: `${siteConfig.domain}/logo.png`,
+                logo: `${siteConfig.domain}/brand/speakace-logo.png`,
                 contactPoint: {
                   "@type": "ContactPoint",
                   email: siteConfig.contactEmail,

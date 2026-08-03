@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { IeltsSpeakingBandCalculator } from "@/components/ielts-speaking-band-calculator";
+import { LeadCaptureForm } from "@/components/lead-capture-form";
 import { ToolWorkbench } from "@/components/tool-workbench";
 import { siteConfig } from "@/lib/site";
 import { toolPages } from "@/lib/seo-growth";
@@ -9,8 +11,11 @@ import { getToolVisual } from "@/lib/tool-visuals";
 
 const INDEXABLE_TOOL_SLUGS = new Set([
   "ielts-band-score-calculator",
+  "ielts-speaking-band-score-calculator",
   "ielts-cue-card-generator"
 ]);
+
+const SPEAKING_BAND_CALCULATOR_SLUG = "ielts-speaking-band-score-calculator";
 
 const toolFaqs: Record<string, Array<{ question: string; answer: string }>> = {
   "ielts-band-score-calculator": [
@@ -29,6 +34,28 @@ const toolFaqs: Record<string, Array<{ question: string; answer: string }>> = {
     {
       question: "Is this calculator an official IELTS result?",
       answer: "No. It applies the public overall-band calculation for planning. Only the score on an official IELTS Test Report Form is authoritative."
+    }
+  ],
+  "ielts-speaking-band-score-calculator": [
+    {
+      question: "How is this IELTS Speaking band estimate calculated?",
+      answer: "The calculator gives equal weight to fluency and coherence, lexical resource, grammatical range and accuracy, and pronunciation. It averages your four self-ratings and displays the nearest half band for planning."
+    },
+    {
+      question: "Is this an official IELTS Speaking score prediction?",
+      answer: "No. It is an educational self-assessment. A certified examiner judges your performance throughout the complete Speaking test, and only an official Test Report Form reports your IELTS Speaking band."
+    },
+    {
+      question: "What does Band 7 IELTS Speaking usually require?",
+      answer: "The public descriptors point to coherent longer turns, flexible vocabulary and paraphrasing, a flexible range of simple and complex structures with frequent accurate sentences, and pronunciation that remains clear while showing stronger control of connected speech."
+    },
+    {
+      question: "Why does the calculator focus on my lowest criterion?",
+      answer: "A four-score average can hide an uneven profile. Working on the lowest criterion first gives you a clearer retry goal and makes it easier to compare two recordings of the same prompt."
+    },
+    {
+      question: "Do I need a native accent for Band 7 pronunciation?",
+      answer: "No. The public criteria focus on intelligibility and control of pronunciation features such as rhythm, stress, intonation, and connected speech, not on copying a particular accent."
     }
   ],
   "ielts-cue-card-generator": [
@@ -52,6 +79,12 @@ const toolFaqs: Record<string, Array<{ question: string; answer: string }>> = {
 };
 
 function getToolLinks(slug: string) {
+  if (slug === SPEAKING_BAND_CALCULATOR_SLUG) {
+    return [
+      { href: "/guides/ielts-speaking-band-6-to-7", label: "Use the Band 7 retry guide" },
+      { href: "/free-ielts-speaking-test", label: "Take a free speaking test" }
+    ];
+  }
   if (slug.includes("toefl")) {
     return [
       { href: "/speaking-timer", label: "Open timer" },
@@ -123,30 +156,48 @@ export default async function ToolDetailPage({
   const visual = getToolVisual(page.slug);
   const relatedLinks = getToolLinks(page.slug);
   const faqs = toolFaqs[page.slug] ?? [];
+  const isSpeakingBandCalculator = page.slug === SPEAKING_BAND_CALCULATOR_SLUG;
+  const canonicalUrl = `${siteConfig.domain}/tools/${page.slug}`;
 
   return (
     <>
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
         <div className="section-head">
           <span className="eyebrow">Free tool</span>
-          <div className="tool-card-visual" aria-hidden="true" style={{ margin: "0.25rem 0 0.75rem" }}>
-            <span className="tool-card-icon">{visual.emoji}</span>
-            <span className="pill">{visual.badge}</span>
-          </div>
+          {isSpeakingBandCalculator ? (
+            <div className="speaking-band-hero-marker" aria-hidden="true">
+              <span>4 criteria</span>
+              <strong>25% each</strong>
+            </div>
+          ) : (
+            <div className="tool-card-visual" aria-hidden="true" style={{ margin: "0.25rem 0 0.75rem" }}>
+              <span className="tool-card-icon">{visual.emoji}</span>
+              <span className="pill">{visual.badge}</span>
+            </div>
+          )}
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.6rem)", lineHeight: 0.96 }}>{page.title}</h1>
           <p>{page.intro}</p>
         </div>
-        <ToolWorkbench slug={page.slug} title={page.title} />
+        {isSpeakingBandCalculator ? (
+          <IeltsSpeakingBandCalculator />
+        ) : (
+          <ToolWorkbench slug={page.slug} title={page.title} />
+        )}
         <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
           <span className="eyebrow">How to use this result</span>
-          <h2 style={{ margin: 0 }}>Turn the tool output into one speaking action</h2>
+          <h2 style={{ margin: 0 }}>
+            {isSpeakingBandCalculator
+              ? "Treat the score as a hypothesis, then test the weakest criterion"
+              : "Turn the tool output into one speaking action"}
+          </h2>
           <p className="practice-copy" style={{ margin: 0 }}>
-            Use the {page.title.toLowerCase()} as a starting point, not a final diagnosis. Choose one
-            prompt, speak for the full time, and compare the result with the target you set here.
+            {isSpeakingBandCalculator
+              ? "Keep the prompt, core idea, and speaking time similar across two recordings. Change only the weakest criterion shown above, then compare the transcript and audio. That controlled retry gives you better evidence than raising a self-rating because an answer merely felt easier."
+              : `Use the ${page.title.toLowerCase()} as a starting point, not a final diagnosis. Choose one prompt, speak for the full time, and compare the result with the target you set here.`}
           </p>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             <Link className="button button-primary" href="/app/practice">
-              {page.actionLabel ?? "Use tool"}
+              {isSpeakingBandCalculator ? "Test with free practice" : page.actionLabel ?? "Use tool"}
             </Link>
             {relatedLinks.map((item) => (
               <Link key={item.href} className="button button-secondary" href={item.href as Route}>
@@ -163,6 +214,76 @@ export default async function ToolDetailPage({
             </article>
           ))}
         </div>
+        {isSpeakingBandCalculator ? (
+          <section className="speaking-band-reference" aria-labelledby="speaking-band-reference-title">
+            <div className="speaking-band-reference__heading">
+              <span className="eyebrow">What the four scores mean</span>
+              <h2 id="speaking-band-reference-title">Look for repeatable evidence, not a perfect performance</h2>
+              <p>
+                IELTS assesses the four criteria equally. Use at least two recordings on different
+                topics before treating a self-rating as stable.
+              </p>
+            </div>
+            <dl className="speaking-band-reference__criteria">
+              <div>
+                <dt>Fluency and coherence</dt>
+                <dd>Can you keep a longer answer moving, develop it logically, and recover from hesitation without losing the listener?</dd>
+              </div>
+              <div>
+                <dt>Lexical resource</dt>
+                <dd>Can you discuss varied topics, choose words precisely enough, and paraphrase when the first expression is unavailable?</dd>
+              </div>
+              <div>
+                <dt>Grammatical range and accuracy</dt>
+                <dd>Can you use both simple and complex structures flexibly while producing frequent stretches that are error-free?</dd>
+              </div>
+              <div>
+                <dt>Pronunciation</dt>
+                <dd>Is your speech easy to understand, with useful control of thought groups, rhythm, stress, intonation, and connected speech?</dd>
+              </div>
+            </dl>
+            <aside className="speaking-band-reference__sources">
+              <div>
+                <span className="eyebrow">Primary references</span>
+                <h3>Check your self-ratings against the public criteria</h3>
+                <p>
+                  SpeakAce is not affiliated with or endorsed by IELTS. The calculation and guidance
+                  on this page are based on public scoring information and are provided for study planning.
+                </p>
+              </div>
+              <div>
+                <a href="https://ielts.org/take-a-test/your-results/ielts-scoring-in-detail" target="_blank" rel="noreferrer">
+                  IELTS scoring in detail
+                </a>
+                <a href="https://ielts.org/cdn/ielts-guides/ielts-speaking-band-descriptors.pdf" target="_blank" rel="noreferrer">
+                  Official Speaking band descriptors (PDF)
+                </a>
+                <a href="https://ielts.org/take-a-test/test-types/ielts-academic-test/ielts-academic-format-speaking" target="_blank" rel="noreferrer">
+                  Official Speaking test format
+                </a>
+              </div>
+            </aside>
+          </section>
+        ) : null}
+        {isSpeakingBandCalculator ? (
+          <section
+            className="card"
+            aria-labelledby="speaking-band-diagnostic-title"
+            style={{ padding: "clamp(1.25rem, 3vw, 2rem)", display: "grid", gap: "1rem" }}
+          >
+            <div>
+              <span className="eyebrow">Save the diagnostic method</span>
+              <h2 id="speaking-band-diagnostic-title" style={{ margin: "0.65rem 0 0.5rem" }}>
+                Get the four-criterion checklist and three retry prompts
+              </h2>
+              <p className="practice-copy" style={{ margin: 0 }}>
+                Get the checklist in the first email, then confirm inside it if you want three short
+                exercises that move from self-assessment to a focused free speaking attempt.
+              </p>
+            </div>
+            <LeadCaptureForm source="speaking_band_calculator" />
+          </section>
+        ) : null}
         {faqs.length ? (
           <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
             <span className="eyebrow">FAQ</span>
@@ -187,7 +308,7 @@ export default async function ToolDetailPage({
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
             <Link className="button button-primary" href="/app/practice">
-              {page.actionLabel ?? "Start practice"}
+              {isSpeakingBandCalculator ? "Start a free speaking attempt" : page.actionLabel ?? "Start practice"}
             </Link>
             {relatedLinks.map((item) => (
               <Link key={item.href} className="button button-secondary" href={item.href as Route}>
@@ -214,6 +335,66 @@ export default async function ToolDetailPage({
               })
             }}
           />
+        ) : null}
+        {isSpeakingBandCalculator ? (
+          <>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "WebApplication",
+                  name: page.title,
+                  description: page.description,
+                  url: canonicalUrl,
+                  applicationCategory: "EducationalApplication",
+                  operatingSystem: "Any",
+                  browserRequirements: "Requires JavaScript",
+                  isAccessibleForFree: true,
+                  offers: {
+                    "@type": "Offer",
+                    price: "0",
+                    priceCurrency: "USD"
+                  },
+                  featureList: [
+                    "Four equally weighted IELTS Speaking self-ratings",
+                    "Half-band planning estimate",
+                    "Weakest-criterion diagnostic retry",
+                    "Shareable result summary"
+                  ]
+                })
+              }}
+            />
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "BreadcrumbList",
+                  itemListElement: [
+                    {
+                      "@type": "ListItem",
+                      position: 1,
+                      name: "Home",
+                      item: siteConfig.domain
+                    },
+                    {
+                      "@type": "ListItem",
+                      position: 2,
+                      name: "IELTS speaking tools",
+                      item: `${siteConfig.domain}/tools`
+                    },
+                    {
+                      "@type": "ListItem",
+                      position: 3,
+                      name: page.title,
+                      item: canonicalUrl
+                    }
+                  ]
+                })
+              }}
+            />
+          </>
         ) : null}
       </main>
     </>

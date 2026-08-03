@@ -1,20 +1,51 @@
 import type { Metadata } from "next";
 import { MarketingPage } from "@/components/marketing-page";
+import { siteConfig } from "@/lib/site";
+
+const pagePath = "/ielts-speaking-practice";
+const pageUrl = `${siteConfig.domain}${pagePath}`;
+const pageTitle = "IELTS Speaking Practice Online (Parts 1–3)";
+const pageDescription =
+  "Practice IELTS Speaking Parts 1, 2, and 3 online with timed prompts, answer transcripts, criterion-level AI feedback, estimated bands, and focused retries.";
 
 export const metadata: Metadata = {
-  title: "IELTS Speaking Practice with AI Feedback",
-  description:
-    "Practice IELTS speaking online with AI feedback, timed cue cards, transcript review, and estimated band score support.",
+  title: pageTitle,
+  description: pageDescription,
   alternates: {
-    canonical: "/ielts-speaking-practice"
+    canonical: pageUrl
   },
-  keywords: [
-    "IELTS speaking practice",
-    "IELTS speaking AI",
-    "improve IELTS speaking score",
-    "IELTS band score speaking",
-    "speaking test simulator IELTS"
-  ]
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1
+    }
+  },
+  openGraph: {
+    title: `${pageTitle} | ${siteConfig.name}`,
+    description: pageDescription,
+    url: pageUrl,
+    siteName: siteConfig.name,
+    type: "website",
+    images: [
+      {
+        url: `${siteConfig.domain}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "SpeakAce IELTS speaking practice feedback"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${pageTitle} | ${siteConfig.name}`,
+    description: pageDescription,
+    images: [`${siteConfig.domain}/og-image.png`]
+  }
 };
 
 export default function IELTSPage() {

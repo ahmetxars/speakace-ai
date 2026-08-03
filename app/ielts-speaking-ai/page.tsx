@@ -2,20 +2,49 @@ import type { Metadata } from "next";
 import { MarketingPage } from "@/components/marketing-page";
 import { siteConfig } from "@/lib/site";
 
+const pagePath = "/ielts-speaking-ai";
+const pageUrl = `${siteConfig.domain}${pagePath}`;
+const pageTitle = "IELTS Speaking AI for Feedback and Retries";
+const pageDescription =
+  "Use IELTS speaking AI to turn recorded answers into transcripts, estimated criterion scores, clear feedback, improved examples, and focused retries.";
+
 export const metadata: Metadata = {
-  title: "IELTS Speaking AI | SpeakAce",
-  description:
-    "Use IELTS speaking AI to get transcript review, band score estimates, and faster speaking feedback with SpeakAce.",
+  title: pageTitle,
+  description: pageDescription,
   alternates: {
-    canonical: "/ielts-speaking-ai"
+    canonical: pageUrl
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1
+    }
   },
   openGraph: {
-    title: "IELTS Speaking AI | SpeakAce",
-    description:
-      "Practice with IELTS speaking AI, smarter transcript review, and score-focused speaking feedback.",
-    url: `${siteConfig.domain}/ielts-speaking-ai`,
+    title: `${pageTitle} | ${siteConfig.name}`,
+    description: pageDescription,
+    url: pageUrl,
     siteName: siteConfig.name,
-    type: "website"
+    type: "website",
+    images: [
+      {
+        url: `${siteConfig.domain}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "SpeakAce IELTS speaking AI feedback"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${pageTitle} | ${siteConfig.name}`,
+    description: pageDescription,
+    images: [`${siteConfig.domain}/og-image.png`]
   }
 };
 

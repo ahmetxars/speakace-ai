@@ -2,20 +2,49 @@ import type { Metadata } from "next";
 import { MarketingPage } from "@/components/marketing-page";
 import { siteConfig } from "@/lib/site";
 
+const pagePath = "/speaking-test-simulator-ielts";
+const pageUrl = `${siteConfig.domain}${pagePath}`;
+const pageTitle = "IELTS Speaking Test Simulator & Mock Practice";
+const pageDescription =
+  "Run a timed IELTS speaking test simulator with Part 1, Part 2, and Part 3 tasks, transcript review, estimated scores, and a structured mock-exam flow.";
+
 export const metadata: Metadata = {
-  title: "Speaking Test Simulator IELTS | SpeakAce",
-  description:
-    "Use a speaking test simulator for IELTS to practice with timing, transcript review, AI scoring support, and mock exam flow.",
+  title: pageTitle,
+  description: pageDescription,
   alternates: {
-    canonical: "/speaking-test-simulator-ielts"
+    canonical: pageUrl
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1
+    }
   },
   openGraph: {
-    title: "Speaking Test Simulator IELTS | SpeakAce",
-    description:
-      "Practice with a speaking test simulator IELTS flow that feels closer to the real exam.",
-    url: `${siteConfig.domain}/speaking-test-simulator-ielts`,
+    title: `${pageTitle} | ${siteConfig.name}`,
+    description: pageDescription,
+    url: pageUrl,
     siteName: siteConfig.name,
-    type: "website"
+    type: "website",
+    images: [
+      {
+        url: `${siteConfig.domain}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "SpeakAce IELTS speaking test simulator"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${pageTitle} | ${siteConfig.name}`,
+    description: pageDescription,
+    images: [`${siteConfig.domain}/og-image.png`]
   }
 };
 

@@ -1,42 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
-import { hasDatabaseUrl, getSql } from "@/lib/server/db";
-import { verifyUnsubscribeToken } from "@/lib/server/unsubscribe-token";
+import {
+  isMarketingLeadPersistenceAvailable,
+  revokeMarketingConsentEverywhere
+} from "@/lib/marketing-leads";
 import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
+import { verifyUnsubscribeToken } from "@/lib/server/unsubscribe-token";
 
 export async function POST(req: NextRequest) {
-  const ip = getRequestIp(req);
-  const limit = checkRateLimit({ key: `unsubscribe:${ip}`, windowMs: 1000 * 60 * 60, max: 10 });
-  if (!limit.allowed) {
-    return rateLimitResponse(limit.retryAfterSeconds);
-  }
-
-  if (!hasDatabaseUrl()) {
-    return NextResponse.json({ ok: false, error: "no db" }, { status: 503 });
-  }
-
   const body = await req.json().catch(() => null);
   const queryEmail = req.nextUrl.searchParams.get("email") ?? "";
   const queryToken = req.nextUrl.searchParams.get("token") ?? "";
   const emailValue = typeof body?.email === "string" ? body.email : queryEmail;
   const tokenValue = typeof body?.token === "string" ? body.token : queryToken;
-  const email = emailValue.toLowerCase().trim();
-  const token = tokenValue.trim();
+  const email = emailValue.toLowerCase().trim().slice(0, 320);
+  const token = tokenValue.trim().slice(0, 500);
 
-  if (!email) {
-    return NextResponse.json({ ok: false, error: "missing email" }, { status: 400 });
+  // A valid HMAC is already a high-entropy authorization credential. It must
+  // not be blocked by shared-IP limits (schools, VPNs, carrier NAT, etc.).
+  if (!email || !verifyUnsubscribeToken(email, token)) {
+    const ip = getRequestIp(req);
+    const limit = checkRateLimit({
+      key: `unsubscribe-invalid:${ip}`,
+      windowMs: 1000 * 60 * 60,
+      max: 300
+    });
+    if (!limit.allowed) {
+      return rateLimitResponse(limit.retryAfterSeconds);
+    }
+    return NextResponse.json({ ok: false, error: "Invalid unsubscribe link." }, { status: 400 });
   }
 
-  if (!verifyUnsubscribeToken(email, token)) {
-    // Return ok to avoid leaking whether email exists, but do not perform the write
-    return NextResponse.json({ ok: true });
+  if (!isMarketingLeadPersistenceAvailable()) {
+    return NextResponse.json(
+      { ok: false, error: "Unsubscribe is temporarily unavailable. Please try again." },
+      { status: 503 }
+    );
   }
 
-  const sql = getSql();
-  await sql`
-    update users
-    set email_opt_out = true
-    where email = ${email}
-  `;
-
-  return NextResponse.json({ ok: true });
+  try {
+    await revokeMarketingConsentEverywhere(email);
+    return NextResponse.json(
+      { ok: true },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  } catch {
+    return NextResponse.json(
+      { ok: false, error: "Unsubscribe is temporarily unavailable. Please try again." },
+      { status: 503 }
+    );
+  }
 }

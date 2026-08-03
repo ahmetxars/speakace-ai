@@ -81,7 +81,11 @@ export default function ToolsHubPage() {
           {toolPages.map((item) => (
             <article key={item.slug} className="card feature-card interactive-link-card">
               <div className="tool-card-visual" aria-hidden="true">
-                <span className="tool-card-icon">{getToolVisual(item.slug).emoji}</span>
+                <span className="tool-card-icon">
+                  {item.slug === "ielts-speaking-band-score-calculator"
+                    ? "4×"
+                    : getToolVisual(item.slug).emoji}
+                </span>
                 <span className="pill tool-card-badge">{getToolVisual(item.slug).badge}</span>
               </div>
               <h2 style={{ fontSize: "1.35rem" }}>{item.title}</h2>

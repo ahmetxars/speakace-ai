@@ -1,4 +1,4 @@
-import { sendEmail } from "@/lib/server/email";
+import { getCommercialSenderIdentity, sendEmail } from "@/lib/server/email";
 import { hasDatabaseUrl, getSql } from "@/lib/server/db";
 import { buildLifecycleEmailClickUrl } from "@/lib/server/lifecycle-email-link";
 import { generateUnsubscribeToken } from "@/lib/server/unsubscribe-token";
@@ -78,8 +78,48 @@ async function ensureEmailSequenceSchema() {
       subject text not null,
       status text not null,
       error_message text,
+      reservation_key text,
       sent_at timestamptz not null default now()
     )
+  `;
+
+  await sql`alter table email_log add column if not exists reservation_key text`;
+
+  await sql`
+    create table if not exists email_lifecycle_daily_budget (
+      budget_day date primary key,
+      reserved_count integer not null default 0,
+      updated_at timestamptz not null default now()
+    )
+  `;
+
+  await sql`
+    create table if not exists email_lifecycle_reservations (
+      reservation_key text primary key,
+      budget_day date not null,
+      status text not null check (status in ('pending', 'reserved', 'sent')),
+      reserved_at timestamptz not null default now(),
+      last_attempt_at timestamptz not null default now(),
+      sent_at timestamptz
+    )
+  `;
+
+  await sql`
+    alter table email_lifecycle_reservations
+    add column if not exists last_attempt_at timestamptz
+  `;
+  await sql`
+    update email_lifecycle_reservations
+    set last_attempt_at = reserved_at
+    where last_attempt_at is null
+  `;
+  await sql`
+    alter table email_lifecycle_reservations
+    alter column last_attempt_at set default now()
+  `;
+  await sql`
+    alter table email_lifecycle_reservations
+    alter column last_attempt_at set not null
   `;
 
   await sql`
@@ -209,16 +249,25 @@ export async function getEmailLifecycleBudgetStatus(): Promise<{
 }> {
   const limit = resolveEmailLifecycleDailyBudget();
   if (!hasDatabaseUrl()) {
-    return { limit, sentToday: 0, remaining: limit };
+    const day = new Date().toISOString().slice(0, 10);
+    const sentToday = getMemoryEmailLifecycleReservationStore().dailyCounts.get(day) ?? 0;
+    return { limit, sentToday, remaining: Math.max(0, limit - sentToday) };
   }
 
   await ensureEmailSequenceSchema();
   const sql = getSql();
   const rows = await sql<Array<{ count: number }>>`
-    select count(*)::int as count
-    from email_log
-    where status = 'sent'
-      and sent_at >= date_trunc('day', now())
+    select (
+      select count(*)::int
+      from email_log
+      where status = 'sent'
+        and reservation_key is null
+        and sent_at >= date_trunc('day', now())
+    ) + coalesce((
+      select reserved_count
+      from email_lifecycle_daily_budget
+      where budget_day = current_date
+    ), 0) as count
   `;
   const sentToday = rows[0]?.count ?? 0;
 
@@ -229,10 +278,249 @@ export async function getEmailLifecycleBudgetStatus(): Promise<{
   };
 }
 
+type EmailLifecycleReservation = {
+  reserved: boolean;
+  reason: "reserved" | "retry" | "budget_exhausted" | "in_flight" | "already_sent";
+};
+
+export const EMAIL_RESERVATION_RETRY_AFTER_MS = 15 * 60 * 1000;
+export const EMAIL_RESERVATION_RETRY_CUTOFF_MS = 23 * 60 * 60 * 1000;
+
+type MemoryEmailLifecycleReservationStore = {
+  reservations: Map<string, {
+    status: "reserved" | "sent";
+    firstReservedAt: number;
+    lastAttemptAt: number;
+    budgetDay: string;
+  }>;
+  dailyCounts: Map<string, number>;
+};
+
+function getMemoryEmailLifecycleReservationStore(): MemoryEmailLifecycleReservationStore {
+  const globalStore = globalThis as typeof globalThis & {
+    __speakAceEmailLifecycleReservations?: MemoryEmailLifecycleReservationStore;
+  };
+  if (!globalStore.__speakAceEmailLifecycleReservations) {
+    globalStore.__speakAceEmailLifecycleReservations = {
+      reservations: new Map(),
+      dailyCounts: new Map()
+    };
+  }
+  return globalStore.__speakAceEmailLifecycleReservations;
+}
+
+export function resetEmailLifecycleReservationMemoryStoreForTests() {
+  const globalStore = globalThis as typeof globalThis & {
+    __speakAceEmailLifecycleReservations?: MemoryEmailLifecycleReservationStore;
+  };
+  delete globalStore.__speakAceEmailLifecycleReservations;
+}
+
+export async function reserveEmailLifecycleSend(
+  reservationKey: string,
+  now = new Date()
+): Promise<EmailLifecycleReservation> {
+  const key = reservationKey.trim().slice(0, 256);
+  if (!key) return { reserved: false, reason: "budget_exhausted" };
+  const limit = resolveEmailLifecycleDailyBudget();
+  const nowMs = now.getTime();
+  const nowIso = now.toISOString();
+  const currentBudgetDay = nowIso.slice(0, 10);
+
+  if (!hasDatabaseUrl()) {
+    const store = getMemoryEmailLifecycleReservationStore();
+    const day = nowIso.slice(0, 10);
+    const existing = store.reservations.get(key);
+    if (existing?.status === "sent") return { reserved: false, reason: "already_sent" };
+    if (existing) {
+      const age = nowMs - existing.firstReservedAt;
+      const sinceLastAttempt = nowMs - existing.lastAttemptAt;
+      if (
+        age >= 0
+        && age < EMAIL_RESERVATION_RETRY_CUTOFF_MS
+        && sinceLastAttempt >= EMAIL_RESERVATION_RETRY_AFTER_MS
+      ) {
+        if (existing.budgetDay !== day) {
+          const used = store.dailyCounts.get(day) ?? 0;
+          if (used >= limit) return { reserved: false, reason: "budget_exhausted" };
+          store.dailyCounts.set(day, used + 1);
+        }
+        store.reservations.set(key, {
+          ...existing,
+          lastAttemptAt: nowMs,
+          budgetDay: day
+        });
+        return { reserved: true, reason: "retry" };
+      }
+      return { reserved: false, reason: "in_flight" };
+    }
+    const used = store.dailyCounts.get(day) ?? 0;
+    if (used >= limit) return { reserved: false, reason: "budget_exhausted" };
+    store.dailyCounts.set(day, used + 1);
+    store.reservations.set(key, {
+      status: "reserved",
+      firstReservedAt: nowMs,
+      lastAttemptAt: nowMs,
+      budgetDay: day
+    });
+    return { reserved: true, reason: "reserved" };
+  }
+
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  return sql.begin(async (transaction) => {
+    const transactionSql = transaction as unknown as ReturnType<typeof getSql>;
+    const reserveBudgetForCurrentDay = async () => {
+      const legacyRows = await transactionSql<Array<{ count: number }>>`
+        select count(*)::int as count
+        from email_log
+        where status = 'sent'
+          and reservation_key is null
+          and sent_at >= (${currentBudgetDay}::date::timestamp at time zone 'UTC')
+          and sent_at < ((${currentBudgetDay}::date + 1)::timestamp at time zone 'UTC')
+      `;
+      const availableForReservations = Math.max(0, limit - (legacyRows[0]?.count ?? 0));
+      if (availableForReservations === 0) return false;
+      const counter = await transactionSql<Array<{ reserved_count: number }>>`
+        insert into email_lifecycle_daily_budget (budget_day, reserved_count, updated_at)
+        values (${currentBudgetDay}::date, 1, ${nowIso})
+        on conflict (budget_day)
+        do update set
+          reserved_count = email_lifecycle_daily_budget.reserved_count + 1,
+          updated_at = ${nowIso}
+        where email_lifecycle_daily_budget.reserved_count < ${availableForReservations}
+        returning reserved_count
+      `;
+      return Boolean(counter[0]);
+    };
+    const existing = await transactionSql<Array<{
+      status: "pending" | "reserved" | "sent";
+      reserved_at: string | Date;
+      last_attempt_at: string | Date;
+      budget_day: string | Date;
+    }>>`
+      select status, reserved_at, last_attempt_at, budget_day
+      from email_lifecycle_reservations
+      where reservation_key = ${key}
+      for update
+    `;
+    if (existing[0]?.status === "sent") return { reserved: false, reason: "already_sent" } as const;
+    if (existing[0]?.status === "reserved" || existing[0]?.status === "pending") {
+      const firstReservedAt = new Date(existing[0].reserved_at).getTime();
+      const lastAttemptAt = new Date(existing[0].last_attempt_at).getTime();
+      const age = nowMs - firstReservedAt;
+      const sinceLastAttempt = nowMs - lastAttemptAt;
+      if (
+        existing[0].status === "reserved"
+        && Number.isFinite(age)
+        && Number.isFinite(sinceLastAttempt)
+        && age >= 0
+        && age < EMAIL_RESERVATION_RETRY_CUTOFF_MS
+        && sinceLastAttempt >= EMAIL_RESERVATION_RETRY_AFTER_MS
+      ) {
+        const existingBudgetDay = existing[0].budget_day instanceof Date
+          ? existing[0].budget_day.toISOString().slice(0, 10)
+          : String(existing[0].budget_day).slice(0, 10);
+        if (existingBudgetDay !== currentBudgetDay && !(await reserveBudgetForCurrentDay())) {
+          return { reserved: false, reason: "budget_exhausted" } as const;
+        }
+        await transactionSql`
+          update email_lifecycle_reservations
+          set last_attempt_at = ${nowIso}, budget_day = ${currentBudgetDay}::date
+          where reservation_key = ${key} and status = 'reserved'
+        `;
+        return { reserved: true, reason: "retry" } as const;
+      }
+      return { reserved: false, reason: "in_flight" } as const;
+    }
+
+    const inserted = await transactionSql<Array<{ reservation_key: string }>>`
+      insert into email_lifecycle_reservations (
+        reservation_key,
+        budget_day,
+        status,
+        reserved_at,
+        last_attempt_at
+      )
+      values (${key}, ${currentBudgetDay}::date, 'pending', ${nowIso}, ${nowIso})
+      on conflict (reservation_key) do nothing
+      returning reservation_key
+    `;
+    if (!inserted[0]) {
+      return { reserved: false, reason: "in_flight" } as const;
+    }
+
+    if (!(await reserveBudgetForCurrentDay())) {
+      await transactionSql`
+        delete from email_lifecycle_reservations
+        where reservation_key = ${key} and status = 'pending'
+      `;
+      return { reserved: false, reason: "budget_exhausted" } as const;
+    }
+
+    await transactionSql`
+      update email_lifecycle_reservations
+      set status = 'reserved', reserved_at = ${nowIso}, last_attempt_at = ${nowIso}
+      where reservation_key = ${key}
+    `;
+    return { reserved: true, reason: "reserved" } as const;
+  });
+}
+
+export async function completeEmailLifecycleReservation(reservationKey: string) {
+  const key = reservationKey.trim().slice(0, 256);
+  if (!key) return;
+  if (!hasDatabaseUrl()) {
+    const store = getMemoryEmailLifecycleReservationStore();
+    const existing = store.reservations.get(key);
+    if (existing) store.reservations.set(key, { ...existing, status: "sent" });
+    return;
+  }
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  await sql`
+    update email_lifecycle_reservations
+    set status = 'sent', sent_at = now()
+    where reservation_key = ${key} and status = 'reserved'
+  `;
+}
+
+export async function releaseEmailLifecycleReservation(reservationKey: string) {
+  const key = reservationKey.trim().slice(0, 256);
+  if (!key) return;
+  if (!hasDatabaseUrl()) {
+    const store = getMemoryEmailLifecycleReservationStore();
+    const existing = store.reservations.get(key);
+    if (!existing || existing.status !== "reserved") return;
+    store.reservations.delete(key);
+    store.dailyCounts.set(existing.budgetDay, Math.max(0, (store.dailyCounts.get(existing.budgetDay) ?? 1) - 1));
+    return;
+  }
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  await sql.begin(async (transaction) => {
+    const transactionSql = transaction as unknown as ReturnType<typeof getSql>;
+    const deleted = await transactionSql<Array<{ budget_day: string | Date }>>`
+      delete from email_lifecycle_reservations
+      where reservation_key = ${key} and status = 'reserved'
+      returning budget_day
+    `;
+    if (!deleted[0]) return;
+    await transactionSql`
+      update email_lifecycle_daily_budget
+      set reserved_count = greatest(0, reserved_count - 1), updated_at = now()
+      where budget_day = ${deleted[0].budget_day}
+    `;
+  });
+}
+
 // ─── Email layout helper ───────────────────────────────────────────────────────
 
 function layout(body: string, preheader = ""): string {
   const safePreheader = escapeEmailHtml(preheader.trim().slice(0, 160));
+  const senderIdentity = getCommercialSenderIdentity();
+  const legalName = escapeEmailHtml(senderIdentity.legalName);
+  const postalAddress = escapeEmailHtml(senderIdentity.postalAddress);
 
   return `
     <!DOCTYPE html>
@@ -256,7 +544,8 @@ function layout(body: string, preheader = ""): string {
           <!-- Footer -->
           <div style="text-align:center;padding:28px 0 0">
             <p style="margin:0;color:#b8a499;font-size:0.75em;line-height:1.8">
-              SpeakAce · IELTS Speaking Practice<br>
+              Commercial practice email from ${legalName}<br>
+              ${postalAddress}<br>
               <a href="${SITE_URL}/unsubscribe" style="color:#b8a499;text-decoration:underline">Unsubscribe</a>
             </p>
           </div>
@@ -700,6 +989,40 @@ function buildEmail12(name: string) {
   };
 }
 
+export async function recordLifecycleEmailAttempt(params: {
+  userId?: string | null;
+  userEmail: string;
+  template: string;
+  subject: string;
+  status: "sent" | "failed";
+  errorMessage?: string;
+  reservationKey?: string;
+}): Promise<void> {
+  if (!hasDatabaseUrl()) return;
+  await ensureEmailSequenceSchema();
+  const sql = getSql();
+  await sql`
+    insert into email_log (
+      user_id,
+      user_email,
+      template,
+      subject,
+      status,
+      error_message,
+      reservation_key
+    )
+    values (
+      ${params.userId ?? null},
+      ${params.userEmail},
+      ${params.template},
+      ${params.subject},
+      ${params.status},
+      ${params.errorMessage ?? null},
+      ${params.reservationKey?.trim().slice(0, 256) || null}
+    )
+  `.catch(() => { /* non-blocking */ });
+}
+
 async function logEmail(params: {
   userId: string;
   userEmail: string;
@@ -707,26 +1030,23 @@ async function logEmail(params: {
   subject: string;
   status: "sent" | "failed";
   errorMessage?: string;
-}): Promise<void> {
-  if (!hasDatabaseUrl()) return;
-  const sql = getSql();
-  await sql`
-    insert into email_log (user_id, user_email, template, subject, status, error_message)
-    values (${params.userId}, ${params.userEmail}, ${params.template}, ${params.subject}, ${params.status}, ${params.errorMessage ?? null})
-  `.catch(() => { /* non-blocking */ });
+}) {
+  return recordLifecycleEmailAttempt(params);
 }
 
 type LifecycleEmailContent = { subject: string; html: string; text: string };
 
-function personalizeLifecycleEmail(emailContent: LifecycleEmailContent, email: string) {
+export function personalizeLifecycleEmail(emailContent: LifecycleEmailContent, email: string) {
   const token = generateUnsubscribeToken(email);
   const query = new URLSearchParams({ email, token }).toString();
   const pageUrl = `${SITE_URL}/unsubscribe?${query}`;
+  const senderIdentity = getCommercialSenderIdentity();
 
   return {
     emailContent: {
       ...emailContent,
-      html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${pageUrl}"`)
+      html: emailContent.html.replace(`${SITE_URL}/unsubscribe"`, `${pageUrl}"`),
+      text: `${emailContent.text}\n\nCommercial practice email from ${senderIdentity.legalName}, ${senderIdentity.postalAddress}.\nUnsubscribe: ${pageUrl}`
     },
     unsubscribeUrl: `${SITE_URL}/api/unsubscribe?${query}`
   };

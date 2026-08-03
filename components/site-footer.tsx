@@ -3,8 +3,8 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { Mail } from "lucide-react";
+import { LeadCaptureForm } from "@/components/lead-capture-form";
 import { siteConfig } from "@/lib/site";
 
 function IconX({ size = 18 }: { size?: number }) {
@@ -78,8 +78,8 @@ type FooterText = {
 const footerText: Record<PublicLanguage, FooterText> = {
   en: {
     tagline: "Master IELTS and TOEFL speaking with AI-powered feedback.",
-    newsletterTitle: "Get one practical speaking tip each week",
-    newsletterBody: "Short IELTS and TOEFL speaking tips, prompts, and study ideas. No spam.",
+    newsletterTitle: "Get the IELTS Speaking score diagnostic",
+    newsletterBody: "Get the 4-part guide first; confirm inside it to activate three short score-and-retry emails.",
     subscribe: "Subscribe",
     subscribed: "Thanks, you're in",
     retry: "Try again",
@@ -105,13 +105,13 @@ const footerText: Record<PublicLanguage, FooterText> = {
     contact: "Contact",
     privacy: "Privacy policy",
     terms: "Terms of service",
-    weeklyLabel: "Weekly speaking notes",
+    weeklyLabel: "Free score guide",
     copyright: "All rights reserved."
   },
   tr: {
     tagline: "Yapay zeka destekli geri bildirimle IELTS ve TOEFL speaking'i geliştir.",
-    newsletterTitle: "Her hafta bir pratik speaking ipucu al",
-    newsletterBody: "Kısa IELTS ve TOEFL speaking ipuçları, prompt'lar ve çalışma fikirleri.",
+    newsletterTitle: "IELTS Speaking skor analiz rehberini al",
+    newsletterBody: "Önce 4 bölümlük rehberi al; üç kısa takip e-postasını açmak için içinden onayla.",
     subscribe: "Abone ol",
     subscribed: "Tamam, eklendin",
     retry: "Tekrar dene",
@@ -137,13 +137,13 @@ const footerText: Record<PublicLanguage, FooterText> = {
     contact: "İletişim",
     privacy: "Gizlilik politikası",
     terms: "Kullanım koşulları",
-    weeklyLabel: "Haftalık speaking notları",
+    weeklyLabel: "Ücretsiz skor rehberi",
     copyright: "Tüm hakları saklıdır."
   },
   de: {
     tagline: "Verbessere IELTS- und TOEFL-Sprechen mit KI-gestütztem Feedback.",
-    newsletterTitle: "Ein praktischer Sprechtipp pro Woche",
-    newsletterBody: "Kurze Tipps, Aufgaben und Lernideen für IELTS und TOEFL. Kein Spam.",
+    newsletterTitle: "Hol dir die IELTS-Sprechdiagnose",
+    newsletterBody: "Du erhältst zuerst den 4-Teile-Leitfaden; bestätige darin drei kurze Folge-E-Mails.",
     subscribe: "Abonnieren",
     subscribed: "Du bist dabei",
     retry: "Erneut versuchen",
@@ -169,13 +169,13 @@ const footerText: Record<PublicLanguage, FooterText> = {
     contact: "Kontakt",
     privacy: "Datenschutz",
     terms: "Nutzungsbedingungen",
-    weeklyLabel: "Wöchentliche Sprechnotizen",
+    weeklyLabel: "Kostenloser Score-Leitfaden",
     copyright: "Alle Rechte vorbehalten."
   },
   es: {
     tagline: "Mejora tu speaking de IELTS y TOEFL con feedback de IA.",
-    newsletterTitle: "Un consejo práctico de speaking cada semana",
-    newsletterBody: "Consejos breves, preguntas e ideas de estudio. Sin spam.",
+    newsletterTitle: "Recibe el diagnóstico de IELTS Speaking",
+    newsletterBody: "Recibe primero la guía de 4 partes y confirma dentro si quieres tres emails breves.",
     subscribe: "Suscribirme",
     subscribed: "Ya estás dentro",
     retry: "Intentar de nuevo",
@@ -201,13 +201,13 @@ const footerText: Record<PublicLanguage, FooterText> = {
     contact: "Contacto",
     privacy: "Privacidad",
     terms: "Términos del servicio",
-    weeklyLabel: "Notas semanales de speaking",
+    weeklyLabel: "Guía de puntuación gratis",
     copyright: "Todos los derechos reservados."
   },
   fr: {
     tagline: "Progressez à l’oral IELTS et TOEFL avec un feedback IA.",
-    newsletterTitle: "Un conseil pratique d’oral chaque semaine",
-    newsletterBody: "Conseils courts, sujets et idées d’étude. Aucun spam.",
+    newsletterTitle: "Reçois le diagnostic IELTS Speaking",
+    newsletterBody: "Recevez d’abord le guide en 4 parties, puis confirmez-y trois courts e-mails de suivi.",
     subscribe: "S’abonner",
     subscribed: "Vous êtes inscrit",
     retry: "Réessayer",
@@ -233,7 +233,7 @@ const footerText: Record<PublicLanguage, FooterText> = {
     contact: "Contact",
     privacy: "Confidentialité",
     terms: "Conditions d’utilisation",
-    weeklyLabel: "Notes hebdomadaires d’oral",
+    weeklyLabel: "Guide de score gratuit",
     copyright: "Tous droits réservés."
   }
 };
@@ -241,8 +241,6 @@ const footerText: Record<PublicLanguage, FooterText> = {
 export function SiteFooter() {
   const pathname = usePathname();
   const { language } = useAppState();
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
 
   if (pathname?.startsWith("/app") || pathname?.startsWith("/admin") || pathname?.startsWith("/auth")) {
     return null;
@@ -422,70 +420,7 @@ export function SiteFooter() {
             <h3 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: "0.25rem" }}>{t.newsletterTitle}</h3>
             <p style={{ fontSize: "0.8125rem", color: "var(--muted-foreground)" }}>{t.newsletterBody}</p>
           </div>
-          <form
-            onSubmit={async (event) => {
-              event.preventDefault();
-              if (!email.trim() || status === "loading") return;
-              setStatus("loading");
-              try {
-                const response = await fetch("/api/marketing/lead", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ email: email.trim(), source: "footer-newsletter" })
-                });
-                if (response.ok) {
-                  setStatus("done");
-                  setEmail("");
-                  window.setTimeout(() => setStatus("idle"), 3000);
-                } else {
-                  setStatus("error");
-                  window.setTimeout(() => setStatus("idle"), 3000);
-                }
-              } catch {
-                setStatus("error");
-                window.setTimeout(() => setStatus("idle"), 3000);
-              }
-            }}
-            style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}
-          >
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="your@email.com"
-              disabled={status === "loading" || status === "done"}
-              style={{
-                padding: "0.625rem 1rem",
-                fontSize: "0.875rem",
-                background: "var(--input-bg)",
-                border: "1px solid var(--border)",
-                borderRadius: "8px",
-                color: "var(--foreground)",
-                outline: "none",
-                minWidth: "220px",
-                opacity: status === "loading" ? 0.6 : 1
-              }}
-            />
-            <button
-              type="submit"
-              disabled={status === "loading" || status === "done"}
-              style={{
-                padding: "0.625rem 1.25rem",
-                fontSize: "0.875rem",
-                fontWeight: 700,
-                color: "white",
-                background: status === "error" ? "var(--destructive, #e53e3e)" : "var(--primary)",
-                border: "none",
-                borderRadius: "8px",
-                cursor: status === "loading" || status === "done" ? "default" : "pointer",
-                whiteSpace: "nowrap",
-                opacity: status === "loading" ? 0.7 : 1,
-                transition: "background 0.2s, opacity 0.2s"
-              }}
-            >
-              {status === "loading" ? "..." : status === "done" ? t.subscribed : status === "error" ? t.retry : t.subscribe}
-            </button>
-          </form>
+          <LeadCaptureForm source="footer_newsletter" variant="compact" showName={false} />
         </div>
 
         {/* Bottom bar */}

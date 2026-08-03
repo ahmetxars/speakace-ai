@@ -14,11 +14,15 @@ function getStore(): MemoryRateLimitStore {
 }
 
 export function getRequestIp(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() || "unknown";
-  }
-  return request.headers.get("x-real-ip") ?? "unknown";
+  // Vercel overwrites this header at the edge, while a proxy in front of
+  // Vercel may rewrite the generic X-Forwarded-For header.
+  const candidate =
+    request.headers.get("x-vercel-forwarded-for") ??
+    request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for") ??
+    "";
+  const first = candidate.split(",")[0]?.trim().replace(/^\[|\]$/g, "") ?? "";
+  return isIP(first) ? first : "unknown";
 }
 
 export function rateLimitResponse(retryAfterSeconds: number, message = "Too many requests. Please try again later.") {
@@ -55,3 +59,4 @@ export function checkRateLimit(input: { key: string; windowMs: number; max: numb
   store.set(input.key, current);
   return { allowed: true, retryAfterSeconds: 0 };
 }
+import { isIP } from "node:net";

@@ -7,6 +7,7 @@ type EmailPayload = {
   html: string;
   text: string;
   unsubscribeUrl?: string;
+  idempotencyKey?: string;
 };
 
 export function resolveEmailReplyTo(configuredValue = process.env.EMAIL_REPLY_TO) {
@@ -39,17 +40,60 @@ export function hasEmailTransport() {
   return Boolean(config.apiKey && config.from);
 }
 
+export function isEmailSuppressionError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  const normalized = message.toLowerCase();
+  return ["suppressed", "suppression", "complaint", "hard_bounce", "hard bounce"].some((value) => (
+    normalized.includes(value)
+  ));
+}
+
+export function isDefiniteEmailRejection(error: unknown) {
+  return error instanceof Error && (
+    error.message.startsWith("Email send failed:") ||
+    error.message.startsWith("Email configuration error:")
+  );
+}
+
+export function getCommercialSenderIdentity() {
+  const legalName = process.env.COMPANY_LEGAL_NAME?.replace(/\s+/g, " ").trim().slice(0, 160) ?? "";
+  const postalAddress = process.env.COMPANY_POSTAL_ADDRESS?.replace(/\s+/g, " ").trim().slice(0, 300) ?? "";
+
+  if (hasEmailTransport() && (!legalName || !postalAddress)) {
+    throw new Error(
+      "Email configuration error: COMPANY_LEGAL_NAME and COMPANY_POSTAL_ADDRESS are required for commercial email."
+    );
+  }
+
+  return {
+    legalName: legalName || "SpeakAce AI",
+    postalAddress: postalAddress || "Postal address required before production sending"
+  };
+}
+
+function commercialIdentityHtml(identity: ReturnType<typeof getCommercialSenderIdentity>) {
+  return `${escapeHtml(identity.legalName)} · ${escapeHtml(identity.postalAddress)}`;
+}
+
+function normalizeEmailLocale(locale?: string) {
+  const normalized = locale?.trim().toLowerCase().split("-")[0];
+  return normalized === "tr" || normalized === "de" || normalized === "es" || normalized === "fr"
+    ? normalized
+    : "en";
+}
+
 export async function sendEmail(payload: EmailPayload) {
   const config = getResendConfig();
   if (!config.apiKey || !config.from) {
     return { ok: false as const, skipped: true as const };
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
+  const request: RequestInit = {
     method: "POST",
     headers: {
       Authorization: `Bearer ${config.apiKey}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      ...(payload.idempotencyKey ? { "Idempotency-Key": payload.idempotencyKey.slice(0, 256) } : {})
     },
     body: JSON.stringify({
       from: config.from,
@@ -67,14 +111,39 @@ export async function sendEmail(payload: EmailPayload) {
         : {}),
       ...(config.replyTo ? { reply_to: config.replyTo } : {})
     })
-  });
+  };
 
-  if (!response.ok) {
+  const maxAttempts = payload.idempotencyKey ? 3 : 1;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    let response: Response;
+    try {
+      response = await fetch("https://api.resend.com/emails", request);
+    } catch (error) {
+      if (attempt < maxAttempts) continue;
+      throw error;
+    }
+
+    if (response.ok) return { ok: true as const };
+
     const raw = await response.text();
+    const idempotencyConflict = response.status === 409 && Boolean(payload.idempotencyKey);
+    const concurrentIdempotentRequest = idempotencyConflict
+      && raw.toLowerCase().includes("concurrent_idempotent_requests");
+    if (concurrentIdempotentRequest && attempt < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, attempt * 200));
+      continue;
+    }
+    if (concurrentIdempotentRequest) {
+      throw new Error("Email send ambiguous: Resend is still processing the idempotent request.");
+    }
+    if (idempotencyConflict) {
+      throw new Error("Email send ambiguous: Resend reported a conflict for an existing idempotency key.");
+    }
+
     throw new Error(`Email send failed: ${raw || response.statusText}`);
   }
 
-  return { ok: true as const };
+  throw new Error("Email send ambiguous: retry attempts exhausted.");
 }
 
 export async function sendVerificationEmail(input: { to: string; name?: string; verificationUrl: string }) {
@@ -119,33 +188,131 @@ export async function sendPasswordResetEmail(input: { to: string; name?: string;
   });
 }
 
-export async function sendLeadMagnetEmail(input: { to: string; name?: string }) {
+export async function sendLeadMagnetEmail(input: {
+  to: string;
+  name?: string;
+  locale?: string;
+  confirmationUrl: string;
+  idempotencyKey: string;
+}) {
   const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
-  const resourcesUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/resources`;
-  const practiceUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org"}/app/practice`;
+  const senderIdentity = getCommercialSenderIdentity();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
+  const locale = normalizeEmailLocale(input.locale);
+  const resourcesUrl = `${siteUrl}/resources?utm_source=email&utm_medium=lead_magnet&utm_campaign=score_diagnostic`;
+  const practiceUrl = `${siteUrl}/auth?mode=signup&cta=score_diagnostic_guide`;
+  const unsubToken = generateUnsubscribeToken(input.to);
+  const unsubscribePageUrl = `${siteUrl}/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}&lang=${locale}`;
+  const unsubscribeApiUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}`;
 
   return sendEmail({
     to: input.to,
-    subject: "Your SpeakAce IELTS speaking checklist",
+    subject: "Your IELTS Speaking score diagnostic guide",
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
-        <h2 style="margin:0 0 12px">Your free speaking checklist is ready</h2>
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
+        <h2 style="margin:0 0 12px">Your IELTS Speaking score diagnostic</h2>
         <p>Hi ${greeting},</p>
-        <p>Here is the simple routine we recommend for faster IELTS speaking improvement:</p>
-        <ul>
-          <li>Answer one timed speaking prompt every day</li>
-          <li>Review the transcript before you retry</li>
-          <li>Add one clear reason and one example to each answer</li>
-          <li>Repeat weak prompts instead of always switching topics</li>
-        </ul>
+        <p>Use this four-part check on one recorded answer. It is a practice diagnostic, not an official IELTS score.</p>
+        <div style="background:#fff8f2;border:1px solid #e9d9ca;border-radius:16px;padding:18px 20px;margin:20px 0">
+          <p style="margin:0 0 10px"><strong>1. Fluency:</strong> mark every pause longer than two seconds. Retry while keeping the same ideas.</p>
+          <p style="margin:0 0 10px"><strong>2. Vocabulary:</strong> circle repeated general words. Replace only two with more precise choices.</p>
+          <p style="margin:0 0 10px"><strong>3. Grammar:</strong> find one sentence you abandoned or repaired. Say it again as two clean sentences.</p>
+          <p style="margin:0"><strong>4. Pronunciation:</strong> underline the words carrying your meaning. Stress those words on the retry.</p>
+        </div>
+        <p><strong>Your 10-minute retry:</strong> record once, review the transcript, choose the weakest category, then retry the same prompt with one change.</p>
         <p style="margin:24px 0">
-          <a href="${practiceUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Start free practice</a>
+          <a href="${practiceUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Create a free account and score an answer</a>
         </p>
-        <p>You can also open the full resource hub here:</p>
-        <p><a href="${resourcesUrl}">${resourcesUrl}</a></p>
+        <p>Keep the guide with the full resource hub: <a href="${resourcesUrl}">${resourcesUrl}</a></p>
+        <div style="background:#eef8f7;border:1px solid #b9ddda;border-radius:16px;padding:18px 20px;margin:24px 0">
+          <p style="margin:0 0 12px"><strong>Want the three short follow-up emails, including a Plus offer?</strong></p>
+          <p style="margin:0 0 16px">Confirm that you own this email address. Until you confirm, this guide is the only practice email we will send for this request.</p>
+          <a href="${input.confirmationUrl}" style="background:#1d6f75;color:#fff8f2;text-decoration:none;padding:11px 16px;border-radius:999px;font-weight:700;display:inline-block">Confirm follow-up emails</a>
+        </div>
+        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
+        <p style="color:#777;font-size:0.8em;margin:0">Commercial practice email from ${commercialIdentityHtml(senderIdentity)}. You requested this guide from SpeakAce. <a href="${unsubscribePageUrl}" style="color:#777">Unsubscribe</a></p>
       </div>
     `,
-    text: `Hi ${greeting}, your free speaking checklist is ready. Start free practice here: ${practiceUrl} or open the resource hub: ${resourcesUrl}`
+    text: `Hi ${greeting}, your IELTS Speaking score diagnostic is ready. Check fluency (long pauses), vocabulary (repeated general words), grammar (abandoned sentences), and pronunciation (meaning-carrying stress). Then retry the same prompt with one change. Create a free account and score an answer: ${practiceUrl}. Resources: ${resourcesUrl}. To receive three short follow-up emails, including a Plus offer in the final message, confirm your email here: ${input.confirmationUrl}. Until confirmation, this is the only practice email we will send for this request. Commercial practice email from ${senderIdentity.legalName}, ${senderIdentity.postalAddress}. Unsubscribe: ${unsubscribePageUrl}`,
+    unsubscribeUrl: unsubscribeApiUrl,
+    idempotencyKey: input.idempotencyKey
+  });
+}
+
+export type MarketingLeadNurtureStep = 1 | 2 | 3;
+
+export async function sendMarketingLeadNurtureEmail(input: {
+  to: string;
+  name?: string;
+  locale?: string;
+  step: MarketingLeadNurtureStep;
+  idempotencyKey: string;
+}) {
+  const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
+  const senderIdentity = getCommercialSenderIdentity();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
+  const locale = normalizeEmailLocale(input.locale);
+  const signupUrl = `${siteUrl}/auth?mode=signup&cta=lead_diagnostic_nurture_${input.step}`;
+  const practiceUrl = `${siteUrl}/app/practice?quickStart=1&runMode=interview&activation=lead_diagnostic_nurture_${input.step}`;
+  const annualCheckoutUrl = `${siteUrl}/api/payments/lemon/checkout?plan=plus&billing=annual&campaign=lead_diagnostic_nurture`;
+  const pricingUrl = `${siteUrl}/pricing?billing=annual&utm_source=email&utm_medium=nurture&utm_campaign=lead_diagnostic`;
+  const unsubToken = generateUnsubscribeToken(input.to);
+  const unsubscribePageUrl = `${siteUrl}/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}&lang=${locale}`;
+  const unsubscribeApiUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}`;
+
+  const content: Record<MarketingLeadNurtureStep, { subject: string; body: string; text: string }> = {
+    1: {
+      subject: "Use your transcript as a score map",
+      body: `
+        <p>A transcript is useful when it points to one change—not when it becomes another page to study.</p>
+        <ol>
+          <li>Highlight repeated words and unfinished sentences.</li>
+          <li>Choose the one pattern that most affects clarity.</li>
+          <li>Retry the same prompt while fixing only that pattern.</li>
+        </ol>
+        <p>Your free SpeakAce account keeps the answer, transcript, feedback, and retry together.</p>
+        <p style="margin:24px 0"><a href="${signupUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Score one answer for free</a></p>
+      `,
+      text: `Use your transcript as a score map: mark repeated words and unfinished sentences, choose one pattern, then retry the same prompt. Score one answer for free: ${signupUrl}`
+    },
+    2: {
+      subject: "The Band 7 retry rule: change one thing",
+      body: `
+        <p>Trying to fix fluency, vocabulary, grammar, and pronunciation at once usually makes the second answer less natural.</p>
+        <p><strong>The retry rule:</strong> keep the question and ideas, then improve one scoring category. If pauses are the main issue, shorten pauses. If development is thin, add one reason and one example.</p>
+        <p>That gives you a fair before-and-after comparison instead of two unrelated answers.</p>
+        <p style="margin:24px 0"><a href="${practiceUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Run a free score-and-retry</a></p>
+      `,
+      text: `The Band 7 retry rule: keep the prompt and ideas, improve only one scoring category, and compare the attempts. Run a free score-and-retry: ${practiceUrl}`
+    },
+    3: {
+      subject: "Make score-and-retry your weekly system",
+      body: `
+        <p>If the diagnostic and retry loop helped, the next step is consistency: several focused answers each week, with feedback kept beside every attempt.</p>
+        <p>SpeakAce Plus annual is built for that longer preparation rhythm. Review the annual option when you are ready; your free practice remains available either way.</p>
+        <p style="margin:24px 0"><a href="${annualCheckoutUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Choose Plus annual</a></p>
+        <p style="font-size:0.9em">Prefer to compare first? <a href="${pricingUrl}">See every plan</a> or <a href="${practiceUrl}">keep practicing free</a>.</p>
+      `,
+      text: `Make score-and-retry your weekly system. Review SpeakAce Plus annual: ${annualCheckoutUrl}. Compare plans: ${pricingUrl}. Keep practicing free: ${practiceUrl}`
+    }
+  };
+  const selected = content[input.step];
+
+  return sendEmail({
+    to: input.to,
+    subject: selected.subject,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
+        <h2 style="margin:0 0 12px">${selected.subject}</h2>
+        <p>Hi ${greeting},</p>
+        ${selected.body}
+        <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
+        <p style="color:#777;font-size:0.8em;margin:0">Commercial practice email from ${commercialIdentityHtml(senderIdentity)}. You requested the IELTS Speaking score diagnostic from SpeakAce. <a href="${unsubscribePageUrl}" style="color:#777">Unsubscribe</a></p>
+      </div>
+    `,
+    text: `Hi ${greeting}, ${selected.text}. Commercial practice email from ${senderIdentity.legalName}, ${senderIdentity.postalAddress}. Unsubscribe: ${unsubscribePageUrl}`,
+    unsubscribeUrl: unsubscribeApiUrl,
+    idempotencyKey: input.idempotencyKey
   });
 }
 
@@ -292,13 +459,17 @@ export async function sendTeacherWelcomeEmail(input: { to: string; name?: string
   });
 }
 
-export async function sendInstitutionLeadEmail(input: { to: string; name?: string }) {
+export async function sendInstitutionLeadEmail(input: { to: string; name?: string; locale?: string; idempotencyKey?: string }) {
   const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
+  const senderIdentity = getCommercialSenderIdentity();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
+  const locale = normalizeEmailLocale(input.locale);
   const unsubToken = generateUnsubscribeToken(input.to);
   const demoUrl = `${siteUrl}/teacher-demo`;
   const institutionUrl = `${siteUrl}/app/teacher/institution`;
   const pricingUrl = `${siteUrl}/pricing`;
+  const unsubscribeApiUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}`;
+  const unsubscribePageUrl = `${siteUrl}/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}&lang=${locale}`;
 
   return sendEmail({
     to: input.to,
@@ -341,20 +512,26 @@ export async function sendInstitutionLeadEmail(input: { to: string; name?: strin
           <a href="${pricingUrl}" style="background:#1d6f75;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">See pricing</a>
         </p>
         <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you requested school information on SpeakAce. <a href="${siteUrl}/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}" style="color:#aaa">Unsubscribe</a></p>
+        <p style="color:#aaa;font-size:0.8em;margin:0">Commercial email from ${commercialIdentityHtml(senderIdentity)}. You requested school information on SpeakAce. <a href="${unsubscribePageUrl}" style="color:#aaa">Unsubscribe</a></p>
       </div>
     `,
-    text: `Hi ${greeting}, thank you for your interest in SpeakAce for schools. View the teacher demo: ${demoUrl} — institution portal: ${institutionUrl} — pricing: ${pricingUrl}`
+    text: `Hi ${greeting}, thank you for your interest in SpeakAce for schools. View the teacher demo: ${demoUrl} — institution portal: ${institutionUrl} — pricing: ${pricingUrl}. Commercial email from ${senderIdentity.legalName}, ${senderIdentity.postalAddress}. Unsubscribe: ${unsubscribePageUrl}`,
+    unsubscribeUrl: unsubscribeApiUrl,
+    idempotencyKey: input.idempotencyKey
   });
 }
 
-export async function sendTeacherLeadEmail(input: { to: string; name?: string }) {
+export async function sendTeacherLeadEmail(input: { to: string; name?: string; locale?: string; idempotencyKey?: string }) {
   const greeting = escapeHtml(input.name?.trim() ? input.name.trim() : "there");
+  const senderIdentity = getCommercialSenderIdentity();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org";
+  const locale = normalizeEmailLocale(input.locale);
   const unsubToken = generateUnsubscribeToken(input.to);
   const teacherUrl = `${siteUrl}/app/teacher`;
   const demoUrl = `${siteUrl}/teacher-demo`;
   const pricingUrl = `${siteUrl}/pricing`;
+  const unsubscribeApiUrl = `${siteUrl}/api/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}`;
+  const unsubscribePageUrl = `${siteUrl}/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}&lang=${locale}`;
 
   return sendEmail({
     to: input.to,
@@ -383,10 +560,12 @@ export async function sendTeacherLeadEmail(input: { to: string; name?: string })
         </p>
         <p>Compare plans and pricing: <a href="${pricingUrl}" style="color:#d95d39">${pricingUrl}</a></p>
         <hr style="border:none;border-top:1px solid #e9d9ca;margin:32px 0 16px">
-        <p style="color:#aaa;font-size:0.8em;margin:0">You are receiving this email because you requested teacher information on SpeakAce. <a href="${siteUrl}/unsubscribe?email=${encodeURIComponent(input.to)}&token=${unsubToken}" style="color:#aaa">Unsubscribe</a></p>
+        <p style="color:#aaa;font-size:0.8em;margin:0">Commercial email from ${commercialIdentityHtml(senderIdentity)}. You requested teacher information on SpeakAce. <a href="${unsubscribePageUrl}" style="color:#aaa">Unsubscribe</a></p>
       </div>
     `,
-    text: `Hi ${greeting}, here's what's in the SpeakAce teacher portal. View demo: ${demoUrl} — open teacher portal: ${teacherUrl} — pricing: ${pricingUrl}`
+    text: `Hi ${greeting}, here's what's in the SpeakAce teacher portal. View demo: ${demoUrl} — open teacher portal: ${teacherUrl} — pricing: ${pricingUrl}. Commercial email from ${senderIdentity.legalName}, ${senderIdentity.postalAddress}. Unsubscribe: ${unsubscribePageUrl}`,
+    unsubscribeUrl: unsubscribeApiUrl,
+    idempotencyKey: input.idempotencyKey
   });
 }
 

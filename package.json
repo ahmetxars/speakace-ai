@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "audit:i18n": "node scripts/audit-i18n.mjs",
+    "export:social": "node scripts/export-social-content.mjs",
     "db:push": "node scripts/apply-schema.mjs",
+    "reconcile:email": "node scripts/reconcile-email-reservations.mjs",
     "reconcile:lemon": "node scripts/reconcile-lemon-orders.mjs",
     "send:campaign": "node scripts/send-campaign.mjs"
   },

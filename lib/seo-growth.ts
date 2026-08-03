@@ -98,6 +98,19 @@ export const toolPages: SeoGrowthEntry[] = [
     actionLabel: "Calculate score"
   },
   {
+    slug: "ielts-speaking-band-score-calculator",
+    title: "IELTS Speaking Band Score Calculator",
+    description: "Estimate your IELTS Speaking band from fluency, vocabulary, grammar, and pronunciation, then get one focused retry drill.",
+    intro: "Score the four equally weighted IELTS Speaking criteria, see a transparent half-band planning estimate, and turn the weakest part of your profile into a specific diagnostic retry.",
+    bullets: [
+      "Rate fluency and coherence, lexical resource, grammatical range and accuracy, and pronunciation separately.",
+      "The calculator averages the four self-ratings and shows the nearest half band for planning, not as an official prediction.",
+      "Your result identifies the lowest criterion and gives you one controlled retry so the next recording produces useful evidence."
+    ],
+    cta: "Save your four-criterion profile, then test the weakest criterion in a free speaking attempt.",
+    actionLabel: "Estimate speaking band"
+  },
+  {
     slug: "ielts-cue-card-generator",
     title: "IELTS Cue Card Generator",
     description: "Generate realistic IELTS Speaking Part 2 cue cards with bullet points, follow-up questions, and a two-minute practice structure.",
@@ -167,15 +180,15 @@ export const toolPages: SeoGrowthEntry[] = [
 export const guidePages: SeoGrowthEntry[] = [
   {
     slug: "ielts-speaking-band-6-to-7",
-    title: "IELTS Speaking Band 6 to 7",
-    description: "Practical guidance to move IELTS speaking from band 6 to band 7 with cleaner structure and stronger examples.",
-    intro: "The jump from band 6 to 7 usually comes from cleaner response control rather than dramatic vocabulary changes.",
+    title: "IELTS Speaking Band 7 Retry Guide",
+    description: "Use a focused IELTS Speaking Band 7 retry method for fluency, vocabulary, grammar, pronunciation, and Part 2 cue cards.",
+    intro: "Moving from Band 6 toward Band 7 is usually a question of control: sustaining a coherent answer, choosing language flexibly, producing frequent accurate sentences, and staying easy to understand. This guide turns those four criteria into evidence-based retries.",
     bullets: [
-      "More direct answers matter.",
-      "Examples should support the point instead of replacing it.",
-      "Retrying the same prompt often reveals the fastest path to improvement."
+      "Score the same recording against all four official Speaking criteria, then choose only the weakest one for the next retry.",
+      "Keep the prompt and core idea constant so you can tell whether the change improved fluency, language control, or clarity.",
+      "For Part 2, use the cue card as a short sequence of notes rather than a script, then retry the same story with one measurable change."
     ],
-    cta: "Practice one answer, check the transcript, and retry with a stronger structure."
+    cta: "Record one answer, diagnose one criterion, and retry it before you move to a new topic."
   },
   {
     slug: "improve-ielts-speaking-pronunciation",
