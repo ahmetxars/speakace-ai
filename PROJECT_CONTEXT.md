@@ -118,6 +118,7 @@ This is the project-wide “where things live” map.
   - `components/resource-library.tsx` owns the filterable, progressively revealed Resources archive.
   - `components/blog-library.tsx` owns Blog archive filtering, search, and progressive loading.
   - `components/blog-reading-enhancements.tsx` owns article reading progress and the delayed, dismissible practice reminder.
+  - `app/free-ielts-speaking-test/page.tsx` embeds `components/mini-speaking-demo.tsx` as a no-account warm-up before the full free assessment. The mini demo uses browser speech recognition and local answer-pattern checks only; analytics must never include its audio or transcript.
 - Content:
   - `lib/marketing-content.ts`
   - `lib/blog-content.ts`
@@ -264,7 +265,7 @@ This is the project-wide “where things live” map.
   - `instrumentation-client.ts`
   - `lib/posthog-server.ts`
   - PostHog is optional: when `NEXT_PUBLIC_POSTHOG_KEY` is absent or analytics is disabled, browser and server clients remain no-op while first-party `analytics_events` collection continues. Admin health reports these two channels separately.
-  - first-payment funnel events include `pricing_view`, `pricing_plus_click`, `practice_limit_hit`, `upgrade_prompt_view`, `checkout_initiated`, `checkout_completed`, `billing_success_seen`, and `billing_sync_pending`
+  - first-payment funnel events include `pricing_view`, `pricing_plus_click`, `practice_limit_hit`, `upgrade_prompt_view`, `checkout_initiated`, `checkout_completed`, `billing_success_seen`, and `billing_sync_pending`; the public pre-account speaking funnel uses `marketing_demo_started`, `marketing_demo_completed`, and `marketing_demo_cta_click`.
   - allowlisted public marketing events use a 180-day HttpOnly `speakace_visitor_id` cookie; product events still require authentication.
   - `analytics_events.user_id` is nullable and `visitor_id` is indexed so pre-signup activity can be measured without storing direct customer data.
   - `checkout_completed` is emitted server-side only for Lemon `order_created`; `subscription_created` arrives for the same initial sale and must not be counted as a second conversion.

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdSenseUnit } from "@/components/adsense-unit";
+import { MiniSpeakingDemo } from "@/components/mini-speaking-demo";
 import { siteConfig } from "@/lib/site";
 
 const pagePath = "/free-ielts-speaking-test";
@@ -185,11 +186,14 @@ export default function FreeIeltsSpeakingTestPage() {
           then retry with a clearer response.
         </p>
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-          <Link className="button button-primary" href="/app/practice?quickStart=1">
-            Start the free speaking test
+          <Link className="button button-primary" href="#try-free-demo">
+            Try the 60-second demo
           </Link>
-          <Link className="button button-secondary" href="#feedback-example">
-            See a transcript retry example
+          <Link
+            className="button button-secondary"
+            href="/app/practice?quickStart=1&runMode=interview&activation=free_test_primary"
+          >
+            Get my full free score
           </Link>
         </div>
         <p style={{ fontSize: "0.92rem", margin: 0 }}>
@@ -197,6 +201,38 @@ export default function FreeIeltsSpeakingTestPage() {
           <Link href="/toefl-speaking-practice">TOEFL speaking practice</Link> flow.
         </p>
       </header>
+
+      <section
+        id="try-free-demo"
+        className="card"
+        style={{
+          padding: "clamp(1.1rem, 3vw, 2rem)",
+          display: "grid",
+          gap: "1.2rem",
+          scrollMarginTop: "6rem",
+          background:
+            "linear-gradient(135deg, color-mix(in oklch, var(--card) 94%, var(--primary) 6%), var(--card))"
+        }}
+        aria-labelledby="free-demo-title"
+      >
+        <div style={{ maxWidth: "52rem" }}>
+          <span className="eyebrow">Try before creating an account</span>
+          <h2 id="free-demo-title" style={{ margin: "0.75rem 0 0.65rem" }}>
+            Give one answer and see an instant practice signal
+          </h2>
+          <p className="practice-copy" style={{ margin: 0 }}>
+            Use your microphone for a short warm-up. The demo checks visible answer patterns in your browser;
+            the full free test adds a saved transcript, IELTS-style criterion feedback, and a focused retry.
+          </p>
+        </div>
+        <MiniSpeakingDemo
+          language="en"
+          prompt="What makes your hometown a good place to live? Give one reason and one example."
+          source="free_ielts_speaking_test"
+          ctaHref="/app/practice?quickStart=1&runMode=interview&activation=free_test_demo"
+          ctaLabel="Get my full free score"
+        />
+      </section>
 
       <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
         <h2>A focused speaking diagnostic, not a generic conversation bot</h2>

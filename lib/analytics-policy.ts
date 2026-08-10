@@ -8,6 +8,9 @@ const ANONYMOUS_ANALYTICS_EVENTS = new Set<AnalyticsEventName>([
   "pricing_view",
   "pricing_plus_click",
   "marketing_cta_click",
+  "marketing_demo_started",
+  "marketing_demo_completed",
+  "marketing_demo_cta_click",
   "pricing_cta_click",
   "checkout_cta_click"
 ]);
