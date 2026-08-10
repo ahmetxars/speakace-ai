@@ -3,7 +3,8 @@ import {
   isDefiniteEmailRejection,
   resolveEmailReplyTo,
   sendEmail,
-  sendLeadMagnetEmail
+  sendLeadMagnetEmail,
+  sendPurchaseAccountClaimEmail
 } from "@/lib/server/email";
 
 const managedEnvKeys = [
@@ -132,5 +133,38 @@ describe("commercial email delivery safety", () => {
     expect((caught as Error).message).toContain("Email send ambiguous");
     expect(isDefiniteEmailRejection(caught)).toBe(false);
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+});
+
+describe("purchase access delivery", () => {
+  it("sends a retry-safe transactional account claim without marketing headers", async () => {
+    process.env.RESEND_API_KEY = "re_test_key";
+    process.env.EMAIL_FROM = "SpeakAce <info@mail.speakace.org>";
+    process.env.NEXT_PUBLIC_SITE_URL = "https://speakace.org";
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(sendPurchaseAccountClaimEmail({
+      to: "buyer@example.test",
+      plan: "plus",
+      idempotencyKey: "purchase-account-claim:event-1"
+    })).resolves.toEqual({ ok: true });
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(init.headers).toMatchObject({
+      "Idempotency-Key": "purchase-account-claim:event-1"
+    });
+    const body = JSON.parse(String(init.body)) as {
+      subject: string;
+      html: string;
+      text: string;
+      headers?: Record<string, string>;
+    };
+    expect(body.subject).toBe("Your SpeakAce Plus access is ready");
+    expect(body.html).toContain("the same email address this message was sent to");
+    expect(body.html).toContain("/auth?mode=signup&amp;intent=purchase_claim");
+    expect(body.text).toContain("/auth?mode=signup&intent=purchase_claim");
+    expect(body.headers).toBeUndefined();
   });
 });

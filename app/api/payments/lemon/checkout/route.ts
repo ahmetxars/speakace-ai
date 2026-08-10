@@ -53,27 +53,6 @@ function normalizeCheckoutParam(value: string | null, maxLength: number) {
   return normalized ? normalized.slice(0, maxLength) : undefined;
 }
 
-function buildCheckoutResumePath(input: {
-  plan: "plus" | "pro" | "lifetime";
-  billing: CheckoutBillingInterval;
-  coupon?: string;
-  campaign?: string;
-  ctaPath?: string;
-  ctaEvent?: string;
-  checkoutId: string;
-}) {
-  const params = new URLSearchParams({
-    plan: input.plan,
-    billing: input.billing,
-    checkout_id: input.checkoutId
-  });
-  if (input.coupon) params.set("coupon", input.coupon);
-  if (input.campaign) params.set("campaign", input.campaign);
-  if (input.ctaPath) params.set("cta", input.ctaPath);
-  if (input.ctaEvent) params.set("cta_event", input.ctaEvent);
-  return `/api/payments/lemon/checkout?${params.toString()}`;
-}
-
 function applyCheckoutCookies(input: {
   response: NextResponse;
   existingVisitorId: string | null;
@@ -155,52 +134,31 @@ export async function GET(request: Request) {
     }
   }
 
-  if (!profile) {
-    const resumePath = buildCheckoutResumePath({
-      plan,
-      billing,
-      coupon,
-      campaign,
-      ctaPath,
-      ctaEvent,
-      checkoutId
-    });
-    const authParams = new URLSearchParams({
-      mode: "signup",
-      intent: "checkout",
-      next: resumePath
-    });
-    if (ctaPath) authParams.set("cta", ctaPath);
-    if (ctaEvent) authParams.set("cta_event", ctaEvent);
-    const response = NextResponse.redirect(new URL(`/auth?${authParams.toString()}`, request.url));
-    return applyCheckoutCookies({
-      response,
-      existingVisitorId,
-      visitorId,
-      ctaPath,
-      ctaEvent,
-      campaign,
-      rawPlan,
-      plan,
-      billing,
-      checkoutId
-    });
-  }
-
   const checkoutUrl = buildLemonCheckoutUrl(
-    {
-      plan,
-      billing,
-      email: profile.email,
-      name: profile.name,
-      userId: profile.id,
-      coupon,
-      campaign,
-      ctaPath,
-      ctaEvent,
-      checkoutId,
-      visitorId
-    }
+    profile
+      ? {
+          plan,
+          billing,
+          email: profile.email,
+          name: profile.name,
+          userId: profile.id,
+          coupon,
+          campaign,
+          ctaPath,
+          ctaEvent,
+          checkoutId,
+          visitorId
+        }
+      : {
+          plan,
+          billing,
+          coupon,
+          campaign,
+          ctaPath,
+          ctaEvent,
+          checkoutId,
+          visitorId
+        }
   );
 
   const response = NextResponse.redirect(checkoutUrl || commerceConfig.plusMonthlyCheckout);

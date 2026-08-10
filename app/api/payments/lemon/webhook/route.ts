@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { getPostHogClient } from "@/lib/posthog-server";
+import { sendPurchaseAccountClaimEmail } from "@/lib/server/email";
 import {
   applyBillingPlanByEmail,
   applyBillingPlanByUserId,
@@ -102,6 +103,11 @@ export async function POST(request: Request) {
     }
   }
 
+  if (!matchedUserId && email) {
+    const memberByEmail = await getMemberByEmail(email).catch(() => null);
+    matchedUserId = memberByEmail?.id ?? null;
+  }
+
   const existingMember = basePlan
     ? null
     : matchedUserId
@@ -113,7 +119,20 @@ export async function POST(request: Request) {
   const resolvedPlan = basePlan ?? retainedPlan;
   const nextPlan = resolvedPlan ? resolvePlanForStatus(resolvedPlan, status) : null;
   const eventPlan = nextPlan ?? retainedPlan ?? "free";
-  const distinctId = matchedUserId ?? email ?? providerCustomerId ?? providerSubscriptionId ?? `billing:${eventName}`;
+  const claimablePlan = nextPlan === "plus" || nextPlan === "pro" || nextPlan === "lifetime"
+    ? nextPlan
+    : null;
+  const needsAccountClaim = eventName === "order_created"
+    && institutionType !== "institution"
+    && Boolean(email)
+    && !matchedUserId
+    && Boolean(claimablePlan);
+  const distinctId = matchedUserId
+    ?? checkoutMetadata.visitorId
+    ?? checkoutMetadata.checkoutId
+    ?? providerCustomerId
+    ?? providerSubscriptionId
+    ?? `billing:${eventName}`;
 
   try {
     if (institutionType === "institution" && matchedUserId) {
@@ -174,6 +193,18 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("Lemon webhook DB error:", err);
     return NextResponse.json({ error: "Internal error processing webhook." }, { status: 500 });
+  }
+
+  if (needsAccountClaim && email && claimablePlan) {
+    try {
+      await sendPurchaseAccountClaimEmail({
+        to: email,
+        plan: claimablePlan,
+        idempotencyKey: `purchase-account-claim:${providerEventId}`
+      });
+    } catch (error) {
+      console.error("Purchase account claim email delivery failed:", error);
+    }
   }
 
   posthog.capture({

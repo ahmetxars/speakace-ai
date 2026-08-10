@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getMemberByEmail: vi.fn(),
   getMemberEmailById: vi.fn(),
   recordBillingEvent: vi.fn(),
+  sendPurchaseAccountClaimEmail: vi.fn(),
   trackAnalyticsEvent: vi.fn(),
   posthogCapture: vi.fn()
 }));
@@ -29,6 +30,10 @@ vi.mock("@/lib/posthog-server", () => ({
 
 vi.mock("@/lib/analytics-store", () => ({
   trackAnalyticsEvent: mocks.trackAnalyticsEvent
+}));
+
+vi.mock("@/lib/server/email", () => ({
+  sendPurchaseAccountClaimEmail: mocks.sendPurchaseAccountClaimEmail
 }));
 
 import { POST } from "@/app/api/payments/lemon/webhook/route";
@@ -78,6 +83,13 @@ function plusOrderPayload() {
   };
 }
 
+function anonymousPlusOrderPayload() {
+  const payload = plusOrderPayload();
+  const customData: Record<string, unknown> = payload.meta.custom_data;
+  delete customData.user_id;
+  return payload;
+}
+
 describe("Lemon webhook entitlement sync", () => {
   beforeEach(() => {
     process.env.LEMON_SQUEEZY_WEBHOOK_SECRET = webhookSecret;
@@ -89,6 +101,7 @@ describe("Lemon webhook entitlement sync", () => {
     mocks.applyBillingPlanByUserId.mockResolvedValue({ id: "user-1", plan: "plus" });
     mocks.applyBillingPlanByEmail.mockResolvedValue({ id: "user-1", plan: "plus" });
     mocks.recordBillingEvent.mockResolvedValue(true);
+    mocks.sendPurchaseAccountClaimEmail.mockResolvedValue({ ok: true });
   });
 
   it("grants Plus from the nested order item before writing the audit event", async () => {
@@ -121,6 +134,56 @@ describe("Lemon webhook entitlement sync", () => {
       source: null,
       plan: "plus"
     }));
+  });
+
+  it("emails an anonymous buyer once so they can claim paid access", async () => {
+    mocks.getMemberByEmail.mockResolvedValueOnce(null);
+    mocks.applyBillingPlanByEmail.mockResolvedValueOnce(null);
+
+    const response = await POST(signedRequest(anonymousPlusOrderPayload()));
+
+    expect(response.status).toBe(200);
+    expect(mocks.applyBillingPlanByUserId).not.toHaveBeenCalled();
+    expect(mocks.applyBillingPlanByEmail).toHaveBeenCalledWith(expect.objectContaining({
+      email: "buyer@example.com",
+      plan: "plus",
+      billingStatus: "active"
+    }));
+    expect(mocks.recordBillingEvent).toHaveBeenCalledWith(expect.objectContaining({
+      eventName: "order_created",
+      userId: null,
+      userEmail: "buyer@example.com",
+      plan: "plus"
+    }));
+    expect(mocks.sendPurchaseAccountClaimEmail).toHaveBeenCalledWith({
+      to: "buyer@example.com",
+      plan: "plus",
+      idempotencyKey: expect.stringMatching(
+        /^purchase-account-claim:lemonsqueezy:[0-9a-f]{64}$/
+      )
+    });
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(expect.objectContaining({
+      userId: null,
+      visitorId: "visitor-1234567890",
+      event: "checkout_completed",
+      plan: "plus"
+    }));
+  });
+
+  it("attaches an email-only purchase to an existing account without a claim email", async () => {
+    const response = await POST(signedRequest(anonymousPlusOrderPayload()));
+
+    expect(response.status).toBe(200);
+    expect(mocks.getMemberByEmail).toHaveBeenCalledWith("buyer@example.com");
+    expect(mocks.applyBillingPlanByUserId).toHaveBeenCalledWith(expect.objectContaining({
+      userId: "user-1",
+      plan: "plus",
+      billingStatus: "active"
+    }));
+    expect(mocks.recordBillingEvent).toHaveBeenCalledWith(expect.objectContaining({
+      userId: "user-1"
+    }));
+    expect(mocks.sendPurchaseAccountClaimEmail).not.toHaveBeenCalled();
   });
 
   it("preserves the current paid plan for a planless renewal invoice", async () => {
@@ -244,5 +307,6 @@ describe("Lemon webhook entitlement sync", () => {
     expect(mocks.applyBillingPlanByUserId).toHaveBeenCalledWith(expect.objectContaining({ plan: "plus" }));
     expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
     expect(mocks.posthogCapture).not.toHaveBeenCalled();
+    expect(mocks.sendPurchaseAccountClaimEmail).not.toHaveBeenCalled();
   });
 });

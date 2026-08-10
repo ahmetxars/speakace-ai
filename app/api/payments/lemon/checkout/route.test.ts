@@ -99,7 +99,7 @@ describe("Lemon checkout redirect", () => {
     );
   });
 
-  it("preserves anonymous checkout intent while requiring an account", async () => {
+  it("sends an anonymous buyer directly to checkout with attribution intact", async () => {
     mocks.getAuthenticatedUser.mockResolvedValue(null);
 
     const response = await GET(
@@ -108,17 +108,15 @@ describe("Lemon checkout redirect", () => {
       )
     );
 
-    const authUrl = new URL(response.headers.get("location") ?? "");
+    const checkoutUrl = new URL(response.headers.get("location") ?? "");
     expect(response.status).toBe(307);
-    expect(authUrl.pathname).toBe("/auth");
-    expect(authUrl.searchParams.get("mode")).toBe("signup");
-    expect(authUrl.searchParams.get("intent")).toBe("checkout");
-    const next = new URL(authUrl.searchParams.get("next") ?? "", "https://speakace.org");
-    expect(next.pathname).toBe("/api/payments/lemon/checkout");
-    expect(next.searchParams.get("plan")).toBe("plus");
-    expect(next.searchParams.get("billing")).toBe("weekly");
-    expect(next.searchParams.get("cta")).toBe("/pricing/plus/weekly");
-    expect(next.searchParams.get("checkout_id")).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(checkoutUrl.href).toContain("speakace.lemonsqueezy.com/checkout/buy/");
+    expect(checkoutUrl.searchParams.get("checkout[custom][plan]")).toBe("plus");
+    expect(checkoutUrl.searchParams.get("checkout[custom][billing]")).toBe("weekly");
+    expect(checkoutUrl.searchParams.get("checkout[custom][visitor_id]")).toBe("visitor-1234567890");
+    expect(checkoutUrl.searchParams.get("checkout[custom][checkout_id]")).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(checkoutUrl.searchParams.get("checkout[custom][user_id]")).toBeNull();
+    expect(checkoutUrl.searchParams.get("checkout[email]")).toBeNull();
     expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: undefined,

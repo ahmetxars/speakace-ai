@@ -188,6 +188,37 @@ export async function sendPasswordResetEmail(input: { to: string; name?: string;
   });
 }
 
+export async function sendPurchaseAccountClaimEmail(input: {
+  to: string;
+  plan: "plus" | "pro" | "lifetime";
+  idempotencyKey: string;
+}) {
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://speakace.org").replace(/\/+$/, "");
+  const successPath = `/app/billing/success?plan=${encodeURIComponent(input.plan)}&source=purchase_account_claim`;
+  const accountUrl = `${siteUrl}/auth?mode=signup&intent=purchase_claim&next=${encodeURIComponent(successPath)}&cta=purchase_account_claim`;
+  const safeAccountUrl = escapeHtml(accountUrl);
+  const planName = input.plan === "lifetime" ? "Lifetime" : input.plan === "pro" ? "Pro" : "Plus";
+
+  return sendEmail({
+    to: input.to,
+    subject: `Your SpeakAce ${planName} access is ready`,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d;max-width:600px">
+        <h2 style="margin:0 0 12px">Your ${planName} access is ready</h2>
+        <p>Your SpeakAce purchase was successful.</p>
+        <p>Create your account with <strong>the same email address this message was sent to</strong>. After you verify that email, SpeakAce will match your purchase and activate ${planName} automatically.</p>
+        <p style="margin:24px 0">
+          <a href="${safeAccountUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Activate my SpeakAce access</a>
+        </p>
+        <p>Already have a SpeakAce account with this email? Choose <strong>Sign in</strong> on the account page instead.</p>
+        <p style="color:#6f6259;font-size:0.9em">If the button does not work, open this link:<br><a href="${safeAccountUrl}">${safeAccountUrl}</a></p>
+      </div>
+    `,
+    text: `Your SpeakAce ${planName} purchase was successful. Create your account using the same email address this message was sent to, then verify it. SpeakAce will match your purchase and activate ${planName} automatically. Already have an account with this email? Sign in instead. Activate access: ${accountUrl}`,
+    idempotencyKey: input.idempotencyKey
+  });
+}
+
 export async function sendLeadMagnetEmail(input: {
   to: string;
   name?: string;
