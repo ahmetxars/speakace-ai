@@ -19,6 +19,7 @@ const GA_EVENT_MAP: Partial<Record<AnalyticsEventName, string>> = {
   signup_completed: "sign_up",
   first_score: "first_score",
   return_practice: "return_practice",
+  return_reminder_added: "return_reminder_added",
   practice_limit_hit: "limit_hit"
 };
 

@@ -125,4 +125,22 @@ describe("analytics tracking policy", () => {
       })
     );
   });
+
+  it("records authenticated calendar reminders for retention analysis", async () => {
+    mocks.getAuthenticatedUserFromCookies.mockResolvedValue({ id: "user-1" });
+
+    const response = await POST(analyticsRequest(
+      "return_reminder_added",
+      "/app/results/session-1"
+    ));
+
+    expect(response.status).toBe(200);
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        event: "return_reminder_added",
+        path: "/app/results/session-1"
+      })
+    );
+  });
 });

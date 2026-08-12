@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Download, Link2, MessageCircle, Share2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
+import { ReturnPracticeReminder } from "@/components/return-practice-reminder";
 import { TrackedLink } from "@/components/tracked-link";
 import posthog from "posthog-js";
 import { trackClientEvent } from "@/lib/analytics-client";
@@ -547,12 +548,11 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
       ) : null}
 
       <div
-        className="card"
+        className="card result-loop-card"
         style={{
           padding: "1rem",
           display: "grid",
-          gap: "0.85rem",
-          background: "linear-gradient(135deg, rgba(29,111,117,0.08) 0%, rgba(255,255,255,0.98) 100%)"
+          gap: "0.85rem"
         }}
       >
         <div>
@@ -607,6 +607,8 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
           )}
         </div>
       </div>
+
+      <ReturnPracticeReminder sessionId={session.id} />
 
       {/* ── SHARE MODAL ── */}
       {shareOpen ? (

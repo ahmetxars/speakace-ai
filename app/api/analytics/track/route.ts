@@ -53,7 +53,8 @@ const ALLOWED_EVENTS = new Set<AnalyticsEventName>([
   "checkout_cta_click",
   "signup_completed",
   "first_score",
-  "return_practice"
+  "return_practice",
+  "return_reminder_added"
 ]);
 
 export async function POST(request: Request) {

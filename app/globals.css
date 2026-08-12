@@ -14444,9 +14444,125 @@ body[data-theme="dark"] .audience-hero-panel {
   margin-bottom: 2rem;
 }
 
+.result-loop-card {
+  margin-bottom: 0.9rem;
+  background: linear-gradient(135deg, var(--surface-strong), var(--card));
+}
+
+.result-return-reminder {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid color-mix(in oklab, var(--primary) 24%, var(--border));
+  border-radius: var(--radius-xl);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--primary) 8%, var(--card)),
+    var(--card) 58%,
+    color-mix(in oklab, var(--accent) 7%, var(--card))
+  );
+  box-shadow: var(--shadow);
+}
+
+.result-return-reminder__icon {
+  display: grid;
+  place-items: center;
+  width: 2.85rem;
+  height: 2.85rem;
+  border-radius: 0.9rem;
+  color: var(--primary);
+  background: color-mix(in oklab, var(--primary) 13%, var(--card));
+  border: 1px solid color-mix(in oklab, var(--primary) 24%, transparent);
+}
+
+.result-return-reminder__copy {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.result-return-reminder__copy .eyebrow {
+  margin-bottom: 0.05rem;
+  color: var(--primary);
+  font-size: 0.68rem;
+}
+
+.result-return-reminder__copy > strong {
+  font-size: 1rem;
+}
+
+.result-return-reminder__copy p,
+.result-return-reminder__copy small {
+  margin: 0;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.result-return-reminder__copy p {
+  font-size: 0.86rem;
+}
+
+.result-return-reminder__copy small {
+  font-size: 0.72rem;
+}
+
+.result-return-reminder__actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.65rem;
+}
+
+.result-return-reminder__time {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.result-return-reminder__time > span {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.result-return-reminder__time select {
+  min-height: 2.65rem;
+  padding: 0 2.1rem 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.result-return-reminder__actions .button {
+  min-height: 2.65rem;
+  white-space: nowrap;
+}
+
 @media (max-width: 640px) {
   .result-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .result-return-reminder {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .result-return-reminder__actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .result-return-reminder__actions .button {
+    justify-content: center;
   }
 }
 
