@@ -5,6 +5,7 @@ import {
   normalizeAnalyticsVisitorId
 } from "@/lib/analytics-policy";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
+import { CHECKOUT_ATTRIBUTION_COOKIE, CHECKOUT_RECOVERY_WINDOW_SECONDS } from "@/lib/billing-recovery";
 import {
   buildLemonCheckoutUrl,
   commerceConfig,
@@ -76,21 +77,22 @@ function applyCheckoutCookies(input: {
   }
   if (input.ctaPath || input.campaign || input.rawPlan) {
     input.response.cookies.set(
-      "speakace_checkout_attribution",
+      CHECKOUT_ATTRIBUTION_COOKIE,
       JSON.stringify({
         ctaPath: input.ctaPath ?? null,
         ctaEvent: input.ctaEvent ?? null,
         campaign: input.campaign ?? null,
         plan: input.plan,
         billing: input.billing,
-        checkoutId: input.checkoutId
+        checkoutId: input.checkoutId,
+        createdAt: new Date().toISOString()
       }),
       {
         httpOnly: false,
         sameSite: "lax",
         secure: process.env.APP_ENV === "production",
         path: "/",
-        maxAge: 60 * 60 * 6
+        maxAge: CHECKOUT_RECOVERY_WINDOW_SECONDS
       }
     );
   }

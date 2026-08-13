@@ -8,6 +8,7 @@ import { useAppState } from "@/components/providers";
 import { trackClientEvent } from "@/lib/analytics-client";
 import {
   buildBillingSyncPendingPath,
+  CHECKOUT_ATTRIBUTION_COOKIE,
   type BillingRecoveryAttribution
 } from "@/lib/billing-recovery";
 
@@ -59,7 +60,7 @@ export default function BillingSuccessPage() {
     if (typeof document === "undefined") return;
     const rawCookie = document.cookie
       .split("; ")
-      .find((item) => item.startsWith("speakace_checkout_attribution="))
+      .find((item) => item.startsWith(`${CHECKOUT_ATTRIBUTION_COOKIE}=`))
       ?.split("=")[1];
     if (!rawCookie) return;
     try {
@@ -68,6 +69,11 @@ export default function BillingSuccessPage() {
       setAttribution(null);
     }
   }, []);
+
+  useEffect(() => {
+    if (status !== "active") return;
+    document.cookie = `${CHECKOUT_ATTRIBUTION_COOKIE}=; path=/; max-age=0; samesite=lax`;
+  }, [status]);
 
   useEffect(() => {
     let cancelled = false;

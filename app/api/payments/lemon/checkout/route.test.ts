@@ -145,6 +145,15 @@ describe("Lemon checkout redirect", () => {
     expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
       expect.objectContaining({ eventId: checkoutId })
     );
+    const recoveryCookie = response.cookies.get("speakace_checkout_attribution");
+    const recoveryPayload = JSON.parse(recoveryCookie?.value ?? "{}") as Record<string, unknown>;
+    expect(recoveryCookie?.maxAge).toBe(60 * 60 * 72);
+    expect(recoveryPayload).toEqual(expect.objectContaining({
+      plan: "plus",
+      billing: "weekly",
+      checkoutId,
+      createdAt: expect.any(String)
+    }));
   });
 
   it("redirects prefetches and scanners without counting checkout intent", async () => {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import Script from "next/script";
+import { CheckoutRecoveryPrompt } from "@/components/checkout-recovery-prompt";
 import { FloatingThemeToggle } from "@/components/floating-theme-toggle";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -172,6 +173,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           />
           {!hideGlobalChrome ? <SiteHeader /> : null}
           {children}
+          {!hideGlobalChrome ? <CheckoutRecoveryPrompt /> : null}
           {!hideGlobalChrome ? <FloatingThemeToggle /> : null}
           {!hideGlobalChrome ? <MarketingStickyCta /> : null}
           {!hideGlobalChrome ? <SiteFooter /> : null}

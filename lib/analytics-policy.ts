@@ -12,7 +12,10 @@ const ANONYMOUS_ANALYTICS_EVENTS = new Set<AnalyticsEventName>([
   "marketing_demo_completed",
   "marketing_demo_cta_click",
   "pricing_cta_click",
-  "checkout_cta_click"
+  "checkout_cta_click",
+  "checkout_recovery_view",
+  "checkout_recovery_continued",
+  "checkout_recovery_dismissed"
 ]);
 
 export function canTrackAnalyticsAnonymously(event: AnalyticsEventName) {

@@ -248,6 +248,7 @@ This is the project-wide “where things live” map.
   - learner checkouts carry generated `checkout_id` and privacy-safe `visitor_id` values through the Lemon custom payload so anonymous starts can be joined to server-confirmed orders.
   - learner checkout does not require a SpeakAce account. Signed-in buyers are attached by user ID; email-only orders are matched to an existing account when possible, while a buyer without an account receives one idempotent transactional claim email and recovers paid access after verifying the same email address.
   - checkout analytics counts only user-activated document navigations marked with a `verified_navigation:` source; Next.js prefetches and email/security scanners still reach the redirect safely but are excluded from conversion reporting.
+  - abandoned learner checkout attribution is retained for 72 hours without PII. `components/checkout-recovery-prompt.tsx` restores the selected plan after a buyer returns from Lemon, suppresses competing sticky CTAs, and records view/continue/dismiss events; successful activation clears the recovery cookie.
   - Pro defaults to the `$12/month` checkout, while an explicit `billing=annual` request uses the `$99/year` variant.
 
 ### Analytics product

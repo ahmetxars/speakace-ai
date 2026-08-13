@@ -93,6 +93,23 @@ describe("analytics tracking policy", () => {
     );
   });
 
+  it("records an anonymous checkout recovery decision without customer data", async () => {
+    const response = await POST(analyticsRequest(
+      "checkout_recovery_continued",
+      "/pricing"
+    ));
+
+    expect(response.status).toBe(200);
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: undefined,
+        visitorId: "visitor-1234567890",
+        event: "checkout_recovery_continued",
+        path: "/pricing"
+      })
+    );
+  });
+
   it("requires authentication for learner product events", async () => {
     const response = await POST(analyticsRequest("practice_start", "/app/practice"));
 
