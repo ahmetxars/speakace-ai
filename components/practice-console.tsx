@@ -8,6 +8,7 @@ import { PracticeUpgradeCooldownCard, PracticeUpgradeDialog } from "@/components
 import { Difficulty, ExamType, ProgressSummary, SpeakingSession, TaskType } from "@/lib/types";
 import posthog from "posthog-js";
 import { trackClientEvent } from "@/lib/analytics-client";
+import { normalizePublicLanguage } from "@/lib/copy";
 import { listPromptsForTask } from "@/lib/prompts";
 import {
   getUpgradePromptDayKey,
@@ -85,6 +86,86 @@ type DrillGoal = "balanced" | "fluency" | "pronunciation" | "topicDevelopment";
 type AnswerMode = "safe" | "natural" | "bold";
 type WizardStep = 1 | 2 | 3;
 type UpgradePromptReason = "practice_limit_hit" | "result_retry_locked";
+type MicrophoneAnalyticsEvent =
+  | "microphone_permission_requested"
+  | "microphone_permission_granted"
+  | "microphone_permission_blocked";
+
+const microphoneCopy = {
+  en: {
+    eyebrow: "10-second setup",
+    title: "Choose Allow in your browser",
+    retryTitle: "Let's reconnect your microphone",
+    body: "The countdown starts as soon as your microphone is ready. Recording only begins after the countdown.",
+    steps: ["Allow microphone", "Plan your answer", "Speak and get your score"],
+    waiting: "Waiting for browser permission...",
+    retry: "Try microphone again",
+    micWaiting: "Waiting for mic",
+    micReady: "Mic ready",
+    exit: "Exit session",
+    ready: "Microphone ready. Prepare your structure before automatic recording begins."
+  },
+  tr: {
+    eyebrow: "10 saniyelik kurulum",
+    title: "Tarayıcıda İzin ver'i seç",
+    retryTitle: "Mikrofonu yeniden bağlayalım",
+    body: "Mikrofon hazır olduğunda geri sayım başlar. Kayıt yalnızca geri sayımdan sonra açılır.",
+    steps: ["Mikrofona izin ver", "Cevabını planla", "Konuş ve skorunu al"],
+    waiting: "Tarayıcı izni bekleniyor...",
+    retry: "Mikrofonu tekrar dene",
+    micWaiting: "Mikrofon bekleniyor",
+    micReady: "Mikrofon hazır",
+    exit: "Oturumdan çık",
+    ready: "Mikrofon hazır. Otomatik kayıt başlamadan önce cevabını kısaca planla."
+  },
+  de: {
+    eyebrow: "10-Sekunden-Setup",
+    title: "Wähle im Browser Zulassen",
+    retryTitle: "Verbinden wir dein Mikrofon erneut",
+    body: "Der Countdown beginnt, sobald dein Mikrofon bereit ist. Die Aufnahme startet erst danach.",
+    steps: ["Mikrofon erlauben", "Antwort planen", "Sprechen und Score erhalten"],
+    waiting: "Warte auf die Browserfreigabe...",
+    retry: "Mikrofon erneut versuchen",
+    micWaiting: "Warte auf das Mikrofon",
+    micReady: "Mikrofon bereit",
+    exit: "Session verlassen",
+    ready: "Mikrofon bereit. Plane kurz deine Antwort, bevor die Aufnahme automatisch startet."
+  },
+  es: {
+    eyebrow: "Configuración de 10 segundos",
+    title: "Elige Permitir en tu navegador",
+    retryTitle: "Volvamos a conectar tu micrófono",
+    body: "La cuenta atrás empieza cuando el micrófono está listo. La grabación comienza solo después.",
+    steps: ["Permitir micrófono", "Planear tu respuesta", "Hablar y obtener tu puntuación"],
+    waiting: "Esperando el permiso del navegador...",
+    retry: "Probar el micrófono otra vez",
+    micWaiting: "Esperando el micrófono",
+    micReady: "Micrófono listo",
+    exit: "Salir de la sesión",
+    ready: "Micrófono listo. Planea brevemente tu respuesta antes de que empiece la grabación."
+  },
+  fr: {
+    eyebrow: "Configuration en 10 secondes",
+    title: "Choisis Autoriser dans ton navigateur",
+    retryTitle: "Reconnectons ton micro",
+    body: "Le compte à rebours démarre dès que le micro est prêt. L'enregistrement commence seulement après.",
+    steps: ["Autoriser le micro", "Préparer ta réponse", "Parler et obtenir ton score"],
+    waiting: "En attente de l'autorisation du navigateur...",
+    retry: "Réessayer le micro",
+    micWaiting: "En attente du micro",
+    micReady: "Micro prêt",
+    exit: "Quitter la session",
+    ready: "Micro prêt. Prépare brièvement ta réponse avant le démarrage automatique."
+  }
+} as const;
+
+function getMicrophoneFailureReason(error: unknown) {
+  const errorName = error instanceof DOMException ? error.name : "UnknownError";
+  if (errorName === "NotAllowedError" || errorName === "SecurityError") return "permission_denied";
+  if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") return "device_missing";
+  if (errorName === "NotReadableError" || errorName === "TrackStartError") return "device_busy";
+  return "unknown";
+}
 
 const emptySummary: ProgressSummary = {
   totalSessions: 0,
@@ -101,6 +182,7 @@ export function PracticeConsole() {
   const searchParams = useSearchParams();
   const { currentUser, language } = useAppState();
   const tr = language === "tr";
+  const selectedMicrophoneCopy = microphoneCopy[normalizePublicLanguage(language)];
   const rawActivationSource = searchParams.get("activation");
   const activationSource = rawActivationSource && /^[a-z0-9_-]{1,80}$/i.test(rawActivationSource)
     ? rawActivationSource.toLowerCase()
@@ -117,6 +199,7 @@ export function PracticeConsole() {
   const [status, setStatus] = useState("Pick an exam mode and start your session.");
   const [error, setError] = useState<string | null>(null);
   const [micReady, setMicReady] = useState(false);
+  const [micPermissionPending, setMicPermissionPending] = useState(false);
   const [recordingLive, setRecordingLive] = useState(false);
   const [noteDraft, setNoteDraft] = useState("");
   const [summary, setSummary] = useState<ProgressSummary>(emptySummary);
@@ -155,6 +238,34 @@ export function PracticeConsole() {
       ...properties
     });
   }, [difficulty, examType, runMode, taskType]);
+
+  const trackMicrophoneEvent = useCallback((
+    event: MicrophoneAnalyticsEvent,
+    activeSession: SpeakingSession | null | undefined,
+    source: string
+  ) => {
+    const sessionId = activeSession?.id ?? sessionRef.current?.id;
+    if (!currentUser?.id || !sessionId) return;
+
+    const eventId = `microphone:${sessionId}:${event}`;
+    void trackClientEvent({
+      userId: currentUser.id,
+      event,
+      eventId,
+      path: `/app/practice/microphone/${event.replace("microphone_permission_", "")}`,
+      source,
+      plan: currentUser.plan,
+      locale: normalizePublicLanguage(language)
+    });
+    posthog.capture(event, {
+      $insert_id: eventId,
+      source,
+      run_mode: runMode,
+      exam_type: examType,
+      task_type: taskType,
+      plan: currentUser.plan
+    });
+  }, [currentUser?.id, currentUser?.plan, examType, language, runMode, taskType]);
 
   useEffect(() => {
     const nextExam = searchParams.get("examType");
@@ -460,8 +571,10 @@ export function PracticeConsole() {
 
   const prepareMicrophone = useCallback(async (activeSession?: SpeakingSession | null) => {
     setError(null);
+    const targetSession = activeSession ?? sessionRef.current;
 
     if (!navigator.mediaDevices?.getUserMedia) {
+      trackMicrophoneEvent("microphone_permission_blocked", targetSession, "unsupported_browser");
       setError(tr ? "Bu tarayici mikrofon kaydini desteklemiyor." : "This browser does not support microphone recording.");
       return false;
     }
@@ -470,6 +583,9 @@ export function PracticeConsole() {
       setError(tr ? "Practice için giriş yapman gerekiyor." : "You need to sign in to start practice.");
       return false;
     }
+
+    setMicPermissionPending(true);
+    trackMicrophoneEvent("microphone_permission_requested", targetSession, "practice_first_score");
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -489,6 +605,7 @@ export function PracticeConsole() {
       const recorder = options ? new MediaRecorder(stream, options) : new MediaRecorder(stream);
       recorderRef.current = recorder;
       chunksRef.current = [];
+      trackMicrophoneEvent("microphone_permission_granted", targetSession, "device_ready");
 
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -498,36 +615,36 @@ export function PracticeConsole() {
 
       recorder.onstop = async () => {
         setRecordingLive(false);
-        const targetSession = activeSession ?? sessionRef.current;
+        const recordedSession = activeSession ?? sessionRef.current;
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
         cleanupMedia();
 
-        if (!targetSession || blob.size === 0) {
+        if (!recordedSession || blob.size === 0) {
           return;
         }
 
         const base64 = await blobToBase64(blob);
         if (typeof window !== "undefined") {
-          window.localStorage.setItem(`speakace-audio-${targetSession.id}`, base64);
+          window.localStorage.setItem(`speakace-audio-${recordedSession.id}`, base64);
         }
         if (currentUser?.id) {
           void trackClientEvent({ userId: currentUser.id, event: "recording_uploaded", path: "/app/practice" });
           posthog.capture("practice_session_completed", { run_mode: runMode, exam_type: examType, task_type: taskType });
         }
         capturePracticeEvent("recording_submitted", {
-          session_id: targetSession.id,
+          session_id: recordedSession.id,
           audio_bytes: blob.size,
-          speaking_seconds: targetSession.prompt.speakingSeconds
+          speaking_seconds: recordedSession.prompt.speakingSeconds
         });
         setMode("saving");
         setStatus(tr ? "Kayıt yükleniyor, yanıtın analiz ediliyor..." : "Uploading your recording and analyzing your answer...");
 
-        const uploadResponse = await fetch(`/api/speaking/session/${targetSession.id}/upload`, {
+        const uploadResponse = await fetch(`/api/speaking/session/${recordedSession.id}/upload`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             audioBase64: base64,
-            durationSeconds: targetSession.prompt.speakingSeconds
+            durationSeconds: recordedSession.prompt.speakingSeconds
           })
         });
 
@@ -541,7 +658,7 @@ export function PracticeConsole() {
 
         if (!uploadResponse.ok) {
           capturePracticeEvent("recording_upload_failed", {
-            session_id: targetSession.id,
+            session_id: recordedSession.id,
             reason: uploadData.error ?? "Recording upload failed."
           });
           setError(uploadData.error ?? (tr ? "Kayıt yüklenemedi." : "Recording upload failed."));
@@ -557,7 +674,7 @@ export function PracticeConsole() {
         }
 
         capturePracticeEvent("transcript_generated", {
-          session_id: targetSession.id,
+          session_id: recordedSession.id,
           transcript_source: uploadData.transcriptSource ?? uploadData.session?.transcriptSource ?? "unknown",
           has_transcription_error: Boolean(uploadData.transcriptionError)
         });
@@ -573,20 +690,28 @@ export function PracticeConsole() {
         );
 
         capturePracticeEvent("evaluation_requested", {
-          session_id: targetSession.id,
+          session_id: recordedSession.id,
           transcript_source: uploadData.transcriptSource ?? uploadData.session?.transcriptSource ?? "unknown"
         });
-        await evaluateSessionNow(targetSession.id);
+        await evaluateSessionNow(recordedSession.id);
       };
 
+      setMicPermissionPending(false);
       return true;
-    } catch {
+    } catch (microphoneError) {
+      cleanupMedia();
       setMicReady(false);
+      setMicPermissionPending(false);
+      trackMicrophoneEvent(
+        "microphone_permission_blocked",
+        targetSession,
+        getMicrophoneFailureReason(microphoneError)
+      );
       setError(tr ? "Mikrofon izni reddedildi. Lutfen izin verip tekrar dene." : "Microphone permission was denied. Please allow access and try again.");
       setStatus(tr ? "Speaking calismasi icin mikrofon izni gerekli." : "Microphone access is required for speaking practice.");
       return false;
     }
-  }, [canPractice, capturePracticeEvent, cleanupMedia, currentUser, evaluateSessionNow, examType, runMode, taskType, tr]);
+  }, [canPractice, capturePracticeEvent, cleanupMedia, currentUser?.id, evaluateSessionNow, examType, runMode, taskType, tr, trackMicrophoneEvent]);
 
   const beginRecording = useCallback(async () => {
     if (!recorderRef.current) {
@@ -614,12 +739,8 @@ export function PracticeConsole() {
     }
 
     setMode("prep");
-    setStatus(
-      tr
-        ? "Mikrofon hazır. Otomatik kayıt başlamadan önce cevabını kısaca planla."
-        : "Microphone ready. Prepare your structure before automatic recording begins."
-    );
-  }, [prepareMicrophone, tr]);
+    setStatus(selectedMicrophoneCopy.ready);
+  }, [prepareMicrophone, selectedMicrophoneCopy.ready]);
 
   const stopRecording = useCallback(() => {
     if (recorderRef.current && recorderRef.current.state !== "inactive") {
@@ -812,6 +933,12 @@ export function PracticeConsole() {
         difficulty,
         activation_source: activationSource
       });
+    }
+
+    const microphoneGranted = await prepareMicrophone(data.session);
+    if (microphoneGranted) {
+      setMode("prep");
+      setStatus(selectedMicrophoneCopy.ready);
     }
 
   };
@@ -1528,17 +1655,19 @@ export function PracticeConsole() {
           <div className="card practice-overlay-card">
             <span className="eyebrow">
               {mode === "permission"
-                ? tr ? "Mikrofon kontrolu" : "Microphone check"
+                ? selectedMicrophoneCopy.eyebrow
                 : mode === "prep"
                   ? tr ? "Hazirlan" : "Get ready"
                   : mode === "speak"
                     ? tr ? "Simdi konus" : "Speak now"
                     : tr ? "Analiz" : "Analyzing"}
             </span>
-            <div className="practice-overlay-number">{mode === "permission" ? "Mic" : mode === "saving" ? "..." : remainingSeconds}</div>
+            <div className={`practice-overlay-number ${mode === "permission" ? "is-microphone" : ""}`}>
+              {mode === "permission" ? "MIC" : mode === "saving" ? "..." : remainingSeconds}
+            </div>
             <h2 className="practice-overlay-title" style={{ margin: 0 }}>
               {mode === "permission"
-                ? tr ? "Mikrofon izni ver" : "Allow microphone access"
+                ? error ? selectedMicrophoneCopy.retryTitle : selectedMicrophoneCopy.title
                 : mode === "prep"
                   ? runMode === "pronunciation"
                     ? tr ? "Geri sayim bitince telaffuz kaydi otomatik baslayacak" : "Pronunciation recording starts automatically after the countdown"
@@ -1555,19 +1684,29 @@ export function PracticeConsole() {
             </h2>
             <p className="practice-overlay-prompt">
               {mode === "permission"
-                  ? tr ? "Tarayicin once mikrofon izni isteyecek. Izin verince geri sayim baslar." : "Your browser will ask for permission first. Once allowed, the countdown begins."
+                  ? selectedMicrophoneCopy.body
                   : mode === "saving"
                     ? tr ? "Birkac saniye icinde transcript ve speaking analizi hazir olacak." : "Your transcript and speaking review will be ready in a few seconds."
                   : activeTaskLayout.overlayPrompt}
             </p>
+            {mode === "permission" ? (
+              <ol className="practice-microphone-steps">
+                {selectedMicrophoneCopy.steps.map((step, index) => (
+                  <li key={step}>
+                    <span>{index + 1}</span>
+                    <strong>{step}</strong>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
             <div className="practice-overlay-mic" style={{ display: "grid", gap: "0.8rem", justifyItems: "center" }}>
               <span className={`mic-pill ${recordingLive ? "is-live" : micReady ? "is-ready" : ""}`}>
                 <span className="mic-pill-dot" />
                 {recordingLive
                   ? tr ? "Kayit acik" : "Recording live"
                   : micReady
-                    ? tr ? "Mikrofon hazir" : "Mic ready"
-                    : tr ? "Mikrofon bekleniyor" : "Waiting for mic"}
+                    ? selectedMicrophoneCopy.micReady
+                    : selectedMicrophoneCopy.micWaiting}
               </span>
               {(mode === "prep" || mode === "speak") ? (
                 <div className="card practice-tone-card practice-tone-card-cool practice-overlay-focus-card">
@@ -1584,13 +1723,13 @@ export function PracticeConsole() {
             </div>
             <div className="practice-overlay-actions">
               {(mode === "prep" || mode === "permission") ? (
-                <button className="button button-secondary" type="button" onClick={endEarly}>
-                  {tr ? "Session'dan cik" : "Exit session"}
+                <button className="button button-secondary" type="button" onClick={endEarly} disabled={mode === "permission" && micPermissionPending}>
+                  {selectedMicrophoneCopy.exit}
                 </button>
               ) : null}
               {mode === "permission" ? (
-                <button className="button button-primary" type="button" onClick={() => void requestMicrophoneAccess()}>
-                  {tr ? "Mikrofon izni ver" : "Allow microphone access"}
+                <button className="button button-primary" type="button" onClick={() => void requestMicrophoneAccess()} disabled={micPermissionPending}>
+                  {micPermissionPending ? selectedMicrophoneCopy.waiting : selectedMicrophoneCopy.retry}
                 </button>
               ) : null}
               {mode === "prep" ? (

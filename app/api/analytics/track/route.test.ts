@@ -143,6 +143,24 @@ describe("analytics tracking policy", () => {
     );
   });
 
+  it("records authenticated microphone funnel outcomes", async () => {
+    mocks.getAuthenticatedUserFromCookies.mockResolvedValue({ id: "user-1" });
+
+    const response = await POST(analyticsRequest(
+      "microphone_permission_granted",
+      "/app/practice/microphone/granted"
+    ));
+
+    expect(response.status).toBe(200);
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        event: "microphone_permission_granted",
+        path: "/app/practice/microphone/granted"
+      })
+    );
+  });
+
   it("records authenticated calendar reminders for retention analysis", async () => {
     mocks.getAuthenticatedUserFromCookies.mockResolvedValue({ id: "user-1" });
 

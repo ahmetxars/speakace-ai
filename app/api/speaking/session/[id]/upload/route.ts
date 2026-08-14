@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { getAudioPayloadStats, hasOpenAiKey, transcribeAudio } from "@/lib/server/openai";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
-import { getSession, uploadSessionAudio } from "@/lib/store";
+import { getSession, reserveSessionAudioUpload, uploadSessionAudio } from "@/lib/store";
 
 export const maxDuration = 60;
 
@@ -49,6 +49,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       },
       { status: 400 }
     );
+  }
+
+  const reservation = await reserveSessionAudioUpload(id, audioBytes);
+  if (!reservation.reserved) {
+    return NextResponse.json({ error: reservation.error }, { status: reservation.status });
   }
 
   let transcript: string | null = null;

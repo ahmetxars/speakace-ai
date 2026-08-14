@@ -23,6 +23,9 @@ const GA_EVENT_MAP: Partial<Record<AnalyticsEventName, string>> = {
   first_score: "first_score",
   return_practice: "return_practice",
   return_reminder_added: "return_reminder_added",
+  microphone_permission_requested: "microphone_permission_requested",
+  microphone_permission_granted: "microphone_permission_granted",
+  microphone_permission_blocked: "microphone_permission_blocked",
   practice_limit_hit: "limit_hit"
 };
 

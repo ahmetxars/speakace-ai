@@ -220,15 +220,6 @@ export async function createSession(input: {
       )
     `;
 
-    await sql`
-      insert into usage_daily (user_id, usage_date, sessions_count, speaking_seconds)
-      values (${input.userId}, ${usageDate}, 1, ${prompt.speakingSeconds})
-      on conflict (user_id, usage_date)
-      do update set
-        sessions_count = usage_daily.sessions_count + 1,
-        speaking_seconds = usage_daily.speaking_seconds + ${prompt.speakingSeconds}
-    `;
-
     return { session };
   }
 
@@ -285,11 +276,139 @@ export async function createSession(input: {
   };
 
   store.sessions.set(session.id, session);
+  return { session };
+}
+
+type SessionAudioReservation =
+  | { reserved: true; alreadyUploaded: boolean }
+  | { reserved: false; error: string; status: 403 | 404 };
+
+export async function reserveSessionAudioUpload(
+  sessionId: string,
+  audioBytes: number
+): Promise<SessionAudioReservation> {
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    const memberRows = await sql<Array<{ user_id: string }>>`
+      select user_id from speaking_sessions where id = ${sessionId} limit 1
+    `;
+    const sessionOwnerId = memberRows[0]?.user_id;
+    const member = sessionOwnerId ? await getMember(sessionOwnerId) : null;
+
+    if (!member) {
+      return { reserved: false, error: "Session not found.", status: 404 };
+    }
+
+    const limits = PLAN_LIMITS[member.plan];
+    const usageDate = new Date().toISOString().slice(0, 10);
+
+    return sql.begin(async (transaction) => {
+      // postgres.js transactions are callable at runtime, but the published TransactionSql type drops the call signature.
+      const tx = transaction as unknown as typeof sql;
+      const sessionRows = await tx<Array<{
+        audio_uploaded: boolean;
+        speaking_seconds: number;
+      }>>`
+        select audio_uploaded, speaking_seconds
+        from speaking_sessions
+        where id = ${sessionId}
+        for update
+      `;
+      const session = sessionRows[0];
+
+      if (!session) {
+        return { reserved: false, error: "Session not found.", status: 404 } as const;
+      }
+
+      if (session.audio_uploaded) {
+        return { reserved: true, alreadyUploaded: true } as const;
+      }
+
+      await tx`
+        insert into usage_daily (user_id, usage_date, sessions_count, speaking_seconds)
+        values (${member.id}, ${usageDate}, 0, 0)
+        on conflict (user_id, usage_date) do nothing
+      `;
+      const usageRows = await tx<Array<{ sessions_count: number; speaking_seconds: number }>>`
+        select sessions_count, speaking_seconds
+        from usage_daily
+        where user_id = ${member.id} and usage_date = ${usageDate}
+        for update
+      `;
+      const currentUsage = usageRows[0] ?? { sessions_count: 0, speaking_seconds: 0 };
+      const nextSeconds = currentUsage.speaking_seconds + session.speaking_seconds;
+
+      if (!member.isAdmin && currentUsage.sessions_count >= limits.sessionsPerDay) {
+        return {
+          reserved: false,
+          error: `${limits.label} users can complete ${limits.sessionsPerDay} sessions per day. Upgrade for more practice.`,
+          status: 403
+        } as const;
+      }
+
+      if (!member.isAdmin && nextSeconds > limits.speakingMinutesPerDay * 60) {
+        return {
+          reserved: false,
+          error: `${limits.label} users can practice up to ${limits.speakingMinutesPerDay} speaking minutes per day.`,
+          status: 403
+        } as const;
+      }
+
+      await tx`
+        update speaking_sessions
+        set audio_uploaded = ${true}, audio_bytes = ${audioBytes}
+        where id = ${sessionId}
+      `;
+      await tx`
+        update usage_daily
+        set
+          sessions_count = sessions_count + 1,
+          speaking_seconds = speaking_seconds + ${session.speaking_seconds}
+        where user_id = ${member.id} and usage_date = ${usageDate}
+      `;
+
+      return { reserved: true, alreadyUploaded: false } as const;
+    });
+  }
+
+  const store = getStore();
+  const session = store.sessions.get(sessionId);
+  const member = session ? store.members.get(session.userId) : null;
+  if (!session || !member) {
+    return { reserved: false, error: "Session not found.", status: 404 };
+  }
+
+  if (session.audioUploaded) {
+    return { reserved: true, alreadyUploaded: true };
+  }
+
+  const limits = PLAN_LIMITS[member.plan];
+  const usageKey = todayKey(member.id);
+  const currentUsage = store.usageByDay.get(usageKey) ?? { sessions: 0, seconds: 0 };
+  const nextSeconds = currentUsage.seconds + session.prompt.speakingSeconds;
+
+  if (!member.isAdmin && currentUsage.sessions >= limits.sessionsPerDay) {
+    return {
+      reserved: false,
+      error: `${limits.label} users can complete ${limits.sessionsPerDay} sessions per day. Upgrade for more practice.`,
+      status: 403
+    };
+  }
+
+  if (!member.isAdmin && nextSeconds > limits.speakingMinutesPerDay * 60) {
+    return {
+      reserved: false,
+      error: `${limits.label} users can practice up to ${limits.speakingMinutesPerDay} speaking minutes per day.`,
+      status: 403
+    };
+  }
+
+  store.sessions.set(sessionId, { ...session, audioUploaded: true, audioBytes });
   store.usageByDay.set(usageKey, {
     sessions: currentUsage.sessions + 1,
     seconds: nextSeconds
   });
-  return { session };
+  return { reserved: true, alreadyUploaded: false };
 }
 
 export async function uploadSessionAudio(
@@ -298,6 +417,11 @@ export async function uploadSessionAudio(
   transcript?: string | null,
   meta?: { transcriptSource?: "openai" | "generated"; transcriptStatus?: string }
 ) {
+  const reservation = await reserveSessionAudioUpload(sessionId, audioBytes);
+  if (!reservation.reserved) {
+    return null;
+  }
+
   if (hasDatabaseUrl()) {
     const sql = getSql();
     const [row] = await sql<{ id: string }[]>`
@@ -539,6 +663,7 @@ export async function getProgressSummary(userId: string, since?: string): Promis
       select count(*)::text as count
       from speaking_sessions s
       where s.user_id = ${userId}
+        and s.audio_uploaded = true
       ${sinceFilter}
     `;
     const [averageRow] = await sql<{ average: number | null }[]>`
@@ -588,6 +713,7 @@ export async function getProgressSummary(userId: string, since?: string): Promis
       from speaking_sessions s
       left join feedback_reports f on f.session_id = s.id
       where s.user_id = ${userId}
+        and s.audio_uploaded = true
       ${sinceFilter}
       order by s.created_at desc
     `;
@@ -633,7 +759,7 @@ export async function getProgressSummary(userId: string, since?: string): Promis
   const limits = PLAN_LIMITS[plan];
   const usage = store.usageByDay.get(todayKey(userId)) ?? { sessions: 0, seconds: 0 };
   const recentSessions = [...store.sessions.values()]
-    .filter((session) => session.userId === userId && (!since || session.createdAt >= since))
+    .filter((session) => session.userId === userId && session.audioUploaded && (!since || session.createdAt >= since))
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
   const scoredSessions = recentSessions.filter((session) => session.report);

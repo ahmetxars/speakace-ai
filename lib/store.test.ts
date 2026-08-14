@@ -5,6 +5,7 @@ import {
   createSession,
   evaluateStoredSession,
   getProgressSummary,
+  reserveSessionAudioUpload,
   resetStore,
   uploadSessionAudio
 } from "@/lib/store";
@@ -15,7 +16,7 @@ describe("session store", () => {
     await resetStore();
   });
 
-  it("limits free sessions after the daily cap", async () => {
+  it("charges free usage only after a recording is submitted", async () => {
     const guest = createGuestProfile();
     await upsertMember(guest);
 
@@ -29,6 +30,23 @@ describe("session store", () => {
       expect("session" in result).toBe(true);
     }
 
+    const beforeRecording = await getProgressSummary(guest.id);
+    expect(beforeRecording.freeSessionsRemaining).toBe(4);
+    expect(beforeRecording.totalSessions).toBe(0);
+    expect(beforeRecording.recentSessions).toHaveLength(0);
+
+    for (let index = 0; index < 4; index += 1) {
+      const result = await createSession({
+        userId: guest.id,
+        examType: "IELTS",
+        taskType: "ielts-part-1",
+        difficulty: "Starter"
+      });
+      if (!("session" in result)) throw new Error("Expected session creation to succeed.");
+      const reservation = await reserveSessionAudioUpload(result.session!.id, 24_000);
+      expect(reservation.reserved).toBe(true);
+    }
+
     const blocked = await createSession({
       userId: guest.id,
       examType: "IELTS",
@@ -37,6 +55,27 @@ describe("session store", () => {
     });
 
     expect("error" in blocked).toBe(true);
+  });
+
+  it("does not charge the same recording twice", async () => {
+    const member = createMemberProfile("idempotent@example.com", "Idempotent");
+    await upsertMember(member);
+
+    const created = await createSession({
+      userId: member.id,
+      examType: "IELTS",
+      taskType: "ielts-part-1",
+      difficulty: "Starter"
+    });
+    if (!("session" in created)) throw new Error("Expected session creation to succeed.");
+
+    const first = await reserveSessionAudioUpload(created.session!.id, 24_000);
+    const second = await reserveSessionAudioUpload(created.session!.id, 24_000);
+    const summary = await getProgressSummary(member.id);
+
+    expect(first).toEqual({ reserved: true, alreadyUploaded: false });
+    expect(second).toEqual({ reserved: true, alreadyUploaded: true });
+    expect(summary.freeSessionsRemaining).toBe(3);
   });
 
   it("builds a report after audio upload", async () => {

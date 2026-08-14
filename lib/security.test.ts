@@ -418,7 +418,7 @@ describe("Issue 1: enrollment-scoped progress aggregates", () => {
         difficulty: "Target"
       },
       createdAt,
-      audioUploaded: false
+      audioUploaded: true
     };
     if (overall !== undefined) {
       base.report = {

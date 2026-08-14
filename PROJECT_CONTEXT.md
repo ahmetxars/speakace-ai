@@ -166,6 +166,8 @@ This is the project-wide “where things live” map.
   - `components/mock-exam-launchpad.tsx`
   - `components/mock-exam-report.tsx`
 - Data and scoring:
+  - Speaking usage is reserved atomically only after a valid audio payload reaches the upload route. Merely opening a prompt must not consume a daily session/minute allowance, and repeat uploads of the same session must remain idempotent.
+  - Progress totals, recent sessions, and streak inputs include completed audio uploads only; abandoned microphone/prompt sessions stay available for recovery but never appear as completed practice.
   - `lib/store.ts`
   - `lib/evaluator.ts`
   - `lib/prompts.ts`
@@ -266,7 +268,7 @@ This is the project-wide “where things live” map.
   - `instrumentation-client.ts`
   - `lib/posthog-server.ts`
   - PostHog is optional: when `NEXT_PUBLIC_POSTHOG_KEY` is absent or analytics is disabled, browser and server clients remain no-op while first-party `analytics_events` collection continues. Admin health reports these two channels separately.
-  - first-payment funnel events include `pricing_view`, `pricing_plus_click`, `practice_limit_hit`, `upgrade_prompt_view`, `checkout_initiated`, `checkout_completed`, `billing_success_seen`, and `billing_sync_pending`; the public pre-account speaking funnel uses `marketing_demo_started`, `marketing_demo_completed`, and `marketing_demo_cta_click`.
+- first-payment funnel events include `pricing_view`, `pricing_plus_click`, `practice_limit_hit`, `upgrade_prompt_view`, `checkout_initiated`, `checkout_completed`, `billing_success_seen`, and `billing_sync_pending`; first-score diagnosis also records `microphone_permission_requested`, `microphone_permission_granted`, and `microphone_permission_blocked`; the public pre-account speaking funnel uses `marketing_demo_started`, `marketing_demo_completed`, and `marketing_demo_cta_click`.
   - allowlisted public marketing events use a 180-day HttpOnly `speakace_visitor_id` cookie; product events still require authentication.
   - `analytics_events.user_id` is nullable and `visitor_id` is indexed so pre-signup activity can be measured without storing direct customer data.
   - `checkout_completed` is emitted server-side only for Lemon `order_created`; `subscription_created` arrives for the same initial sale and must not be counted as a second conversion.
@@ -753,7 +755,7 @@ Fast debugging split:
 
 1. UI starts a session via `POST /api/speaking/session/start`.
 2. Route delegates to `lib/store.ts`.
-3. Store checks plan limits from `lib/membership.ts`, usage data, and prompt selection.
+3. Store checks plan limits from `lib/membership.ts`, usage data, and prompt selection. A prompt/session start is free; the upload route atomically reserves daily session/minute usage only after validating a real audio payload.
 4. Transcript and feedback logic are handled through:
    - local heuristics in `lib/evaluator.ts`
    - optional OpenAI calls in `lib/server/openai.ts`

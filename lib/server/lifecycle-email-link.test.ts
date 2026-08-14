@@ -52,8 +52,11 @@ describe("lifecycle email links", () => {
       campaign: "daily_tip",
       now
     });
+    const tamperIndex = Math.floor(token.length / 2);
+    const replacement = token[tamperIndex] === "x" ? "y" : "x";
+    const tamperedToken = `${token.slice(0, tamperIndex)}${replacement}${token.slice(tamperIndex + 1)}`;
 
-    expect(verifyLifecycleEmailToken(`${token.slice(0, -1)}x`, now)).toBeNull();
+    expect(verifyLifecycleEmailToken(tamperedToken, now)).toBeNull();
     expect(verifyLifecycleEmailToken(token, new Date("2026-07-16T07:00:01.000Z"))).toBeNull();
   });
 
