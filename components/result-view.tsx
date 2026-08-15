@@ -521,6 +521,8 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
         ) : null}
       </div>
 
+      <ReturnPracticeReminder sessionId={session.id} />
+
       {/* ── SESSION STATS ── */}
       {session.report ? (
         <div className="result-summary-grid">
@@ -607,8 +609,6 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
           )}
         </div>
       </div>
-
-      <ReturnPracticeReminder sessionId={session.id} />
 
       {/* ── SHARE MODAL ── */}
       {shareOpen ? (

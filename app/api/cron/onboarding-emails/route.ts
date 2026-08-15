@@ -14,6 +14,7 @@ import {
   getCurrentEmailQuotaBlock,
   getEmailLifecycleBudgetStatus
 } from "@/lib/server/email-sequences";
+import { getCommercialEmailConfigurationStatus } from "@/lib/server/email";
 
 export const maxDuration = 300;
 
@@ -49,8 +50,9 @@ export async function GET(request: Request) {
   const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 1000) : 500;
   const quotaBlock = await getCurrentEmailQuotaBlock();
   const lifecycleBudget = await getEmailLifecycleBudgetStatus();
+  const emailConfiguration = getCommercialEmailConfigurationStatus();
   let remainingAttempts = lifecycleBudget.remaining;
-  const sendingSuppressed = dryRun || Boolean(quotaBlock);
+  const sendingSuppressed = dryRun || Boolean(quotaBlock) || !emailConfiguration.ready;
 
   // ── 1. Trial activation and renewal transparency ──────────────────────────
   let trialSent = 0;
@@ -201,6 +203,7 @@ export async function GET(request: Request) {
     emailQuota: quotaBlock
       ? { blocked: true, kind: quotaBlock.kind, detectedAt: quotaBlock.detectedAt }
       : { blocked: false },
+    emailConfiguration,
     lifecycleBudget: {
       limit: lifecycleBudget.limit,
       sentToday: lifecycleBudget.sentToday,

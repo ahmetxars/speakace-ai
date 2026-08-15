@@ -13,6 +13,7 @@ import {
   listReferralCodes
 } from "@/lib/server/admin-panel";
 import { resolveEmailLifecycleDailyBudget } from "@/lib/server/email-sequences";
+import { getCommercialEmailConfigurationStatus } from "@/lib/server/email";
 
 export default async function AdminPage() {
   let session: Awaited<ReturnType<typeof getAdminPanelSession>> = null;
@@ -183,6 +184,7 @@ export default async function AdminPage() {
     const referralCodes = referralCodesResult.status === "fulfilled" ? referralCodesResult.value : [];
     const institutions = institutionsResult.status === "fulfilled" ? institutionsResult.value : [];
     const customPosts = customPostsResult.status === "fulfilled" ? customPostsResult.value : [];
+    const emailConfiguration = getCommercialEmailConfigurationStatus();
     const systemHealth = {
       nodeEnv: process.env.NODE_ENV ?? "unknown",
       siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "—",
@@ -190,7 +192,9 @@ export default async function AdminPage() {
       region: process.env.VERCEL_REGION ?? "—",
       databaseConfigured: Boolean(process.env.DATABASE_URL),
       lemonWebhookConfigured: Boolean(process.env.LEMON_SQUEEZY_WEBHOOK_SECRET),
-      emailConfigured: Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM),
+      emailConfigured: emailConfiguration.transportConfigured,
+      emailLegalIdentityConfigured: emailConfiguration.legalIdentityConfigured,
+      commercialEmailConfigured: emailConfiguration.ready,
       analyticsConfigured: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS !== "false",
       posthogConfigured:
         process.env.NEXT_PUBLIC_ENABLE_ANALYTICS !== "false"

@@ -65,6 +65,8 @@ type AdminSystemHealth = {
   databaseConfigured: boolean;
   lemonWebhookConfigured: boolean;
   emailConfigured: boolean;
+  emailLegalIdentityConfigured: boolean;
+  commercialEmailConfigured: boolean;
   analyticsConfigured: boolean;
   posthogConfigured: boolean;
   lifecycleDailyBudget: number;
@@ -356,15 +358,21 @@ function AdminDailyOverview({
     });
   }
 
-  if (overview.emailQuotaBlocked || overview.emailFailed24h > 0 || !systemHealth.emailConfigured) {
+  if (
+    overview.emailQuotaBlocked ||
+    overview.emailFailed24h > 0 ||
+    !systemHealth.commercialEmailConfigured
+  ) {
     actions.push({
       title: "E-posta teslimatını düzelt",
       detail: !systemHealth.emailConfigured
         ? "Resend bağlantısı canlı ortamda yapılandırılmamış görünüyor."
+        : !systemHealth.emailLegalIdentityConfigured
+          ? "Ticari gönderimler güvenli biçimde durduruldu: Vercel Production ortamında COMPANY_LEGAL_NAME ve COMPANY_POSTAL_ADDRESS eksik."
         : `${overview.emailSent24h} gönderim başarılı, ${overview.emailFailed24h} gönderim başarısız. Yaşam döngüsü maillerinin kullanıcıya ulaştığını doğrula.`,
       label: "Sistemi kontrol et",
       tab: "system",
-      severity: overview.emailQuotaBlocked ? "critical" : "warning"
+      severity: overview.emailQuotaBlocked || !systemHealth.commercialEmailConfigured ? "critical" : "warning"
     });
   }
 
@@ -421,10 +429,14 @@ function AdminDailyOverview({
       label: "E-posta",
       detail: overview.emailQuotaBlocked
         ? "Sağlayıcı kotası bloklu"
-        : systemHealth.emailConfigured
-          ? `${overview.emailSent24h} gönderim / 24 saat`
-          : "Resend bağlantısı eksik",
-      ready: systemHealth.emailConfigured && !overview.emailQuotaBlocked
+        : !systemHealth.emailConfigured
+          ? "Resend bağlantısı eksik"
+          : !systemHealth.emailLegalIdentityConfigured
+            ? "Yasal gönderen adı ve posta adresi eksik"
+            : systemHealth.commercialEmailConfigured
+              ? `${overview.emailSent24h} gönderim / 24 saat`
+              : "Yapılandırma eksik",
+      ready: systemHealth.commercialEmailConfigured && !overview.emailQuotaBlocked
     },
     {
       label: "Birinci taraf analitik",
@@ -1003,11 +1015,19 @@ export function AdminPanel(props: {
 
     actions.push({
       title: "Yaşam döngüsü e-postaları",
-      value: props.overview.emailQuotaBlocked ? "Bloklu" : `${props.overview.emailSent24h} gönderildi`,
+      value: !props.systemHealth.commercialEmailConfigured
+        ? "Yapılandırma eksik"
+        : props.overview.emailQuotaBlocked
+          ? "Bloklu"
+          : `${props.overview.emailSent24h} gönderildi`,
       detail: props.overview.emailQuotaBlocked
         ? `Sağlayıcı kotası gönderimi engelliyor; son 24 saatte ${props.overview.emailFailed24h} deneme başarısız. Kota sıfırlanana kadar tekrar fırtınası engellendi.`
-        : `Son 24 saatte ${props.overview.emailSent24h} e-posta gönderildi, ${props.overview.emailFailed24h} gönderim başarısız. 30 günde ${props.overview.dayOneReturnStarts30d} kullanıcı ilk gün dönüş akışından geldi.`,
-      tone: props.overview.emailQuotaBlocked || props.overview.emailFailed24h > 0 ? "warning" : "success"
+        : !props.systemHealth.emailConfigured
+          ? "Resend bağlantısı eksik; yaşam döngüsü e-postaları gönderilemez."
+          : !props.systemHealth.emailLegalIdentityConfigured
+            ? "COMPANY_LEGAL_NAME ve COMPANY_POSTAL_ADDRESS eksik. Yasal bilgiler eklenene kadar ticari gönderimler güvenli biçimde durduruluyor."
+            : `Son 24 saatte ${props.overview.emailSent24h} e-posta gönderildi, ${props.overview.emailFailed24h} gönderim başarısız. 30 günde ${props.overview.dayOneReturnStarts30d} kullanıcı ilk gün dönüş akışından geldi.`,
+      tone: !props.systemHealth.commercialEmailConfigured || props.overview.emailQuotaBlocked || props.overview.emailFailed24h > 0 ? "warning" : "success"
     });
 
     actions.push({
@@ -1043,6 +1063,9 @@ export function AdminPanel(props: {
     props.overview.emailFailed24h,
     props.overview.emailQuotaBlocked,
     props.overview.emailSent24h,
+    props.systemHealth.commercialEmailConfigured,
+    props.systemHealth.emailConfigured,
+    props.systemHealth.emailLegalIdentityConfigured,
     props.overview.practiceLimitRecoveryCheckoutStarts7d,
     props.overview.practiceLimitRecoveryEnabled,
     props.overview.practiceLimitRecoverySent7d,
@@ -2837,12 +2860,16 @@ export function AdminPanel(props: {
                     },
                     {
                       label: "E-posta teslimatı",
-                      ready: props.systemHealth.emailConfigured && !props.overview.emailQuotaBlocked,
+                      ready: props.systemHealth.commercialEmailConfigured && !props.overview.emailQuotaBlocked,
                       detail: props.overview.emailQuotaBlocked
                         ? "Sağlayıcı kotası yaşam döngüsü gönderimlerini engelliyor."
-                        : props.systemHealth.emailConfigured
-                          ? `Günlük ${props.systemHealth.lifecycleDailyBudget} gönderim bütçesiyle hazır.`
-                          : "RESEND_API_KEY veya EMAIL_FROM eksik."
+                        : !props.systemHealth.emailConfigured
+                          ? "RESEND_API_KEY veya EMAIL_FROM eksik."
+                          : !props.systemHealth.emailLegalIdentityConfigured
+                            ? "COMPANY_LEGAL_NAME ve COMPANY_POSTAL_ADDRESS eksik; ticari gönderimler durduruldu."
+                            : props.systemHealth.commercialEmailConfigured
+                              ? `Günlük ${props.systemHealth.lifecycleDailyBudget} gönderim bütçesiyle hazır.`
+                              : "E-posta yapılandırması eksik."
                     },
                     {
                       label: "Ürün analitiği",

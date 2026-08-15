@@ -40,6 +40,25 @@ export function hasEmailTransport() {
   return Boolean(config.apiKey && config.from);
 }
 
+function getConfiguredCommercialIdentity() {
+  return {
+    legalName: process.env.COMPANY_LEGAL_NAME?.replace(/\s+/g, " ").trim().slice(0, 160) ?? "",
+    postalAddress: process.env.COMPANY_POSTAL_ADDRESS?.replace(/\s+/g, " ").trim().slice(0, 300) ?? ""
+  };
+}
+
+export function getCommercialEmailConfigurationStatus() {
+  const { legalName, postalAddress } = getConfiguredCommercialIdentity();
+  const transportConfigured = hasEmailTransport();
+  const legalIdentityConfigured = Boolean(legalName && postalAddress);
+
+  return {
+    transportConfigured,
+    legalIdentityConfigured,
+    ready: transportConfigured && legalIdentityConfigured
+  };
+}
+
 export function isEmailSuppressionError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error ?? "");
   const normalized = message.toLowerCase();
@@ -56,8 +75,7 @@ export function isDefiniteEmailRejection(error: unknown) {
 }
 
 export function getCommercialSenderIdentity() {
-  const legalName = process.env.COMPANY_LEGAL_NAME?.replace(/\s+/g, " ").trim().slice(0, 160) ?? "";
-  const postalAddress = process.env.COMPANY_POSTAL_ADDRESS?.replace(/\s+/g, " ").trim().slice(0, 300) ?? "";
+  const { legalName, postalAddress } = getConfiguredCommercialIdentity();
 
   if (hasEmailTransport() && (!legalName || !postalAddress)) {
     throw new Error(

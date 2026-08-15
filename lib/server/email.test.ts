@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  getCommercialEmailConfigurationStatus,
   isDefiniteEmailRejection,
   resolveEmailReplyTo,
   sendEmail,
@@ -47,6 +48,25 @@ describe("email reply routing", () => {
 });
 
 describe("commercial email delivery safety", () => {
+  it("reports missing legal identity without exposing configured values", () => {
+    process.env.RESEND_API_KEY = "re_test_key";
+    process.env.EMAIL_FROM = "SpeakAce <mail@speakace.org>";
+
+    expect(getCommercialEmailConfigurationStatus()).toEqual({
+      transportConfigured: true,
+      legalIdentityConfigured: false,
+      ready: false
+    });
+
+    process.env.COMPANY_LEGAL_NAME = "SpeakAce Labs";
+    process.env.COMPANY_POSTAL_ADDRESS = "Example Street 10, Amsterdam";
+    expect(getCommercialEmailConfigurationStatus()).toEqual({
+      transportConfigured: true,
+      legalIdentityConfigured: true,
+      ready: true
+    });
+  });
+
   it("fails closed when a configured transport has no legal sender identity", async () => {
     process.env.RESEND_API_KEY = "re_test_key";
     process.env.EMAIL_FROM = "SpeakAce <mail@speakace.org>";

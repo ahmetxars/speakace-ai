@@ -2,7 +2,7 @@
 
 import { CalendarDays, Clock3 } from "lucide-react";
 import posthog from "posthog-js";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppState } from "@/components/providers";
 import { trackClientEvent } from "@/lib/analytics-client";
 
@@ -15,6 +15,7 @@ const reminderCopy = {
     morning: "Tomorrow, 09:00",
     evening: "Tomorrow, 19:00",
     action: "Add to calendar",
+    saved: "Calendar file ready",
     note: "Private calendar file. Change or remove it whenever you want."
   },
   tr: {
@@ -25,6 +26,7 @@ const reminderCopy = {
     morning: "Yarın, 09:00",
     evening: "Yarın, 19:00",
     action: "Takvime ekle",
+    saved: "Takvim dosyası hazır",
     note: "Özel takvim dosyası. İstediğin zaman değiştirebilir veya silebilirsin."
   },
   de: {
@@ -35,6 +37,7 @@ const reminderCopy = {
     morning: "Morgen, 09:00",
     evening: "Morgen, 19:00",
     action: "Zum Kalender",
+    saved: "Kalenderdatei ist bereit",
     note: "Private Kalenderdatei. Du kannst sie jederzeit ändern oder löschen."
   },
   es: {
@@ -45,6 +48,7 @@ const reminderCopy = {
     morning: "Mañana, 09:00",
     evening: "Mañana, 19:00",
     action: "Añadir al calendario",
+    saved: "Archivo de calendario listo",
     note: "Archivo de calendario privado. Puedes cambiarlo o borrarlo cuando quieras."
   },
   fr: {
@@ -55,6 +59,7 @@ const reminderCopy = {
     morning: "Demain, 09:00",
     evening: "Demain, 19:00",
     action: "Ajouter au calendrier",
+    saved: "Fichier calendrier prêt",
     note: "Fichier calendrier privé. Modifiez-le ou supprimez-le à tout moment."
   }
 } as const;
@@ -79,6 +84,10 @@ export function ReturnPracticeReminder({ sessionId }: { sessionId: string }) {
   const copy = reminderCopy[locale];
   const [reminderTime, setReminderTime] = useState<ReminderTime>("090000");
   const [calendarHref, setCalendarHref] = useState<string | null>(null);
+  const [calendarOpened, setCalendarOpened] = useState(false);
+  const reminderRef = useRef<HTMLElement | null>(null);
+  const viewTrackedRef = useRef(false);
+  const addTrackedRef = useRef(false);
 
   useEffect(() => {
     const tomorrow = new Date();
@@ -91,34 +100,78 @@ export function ReturnPracticeReminder({ sessionId }: { sessionId: string }) {
     setCalendarHref(`/api/calendar/practice-reminder?${search.toString()}`);
   }, [locale, reminderTime]);
 
+  useEffect(() => {
+    const element = reminderRef.current;
+    if (!element || viewTrackedRef.current) return;
+
+    const trackView = () => {
+      if (viewTrackedRef.current) return;
+      viewTrackedRef.current = true;
+      const eventId = crypto.randomUUID();
+      void trackClientEvent({
+        userId: currentUser?.id,
+        event: "return_reminder_view",
+        eventId,
+        path: `/app/results/${sessionId}`,
+        source: "result_tomorrow_card",
+        plan: currentUser?.plan,
+        locale
+      });
+      posthog.capture("return_reminder_view", {
+        event_id: eventId,
+        source: "result_tomorrow_card",
+        plan: currentUser?.plan,
+        locale
+      });
+    };
+
+    if (!("IntersectionObserver" in window)) {
+      trackView();
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.5)) {
+        trackView();
+        observer.disconnect();
+      }
+    }, { threshold: 0.5 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [currentUser?.id, currentUser?.plan, locale, sessionId]);
+
   const trackReminder = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (!calendarHref) {
       event.preventDefault();
       return;
     }
 
-    const eventId = crypto.randomUUID();
-    const source = `result_tomorrow_${reminderTime.slice(0, 2)}00`;
-    void trackClientEvent({
-      userId: currentUser?.id,
-      event: "return_reminder_added",
-      eventId,
-      path: `/app/results/${sessionId}`,
-      source,
-      plan: currentUser?.plan,
-      locale
-    });
-    posthog.capture("return_reminder_added", {
-      event_id: eventId,
-      source,
-      plan: currentUser?.plan,
-      locale,
-      reminder_time: reminderTime
-    });
+    setCalendarOpened(true);
+    if (!addTrackedRef.current) {
+      addTrackedRef.current = true;
+      const eventId = crypto.randomUUID();
+      const source = `result_tomorrow_${reminderTime.slice(0, 2)}00`;
+      void trackClientEvent({
+        userId: currentUser?.id,
+        event: "return_reminder_added",
+        eventId,
+        path: `/app/results/${sessionId}`,
+        source,
+        plan: currentUser?.plan,
+        locale
+      });
+      posthog.capture("return_reminder_added", {
+        event_id: eventId,
+        source,
+        plan: currentUser?.plan,
+        locale,
+        reminder_time: reminderTime
+      });
+    }
   };
 
   return (
-    <section className="result-return-reminder" aria-labelledby="result-return-reminder-title">
+    <section ref={reminderRef} className="result-return-reminder" aria-labelledby="result-return-reminder-title">
       <div className="result-return-reminder__icon" aria-hidden="true">
         <CalendarDays size={22} />
       </div>
@@ -136,7 +189,11 @@ export function ReturnPracticeReminder({ sessionId }: { sessionId: string }) {
           </span>
           <select
             value={reminderTime}
-            onChange={(event) => setReminderTime(event.target.value as ReminderTime)}
+            onChange={(event) => {
+              setReminderTime(event.target.value as ReminderTime);
+              setCalendarOpened(false);
+              addTrackedRef.current = false;
+            }}
           >
             <option value="090000">{copy.morning}</option>
             <option value="190000">{copy.evening}</option>
@@ -148,7 +205,7 @@ export function ReturnPracticeReminder({ sessionId }: { sessionId: string }) {
           aria-disabled={!calendarHref}
           onClick={trackReminder}
         >
-          {copy.action}
+          {calendarOpened ? copy.saved : copy.action}
         </a>
       </div>
     </section>
