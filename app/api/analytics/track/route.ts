@@ -60,6 +60,7 @@ const ALLOWED_EVENTS = new Set<AnalyticsEventName>([
   "signup_completed",
   "first_score",
   "return_practice",
+  "return_reminder_view",
   "return_reminder_added"
 ]);
 

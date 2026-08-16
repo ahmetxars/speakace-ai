@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
+import {
+  GOOGLE_NEW_STUDENT_REDIRECT,
+  resolveGoogleCallbackRedirect,
+  resolveSafeAppRedirect
+} from "@/lib/auth-redirect";
 
 describe("resolveSafeAppRedirect", () => {
   it("keeps app destinations and the exact Lemon checkout bridge", () => {
@@ -24,5 +28,41 @@ describe("resolveSafeAppRedirect", () => {
     expect(resolveSafeAppRedirect("/api/payments/lemon/webhook")).toBeNull();
     expect(resolveSafeAppRedirect("/auth")).toBeNull();
     expect(resolveSafeAppRedirect("/application")).toBeNull();
+  });
+});
+
+describe("resolveGoogleCallbackRedirect", () => {
+  it("sends a new student without an explicit destination to quick-start practice", () => {
+    expect(resolveGoogleCallbackRedirect({
+      isNewUser: true,
+      memberType: "student"
+    })).toBe(GOOGLE_NEW_STUDENT_REDIRECT);
+  });
+
+  it("preserves a safe explicit destination for signup and invite flows", () => {
+    expect(resolveGoogleCallbackRedirect({
+      requestedNext: "/app/profile?onboarding=1",
+      isNewUser: true,
+      memberType: "student"
+    })).toBe("/app/profile?onboarding=1");
+  });
+
+  it("keeps existing users and non-student accounts on the app home", () => {
+    expect(resolveGoogleCallbackRedirect({
+      isNewUser: false,
+      memberType: "student"
+    })).toBe("/app");
+    expect(resolveGoogleCallbackRedirect({
+      isNewUser: true,
+      memberType: "teacher"
+    })).toBe("/app");
+  });
+
+  it("rejects an unsafe explicit destination before applying the signup default", () => {
+    expect(resolveGoogleCallbackRedirect({
+      requestedNext: "https://evil.example/steal",
+      isNewUser: true,
+      memberType: "student"
+    })).toBe(GOOGLE_NEW_STUDENT_REDIRECT);
   });
 });

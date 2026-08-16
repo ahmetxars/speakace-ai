@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
+import { resolveGoogleCallbackRedirect } from "@/lib/auth-redirect";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { ANALYTICS_VISITOR_COOKIE, normalizeAnalyticsVisitorId } from "@/lib/analytics-policy";
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
@@ -298,7 +298,11 @@ export async function GET(request: Request) {
     await recordAuthActivity({ userId: profile.id, eventType: "signin", meta: { source: "google" } });
     const session = await createAuthSession(profile.id);
 
-    const nextPath = resolveSafeAppRedirect(parsedState.next) ?? "/app";
+    const nextPath = resolveGoogleCallbackRedirect({
+      requestedNext: parsedState.next,
+      isNewUser,
+      memberType: profile.memberType
+    });
     const response = NextResponse.redirect(new URL(nextPath, siteUrl));
     response.cookies.set(getSessionCookieName(), session.token, getSessionCookieOptions(session.expiresAt));
     return clearGoogleOAuthStateCookie(response);

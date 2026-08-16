@@ -1,3 +1,8 @@
+import type { MemberType } from "@/lib/types";
+
+export const GOOGLE_NEW_STUDENT_REDIRECT =
+  "/app/practice?quickStart=1&runMode=interview&activation=google_signup";
+
 export function resolveSafeAppRedirect(value: string | null | undefined) {
   if (!value || value.length > 1000 || !value.startsWith("/") || value.startsWith("//")) {
     return null;
@@ -13,4 +18,19 @@ export function resolveSafeAppRedirect(value: string | null | undefined) {
   } catch {
     return null;
   }
+}
+
+export function resolveGoogleCallbackRedirect(input: {
+  requestedNext?: string | null;
+  isNewUser: boolean;
+  memberType?: MemberType | null;
+}) {
+  const requestedNext = resolveSafeAppRedirect(input.requestedNext);
+  if (requestedNext) return requestedNext;
+
+  if (input.isNewUser && input.memberType === "student") {
+    return GOOGLE_NEW_STUDENT_REDIRECT;
+  }
+
+  return "/app";
 }
