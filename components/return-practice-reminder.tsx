@@ -14,9 +14,10 @@ const reminderCopy = {
     timeLabel: "Reminder time",
     morning: "Tomorrow, 09:00",
     evening: "Tomorrow, 19:00",
-    action: "Add to calendar",
-    saved: "Calendar file ready",
-    note: "Private calendar file. Change or remove it whenever you want."
+    action: "Schedule in Google Calendar",
+    opened: "Google Calendar opened",
+    download: "Use another calendar (.ics)",
+    note: "Review and save it in your calendar. SpeakAce cannot see your calendar."
   },
   tr: {
     eyebrow: "Yarının 5 dakikalık kazanımı",
@@ -25,9 +26,10 @@ const reminderCopy = {
     timeLabel: "Hatırlatma saati",
     morning: "Yarın, 09:00",
     evening: "Yarın, 19:00",
-    action: "Takvime ekle",
-    saved: "Takvim dosyası hazır",
-    note: "Özel takvim dosyası. İstediğin zaman değiştirebilir veya silebilirsin."
+    action: "Google Takvim'de planla",
+    opened: "Google Takvim açıldı",
+    download: "Başka takvim kullan (.ics)",
+    note: "Takviminde kontrol edip kaydet. SpeakAce takvimini göremez."
   },
   de: {
     eyebrow: "Dein 5-Minuten-Erfolg morgen",
@@ -36,9 +38,10 @@ const reminderCopy = {
     timeLabel: "Erinnerungszeit",
     morning: "Morgen, 09:00",
     evening: "Morgen, 19:00",
-    action: "Zum Kalender",
-    saved: "Kalenderdatei ist bereit",
-    note: "Private Kalenderdatei. Du kannst sie jederzeit ändern oder löschen."
+    action: "In Google Kalender planen",
+    opened: "Google Kalender geöffnet",
+    download: "Anderen Kalender nutzen (.ics)",
+    note: "Prüfe und speichere den Termin im Kalender. SpeakAce kann deinen Kalender nicht sehen."
   },
   es: {
     eyebrow: "Tu avance de 5 minutos mañana",
@@ -47,9 +50,10 @@ const reminderCopy = {
     timeLabel: "Hora del recordatorio",
     morning: "Mañana, 09:00",
     evening: "Mañana, 19:00",
-    action: "Añadir al calendario",
-    saved: "Archivo de calendario listo",
-    note: "Archivo de calendario privado. Puedes cambiarlo o borrarlo cuando quieras."
+    action: "Programar en Google Calendar",
+    opened: "Google Calendar abierto",
+    download: "Usar otro calendario (.ics)",
+    note: "Revísalo y guárdalo en tu calendario. SpeakAce no puede ver tu calendario."
   },
   fr: {
     eyebrow: "Votre progrès de 5 minutes demain",
@@ -58,9 +62,10 @@ const reminderCopy = {
     timeLabel: "Heure du rappel",
     morning: "Demain, 09:00",
     evening: "Demain, 19:00",
-    action: "Ajouter au calendrier",
-    saved: "Fichier calendrier prêt",
-    note: "Fichier calendrier privé. Modifiez-le ou supprimez-le à tout moment."
+    action: "Planifier dans Google Agenda",
+    opened: "Google Agenda ouvert",
+    download: "Utiliser un autre agenda (.ics)",
+    note: "Vérifiez puis enregistrez l'événement. SpeakAce ne peut pas voir votre agenda."
   }
 } as const;
 
@@ -84,10 +89,11 @@ export function ReturnPracticeReminder({ sessionId }: { sessionId: string }) {
   const copy = reminderCopy[locale];
   const [reminderTime, setReminderTime] = useState<ReminderTime>("090000");
   const [calendarHref, setCalendarHref] = useState<string | null>(null);
-  const [calendarOpened, setCalendarOpened] = useState(false);
+  const [googleCalendarHref, setGoogleCalendarHref] = useState<string | null>(null);
+  const [googleCalendarOpened, setGoogleCalendarOpened] = useState(false);
   const reminderRef = useRef<HTMLElement | null>(null);
   const viewTrackedRef = useRef(false);
-  const addTrackedRef = useRef(false);
+  const addTrackedRef = useRef(new Set<string>());
 
   useEffect(() => {
     const tomorrow = new Date();
@@ -98,16 +104,35 @@ export function ReturnPracticeReminder({ sessionId }: { sessionId: string }) {
       locale
     });
     setCalendarHref(`/api/calendar/practice-reminder?${search.toString()}`);
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timezone) search.set("timezone", timezone);
+    search.set("provider", "google");
+    setGoogleCalendarHref(`/api/calendar/practice-reminder?${search.toString()}`);
   }, [locale, reminderTime]);
 
   useEffect(() => {
     const element = reminderRef.current;
-    if (!element || viewTrackedRef.current) return;
+    if (!element || !currentUser?.id || viewTrackedRef.current) return;
+
+    const eventId = `reminder-view:${sessionId}`;
+    const storageKey = `speakace:${eventId}`;
+    try {
+      if (window.sessionStorage.getItem(storageKey)) {
+        viewTrackedRef.current = true;
+        return;
+      }
+    } catch {
+      // Storage can be unavailable in privacy-focused browsers.
+    }
 
     const trackView = () => {
       if (viewTrackedRef.current) return;
       viewTrackedRef.current = true;
-      const eventId = crypto.randomUUID();
+      try {
+        window.sessionStorage.setItem(storageKey, "1");
+      } catch {
+        // Analytics remains best-effort when storage is unavailable.
+      }
       void trackClientEvent({
         userId: currentUser?.id,
         event: "return_reminder_view",
@@ -119,6 +144,7 @@ export function ReturnPracticeReminder({ sessionId }: { sessionId: string }) {
       });
       posthog.capture("return_reminder_view", {
         event_id: eventId,
+        $insert_id: eventId,
         source: "result_tomorrow_card",
         plan: currentUser?.plan,
         locale
@@ -140,17 +166,22 @@ export function ReturnPracticeReminder({ sessionId }: { sessionId: string }) {
     return () => observer.disconnect();
   }, [currentUser?.id, currentUser?.plan, locale, sessionId]);
 
-  const trackReminder = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    if (!calendarHref) {
+  const trackReminder = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    provider: "google" | "ics"
+  ) => {
+    const href = provider === "google" ? googleCalendarHref : calendarHref;
+    if (!href) {
       event.preventDefault();
       return;
     }
 
-    setCalendarOpened(true);
-    if (!addTrackedRef.current) {
-      addTrackedRef.current = true;
-      const eventId = crypto.randomUUID();
-      const source = `result_tomorrow_${reminderTime.slice(0, 2)}00`;
+    if (provider === "google") setGoogleCalendarOpened(true);
+    const trackingKey = `${reminderTime}:${provider}`;
+    if (!addTrackedRef.current.has(trackingKey)) {
+      addTrackedRef.current.add(trackingKey);
+      const eventId = `reminder-add:${sessionId}:${reminderTime}:${provider}`;
+      const source = `result_tomorrow_${provider}_${reminderTime.slice(0, 2)}00`;
       void trackClientEvent({
         userId: currentUser?.id,
         event: "return_reminder_added",
@@ -162,6 +193,7 @@ export function ReturnPracticeReminder({ sessionId }: { sessionId: string }) {
       });
       posthog.capture("return_reminder_added", {
         event_id: eventId,
+        $insert_id: eventId,
         source,
         plan: currentUser?.plan,
         locale,
@@ -191,22 +223,33 @@ export function ReturnPracticeReminder({ sessionId }: { sessionId: string }) {
             value={reminderTime}
             onChange={(event) => {
               setReminderTime(event.target.value as ReminderTime);
-              setCalendarOpened(false);
-              addTrackedRef.current = false;
+              setGoogleCalendarOpened(false);
             }}
           >
             <option value="090000">{copy.morning}</option>
             <option value="190000">{copy.evening}</option>
           </select>
         </label>
-        <a
-          className="button button-primary"
-          href={calendarHref ?? "#"}
-          aria-disabled={!calendarHref}
-          onClick={trackReminder}
-        >
-          {calendarOpened ? copy.saved : copy.action}
-        </a>
+        <div className="result-return-reminder__calendar-actions">
+          <a
+            className="button button-primary"
+            href={googleCalendarHref ?? "#"}
+            aria-disabled={!googleCalendarHref}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => trackReminder(event, "google")}
+          >
+            {googleCalendarOpened ? copy.opened : copy.action}
+          </a>
+          <a
+            className="result-return-reminder__download"
+            href={calendarHref ?? "#"}
+            aria-disabled={!calendarHref}
+            onClick={(event) => trackReminder(event, "ics")}
+          >
+            {copy.download}
+          </a>
+        </div>
       </div>
     </section>
   );

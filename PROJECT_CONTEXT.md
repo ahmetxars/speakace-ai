@@ -168,6 +168,7 @@ This is the project-wide “where things live” map.
 - Data and scoring:
   - Speaking usage is reserved atomically only after a valid audio payload reaches the upload route. Merely opening a prompt must not consume a daily session/minute allowance, and repeat uploads of the same session must remain idempotent.
   - Progress totals, recent sessions, and streak inputs include completed audio uploads only; abandoned microphone/prompt sessions stay available for recovery but never appear as completed practice.
+  - Completed speaking results offer a Google Calendar-first next-day practice reminder with a private `.ics` fallback; reminder exposure and provider clicks use deterministic per-session event ids so revisits do not inflate retention analytics.
   - `lib/store.ts`
   - `lib/evaluator.ts`
   - `lib/prompts.ts`

@@ -14789,6 +14789,26 @@ body[data-theme="dark"] .audience-hero-panel {
   white-space: nowrap;
 }
 
+.result-return-reminder__calendar-actions {
+  display: grid;
+  justify-items: stretch;
+  gap: 0.35rem;
+}
+
+.result-return-reminder__download {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+  text-underline-offset: 0.2rem;
+}
+
+.result-return-reminder__download:hover {
+  color: var(--foreground);
+}
+
 @media (max-width: 640px) {
   .result-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -14807,6 +14827,7 @@ body[data-theme="dark"] .audience-hero-panel {
 
   .result-return-reminder__actions .button {
     justify-content: center;
+    min-height: 3rem;
   }
 }
 

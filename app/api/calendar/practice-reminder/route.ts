@@ -48,6 +48,18 @@ function normalizeLocale(value: string | null): SupportedLocale {
   return supportedLocales.includes(value as SupportedLocale) ? value as SupportedLocale : "en";
 }
 
+function normalizeTimezone(value: string | null) {
+  const timezone = value?.trim();
+  if (!timezone || timezone.length > 64) return null;
+
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: timezone }).format();
+    return timezone;
+  } catch {
+    return null;
+  }
+}
+
 function escapeCalendarText(value: string) {
   return value
     .replace(/\\/g, "\\\\")
@@ -77,6 +89,26 @@ export async function GET(request: Request) {
   const locale = normalizeLocale(searchParams.get("locale"));
   const copy = calendarCopy[locale];
   const practiceUrl = "https://speakace.org/app/practice?source=calendar_return_reminder";
+
+  if (searchParams.get("provider") === "google") {
+    const calendarUrl = new URL("https://calendar.google.com/calendar/render");
+    calendarUrl.searchParams.set("action", "TEMPLATE");
+    calendarUrl.searchParams.set("text", copy.summary);
+    calendarUrl.searchParams.set("dates", `${date}T${time}/${date}T${endTime}`);
+    calendarUrl.searchParams.set("details", `${copy.description}\n\n${practiceUrl}`);
+    calendarUrl.searchParams.set("location", practiceUrl);
+    const timezone = normalizeTimezone(searchParams.get("timezone"));
+    if (timezone) calendarUrl.searchParams.set("ctz", timezone);
+
+    return new Response(null, {
+      status: 302,
+      headers: {
+        "Cache-Control": "private, no-store",
+        Location: calendarUrl.toString()
+      }
+    });
+  }
+
   const timestamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
   const lines = [
     "BEGIN:VCALENDAR",
