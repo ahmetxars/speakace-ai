@@ -11,8 +11,10 @@ import { trackClientEvent } from "@/lib/analytics-client";
 import { normalizePublicLanguage } from "@/lib/copy";
 import { listPromptsForTask } from "@/lib/prompts";
 import {
+  buildPracticeLimitEventId,
   getUpgradePromptDayKey,
   getUpgradePromptStorageKey,
+  isFreePracticeQuotaExhausted,
   shouldShowUpgradePromptDialog
 } from "@/lib/upgrade-prompt-frequency";
 
@@ -220,14 +222,33 @@ export function PracticeConsole() {
   const [cooldownUpgradePrompt, setCooldownUpgradePrompt] = useState<{
     reason: UpgradePromptReason;
   } | null>(null);
+  const [limitBlockedToday, setLimitBlockedToday] = useState(false);
+  const [quotaOfferDismissed, setQuotaOfferDismissed] = useState(false);
+
+  const freeQuotaExhausted = isFreePracticeQuotaExhausted({
+    plan: summary.currentPlan,
+    freeSessionsRemaining: summary.freeSessionsRemaining,
+    remainingMinutesToday: summary.remainingMinutesToday
+  });
+  const practiceBlockedByQuota = limitBlockedToday || freeQuotaExhausted;
+  const canStartPractice = canPractice && !practiceBlockedByQuota;
 
   const sessionRef = useRef<SpeakingSession | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const autoStartedRef = useRef(false);
-  const dismissUpgradePrompt = useCallback(() => setUpgradePrompt(null), []);
-  const dismissCooldownUpgradePrompt = useCallback(() => setCooldownUpgradePrompt(null), []);
+  const dismissUpgradePrompt = useCallback(() => {
+    const reason = upgradePrompt?.reason;
+    setUpgradePrompt(null);
+    if (reason) {
+      setCooldownUpgradePrompt({ reason });
+    }
+  }, [upgradePrompt?.reason]);
+  const dismissCooldownUpgradePrompt = useCallback(() => {
+    setQuotaOfferDismissed(true);
+    setCooldownUpgradePrompt(null);
+  }, []);
 
   const capturePracticeEvent = useCallback((event: string, properties: Record<string, unknown>) => {
     posthog.capture(event, {
@@ -313,6 +334,38 @@ export function PracticeConsole() {
       .then((data: ProgressSummary) => setSummary(data))
       .catch(() => setSummary(emptySummary));
   }, [canPractice]);
+
+  useEffect(() => {
+    setLimitBlockedToday(false);
+    setQuotaOfferDismissed(false);
+    setUpgradePrompt(null);
+    setCooldownUpgradePrompt(null);
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    if (!canPractice || summary.currentPlan !== "free") {
+      setLimitBlockedToday(false);
+      setQuotaOfferDismissed(false);
+      setCooldownUpgradePrompt(null);
+      return;
+    }
+
+    if (!freeQuotaExhausted) {
+      return;
+    }
+
+    setLimitBlockedToday(true);
+    if (!quotaOfferDismissed && !upgradePrompt && !cooldownUpgradePrompt) {
+      setCooldownUpgradePrompt({ reason: "practice_limit_hit" });
+    }
+  }, [
+    canPractice,
+    cooldownUpgradePrompt,
+    freeQuotaExhausted,
+    quotaOfferDismissed,
+    summary.currentPlan,
+    upgradePrompt
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -764,6 +817,15 @@ export function PracticeConsole() {
       speakingSeconds?: number;
     };
   }) => {
+    if (practiceBlockedByQuota) {
+      const reason: UpgradePromptReason = mode === "done" ? "result_retry_locked" : "practice_limit_hit";
+      if (!quotaOfferDismissed && !upgradePrompt && !cooldownUpgradePrompt) {
+        setCooldownUpgradePrompt({ reason });
+      }
+      setStatus(tr ? "Ücretsiz pratik kotan yarın yenilenir." : "Your free practice quota resets tomorrow.");
+      return;
+    }
+
     setError(null);
     setUpgradePrompt(null);
 
@@ -839,6 +901,9 @@ export function PracticeConsole() {
         const minutesLimited = (data.error ?? "").toLowerCase().includes("minute");
         let placement: "trial_dialog" | "cooldown_card" = "trial_dialog";
 
+        setLimitBlockedToday(true);
+        setQuotaOfferDismissed(false);
+
         if (typeof window !== "undefined") {
           try {
             const storageKey = getUpgradePromptStorageKey(currentUser.id);
@@ -862,18 +927,25 @@ export function PracticeConsole() {
         }
 
         if (currentUser.id) {
+          const eventId = buildPracticeLimitEventId(currentUser.id, reason);
           void trackClientEvent({
             userId: currentUser.id,
             event: "practice_limit_hit",
-            path: `/app/practice/${reason}/${placement}`
+            eventId,
+            path: `/app/practice/${reason}/${placement}`,
+            source: reason,
+            plan: currentUser.plan,
+            locale: language
+          });
+          posthog.capture("practice_limit_hit", {
+            source: reason,
+            limit_type: minutesLimited ? "minutes" : "sessions",
+            plan: currentUser.plan,
+            placement: placement === "trial_dialog" ? "practice_trial_dialog" : "practice_cooldown_card",
+            event_id: eventId,
+            $insert_id: eventId
           });
         }
-        posthog.capture("practice_limit_hit", {
-          source: reason,
-          limit_type: minutesLimited ? "minutes" : "sessions",
-          plan: currentUser.plan,
-          placement: placement === "trial_dialog" ? "practice_trial_dialog" : "practice_cooldown_card"
-        });
         void fetch("/api/progress/summary", { cache: "no-store" })
           .then((summaryResponse) => summaryResponse.json())
           .then((nextSummary: ProgressSummary) => setSummary(nextSummary))
@@ -890,6 +962,8 @@ export function PracticeConsole() {
       return;
     }
 
+    setLimitBlockedToday(false);
+    setQuotaOfferDismissed(false);
     setCooldownUpgradePrompt(null);
     sessionRef.current = data.session;
     setPreferredPromptId(data.session.prompt.id);
@@ -1331,10 +1405,12 @@ export function PracticeConsole() {
                 className="button button-primary"
                 type="button"
                 onClick={() => void startSession()}
-                disabled={!canPractice || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
+                disabled={!canStartPractice || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
                 style={{ width: "100%", padding: "0.85rem", fontSize: "1rem", fontWeight: 700, borderRadius: 12 }}
               >
-                {mode === "saving"
+                {practiceBlockedByQuota
+                  ? (tr ? "Ücretsiz pratik yarın yenilenir" : "Free practice resets tomorrow")
+                  : mode === "saving"
                   ? (tr ? "Kaydediliyor..." : "Saving...")
                   : (tr ? "🧪 Mock Exam'i Başlat" : "🧪 Start Mock Exam")}
               </button>
@@ -1430,7 +1506,7 @@ export function PracticeConsole() {
                   transition: "all 0.15s",
                   cursor: "pointer"
                 }}
-                onClick={() => !canPractice || mode !== "idle" ? undefined : void pickPromptAndStart(prompt.id)}
+                onClick={() => !canStartPractice || mode !== "idle" ? undefined : void pickPromptAndStart(prompt.id)}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, marginBottom: "0.2rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prompt.title}</div>
@@ -1440,7 +1516,7 @@ export function PracticeConsole() {
                   type="button"
                   className="button button-primary"
                   onClick={e => { e.stopPropagation(); void pickPromptAndStart(prompt.id); }}
-                  disabled={!canPractice || mode !== "idle"}
+                  disabled={!canStartPractice || mode !== "idle"}
                   style={{ flexShrink: 0, padding: "0.45rem 1rem", fontSize: "0.85rem" }}
                 >
                   {tr ? "Başla" : "Start"}
@@ -1468,7 +1544,7 @@ export function PracticeConsole() {
                       <div style={{ fontWeight: 600, fontSize: "0.9rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prompt.title}</div>
                       <div style={{ fontSize: "0.78rem", color: "var(--muted-foreground)" }}>{humanizeTaskType(prompt.taskType, tr)} · {tr ? translateDifficulty(prompt.difficulty) : prompt.difficulty}</div>
                     </div>
-                    <button type="button" className="button button-secondary" onClick={() => void pickPromptAndStart(prompt.id)} disabled={!canPractice || mode !== "idle"} style={{ padding: "0.4rem 0.9rem", fontSize: "0.82rem", flexShrink: 0 }}>
+                    <button type="button" className="button button-secondary" onClick={() => void pickPromptAndStart(prompt.id)} disabled={!canStartPractice || mode !== "idle"} style={{ padding: "0.4rem 0.9rem", fontSize: "0.82rem", flexShrink: 0 }}>
                       {tr ? "Başlat" : "Start"}
                     </button>
                   </div>
@@ -1635,10 +1711,12 @@ export function PracticeConsole() {
             className="button button-primary"
             type="button"
             onClick={() => void startSession()}
-            disabled={!canPractice || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
+            disabled={!canStartPractice || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
             style={{ width: "100%", padding: "1rem", fontSize: "1rem", fontWeight: 700, borderRadius: 14 }}
           >
-            {mode === "saving"
+            {practiceBlockedByQuota
+              ? (tr ? "Ücretsiz pratik yarın yenilenir" : "Free practice resets tomorrow")
+              : mode === "saving"
               ? (tr ? "Kaydediliyor..." : "Saving...")
               : runMode === "interview"
                 ? (tr ? "🗣 Interview Modunu Başlat" : "🗣 Start Interview Mode")
