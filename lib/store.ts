@@ -839,11 +839,11 @@ export async function getMember(userId: string) {
       select
         id, email, name, role, member_type as "memberType", organization_name as "organizationName",
         case
-          when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'free'
+          when billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'free'
           else plan
         end as "plan",
         case
-          when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'expired'
+          when billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'expired'
           else billing_status
         end as "billingStatus",
         lemon_customer_id as "lemonCustomerId", lemon_subscription_id as "lemonSubscriptionId",
@@ -870,11 +870,11 @@ export async function getMemberByEmail(email: string) {
       select
         id, email, name, role, member_type as "memberType", organization_name as "organizationName",
         case
-          when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'free'
+          when billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'free'
           else plan
         end as "plan",
         case
-          when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'expired'
+          when billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'expired'
           else billing_status
         end as "billingStatus",
         lemon_customer_id as "lemonCustomerId", lemon_subscription_id as "lemonSubscriptionId",
@@ -913,6 +913,7 @@ export async function recordBillingEvent(input: {
   }
 
   const sql = getSql();
+  const payloadJson = input.payloadJson as Parameters<typeof sql.json>[0];
   const rows = await sql<Array<{ id: string }>>`
     insert into billing_events (
       id, provider, event_name, user_email, user_id, plan, billing_status,
@@ -920,7 +921,7 @@ export async function recordBillingEvent(input: {
     ) values (
       ${input.id ?? crypto.randomUUID()}, ${input.provider}, ${input.eventName}, ${input.userEmail ?? null}, ${input.userId ?? null},
       ${input.plan}, ${input.billingStatus}, ${input.providerCustomerId ?? null}, ${input.providerSubscriptionId ?? null},
-      ${JSON.stringify(input.payloadJson)}, ${new Date().toISOString()}
+      ${sql.json(payloadJson)}, ${new Date().toISOString()}
     )
     on conflict (id) do nothing
     returning id
@@ -959,20 +960,54 @@ export async function syncBillingStateForMember(member: MemberProfile) {
       trialEndsAt: string | null;
     }>
   >`
+    with normalized_events as (
+      select
+        plan,
+        billing_status,
+        provider_customer_id,
+        provider_subscription_id,
+        created_at,
+        case
+          when jsonb_typeof(payload_json) = 'string' then (payload_json #>> '{}')::jsonb
+          else payload_json
+        end as payload
+      from billing_events
+      where user_id = ${member.id}
+        or lower(user_email) = ${normalizedEmail}
+    ), latest_event as (
+      select
+        plan,
+        billing_status,
+        provider_customer_id,
+        provider_subscription_id,
+        coalesce(
+          nullif(payload #>> '{data,attributes,trial_ends_at}', ''),
+          nullif(payload #>> '{data,attributes,ends_at}', '')
+        ) as access_ends_at
+      from normalized_events
+      where coalesce(payload->'meta'->'custom_data'->>'type', '') <> 'institution'
+      order by created_at desc
+      limit 1
+    )
     select
-      plan,
-      billing_status as "billingStatus",
+      case
+        when billing_status in ('on_trial', 'cancelled')
+          and access_ends_at is not null
+          and access_ends_at::timestamptz <= now()
+          then 'free'
+        else plan
+      end as plan,
+      case
+        when billing_status in ('on_trial', 'cancelled')
+          and access_ends_at is not null
+          and access_ends_at::timestamptz <= now()
+          then 'expired'
+        else billing_status
+      end as "billingStatus",
       provider_customer_id as "providerCustomerId",
       provider_subscription_id as "providerSubscriptionId",
-      nullif(payload_json #>> '{data,attributes,trial_ends_at}', '') as "trialEndsAt"
-    from billing_events
-    where (
-      user_id = ${member.id}
-      or lower(user_email) = ${normalizedEmail}
-    )
-      and coalesce(payload_json->'meta'->'custom_data'->>'type', '') <> 'institution'
-    order by created_at desc
-    limit 1
+      access_ends_at as "trialEndsAt"
+    from latest_event
   `;
 
   const latest = rows[0];
@@ -1020,8 +1055,9 @@ export async function applyBillingPlanByEmail(input: {
         lemon_customer_id = coalesce(${input.providerCustomerId ?? null}, lemon_customer_id),
         lemon_subscription_id = coalesce(${input.providerSubscriptionId ?? null}, lemon_subscription_id),
         trial_ends_at = case
-          when ${input.billingStatus} = 'on_trial' then coalesce(${input.trialEndsAt ?? null}::timestamptz, trial_ends_at)
-          else null
+          when ${input.billingStatus} in ('on_trial', 'cancelled') then coalesce(${input.trialEndsAt ?? null}::timestamptz, trial_ends_at)
+          when ${input.billingStatus} in ('free', 'expired', 'refunded') then null
+          else trial_ends_at
         end
       where lower(email) = ${normalizedEmail}
       returning
@@ -1042,7 +1078,11 @@ export async function applyBillingPlanByEmail(input: {
     billingStatus: input.billingStatus,
     lemonCustomerId: input.providerCustomerId ?? member.lemonCustomerId ?? null,
     lemonSubscriptionId: input.providerSubscriptionId ?? member.lemonSubscriptionId ?? null,
-    trialEndsAt: input.billingStatus === "on_trial" ? input.trialEndsAt ?? member.trialEndsAt ?? null : null
+    trialEndsAt: ["on_trial", "cancelled"].includes(input.billingStatus)
+      ? input.trialEndsAt ?? member.trialEndsAt ?? null
+      : ["free", "expired", "refunded"].includes(input.billingStatus)
+        ? null
+        : member.trialEndsAt ?? null
   });
 }
 
@@ -1076,8 +1116,9 @@ export async function applyBillingPlanByUserId(input: {
         lemon_customer_id = coalesce(${input.providerCustomerId ?? null}, lemon_customer_id),
         lemon_subscription_id = coalesce(${input.providerSubscriptionId ?? null}, lemon_subscription_id),
         trial_ends_at = case
-          when ${input.billingStatus} = 'on_trial' then coalesce(${input.trialEndsAt ?? null}::timestamptz, trial_ends_at)
-          else null
+          when ${input.billingStatus} in ('on_trial', 'cancelled') then coalesce(${input.trialEndsAt ?? null}::timestamptz, trial_ends_at)
+          when ${input.billingStatus} in ('free', 'expired', 'refunded') then null
+          else trial_ends_at
         end
       where id = ${normalizedUserId}
       returning
@@ -1098,7 +1139,11 @@ export async function applyBillingPlanByUserId(input: {
     billingStatus: input.billingStatus,
     lemonCustomerId: input.providerCustomerId ?? member.lemonCustomerId ?? null,
     lemonSubscriptionId: input.providerSubscriptionId ?? member.lemonSubscriptionId ?? null,
-    trialEndsAt: input.billingStatus === "on_trial" ? input.trialEndsAt ?? member.trialEndsAt ?? null : null
+    trialEndsAt: ["on_trial", "cancelled"].includes(input.billingStatus)
+      ? input.trialEndsAt ?? member.trialEndsAt ?? null
+      : ["free", "expired", "refunded"].includes(input.billingStatus)
+        ? null
+        : member.trialEndsAt ?? null
   });
 }
 

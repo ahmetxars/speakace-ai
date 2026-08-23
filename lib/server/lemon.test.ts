@@ -28,6 +28,48 @@ describe("Lemon billing helpers", () => {
     expect(getLemonTrialEndsAt(payload)).toBe("2026-07-25T12:00:00.000Z");
   });
 
+  it("uses the subscription end date when a cancelled plan has no trial date", () => {
+    const payload = {
+      data: {
+        attributes: {
+          status: "cancelled",
+          trial_ends_at: null,
+          ends_at: "2026-08-30T12:00:00.000Z"
+        }
+      }
+    };
+
+    expect(getLemonTrialEndsAt(payload)).toBe("2026-08-30T12:00:00.000Z");
+  });
+
+  it("prefers the paid access end when a cancelled subscription also keeps its old trial date", () => {
+    const payload = {
+      data: {
+        attributes: {
+          status: "cancelled",
+          trial_ends_at: "2026-08-03T12:00:00.000Z",
+          ends_at: "2026-08-30T12:00:00.000Z"
+        }
+      }
+    };
+
+    expect(getLemonTrialEndsAt(payload)).toBe("2026-08-30T12:00:00.000Z");
+  });
+
+  it("does not turn a zero-dollar initial trial invoice into active billing", () => {
+    const payload = {
+      data: {
+        attributes: {
+          status: "paid",
+          billing_reason: "initial",
+          total: 0
+        }
+      }
+    };
+
+    expect(resolveBillingStatusFromEvent("subscription_payment_success", payload)).toBe("on_trial");
+  });
+
   it("extracts real payment value and checkout attribution", () => {
     const payload = {
       meta: {

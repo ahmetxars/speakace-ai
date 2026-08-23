@@ -51,10 +51,12 @@ export function getLemonUserId(payload: LemonPayload) {
 
 export function getLemonTrialEndsAt(payload: LemonPayload) {
   const attributes = payload.data?.attributes ?? {};
-  const rawTrialEndsAt = attributes.trial_ends_at;
-  if (typeof rawTrialEndsAt !== "string" || !rawTrialEndsAt.trim()) return null;
+  const rawAccessEndsAt = ["cancelled", "expired"].includes(String(attributes.status ?? ""))
+    ? attributes.ends_at ?? attributes.trial_ends_at
+    : attributes.trial_ends_at ?? attributes.ends_at;
+  if (typeof rawAccessEndsAt !== "string" || !rawAccessEndsAt.trim()) return null;
 
-  const parsed = new Date(rawTrialEndsAt);
+  const parsed = new Date(rawAccessEndsAt);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
@@ -174,6 +176,11 @@ export function resolveBillingStatusFromEvent(eventName: string, payload: LemonP
     return "active";
   }
   if (["subscription_payment_success", "subscription_payment_recovered"].includes(eventName)) {
+    const rawTotal = attributes.total;
+    const total = typeof rawTotal === "number" ? rawTotal : typeof rawTotal === "string" ? Number(rawTotal) : NaN;
+    if (eventName === "subscription_payment_success" && attributes.billing_reason === "initial" && total === 0) {
+      return "on_trial";
+    }
     return "active";
   }
   if (eventName === "subscription_updated") {
