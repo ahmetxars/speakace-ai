@@ -16,6 +16,7 @@ import {
 } from "@/lib/commerce";
 import { getPracticeMomentum, getUtcPracticeDayKey } from "@/lib/practice-streak";
 import { resolveDashboardRole } from "@/lib/roles";
+import { getTrialValueProof } from "@/lib/trial-value-proof";
 import { AnnouncementItem, HomeworkAssignment, ProgressSummary, SharedClassStudyItem, SpeakingSession, StudentClassMembership, StudentProfile } from "@/lib/types";
 
 const emptySummary: ProgressSummary = {
@@ -62,6 +63,7 @@ export function Dashboard() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
   const hasTrackedUpgradePromptRef = useRef(false);
+  const trackedTrialProofViewRef = useRef("");
 
   const dashboardRole = resolveDashboardRole(currentUser);
   const isSchoolMember = Boolean(signedIn && dashboardRole === "school");
@@ -155,6 +157,19 @@ export function Dashboard() {
     () => summary.recentSessions.filter((s) => s.report),
     [summary.recentSessions]
   );
+  const trialProofWindowStart = useMemo(() => {
+    if (!currentUser?.trialEndsAt) return null;
+    const accessEndsAt = new Date(currentUser.trialEndsAt).getTime();
+    if (!Number.isFinite(accessEndsAt)) return null;
+    return new Date(accessEndsAt - 72 * 60 * 60 * 1000).toISOString();
+  }, [currentUser?.trialEndsAt]);
+  const trialValueProof = useMemo(
+    () => getTrialValueProof(summary.recentSessions, { since: trialProofWindowStart }),
+    [summary.recentSessions, trialProofWindowStart]
+  );
+  const isPlusTrial = signedIn && currentUser?.plan === "plus" && currentUser.billingStatus === "on_trial";
+  const isCancelledPlusAccess = signedIn && currentUser?.plan === "plus" && currentUser.billingStatus === "cancelled";
+  const hasTrialValueWindow = isPlusTrial || isCancelledPlusAccess;
 
   const latestExamType = scoredSessions[0]?.examType ?? "IELTS";
   const storageKey = currentUser ? `speakace-target-${currentUser.id}` : "speakace-target-guest";
@@ -472,6 +487,20 @@ export function Dashboard() {
     });
   }, [currentUser?.id, recommendedUpsellBilling, shouldUpsellPlus]);
 
+  useEffect(() => {
+    if (!hasTrialValueWindow || loadingSummary || !currentUser?.id) return;
+    const viewKey = `${currentUser.id}:${currentUser.billingStatus}:${trialValueProof.stage}`;
+    if (trackedTrialProofViewRef.current === viewKey) return;
+    trackedTrialProofViewRef.current = viewKey;
+    void trackClientEvent({
+      userId: currentUser.id,
+      event: "trial_value_proof_view",
+      path: `/app/trial-proof/${currentUser.billingStatus}/${trialValueProof.stage}`,
+      plan: currentUser.plan,
+      source: "dashboard_trial_value_proof"
+    });
+  }, [currentUser, hasTrialValueWindow, loadingSummary, trialValueProof.stage]);
+
   const joinClass = async () => {
     setJoinError("");
     setJoinNotice("");
@@ -527,14 +556,15 @@ export function Dashboard() {
     : tr
       ? "Bugun ilk denemeni atip dashboardu veriyle doldurmaya baslayabilirsin."
       : "Start your first attempt today and begin filling the dashboard with real data.";
-  const isPlusTrial = signedIn && currentUser?.plan === "plus" && currentUser.billingStatus === "on_trial";
   const trialEndsAt = currentUser?.trialEndsAt ? new Date(currentUser.trialEndsAt) : null;
   const hasValidTrialEnd = Boolean(trialEndsAt && !Number.isNaN(trialEndsAt.getTime()));
   const trialHoursRemaining = hasValidTrialEnd
     ? Math.max(0, Math.ceil((trialEndsAt!.getTime() - Date.now()) / (60 * 60 * 1000)))
     : null;
   const trialTimeLabel = trialHoursRemaining === null
-    ? (tr ? "3 gunluk deneme aktif" : "3-day trial active")
+    ? isCancelledPlusAccess
+      ? (tr ? "kalan erişim açık" : "remaining access open")
+      : (tr ? "3 günlük deneme aktif" : "3-day trial active")
     : trialHoursRemaining <= 24
       ? tr
         ? `${trialHoursRemaining} saat kaldi`
@@ -545,10 +575,14 @@ export function Dashboard() {
   const momentumDays = Math.min(practiceMomentum.activeDays7, 3);
   const momentumComplete = momentumDays >= 3;
   const momentumNextDay = Math.min(momentumDays + 1, 3);
+  const showTrialValueProof = Boolean(!loadingSummary && hasTrialValueWindow);
   const showMomentumMission = Boolean(
     !loadingSummary &&
     signedIn &&
-    (isPlusTrial || (summary.totalSessions > 0 && momentumDays > 0 && !momentumComplete))
+    !hasTrialValueWindow &&
+    summary.totalSessions > 0 &&
+    momentumDays > 0 &&
+    !momentumComplete
   );
   const momentumPracticeHref = {
     pathname: "/app/practice" as Route,
@@ -561,9 +595,107 @@ export function Dashboard() {
   const momentumReviewHref: Route = scoredSessions[0]
     ? (`/app/results/${scoredSessions[0].id}` as Route)
     : "/app/review";
+  const trialProofHref = trialValueProof.stage === "baseline"
+    ? {
+        pathname: "/app/practice" as Route,
+        query: {
+          quickStart: "1",
+          runMode: "interview",
+          activation: "dashboard_trial_proof_baseline"
+        }
+      }
+    : trialValueProof.stage === "retry" && trialValueProof.baselineSession
+      ? (`/app/results/${trialValueProof.baselineSession.id}` as Route)
+      : trialValueProof.retrySession
+        ? (`/app/results/${trialValueProof.retrySession.id}` as Route)
+        : ("/app/review" as Route);
+  const trialProofCta = trialValueProof.stage === "baseline"
+    ? (tr ? "Baseline skorumu al →" : "Set my baseline →")
+    : trialValueProof.stage === "retry"
+      ? (tr ? "Geri bildirimi aç ve retry yap →" : "Open feedback and retry →")
+      : (tr ? "Önce/sonra sonucunu gör →" : "See the before/after result →");
+  const trialProofTitle = trialValueProof.stage === "baseline"
+    ? (tr ? `Plus değer kanıtı · ${trialTimeLabel}` : `Plus value proof · ${trialTimeLabel}`)
+    : trialValueProof.stage === "retry"
+      ? (tr
+          ? `Baseline ${trialValueProof.baselineScore} hazır · aynı soruyu iyileştir`
+          : `Baseline ${trialValueProof.baselineScore} ready · improve the same answer`)
+      : (tr
+          ? `Değer kanıtı tamamlandı · ${trialValueProof.baselineScore} → ${trialValueProof.retryScore}`
+          : `Value proof complete · ${trialValueProof.baselineScore} → ${trialValueProof.retryScore}`);
+  const trialProofCoreCopy = trialValueProof.stage === "baseline"
+    ? (tr
+        ? "Tek bir cevabı tamamla; sonra geri bildirimdeki bir öneriyi aynı sorunun ikinci denemesinde uygula. Plus'ın değerini sayfa gezerek değil, skor karşılaştırarak ölç."
+        : "Complete one answer, then apply one feedback point to a second attempt on the same prompt. Judge Plus by a score comparison, not by browsing features.")
+    : trialValueProof.stage === "retry"
+      ? (tr
+          ? "İlk skorun hazır. Geri bildirimi aç, tek bir düzeltme seç ve aynı prompt'u tekrar kaydet; aradaki farkı otomatik göstereceğiz."
+          : "Your first score is ready. Open the feedback, choose one change, and record the same prompt again; we will show the difference automatically.")
+      : trialValueProof.delta !== null && trialValueProof.delta > 0
+        ? (tr
+            ? `Aynı prompt'ta skorun ${trialValueProof.delta} arttı. Artık Plus kararını gerçek bir önce/sonra sonucu üzerinden verebilirsin.`
+            : `Your score improved by ${trialValueProof.delta} on the same prompt. You can now judge Plus using a real before/after result.`)
+        : (tr
+            ? "Aynı prompt retry'ı tamamlandı. Skor hemen yükselmese bile iki geri bildirimi karşılaştırıp bir sonraki net düzeltmeyi seçebilirsin."
+            : "The same-prompt retry is complete. Even if the score did not rise yet, compare both feedback reports and choose the next clear improvement.");
+  const trialProofCopy = isCancelledPlusAccess
+    ? `${trialProofCoreCopy} ${tr ? "Yenileme kapalı kalır; bu görevi tamamlamak aboneliği yeniden başlatmaz." : "Renewal stays off; completing this mission does not restart the subscription."}`
+    : `${trialProofCoreCopy} ${tr ? "Deneme iptal edilmezse Plus sonrasında haftalık $3.99 ile devam eder." : "Unless cancelled, Plus continues at $3.99/week after the trial."}`;
 
   return (
     <div className="page-shell section db-page">
+
+      {/* TRIAL VALUE PROOF */}
+      {showTrialValueProof ? (
+        <section
+          className="db-banner db-momentum-banner card"
+          data-trial="true"
+          data-cancelled={isCancelledPlusAccess ? "true" : "false"}
+        >
+          <div className="db-momentum-copy">
+            <div className="db-banner-body">
+              <Sparkles size={16} />
+              <div>
+                <strong style={{ display: "block", marginBottom: "0.2rem" }}>{trialProofTitle}</strong>
+                <p>{trialProofCopy}</p>
+              </div>
+            </div>
+            <div className="db-momentum-progress" aria-label={tr ? "Plus değer kanıtı ilerlemesi" : "Plus value proof progress"}>
+              {[
+                tr ? "Baseline" : "Baseline",
+                tr ? "Aynı prompt retry" : "Same-prompt retry",
+                tr ? "Kanıt" : "Proof"
+              ].map((label, index) => {
+                const step = index + 1;
+                const done = trialValueProof.stage === "complete" || (trialValueProof.stage === "retry" && step === 1);
+                const current = (trialValueProof.stage === "baseline" && step === 1) || (trialValueProof.stage === "retry" && step === 2);
+                return (
+                  <span key={label} className="db-momentum-step" data-done={done ? "true" : "false"} data-current={current ? "true" : "false"}>
+                    <span>{done ? <CheckCircle2 size={14} /> : step}</span>
+                    <small>{label}</small>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+          <div className="dashboard-inline-actions">
+            <TrackedLink
+              className="button button-primary"
+              href={trialProofHref}
+              userId={currentUser?.id}
+              analyticsEvent="trial_value_proof_action"
+              analyticsPath={`/app/trial-proof/${currentUser?.billingStatus ?? "unknown"}/${trialValueProof.stage}/action`}
+            >
+              {trialProofCta}
+            </TrackedLink>
+            <Link className="button button-secondary" href="/app/billing">
+              {isCancelledPlusAccess
+                ? (tr ? "Yenileme seçenekleri" : "Renewal options")
+                : (tr ? "Deneme ve ücret detayları" : "Trial and price details")}
+            </Link>
+          </div>
+        </section>
+      ) : null}
 
       {/* THREE-DAY MOMENTUM MISSION */}
       {showMomentumMission ? (

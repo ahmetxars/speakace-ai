@@ -19,6 +19,8 @@ export type AnalyticsEventName =
   | "checkout_recovery_dismissed"
   | "billing_success_seen"
   | "billing_sync_pending"
+  | "trial_value_proof_view"
+  | "trial_value_proof_action"
   | "result_card_download"
   | "result_share_x"
   | "result_share_whatsapp"
