@@ -114,6 +114,44 @@ const checkoutIntentUi: Record<PublicLanguage, {
   }
 };
 
+const practiceIntentUi: Record<PublicLanguage, {
+  signupTitle: string;
+  signinTitle: string;
+  signupBody: string;
+  signinBody: string;
+}> = {
+  en: {
+    signupTitle: "Save your first free speaking score.",
+    signinTitle: "Sign in to continue your speaking test.",
+    signupBody: "Create your account and we will return you directly to the full test. No card is required.",
+    signinBody: "Sign in and we will return you directly to the same speaking test setup."
+  },
+  tr: {
+    signupTitle: "İlk ücretsiz speaking skorunu kaydet.",
+    signinTitle: "Speaking testine devam etmek için giriş yap.",
+    signupBody: "Hesabını oluştur; seni doğrudan tam teste geri götürelim. Kart bilgisi gerekmez.",
+    signinBody: "Giriş yap; seni aynı speaking testi ayarına doğrudan geri götürelim."
+  },
+  de: {
+    signupTitle: "Speichere dein erstes kostenloses Speaking-Ergebnis.",
+    signinTitle: "Melde dich an, um deinen Speaking-Test fortzusetzen.",
+    signupBody: "Erstelle dein Konto und kehre direkt zum vollständigen Test zurück. Keine Karte erforderlich.",
+    signinBody: "Melde dich an und kehre direkt zur gleichen Testeinstellung zurück."
+  },
+  es: {
+    signupTitle: "Guarda tu primera puntuación oral gratuita.",
+    signinTitle: "Entra para continuar tu prueba oral.",
+    signupBody: "Crea tu cuenta y volverás directamente a la prueba completa. No necesitas tarjeta.",
+    signinBody: "Entra y volverás directamente a la misma configuración de la prueba oral."
+  },
+  fr: {
+    signupTitle: "Enregistre ton premier score oral gratuit.",
+    signinTitle: "Connecte-toi pour continuer ton test oral.",
+    signupBody: "Crée ton compte et reviens directement au test complet. Aucune carte n'est nécessaire.",
+    signinBody: "Connecte-toi et reviens directement à la même configuration du test oral."
+  }
+};
+
 export default function AuthPage() {
   return (
     <Suspense fallback={null}>
@@ -129,12 +167,17 @@ function AuthPageInner() {
   const publicLanguage = normalizePublicLanguage(language);
   const ui = authUi[publicLanguage];
   const checkoutUi = checkoutIntentUi[publicLanguage];
+  const practiceUi = practiceIntentUi[publicLanguage];
   const safeNext = resolveSafeAppRedirect(searchParams.get("next"));
   const isCheckoutIntent = searchParams.get("intent") === "checkout"
     && safeNext?.startsWith("/api/payments/lemon/checkout") === true;
+  const isPracticeIntent = searchParams.get("intent") === "practice"
+    && safeNext?.startsWith("/app/practice") === true;
   const tr = language === "tr";
   const authError = searchParams.get("error");
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">(
+    searchParams.get("mode") === "signup" ? "signup" : "signin"
+  );
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -454,14 +497,18 @@ function AuthPageInner() {
               ? ui.resetTitle
               : isCheckoutIntent
                 ? isSignup ? checkoutUi.signupTitle : checkoutUi.signinTitle
-                : isSignup ? ui.signupTitle : ui.signinTitle}
+                : isPracticeIntent
+                  ? isSignup ? practiceUi.signupTitle : practiceUi.signinTitle
+                  : isSignup ? ui.signupTitle : ui.signinTitle}
           </h1>
           <p className="auth-entry-story-copy">
             {isResetMode
               ? ui.resetBody
               : isCheckoutIntent
                 ? isSignup ? checkoutUi.signupBody : checkoutUi.signinBody
-                : isSignup ? ui.signupBody : ui.signinBody}
+                : isPracticeIntent
+                  ? isSignup ? practiceUi.signupBody : practiceUi.signinBody
+                  : isSignup ? ui.signupBody : ui.signinBody}
           </p>
 
           <div className="auth-entry-benefits">

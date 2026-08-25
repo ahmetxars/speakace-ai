@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { PracticeConsole } from "@/components/practice-console";
+import { resolvePracticeAuthEntry } from "@/lib/auth-redirect";
 import { redirectPrivilegedDashboardUsers } from "@/lib/server/dashboard-access";
 
 const RETURN_PARAM_KEYS = [
@@ -32,7 +33,18 @@ export default async function PracticePage({ searchParams }: PracticePageProps) 
       }
     }
     const returnTo = `/app/practice${returnParams.size ? `?${returnParams.toString()}` : ""}`;
-    redirect(`/auth?mode=signin&next=${encodeURIComponent(returnTo)}`);
+    const activationValue = requestedParams.activation;
+    const activation = Array.isArray(activationValue) ? activationValue[0] : activationValue;
+    const authEntry = resolvePracticeAuthEntry(activation);
+    const authParams = new URLSearchParams({
+      mode: authEntry.mode,
+      intent: "practice",
+      next: returnTo
+    });
+    if (authEntry.attributionPath) {
+      authParams.set("cta", authEntry.attributionPath);
+    }
+    redirect(`/auth?${authParams.toString()}`);
   }
 
   return (

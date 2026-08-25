@@ -3,6 +3,21 @@ import type { MemberType } from "@/lib/types";
 export const GOOGLE_NEW_STUDENT_REDIRECT =
   "/app/practice?quickStart=1&runMode=interview&activation=google_signup";
 
+const PRACTICE_SIGNUP_ATTRIBUTION: Record<string, string> = {
+  free_test_demo: "/free-ielts-speaking-test#demo-cta",
+  free_test_primary: "/free-ielts-speaking-test#primary-cta",
+  marketing_demo: "/#speaking-demo-cta"
+};
+
+export function resolvePracticeAuthEntry(activation: string | null | undefined) {
+  const normalizedActivation = activation?.trim() ?? "";
+  const attributionPath = PRACTICE_SIGNUP_ATTRIBUTION[normalizedActivation] ?? null;
+  return {
+    mode: attributionPath ? "signup" as const : "signin" as const,
+    attributionPath
+  };
+}
+
 export function resolveSafeAppRedirect(value: string | null | undefined) {
   if (!value || value.length > 1000 || !value.startsWith("/") || value.startsWith("//")) {
     return null;
