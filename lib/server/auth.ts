@@ -127,11 +127,9 @@ export function getSessionCookieOptions(expires: Date) {
   return {
     httpOnly: true,
     secure: process.env.APP_ENV === "production",
-    // "strict" prevents the cookie being sent on cross-site navigations (L-2 fix).
-    // If you rely on OAuth redirects back to this site, you may need "lax", but
-    // ensure the OAuth callback sets the cookie server-side rather than relying
-    // on the pre-existing cookie being present.
-    sameSite: "strict" as const,
+    // OAuth returns on a top-level GET; Lax allows that handoff while continuing
+    // to withhold the session from cross-site subrequests and unsafe methods.
+    sameSite: "lax" as const,
     path: "/",
     expires
   };

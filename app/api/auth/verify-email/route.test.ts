@@ -54,7 +54,7 @@ describe("email verification activation", () => {
     mocks.getSessionCookieOptions.mockReturnValue({
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       expires: new Date("2026-08-01T00:00:00.000Z")
     });
@@ -78,7 +78,7 @@ describe("email verification activation", () => {
     expect(mocks.cookieSet).toHaveBeenCalledWith(
       "speakace_session",
       "session-token",
-      expect.objectContaining({ httpOnly: true, secure: true, sameSite: "strict" })
+      expect.objectContaining({ httpOnly: true, secure: true, sameSite: "lax" })
     );
     expect(mocks.sendOnboardingEmail).toHaveBeenCalledWith("user-1", 1);
     expect(mocks.markOnboardingEmailSent).toHaveBeenCalledWith("user-1", 1);
