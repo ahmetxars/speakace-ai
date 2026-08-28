@@ -14,6 +14,10 @@ describe("resolvePracticeAuthEntry", () => {
     });
     expect(resolvePracticeAuthEntry("free_test_primary").mode).toBe("signup");
     expect(resolvePracticeAuthEntry("marketing_demo").mode).toBe("signup");
+    expect(resolvePracticeAuthEntry("cue_card_generator")).toEqual({
+      mode: "signup",
+      attributionPath: "/tools/ielts-cue-card-generator#practice-cta"
+    });
   });
 
   it("keeps returning and unknown practice sources on sign in", () => {

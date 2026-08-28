@@ -4,6 +4,7 @@ export const GOOGLE_NEW_STUDENT_REDIRECT =
   "/app/practice?quickStart=1&runMode=interview&activation=google_signup";
 
 const PRACTICE_SIGNUP_ATTRIBUTION: Record<string, string> = {
+  cue_card_generator: "/tools/ielts-cue-card-generator#practice-cta",
   free_test_demo: "/free-ielts-speaking-test#demo-cta",
   free_test_primary: "/free-ielts-speaking-test#primary-cta",
   marketing_demo: "/#speaking-demo-cta"

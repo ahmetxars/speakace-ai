@@ -6,9 +6,9 @@ import { siteConfig } from "@/lib/site";
 
 const pagePath = "/free-ielts-speaking-test";
 const pageUrl = `${siteConfig.domain}${pagePath}`;
-const pageTitle = "Free Speaking Test Online for IELTS";
+const pageTitle = "Free IELTS Speaking Test Online with AI Score";
 const pageDescription =
-  "Take a free speaking test online for IELTS. Record an answer, review your transcript, and get an estimated band with feedback across four scoring criteria.";
+  "Take a free IELTS speaking test online. Try a 60-second demo, then record an answer and get an AI-estimated band score with four-criteria feedback.";
 
 export const metadata: Metadata = {
   title: pageTitle,
@@ -109,7 +109,7 @@ const structuredData = {
     {
       "@type": "WebApplication",
       "@id": `${pageUrl}#practice-test`,
-      name: "SpeakAce Free IELTS Speaking Test",
+      name: pageTitle,
       description: pageDescription,
       url: pageUrl,
       applicationCategory: "EducationalApplication",
@@ -179,11 +179,11 @@ export default function FreeIeltsSpeakingTestPage() {
       <header className="section-head">
         <span className="eyebrow">Free IELTS diagnostic</span>
         <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.8rem)", lineHeight: 0.96 }}>
-          Free Speaking Test Online for IELTS
+          Free IELTS Speaking Test Online with an AI Score Estimate
         </h1>
         <p>
-          Record one IELTS-style answer, review the transcript, see an estimated band and four criterion scores,
-          then retry with a clearer response.
+          Try a 60-second speaking demo, then record one IELTS-style answer for an AI-estimated band,
+          four criterion scores, transcript feedback, and a focused retry.
         </p>
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
           <Link className="button button-primary" href="#try-free-demo">
@@ -435,8 +435,11 @@ export default function FreeIeltsSpeakingTestPage() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-          <Link className="button button-primary" href="/app/practice?quickStart=1">
-            Start free speaking test
+          <Link
+            className="button button-primary"
+            href="/app/practice?quickStart=1&runMode=interview&activation=free_test_primary"
+          >
+            Get my free AI score
           </Link>
           <Link className="button button-secondary" href="/ielts-speaking-topics">
             Browse IELTS topics

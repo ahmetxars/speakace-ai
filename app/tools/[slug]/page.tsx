@@ -16,6 +16,7 @@ const INDEXABLE_TOOL_SLUGS = new Set([
 ]);
 
 const SPEAKING_BAND_CALCULATOR_SLUG = "ielts-speaking-band-score-calculator";
+const CUE_CARD_GENERATOR_SLUG = "ielts-cue-card-generator";
 
 const toolFaqs: Record<string, Array<{ question: string; answer: string }>> = {
   "ielts-band-score-calculator": [
@@ -157,6 +158,10 @@ export default async function ToolDetailPage({
   const relatedLinks = getToolLinks(page.slug);
   const faqs = toolFaqs[page.slug] ?? [];
   const isSpeakingBandCalculator = page.slug === SPEAKING_BAND_CALCULATOR_SLUG;
+  const isCueCardGenerator = page.slug === CUE_CARD_GENERATOR_SLUG;
+  const practiceHref = (isCueCardGenerator
+    ? "/app/practice?quickStart=1&runMode=interview&activation=cue_card_generator"
+    : "/app/practice") as Route;
   const canonicalUrl = `${siteConfig.domain}/tools/${page.slug}`;
 
   return (
@@ -183,7 +188,11 @@ export default async function ToolDetailPage({
         ) : (
           <ToolWorkbench slug={page.slug} title={page.title} />
         )}
-        <div className="card" style={{ padding: "1.2rem", display: "grid", gap: "0.8rem" }}>
+        <div
+          id={isCueCardGenerator ? "practice-cta" : undefined}
+          className="card"
+          style={{ padding: "1.2rem", display: "grid", gap: "0.8rem", scrollMarginTop: "6rem" }}
+        >
           <span className="eyebrow">How to use this result</span>
           <h2 style={{ margin: 0 }}>
             {isSpeakingBandCalculator
@@ -196,8 +205,12 @@ export default async function ToolDetailPage({
               : `Use the ${page.title.toLowerCase()} as a starting point, not a final diagnosis. Choose one prompt, speak for the full time, and compare the result with the target you set here.`}
           </p>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <Link className="button button-primary" href="/app/practice">
-              {isSpeakingBandCalculator ? "Test with free practice" : page.actionLabel ?? "Use tool"}
+            <Link className="button button-primary" href={practiceHref}>
+              {isSpeakingBandCalculator
+                ? "Test with free practice"
+                : isCueCardGenerator
+                  ? "Practice this cue card free"
+                  : page.actionLabel ?? "Use tool"}
             </Link>
             {relatedLinks.map((item) => (
               <Link key={item.href} className="button button-secondary" href={item.href as Route}>
@@ -307,8 +320,12 @@ export default async function ToolDetailPage({
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-            <Link className="button button-primary" href="/app/practice">
-              {isSpeakingBandCalculator ? "Start a free speaking attempt" : page.actionLabel ?? "Start practice"}
+            <Link className="button button-primary" href={practiceHref}>
+              {isSpeakingBandCalculator
+                ? "Start a free speaking attempt"
+                : isCueCardGenerator
+                  ? "Start free Part 2 practice"
+                  : page.actionLabel ?? "Start practice"}
             </Link>
             {relatedLinks.map((item) => (
               <Link key={item.href} className="button button-secondary" href={item.href as Route}>
