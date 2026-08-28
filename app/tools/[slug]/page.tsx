@@ -16,7 +16,15 @@ const INDEXABLE_TOOL_SLUGS = new Set([
 ]);
 
 const SPEAKING_BAND_CALCULATOR_SLUG = "ielts-speaking-band-score-calculator";
+const OVERALL_BAND_CALCULATOR_SLUG = "ielts-band-score-calculator";
 const CUE_CARD_GENERATOR_SLUG = "ielts-cue-card-generator";
+
+const overallBandExamples = [
+  { listening: "6.5", reading: "6.5", writing: "5.5", speaking: "6.0", average: "6.13", overall: "6.0" },
+  { listening: "6.5", reading: "6.5", writing: "6.0", speaking: "6.0", average: "6.25", overall: "6.5" },
+  { listening: "7.0", reading: "6.5", writing: "6.5", speaking: "6.0", average: "6.50", overall: "6.5" },
+  { listening: "7.0", reading: "7.0", writing: "6.5", speaking: "6.5", average: "6.75", overall: "7.0" }
+];
 
 const toolFaqs: Record<string, Array<{ question: string; answer: string }>> = {
   "ielts-band-score-calculator": [
@@ -158,10 +166,14 @@ export default async function ToolDetailPage({
   const relatedLinks = getToolLinks(page.slug);
   const faqs = toolFaqs[page.slug] ?? [];
   const isSpeakingBandCalculator = page.slug === SPEAKING_BAND_CALCULATOR_SLUG;
+  const isOverallBandCalculator = page.slug === OVERALL_BAND_CALCULATOR_SLUG;
+  const isBandCalculator = isSpeakingBandCalculator || isOverallBandCalculator;
   const isCueCardGenerator = page.slug === CUE_CARD_GENERATOR_SLUG;
-  const practiceHref = (isCueCardGenerator
-    ? "/app/practice?quickStart=1&runMode=interview&activation=cue_card_generator"
-    : "/app/practice") as Route;
+  const practiceHref = (isOverallBandCalculator
+    ? "/free-ielts-speaking-test"
+    : isCueCardGenerator
+      ? "/app/practice?quickStart=1&runMode=interview&activation=cue_card_generator"
+      : "/app/practice") as Route;
   const canonicalUrl = `${siteConfig.domain}/tools/${page.slug}`;
 
   return (
@@ -188,6 +200,66 @@ export default async function ToolDetailPage({
         ) : (
           <ToolWorkbench slug={page.slug} title={page.title} />
         )}
+        {isOverallBandCalculator ? (
+          <section
+            className="card"
+            aria-labelledby="overall-band-formula-title"
+            style={{ padding: "clamp(1.25rem, 3vw, 2rem)", display: "grid", gap: "1.2rem" }}
+          >
+            <div style={{ maxWidth: "54rem" }}>
+              <span className="eyebrow">IELTS overall band formula</span>
+              <h2 id="overall-band-formula-title" style={{ margin: "0.75rem 0 0.6rem" }}>
+                Add the four section scores, then divide by four
+              </h2>
+              <p className="practice-copy" style={{ margin: 0 }}>
+                Overall band = (Listening + Reading + Writing + Speaking) / 4. IELTS reports the
+                resulting average as a whole or half band: an average ending in .25 moves to the
+                next half band, while .75 moves to the next whole band.
+              </p>
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", minWidth: "660px", borderCollapse: "collapse" }}>
+                <caption style={{ textAlign: "left", paddingBottom: "0.8rem", color: "var(--muted)" }}>
+                  Worked IELTS overall band score examples
+                </caption>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--line)" }}>
+                    {[
+                      "Listening",
+                      "Reading",
+                      "Writing",
+                      "Speaking",
+                      "Raw average",
+                      "Overall band"
+                    ].map((label) => (
+                      <th key={label} scope="col" style={{ padding: "0.75rem", textAlign: "left" }}>
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {overallBandExamples.map((example) => (
+                    <tr key={`${example.listening}-${example.reading}-${example.writing}-${example.speaking}`} style={{ borderBottom: "1px solid var(--line)" }}>
+                      <td style={{ padding: "0.75rem" }}>{example.listening}</td>
+                      <td style={{ padding: "0.75rem" }}>{example.reading}</td>
+                      <td style={{ padding: "0.75rem" }}>{example.writing}</td>
+                      <td style={{ padding: "0.75rem" }}>{example.speaking}</td>
+                      <td style={{ padding: "0.75rem" }}>{example.average}</td>
+                      <td style={{ padding: "0.75rem", fontWeight: 800 }}>{example.overall}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="practice-copy" style={{ margin: 0 }}>
+              This calculator is a planning aid, not a test result. Review the published rule on the{" "}
+              <a href="https://ielts.org/take-a-test/your-results/ielts-scoring-in-detail" target="_blank" rel="noreferrer">
+                official IELTS scoring page
+              </a>. Only your Test Report Form contains your official scores.
+            </p>
+          </section>
+        ) : null}
         <div
           id={isCueCardGenerator ? "practice-cta" : undefined}
           className="card"
@@ -197,17 +269,23 @@ export default async function ToolDetailPage({
           <h2 style={{ margin: 0 }}>
             {isSpeakingBandCalculator
               ? "Treat the score as a hypothesis, then test the weakest criterion"
+              : isOverallBandCalculator
+                ? "Turn your overall band into a speaking target"
               : "Turn the tool output into one speaking action"}
           </h2>
           <p className="practice-copy" style={{ margin: 0 }}>
             {isSpeakingBandCalculator
               ? "Keep the prompt, core idea, and speaking time similar across two recordings. Change only the weakest criterion shown above, then compare the transcript and audio. That controlled retry gives you better evidence than raising a self-rating because an answer merely felt easier."
+              : isOverallBandCalculator
+                ? "Use the overall result to decide which section needs attention, then record one free speaking answer to get a separate IELTS-style speaking estimate and a focused retry."
               : `Use the ${page.title.toLowerCase()} as a starting point, not a final diagnosis. Choose one prompt, speak for the full time, and compare the result with the target you set here.`}
           </p>
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
             <Link className="button button-primary" href={practiceHref}>
               {isSpeakingBandCalculator
                 ? "Test with free practice"
+                : isOverallBandCalculator
+                  ? "Check my speaking score free"
                 : isCueCardGenerator
                   ? "Practice this cue card free"
                   : page.actionLabel ?? "Use tool"}
@@ -323,6 +401,8 @@ export default async function ToolDetailPage({
             <Link className="button button-primary" href={practiceHref}>
               {isSpeakingBandCalculator
                 ? "Start a free speaking attempt"
+                : isOverallBandCalculator
+                  ? "Take the free speaking test"
                 : isCueCardGenerator
                   ? "Start free Part 2 practice"
                   : page.actionLabel ?? "Start practice"}
@@ -353,7 +433,7 @@ export default async function ToolDetailPage({
             }}
           />
         ) : null}
-        {isSpeakingBandCalculator ? (
+        {isBandCalculator ? (
           <>
             <script
               type="application/ld+json"
@@ -373,12 +453,19 @@ export default async function ToolDetailPage({
                     price: "0",
                     priceCurrency: "USD"
                   },
-                  featureList: [
-                    "Four equally weighted IELTS Speaking self-ratings",
-                    "Half-band planning estimate",
-                    "Weakest-criterion diagnostic retry",
-                    "Shareable result summary"
-                  ]
+                  featureList: isOverallBandCalculator
+                    ? [
+                        "Four-section IELTS overall band calculator",
+                        "Published whole- and half-band rounding",
+                        "Raw average display",
+                        "Worked overall band examples"
+                      ]
+                    : [
+                        "Four equally weighted IELTS Speaking self-ratings",
+                        "Half-band planning estimate",
+                        "Weakest-criterion diagnostic retry",
+                        "Shareable result summary"
+                      ]
                 })
               }}
             />
@@ -398,7 +485,7 @@ export default async function ToolDetailPage({
                     {
                       "@type": "ListItem",
                       position: 2,
-                      name: "IELTS speaking tools",
+                      name: isOverallBandCalculator ? "IELTS tools" : "IELTS speaking tools",
                       item: `${siteConfig.domain}/tools`
                     },
                     {

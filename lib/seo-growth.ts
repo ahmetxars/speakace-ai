@@ -86,16 +86,16 @@ export const comparisonPages: SeoGrowthEntry[] = [
 export const toolPages: SeoGrowthEntry[] = [
   {
     slug: "ielts-band-score-calculator",
-    title: "IELTS Band Score Calculator",
-    description: "Calculate your overall IELTS band from Listening, Reading, Writing, and Speaking scores with official half-band rounding.",
-    intro: "Enter your four IELTS section scores to calculate the overall band. The calculator averages Listening, Reading, Writing, and Speaking, then rounds the result to the nearest whole or half band.",
+    title: "IELTS Score Calculator for Overall Band",
+    description: "Calculate your overall IELTS band score from Listening, Reading, Writing, and Speaking. See the four-score formula, half-band rounding, and worked examples.",
+    intro: "Select your Listening, Reading, Writing, and Speaking scores. The calculator shows the raw four-section average, then applies the published IELTS rule to return your overall whole or half band.",
     bullets: [
       "Each section accepts scores from 0 to 9 in half-band steps.",
       "An average ending in .25 rounds up to the next half band; .75 rounds up to the next whole band.",
       "This calculator is for planning only. Your official score comes from an authorized IELTS test."
     ],
     cta: "Use your target band to choose the speaking score you need, then test one answer for free.",
-    actionLabel: "Calculate score"
+    actionLabel: "Calculate overall band"
   },
   {
     slug: "ielts-speaking-band-score-calculator",
