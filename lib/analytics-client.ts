@@ -48,20 +48,30 @@ export async function trackClientEvent(input: ClientAnalyticsInput) {
 
   if (!input.userId && !canTrackAnalyticsAnonymously(input.event)) return;
 
+  const body = JSON.stringify({
+    event: input.event,
+    path: input.path,
+    eventId,
+    source: input.source,
+    plan: input.plan,
+    locale: input.locale,
+    occurredAt
+  });
+
   try {
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      const queued = navigator.sendBeacon(
+        "/api/analytics/track",
+        new Blob([body], { type: "application/json" })
+      );
+      if (queued) return;
+    }
+
     await fetch("/api/analytics/track", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       keepalive: true,
-      body: JSON.stringify({
-        event: input.event,
-        path: input.path,
-        eventId,
-        source: input.source,
-        plan: input.plan,
-        locale: input.locale,
-        occurredAt
-      })
+      body
     });
   } catch {
     // best-effort analytics only

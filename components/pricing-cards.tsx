@@ -44,7 +44,9 @@ export function PricingCards() {
     void trackClientEvent({
       userId: currentUser?.id,
       event: "pricing_plus_click",
-      path: `/pricing/plus/${billing}`
+      path: `/pricing/plus/${billing}`,
+      source: "pricing_primary",
+      plan: "plus"
     });
 
     posthog.capture("pricing_plus_click", {
