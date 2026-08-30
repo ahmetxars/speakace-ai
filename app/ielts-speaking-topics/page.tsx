@@ -2,8 +2,15 @@ import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
 import { AdSenseUnit } from "@/components/adsense-unit";
+import { TrackedLink } from "@/components/tracked-link";
 import { siteConfig } from "@/lib/site";
 import { seoTopicPages } from "@/lib/seo-topics";
+
+const pagePath = "/ielts-speaking-topics";
+const pageUrl = `${siteConfig.domain}${pagePath}`;
+const pageTitle = "IELTS Speaking Topics: 79 Part 1, 2 & 3 Questions";
+const pageDescription =
+  "Practise 79 IELTS Speaking topics and questions for Parts 1, 2 and 3. Browse common prompts, cue cards, and follow-ups, then try one free with AI feedback.";
 
 const part1Topics = [
   { topic: "Home", questions: ["Do you live in a house or an apartment?", "What do you like about your home?", "Would you like to change anything about it?"] },
@@ -47,18 +54,143 @@ const part3Topics = [
   { topic: "Health and lifestyle", questions: ["Why do people care more about fitness today?", "Should employers support healthy habits?", "How can stress affect daily life?"] }
 ];
 
+const topicStats = [
+  {
+    href: "#part-1",
+    eyebrow: "Part 1",
+    value: "15 topics · 45 questions",
+    description: "Short questions about familiar life, habits, work, study, and preferences."
+  },
+  {
+    href: "#part-2",
+    eyebrow: "Part 2",
+    value: "10 cue cards",
+    description: "Long-turn prompts for stories, people, places, objects, skills, and experiences."
+  },
+  {
+    href: "#part-3",
+    eyebrow: "Part 3",
+    value: "8 themes · 24 questions",
+    description: "Deeper opinion, comparison, cause-and-effect, and future-focused discussion."
+  }
+];
+
+const faqs = [
+  {
+    question: "What topics appear in IELTS Speaking?",
+    answer:
+      "Common topic families include home, work, study, technology, travel, education, people, places, objects, experiences, and social change. The exact wording varies, so practise developing ideas rather than memorising one answer."
+  },
+  {
+    question: "Are these official current IELTS questions?",
+    answer:
+      "No. This is an independent practice collection based on common IELTS-style topic families, not a leaked or guaranteed exam list. Use it to build flexible answers you can adapt to new wording."
+  },
+  {
+    question: "How should I practise IELTS Speaking topics?",
+    answer:
+      "Choose one prompt, record your first answer without a script, review one weakness, and answer the same prompt again with one specific improvement. Repeating a focused topic is usually more useful than reading many prompts without speaking."
+  },
+  {
+    question: "Should I memorise sample answers for these topics?",
+    answer:
+      "Use samples to notice structure and development, but do not memorise them word for word. Personal examples and flexible language make it easier to respond naturally when the examiner changes the question."
+  }
+];
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": `${pageUrl}#webpage`,
+      url: pageUrl,
+      name: pageTitle,
+      description: pageDescription,
+      inLanguage: "en",
+      breadcrumb: { "@id": `${pageUrl}#breadcrumb` },
+      mainEntity: { "@id": `${pageUrl}#topics` }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": `${pageUrl}#breadcrumb`,
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: siteConfig.domain
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "IELTS Speaking Topics",
+          item: pageUrl
+        }
+      ]
+    },
+    {
+      "@type": "ItemList",
+      "@id": `${pageUrl}#topics`,
+      name: "IELTS Speaking Part 2 topic practice",
+      numberOfItems: seoTopicPages.length,
+      itemListElement: seoTopicPages.map((topic, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: topic.title,
+        url: `${pageUrl}/${topic.slug}`
+      }))
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${pageUrl}#faq`,
+      mainEntity: faqs.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: item.answer
+        }
+      }))
+    }
+  ]
+};
+
 export const metadata: Metadata = {
-  title: "IELTS Speaking Topics 2025 | SpeakAce",
-  description:
-    "Explore IELTS speaking topics 2025, Part 1 questions, cue card topics, and Part 3 discussion prompts. Practice free ->",
-  alternates: { canonical: "/ielts-speaking-topics" },
+  title: pageTitle,
+  description: pageDescription,
+  alternates: { canonical: pageUrl },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1
+    }
+  },
   openGraph: {
-    title: "IELTS Speaking Topics 2025 | SpeakAce",
-    description:
-      "Browse IELTS speaking topics, Part 2 cue cards, and discussion questions with direct practice links and sample prompts.",
-    url: `${siteConfig.domain}/ielts-speaking-topics`,
+    title: `${pageTitle} | ${siteConfig.name}`,
+    description: pageDescription,
+    url: pageUrl,
     siteName: siteConfig.name,
-    type: "website"
+    type: "website",
+    images: [
+      {
+        url: `${siteConfig.domain}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "SpeakAce IELTS Speaking topics and practice questions"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${pageTitle} | ${siteConfig.name}`,
+    description: pageDescription,
+    images: [`${siteConfig.domain}/og-image.png`]
   }
 };
 
@@ -66,19 +198,68 @@ export default function IeltsSpeakingTopicsPage() {
   return (
     <>
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
+        <nav aria-label="Breadcrumb" style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
+          <Link href="/">Home</Link>
+          <span aria-hidden="true"> / </span>
+          <span aria-current="page">IELTS Speaking topics</span>
+        </nav>
+
         <div className="section-head">
-          <span className="eyebrow">IELTS topics</span>
+          <span className="eyebrow">79 IELTS-style practice prompts</span>
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.6rem)", lineHeight: 0.96 }}>
-            IELTS Speaking Topics 2025 — Part 1, 2 & 3 Full List
+            IELTS Speaking Topics for Parts 1, 2 and 3
           </h1>
           <p>
-            Use this page as a full list of IELTS speaking topics 2025, including Part 1 question
-            themes, Part 2 cue card topics, and Part 3 discussion prompts. Every section below is
-            built to move you from browsing topics into real speaking practice.
+            Browse 15 Part 1 categories, 10 Part 2 cue cards, and 24 Part 3 questions. Choose one
+            prompt, speak before you script, and use the free diagnostic to turn topic reading into
+            a scored retry.
+          </p>
+          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+            <TrackedLink
+              className="button button-primary"
+              href="/free-ielts-speaking-test#try-free-demo"
+              analyticsEvent="marketing_cta_click"
+              analyticsPath="/ielts-speaking-topics/hero/free-test"
+            >
+              Practise one topic free
+            </TrackedLink>
+            <TrackedLink
+              className="button button-secondary"
+              href="/tools/ielts-cue-card-generator"
+              analyticsEvent="marketing_cta_click"
+              analyticsPath="/ielts-speaking-topics/hero/cue-card-generator"
+            >
+              Generate a cue card
+            </TrackedLink>
+          </div>
+          <p style={{ fontSize: "0.92rem", margin: 0 }}>
+            Independent practice prompts · No memorisation required · AI estimate, not an official IELTS score
           </p>
         </div>
 
-        <section className="card" style={{ padding: "1.5rem" }}>
+        <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }} aria-labelledby="topic-map-title">
+          <div>
+            <span className="eyebrow">Choose your part</span>
+            <h2 id="topic-map-title" style={{ margin: "0.8rem 0 0.4rem" }}>Find a speaking topic in one step</h2>
+            <p className="practice-copy" style={{ margin: 0 }}>
+              Start with the section that matches your weakest answer type. Each link jumps to visible questions on this page.
+            </p>
+          </div>
+          <div className="marketing-grid">
+            {topicStats.map((item) => (
+              <article key={item.href} className="card feature-card">
+                <span className="eyebrow">{item.eyebrow}</span>
+                <h3 style={{ margin: "0.7rem 0 0.45rem" }}>{item.value}</h3>
+                <p>{item.description}</p>
+                <Link className="button button-secondary" href={item.href as Route}>
+                  Jump to {item.eyebrow}
+                </Link>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section id="part-1" className="card" style={{ padding: "1.5rem", scrollMarginTop: "6rem" }}>
           <span className="eyebrow">Part 1</span>
           <h2 style={{ margin: "0.8rem 0 1rem" }}>IELTS Speaking Part 1 topic categories</h2>
           <p className="practice-copy" style={{ marginBottom: "1rem" }}>
@@ -95,8 +276,8 @@ export default function IeltsSpeakingTopicsPage() {
                   {item.questions.map((question) => <li key={question}>{question}</li>)}
                 </ul>
                 <div style={{ marginTop: "0.9rem" }}>
-                  <Link className="button button-secondary" href="/app/practice?quickStart=1">
-                    Practice this topic
+                  <Link className="button button-secondary" href="/ielts-speaking-part-1-questions">
+                    Open Part 1 practice
                   </Link>
                 </div>
               </article>
@@ -106,7 +287,7 @@ export default function IeltsSpeakingTopicsPage() {
 
         <AdSenseUnit />
 
-        <section className="card" style={{ padding: "1.5rem" }}>
+        <section id="part-2" className="card" style={{ padding: "1.5rem", scrollMarginTop: "6rem" }}>
           <span className="eyebrow">Part 2</span>
           <h2 style={{ margin: "0.8rem 0 1rem" }}>IELTS Speaking Part 2 cue card topics</h2>
           <p className="practice-copy" style={{ marginBottom: "1rem" }}>
@@ -130,7 +311,7 @@ export default function IeltsSpeakingTopicsPage() {
           </div>
         </section>
 
-        <section className="card" style={{ padding: "1.5rem" }}>
+        <section id="part-3" className="card" style={{ padding: "1.5rem", scrollMarginTop: "6rem" }}>
           <span className="eyebrow">Part 3</span>
           <h2 style={{ margin: "0.8rem 0 1rem" }}>IELTS Speaking Part 3 discussion topics</h2>
           <p className="practice-copy" style={{ marginBottom: "1rem" }}>
@@ -146,8 +327,8 @@ export default function IeltsSpeakingTopicsPage() {
                   {item.questions.map((question) => <li key={question}>{question}</li>)}
                 </ul>
                 <div style={{ marginTop: "0.9rem" }}>
-                  <Link className="button button-secondary" href="/app/practice?quickStart=1">
-                    Practice discussion questions
+                  <Link className="button button-secondary" href="/ielts-speaking-part-3-questions">
+                    Open Part 3 practice
                   </Link>
                 </div>
               </article>
@@ -178,6 +359,21 @@ export default function IeltsSpeakingTopicsPage() {
           </div>
         </section>
 
+        <section id="faq" className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
+          <div>
+            <span className="eyebrow">FAQ</span>
+            <h2 style={{ margin: "0.8rem 0 0.4rem" }}>How to use IELTS Speaking topics well</h2>
+          </div>
+          <div className="marketing-grid">
+            {faqs.map((item) => (
+              <article key={item.question} className="card feature-card">
+                <h3>{item.question}</h3>
+                <p>{item.answer}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <div className="card institution-cta">
           <div>
             <span className="eyebrow">Practice next</span>
@@ -188,9 +384,14 @@ export default function IeltsSpeakingTopicsPage() {
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-            <Link className="button button-primary" href="/app/practice?quickStart=1">
+            <TrackedLink
+              className="button button-primary"
+              href="/app/practice?quickStart=1&runMode=interview&activation=ielts_topics_final"
+              analyticsEvent="marketing_cta_click"
+              analyticsPath="/ielts-speaking-topics/final/start-practice"
+            >
               Start speaking practice
-            </Link>
+            </TrackedLink>
             <Link className="button button-secondary" href="/free-ielts-speaking-test">
               Try a free IELTS speaking test
             </Link>
@@ -199,6 +400,11 @@ export default function IeltsSpeakingTopicsPage() {
             </Link>
           </div>
         </div>
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
       </main>
     </>
   );
