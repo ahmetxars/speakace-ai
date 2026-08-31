@@ -1,7 +1,6 @@
 import type { MemberType } from "@/lib/types";
 
-export const GOOGLE_NEW_STUDENT_REDIRECT =
-  "/app/practice?quickStart=1&runMode=interview&activation=google_signup";
+export const GOOGLE_NEW_STUDENT_REDIRECT = "/app";
 
 const PRACTICE_SIGNUP_ATTRIBUTION: Record<string, string> = {
   cue_card_generator: "/tools/ielts-cue-card-generator#practice-cta",

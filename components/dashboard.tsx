@@ -785,7 +785,7 @@ export function Dashboard() {
           <div className="dashboard-inline-actions">
             <TrackedLink
               className="button button-primary"
-              href="/app/practice?quickStart=1&runMode=interview"
+              href="/app/practice?quickStart=1&runMode=interview&activation=dashboard_first_score"
               userId={currentUser?.id}
               analyticsEvent="marketing_cta_click"
               analyticsPath="/app/activation/first-score"
