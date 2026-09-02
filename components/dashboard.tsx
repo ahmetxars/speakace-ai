@@ -44,12 +44,18 @@ type DashboardNextAction = {
   variant: "primary" | "streak" | "default";
 };
 
+type RecordingRecoveryStatus = {
+  shouldRecover: boolean;
+};
+
 export function Dashboard() {
   const router = useRouter();
   const { signedIn, currentUser, language, signOut } = useAppState();
   const tr = language === "tr";
   const [summary, setSummary] = useState<ProgressSummary>(emptySummary);
   const [loadingSummary, setLoadingSummary] = useState(true);
+  const [recordingRecovery, setRecordingRecovery] = useState(false);
+  const [loadingRecordingRecovery, setLoadingRecordingRecovery] = useState(true);
   const [targetScore, setTargetScore] = useState<string>("");
   const [joinedClasses, setJoinedClasses] = useState<StudentClassMembership[]>([]);
   const [joinCode, setJoinCode] = useState("");
@@ -91,6 +97,33 @@ export function Dashboard() {
       .catch(() => { setSummary(emptySummary); setLoadingSummary(false); });
     return () => ctrl.abort();
   }, [currentUserId, signedIn]);
+
+  useEffect(() => {
+    if (!signedIn || !currentUserId || isTeacherMember || isSchoolMember) {
+      setRecordingRecovery(false);
+      setLoadingRecordingRecovery(false);
+      return;
+    }
+
+    const ctrl = new AbortController();
+    let active = true;
+    setLoadingRecordingRecovery(true);
+    fetch("/api/progress/recording-recovery", { signal: ctrl.signal })
+      .then((response) => response.ok ? response.json() : { shouldRecover: false })
+      .then((data: RecordingRecoveryStatus) => {
+        if (active) setRecordingRecovery(Boolean(data.shouldRecover));
+      })
+      .catch(() => {
+        if (active) setRecordingRecovery(false);
+      })
+      .finally(() => {
+        if (active) setLoadingRecordingRecovery(false);
+      });
+    return () => {
+      active = false;
+      ctrl.abort();
+    };
+  }, [currentUserId, isSchoolMember, isTeacherMember, signedIn]);
 
   useEffect(() => {
     if (!signedIn || !currentUserId || isTeacherMember || isSchoolMember) {
@@ -766,8 +799,41 @@ export function Dashboard() {
         </section>
       ) : null}
 
+      {/* RECORDING RECOVERY */}
+      {recordingRecovery ? (
+        <section className="db-banner card" style={{ background: "rgba(181,118,20,0.1)", border: "1.5px solid rgba(181,118,20,0.28)" }}>
+          <div className="db-banner-body">
+            <Mic size={15} />
+            <div>
+              <strong style={{ display: "block", marginBottom: "0.2rem" }}>
+                {tr ? "Son kaydın yükleme sırasında tamamlanmadı" : "Your last recording did not finish uploading"}
+              </strong>
+              <p style={{ margin: 0, fontSize: "0.87rem", color: "var(--muted)" }}>
+                {tr
+                  ? "Skor oluşmadı ve ücretsiz hakkın kullanılmadı. Mikrofonunu kontrol et, en az 10 saniye konuş ve kısa bir cevapla tekrar dene."
+                  : "No score was created and your free allowance was not used. Check your microphone, speak for at least 10 seconds, and retry with a short answer."}
+              </p>
+            </div>
+          </div>
+          <div className="dashboard-inline-actions">
+            <TrackedLink
+              className="button button-primary"
+              href="/app/practice?quickStart=1&runMode=drill&activation=dashboard_recording_recovery"
+              userId={currentUser?.id}
+              analyticsEvent="marketing_cta_click"
+              analyticsPath="/app/activation/recording-recovery"
+            >
+              {tr ? "Kısa kaydı tekrar dene →" : "Retry a short recording →"}
+            </TrackedLink>
+            <Link className="button button-secondary" href="/app/practice">
+              {tr ? "Başka soru seç" : "Choose another prompt"}
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
       {/* ONBOARDING BANNER */}
-      {needsOnboarding ? (
+      {needsOnboarding && !loadingRecordingRecovery && !recordingRecovery ? (
         <section className="db-banner card" style={{ background: "rgba(29,111,117,0.07)", border: "1.5px solid rgba(29,111,117,0.2)" }}>
           <div className="db-banner-body">
             <Sparkles size={15} />
