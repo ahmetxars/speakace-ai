@@ -8,7 +8,7 @@ import { ReturnPracticeReminder } from "@/components/return-practice-reminder";
 import { TrackedLink } from "@/components/tracked-link";
 import posthog from "posthog-js";
 import { trackClientEvent } from "@/lib/analytics-client";
-import { buildPlanCheckoutPath } from "@/lib/commerce";
+import { buildPlanCheckoutPath, commerceNumbers, formatUsd } from "@/lib/commerce";
 import { ProgressSummary, SpeakingSession } from "@/lib/types";
 import { readStudyFolders, readStudyItems, writeStudyFolders, writeStudyItems } from "@/lib/study-lists";
 
@@ -42,15 +42,15 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
     : (tr ? "İlk seriyi başlat" : "Start your first streak");
   const resultLoopTitle = isFreePlan
     ? tr
-      ? "Bu sonucu daha hizli gelisime cevir"
-      : "Turn this result into faster improvement"
+      ? "Geri bildirimi bir sonraki cevabinda uygula"
+      : "Apply this feedback to your next answer"
     : tr
       ? "Bu sonucu ayni gun ikinci kazanca cevir"
       : "Turn this result into a same-day second win";
   const resultLoopBody = isFreePlan
     ? tr
-      ? "Ayni gun retry, PDF raporu ve daha fazla speaking hacmi genelde ilk odemeyi en kolay bu ekranda aciyor."
-      : "Same-day retries, PDF export, and more speaking volume usually make this the easiest screen for a first upgrade."
+      ? "Plus ile bugun daha fazla cevap kaydet, ayni soruyu geri bildirimle yeniden dene ve gelisimini PDF raporuyla takip et."
+      : "With Plus, record more answers today, retry this prompt with feedback, and track your progress with PDF reports."
     : tr
       ? "En iyi ilerleme, geri bildirimi hemen yeni cevaba uygulayip memnunsan referral akisini da acmaktan gelir."
       : "The best progress comes from applying this feedback to a new answer right away, then opening the referral loop if the product is working for you."
@@ -573,17 +573,22 @@ export function ResultView({ session, summary }: { session: SpeakingSession; sum
                 analyticsEvent="checkout_initiated"
                 analyticsPath="/app/results/upgrade"
               >
-                {tr ? "Plus ile devam et" : "Continue with Plus"}
+                {tr ? "3 gunluk Plus denemesini baslat" : "Start the 3-day Plus trial"}
               </TrackedLink>
               <TrackedLink
                 className="button button-secondary"
-                href="/app/billing"
+                href="/app/billing#plus-checkout"
                 userId={currentUser?.id}
                 analyticsEvent="checkout_cta_click"
                 analyticsPath="/app/results/billing"
               >
-                {tr ? "Planlari incele" : "Review plans"}
+                {tr ? "Plus'i karsilastir" : "Compare Plus"}
               </TrackedLink>
+              <small style={{ width: "100%", color: "var(--muted-foreground)", lineHeight: 1.55 }}>
+                {tr
+                  ? `Bugun $0 · 3 gun sonra ${formatUsd(commerceNumbers.plusWeeklyPrice)}/hafta · yenilemeden once iptal edebilirsin.`
+                  : `$0 today · ${formatUsd(commerceNumbers.plusWeeklyPrice)}/week after 3 days · cancel before renewal.`}
+              </small>
             </>
           ) : (
             <>

@@ -263,9 +263,42 @@ export default function BillingPage() {
               </small>
             ) : null}
           </div>
-          <div className="card billing-plus-card" style={{ padding: "1rem" }}>
+          <div id="plus-checkout" className="card billing-plus-card" style={{ padding: "1rem", display: "grid", gap: "0.75rem", scrollMarginTop: "7rem" }}>
             <strong>{commerceConfig.plusPlanName} · {commerceConfig.plusMonthlyPrice}/week</strong>
-            <p>{tr ? `Ilk upgrade icin en net teklif: bugun devam et, daha fazla speaking yap, ayni prompt'u geri bildirimle tekrar dene. Yillik planda aylik maliyet ${formatUsd(plusAnnualMonthlyEquivalent)} seviyesine iner.` : `The clearest first upgrade: continue today, practice more, and retry the same prompt with stronger feedback. On annual billing the monthly equivalent drops to about ${formatUsd(plusAnnualMonthlyEquivalent)}.`}</p>
+            <p style={{ margin: 0 }}>{tr ? "Bugun $0 ile basla. Daha fazla speaking yap ve ayni prompt'u geri bildirimle tekrar dene." : "Start for $0 today. Practice more and retry the same prompt with stronger feedback."}</p>
+            {currentUser?.plan === "free" ? (
+              <>
+                <TrackedLink
+                  className="button button-primary"
+                  href={buildPlanCheckoutPath({ plan: "plus", campaign: "billing_quick_start_weekly" })}
+                  userId={currentUser.id}
+                  analyticsEvent="checkout_initiated"
+                  analyticsPath="/app/billing/quick-start/plus/weekly"
+                  gaEvent="begin_checkout"
+                  gaParams={{
+                    currency: "USD",
+                    value: commerceNumbers.plusWeeklyPrice,
+                    items: [{ item_id: "plus_weekly", item_name: "SpeakAce Plus - Weekly", price: commerceNumbers.plusWeeklyPrice, quantity: 1 }]
+                  }}
+                  style={{ justifySelf: "start" }}
+                  onClick={() => {
+                    posthog.capture("checkout_initiated", {
+                      plan: "plus",
+                      billing: "weekly",
+                      current_plan: currentUser.plan,
+                      campaign: "billing_quick_start_weekly"
+                    });
+                  }}
+                >
+                  {tr ? "3 gunluk ucretsiz denemeyi baslat" : "Start the free 3-day trial"}
+                </TrackedLink>
+                <small style={{ color: "var(--muted)", lineHeight: 1.5 }}>
+                  {tr
+                    ? `3 gun sonra ${formatUsd(commerceNumbers.plusWeeklyPrice)}/hafta; yenilemeden once iptal edebilirsin.`
+                    : `${formatUsd(commerceNumbers.plusWeeklyPrice)}/week after 3 days; cancel before renewal.`}
+                </small>
+              </>
+            ) : null}
           </div>
           {currentUser?.plan === "plus" && billingStatus === "active" ? (
             <div className="card billing-pro-card" style={{ padding: "1rem" }}>
@@ -343,7 +376,7 @@ export default function BillingPage() {
                   const billing = purchaseDecisionGuide.ctaHref.includes("billing=annual") ? "annual" : "weekly";
                   posthog.capture("checkout_initiated", { plan: "plus", billing, current_plan: currentUser?.plan, campaign: `billing_decision_${billing}` });
                 } else if (purchaseDecisionGuide.ctaHref.includes("plan=pro")) {
-                  posthog.capture("checkout_initiated", { plan: "pro", billing: "annual", current_plan: currentUser?.plan, campaign: "billing_decision_pro" });
+                  posthog.capture("checkout_initiated", { plan: "pro", billing: "monthly", current_plan: currentUser?.plan, campaign: "billing_decision_pro_monthly" });
                 }
               }}
             >
