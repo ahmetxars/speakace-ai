@@ -19,7 +19,7 @@ import {
 import { useAppState } from "@/components/providers";
 import { motion } from "@/components/static-motion";
 import { TrackedLink } from "@/components/tracked-link";
-import { buildPlanCheckoutPath, commerceNumbers, formatUsd, getAnnualMonthlyEquivalent } from "@/lib/commerce";
+import { buildPlanCheckoutPath, commerceNumbers, formatUsd } from "@/lib/commerce";
 import { buildFaqJsonLd, jsonLdToHtml } from "@/lib/structured-data";
 
 const MiniSpeakingDemo = dynamic(
@@ -431,8 +431,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
   const { language, currentUser } = useAppState();
   const t = sectionCopy[language === "tr" ? "tr" : "en"];
   const primaryHref = ctaHref as Route;
-  const annualHref = buildPlanCheckoutPath({ plan: "plus", billing: "annual", campaign: "homepage_annual" });
-  const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
+  const plusTrialHref = buildPlanCheckoutPath({ plan: "plus", billing: "weekly", campaign: "homepage_weekly_trial" });
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [activeDemo, setActiveDemo] = useState<(typeof t.demoTabs)[number]["id"]>(t.demoTabs[0].id);
   const selectedDemo = t.demoTabs.find((item) => item.id === activeDemo) ?? t.demoTabs[0];
@@ -583,14 +582,27 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                     color: "var(--foreground)"
                   }}
                 >
-                  {t.ctaMicrocopy} · Plus annual {formatUsd(annualMonthlyEquivalent)}/month
+                  {t.ctaMicrocopy} · {language === "tr"
+                    ? `Plus bugun $0, sonra ${formatUsd(commerceNumbers.plusWeeklyPrice)}/hafta`
+                    : `Plus is $0 today, then ${formatUsd(commerceNumbers.plusWeeklyPrice)}/week`}
                 </div>
                 <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
                   <TrackedLink
-                    href={annualHref}
+                    href={plusTrialHref}
                     userId={currentUser?.id}
                     analyticsEvent="checkout_initiated"
-                    analyticsPath="/#hero-annual"
+                    analyticsPath="/#hero-plus-trial"
+                    gaEvent="begin_checkout"
+                    gaParams={{
+                      currency: "USD",
+                      value: commerceNumbers.plusWeeklyPrice,
+                      items: [{
+                        item_id: "plus_weekly",
+                        item_name: "SpeakAce Plus - Weekly",
+                        price: commerceNumbers.plusWeeklyPrice,
+                        quantity: 1
+                      }]
+                    }}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
@@ -605,7 +617,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                       textDecoration: "none"
                     }}
                   >
-                    {language === "tr" ? "En iyi deger: Plus yillik" : "Best value: Plus annual"}
+                    {language === "tr" ? "3 gunluk Plus denemesini baslat" : "Start 3-day Plus trial"}
                   </TrackedLink>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
@@ -1508,10 +1520,21 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
               <TrackedLink
-                href={annualHref}
+                href={plusTrialHref}
                 userId={currentUser?.id}
                 analyticsEvent="checkout_initiated"
-                analyticsPath="/#final-annual"
+                analyticsPath="/#final-plus-trial"
+                gaEvent="begin_checkout"
+                gaParams={{
+                  currency: "USD",
+                  value: commerceNumbers.plusWeeklyPrice,
+                  items: [{
+                    item_id: "plus_weekly",
+                    item_name: "SpeakAce Plus - Weekly",
+                    price: commerceNumbers.plusWeeklyPrice,
+                    quantity: 1
+                  }]
+                }}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -1526,7 +1549,7 @@ export function MarketingPage({ eyebrow, title, description, focus, ctaHref }: M
                   border: "1px solid oklch(1 0 0 / 0.32)"
                 }}
               >
-                {language === "tr" ? `Plus yillik · ${formatUsd(annualMonthlyEquivalent)}/ay` : `Plus annual · ${formatUsd(annualMonthlyEquivalent)}/month`}
+                {language === "tr" ? "Plus denemesi · bugun $0" : "Plus trial · $0 today"}
               </TrackedLink>
             </motion.div>
           </div>
