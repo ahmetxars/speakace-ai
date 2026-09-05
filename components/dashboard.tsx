@@ -482,8 +482,15 @@ export function Dashboard() {
   const needsOnboarding = Boolean(
     signedIn && currentUser && !isTeacherMember && !isSchoolMember && profile && !profile.onboardingComplete
   );
+  const hasScoredSession = summary.recentSessions.some((item) => Boolean(item.report));
   const shouldUpsellPlus = Boolean(
-    signedIn && currentUser && !isTeacherMember && !isSchoolMember && currentUser.plan === "free"
+    signedIn
+      && currentUser
+      && !isTeacherMember
+      && !isSchoolMember
+      && currentUser.plan === "free"
+      && !loadingSummary
+      && hasScoredSession
   );
   const isNearDailyLimit = summary.freeSessionsRemaining <= 1 || summary.remainingMinutesToday <= 2;
   const highIntentPrep = (profile?.weeklyGoal ?? 0) >= 4 || (scoreGap ?? 0) >= (latestExamType === "IELTS" ? 1.2 : 0.8);

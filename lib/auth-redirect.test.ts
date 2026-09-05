@@ -57,8 +57,10 @@ describe("resolveSafeAppRedirect", () => {
 });
 
 describe("resolveGoogleCallbackRedirect", () => {
-  it("sends a new student without an explicit destination to the guided dashboard", () => {
-    expect(GOOGLE_NEW_STUDENT_REDIRECT).toBe("/app");
+  it("sends a new student without an explicit destination to the first-score flow", () => {
+    expect(GOOGLE_NEW_STUDENT_REDIRECT).toBe(
+      "/app/practice?quickStart=1&runMode=interview&activation=google_new_student"
+    );
     expect(resolveGoogleCallbackRedirect({
       isNewUser: true,
       memberType: "student"
