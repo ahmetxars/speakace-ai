@@ -216,6 +216,7 @@ export function SiteFooter() {
   const { language } = useAppState();
 
   if (
+    pathname === "/" ||
     pathname?.startsWith("/app") ||
     pathname?.startsWith("/admin") ||
     pathname?.startsWith("/auth")
