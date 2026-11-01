@@ -7,7 +7,6 @@ import { defaultLanguage, isPublicLanguage, Language } from "@/lib/copy";
 import { createGuestProfile } from "@/lib/membership";
 import { trackClientEvent } from "@/lib/analytics-client";
 import { MemberProfile, SubscriptionPlan } from "@/lib/types";
-import { SplashScreen } from "@/components/splash-screen";
 
 export type ThemeMode = "light" | "dark";
 
@@ -68,7 +67,7 @@ export function Providers({ children, initialLanguage = defaultLanguage }: { chi
   };
 
   const initializeUser = useCallback(async (storedUser: string | null) => {
-    const profile = await fetchCurrentProfile();
+    const profile = await fetchCurrentProfile().catch(() => null);
 
     if (profile) {
       setCurrentUser(profile);
@@ -78,11 +77,15 @@ export function Providers({ children, initialLanguage = defaultLanguage }: { chi
     }
 
     if (storedUser) {
-      const parsedUser = JSON.parse(storedUser) as MemberProfile;
-      if (parsedUser.role === "guest") {
-        setCurrentUser(parsedUser);
-        setSignedInState(false);
-        return;
+      try {
+        const parsedUser = JSON.parse(storedUser) as MemberProfile;
+        if (parsedUser?.role === "guest" && typeof parsedUser.id === "string") {
+          setCurrentUser(parsedUser);
+          setSignedInState(false);
+          return;
+        }
+      } catch {
+        window.localStorage.removeItem("speakace-user");
       }
     }
 
@@ -146,6 +149,16 @@ export function Providers({ children, initialLanguage = defaultLanguage }: { chi
     return () => mediaQuery.removeEventListener("change", syncSystemTheme);
   }, []);
 
+  useEffect(() => {
+    // Public and account pages use the paper identity. Preserve the visitor's
+    // preferred workspace theme when they return to the signed-in product.
+    const workspace = /^\/(app|admin)(\/|$)/.test(pathname ?? "/");
+    document.body.dataset.theme = workspace ? theme : "light";
+    const bodyClass = pathname?.startsWith("/admin") ? "admin-site" : pathname?.startsWith("/app") ? "application-site" : pathname?.startsWith("/auth") ? "auth-site" : "public-site";
+    document.body.classList.remove("public-site", "auth-site", "application-site", "admin-site");
+    document.body.classList.add(bodyClass);
+  }, [pathname, theme]);
+
   const setGuestProfile = async (profile: MemberProfile) => {
     setCurrentUser(profile);
     setSignedInState(false);
@@ -180,9 +193,8 @@ export function Providers({ children, initialLanguage = defaultLanguage }: { chi
 
     if (signedIn) {
       const response = await fetch("/api/account/plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan })
+        method: "GET",
+        cache: "no-store"
       });
       const raw = await response.text();
       let data: { profile?: MemberProfile } = {};
@@ -205,7 +217,6 @@ export function Providers({ children, initialLanguage = defaultLanguage }: { chi
 
   return (
     <AppContext.Provider value={{ language, setLanguage, theme, setTheme, signedIn, signOut, currentUser, setGuestProfile, refreshSession, updatePlan }}>
-      <SplashScreen />
       {children}
     </AppContext.Provider>
   );

@@ -782,3 +782,10 @@ alter table announcements add column if not exists organization_id text referenc
 
 create index if not exists idx_announcements_org_id
   on announcements(organization_id);
+
+-- Account legal acknowledgements and separately optional email marketing consent.
+-- No consent is inferred or backfilled for existing users.
+alter table users add column if not exists terms_accepted_at timestamptz;
+alter table users add column if not exists privacy_acknowledged_at timestamptz;
+alter table users add column if not exists legal_version text;
+alter table users add column if not exists marketing_consent_at timestamptz;

@@ -411,6 +411,31 @@ export async function reserveSessionAudioUpload(
   return { reserved: true, alreadyUploaded: false };
 }
 
+// Release a newly reserved attempt when transcription fails. The session row
+// lock and null-transcript guard protect a simultaneous successful retry.
+export async function releaseFailedAudioUpload(sessionId: string, usageDate = new Date().toISOString().slice(0, 10)) {
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    await sql.begin(async (transaction) => {
+      const tx = transaction as unknown as typeof sql;
+      const [row] = await tx<Array<{ user_id: string; speaking_seconds: number; audio_uploaded: boolean; transcript: string | null }>>`
+        select user_id, speaking_seconds, audio_uploaded, transcript from speaking_sessions where id = ${sessionId} for update
+      `;
+      if (!row?.audio_uploaded || row.transcript) return;
+      await tx`update speaking_sessions set audio_uploaded = false, audio_bytes = 0 where id = ${sessionId}`;
+      await tx`update usage_daily set sessions_count = greatest(0, sessions_count - 1), speaking_seconds = greatest(0, speaking_seconds - ${row.speaking_seconds}) where user_id = ${row.user_id} and usage_date = ${usageDate}`;
+    });
+    return;
+  }
+  const store = getStore();
+  const session = store.sessions.get(sessionId);
+  if (!session?.audioUploaded || session.transcript) return;
+  const usageKey = `${session.userId}:${usageDate}`;
+  const usage = store.usageByDay.get(usageKey);
+  if (usage) store.usageByDay.set(usageKey, { sessions: Math.max(0, usage.sessions - 1), seconds: Math.max(0, usage.seconds - session.prompt.speakingSeconds) });
+  store.sessions.set(sessionId, { ...session, audioUploaded: false, audioBytes: 0 });
+}
+
 export async function uploadSessionAudio(
   sessionId: string,
   audioBytes: number,
@@ -463,7 +488,8 @@ export async function evaluateStoredSession(sessionId: string) {
     return null;
   }
 
-  const rawTranscript = session.rawTranscript ?? session.transcript ?? buildSessionTranscript(session);
+  const rawTranscript = session.rawTranscript ?? session.transcript ?? (process.env.APP_ENV === "production" ? "" : buildSessionTranscript(session));
+  if (process.env.APP_ENV === "production" && !rawTranscript.trim()) throw new Error("A real transcript is required before evaluation. Please retry your recording.");
   const cleanedTranscript = cleanTranscriptText(rawTranscript);
   const transcriptIssue = detectTranscriptIssue(cleanedTranscript);
   const transcriptQuality = getTranscriptQuality(cleanedTranscript);
@@ -500,8 +526,8 @@ export async function evaluateStoredSession(sessionId: string) {
           improvedAnswer: aiReport.improvedAnswer
         };
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
+      report.caution = "AI feedback is temporarily unavailable. This is a basic text-only practice estimate and cannot assess pronunciation. Retry later for AI feedback.";
     }
   }
 

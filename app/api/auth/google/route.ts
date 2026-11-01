@@ -1,3 +1,4 @@
+import { ACCOUNT_LEGAL_VERSION } from "@/lib/account-consent";
 import { createHmac, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
@@ -50,6 +51,8 @@ export async function GET(request: Request) {
   const payload = Buffer.from(
     JSON.stringify({
       nonce,
+      legalAccepted: searchParams.get("legalVersion") === ACCOUNT_LEGAL_VERSION,
+      marketingConsent: searchParams.get("marketingConsent") === "true",
       cta: cta ?? null,
       ctaEvent: ctaEvent ?? null,
       invite: invite ?? null,

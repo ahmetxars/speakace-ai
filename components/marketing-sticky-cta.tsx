@@ -18,7 +18,7 @@ export function MarketingStickyCta() {
     return () => window.removeEventListener("scroll", updateVisibility);
   }, [pathname]);
 
-  if (!pathname) return null;
+  if (!pathname || pathname === "/") return null;
   if (pathname.startsWith("/app") || pathname.startsWith("/auth") || pathname.startsWith("/admin")) return null;
   if (pathname.startsWith("/for-") || pathname === "/teacher-demo") return null;
   if (pathname === "/maintenance") return null;

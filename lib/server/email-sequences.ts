@@ -1,3 +1,4 @@
+import { ensureAccountConsentSchema } from "@/lib/server/account-consent";
 import { getCommercialSenderIdentity, sendEmail } from "@/lib/server/email";
 import { hasDatabaseUrl, getSql } from "@/lib/server/db";
 import { buildLifecycleEmailClickUrl } from "@/lib/server/lifecycle-email-link";
@@ -52,6 +53,7 @@ export function resolveEmailLifecycleDailyBudget(value = process.env.EMAIL_LIFEC
 async function ensureEmailSequenceSchema() {
   if (!hasDatabaseUrl() || emailSequenceSchemaEnsured) return;
 
+  await ensureAccountConsentSchema();
   const sql = getSql();
   const onboardingColumn = await sql<Array<{ exists: boolean }>>`
     select exists (
@@ -1100,7 +1102,7 @@ export async function sendOnboardingEmail(
     select
       u.email,
       u.name,
-      u.email_opt_out,
+      (u.email_opt_out or u.marketing_consent_at is null) as email_opt_out,
       u.email_verified,
       (select count(*)::int from speaking_sessions s where s.user_id = u.id) as speaking_session_count
     from users u
@@ -1198,7 +1200,7 @@ export async function getUsersDueForNextOnboardingEmail(limit = 100): Promise<
       u.email,
       u.name,
       coalesce(u.onboarding_emails_sent, 0) as onboarding_emails_sent,
-      u.email_opt_out,
+      (u.email_opt_out or u.marketing_consent_at is null) as email_opt_out,
       u.created_at
     from users u
     where coalesce(u.onboarding_emails_sent, 0) < ${maxEmailNumber}
@@ -1360,7 +1362,7 @@ export async function getUsersDueForPracticeLimitRecoveryEmail(limit = 50): Prom
     where u.plan = 'free'
       and coalesce(u.billing_status, 'free') not in ('active', 'on_trial')
       and u.email_verified = true
-      and u.email_opt_out = false
+      and u.email_opt_out = false and u.marketing_consent_at is not null
       and u.role <> 'guest'
       and not exists (
         select 1 from analytics_events checkout_event
@@ -1420,7 +1422,7 @@ export async function sendPracticeLimitRecoveryEmail(
       u.email,
       u.name,
       latest_limit.path,
-      u.email_opt_out,
+      (u.email_opt_out or u.marketing_consent_at is null) as email_opt_out,
       u.email_verified,
       u.plan,
       u.billing_status,
@@ -1554,7 +1556,7 @@ export async function getUsersDueForCheckoutRecoveryEmail(
     where u.plan = 'free'
       and coalesce(u.billing_status, 'free') not in ('active', 'on_trial')
       and u.email_verified = true
-      and u.email_opt_out = false
+      and u.email_opt_out = false and u.marketing_consent_at is not null
       and u.role <> 'guest'
       and not exists (
         select 1
@@ -1622,7 +1624,7 @@ export async function sendCheckoutRecoveryEmail(
     select
       u.email,
       u.name,
-      u.email_opt_out,
+      (u.email_opt_out or u.marketing_consent_at is null) as email_opt_out,
       u.email_verified,
       u.plan,
       u.billing_status,
@@ -1808,7 +1810,7 @@ export async function getUsersDueForTrialLifecycleEmail(limit = 100): Promise<
       and u.billing_status = 'on_trial'
       and u.trial_ends_at > now()
       and u.trial_ends_at <= now() + interval '72 hours'
-      and u.email_opt_out = false
+      and u.email_opt_out = false and u.marketing_consent_at is not null
     order by u.trial_ends_at asc
     limit ${Math.max(limit * 3, limit)}
   `;
@@ -1846,7 +1848,7 @@ export async function sendTrialLifecycleEmail(
       trial_ends_at: string | Date | null;
     }>
   >`
-    select email, name, plan, email_opt_out, billing_status, trial_ends_at
+    select email, name, plan, (email_opt_out or marketing_consent_at is null) as email_opt_out, billing_status, trial_ends_at
     from users
     where id = ${userId}
     limit 1
@@ -2090,7 +2092,7 @@ export async function getUsersForDailyTip(limit = 500): Promise<Array<{ id: stri
   const rows = await sql<Array<{ id: string; email: string; name: string }>>`
     select u.id, u.email, u.name
     from users u
-    where u.email_opt_out = false
+    where u.email_opt_out = false and u.marketing_consent_at is not null
       and u.email_verified = true
       and u.role != 'guest'
       and u.email not like '%@example.com'
@@ -2138,7 +2140,7 @@ export async function sendDailyTipEmail(userId: string): Promise<{ ok: boolean; 
     select
       u.email,
       u.name,
-      u.email_opt_out,
+      (u.email_opt_out or u.marketing_consent_at is null) as email_opt_out,
       u.email_verified,
       latest_focus.focus_label,
       latest_focus.focus_score,

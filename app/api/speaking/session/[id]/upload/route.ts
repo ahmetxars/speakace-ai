@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { getAudioPayloadStats, hasOpenAiKey, transcribeAudio } from "@/lib/server/openai";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
-import { getSession, reserveSessionAudioUpload, uploadSessionAudio } from "@/lib/store";
+import { getSession, reserveSessionAudioUpload, releaseFailedAudioUpload, uploadSessionAudio } from "@/lib/store";
 
 export const maxDuration = 60;
 
@@ -19,7 +19,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Audio payload too large (max 10 MB)." }, { status: 413 });
   }
 
-  const body = await request.json();
+  let body;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid recording payload." }, { status: 400 }); }
   const { id } = await params;
   const ip = getRequestIp(request);
   const limit = checkRateLimit({
@@ -41,7 +42,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Missing recording payload." }, { status: 400 });
   }
 
-  const { bytes: audioBytes } = getAudioPayloadStats(audioBase64);
+  let audioBytes: number;
+  try { audioBytes = getAudioPayloadStats(audioBase64).bytes; } catch { return NextResponse.json({ error: "Invalid recording format." }, { status: 400 }); }
+  if (audioBytes > MAX_BODY_BYTES) return NextResponse.json({ error: "Recording too large." }, { status: 413 });
+  if (!hasOpenAiKey()) return NextResponse.json({ error: "Speech processing is temporarily unavailable. Please retry later." }, { status: 503 });
   if (audioBytes < 12_000) {
     return NextResponse.json(
       {
@@ -51,6 +55,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
+  const reservationDay = new Date().toISOString().slice(0, 10);
   const reservation = await reserveSessionAudioUpload(id, audioBytes);
   if (!reservation.reserved) {
     return NextResponse.json({ error: reservation.error }, { status: reservation.status });
@@ -58,9 +63,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   let transcript: string | null = null;
   let transcriptSource: "openai" | "fallback" = "fallback";
-  let transcriptStatus = hasOpenAiKey()
-    ? "Audio was received. OpenAI transcription is being used."
-    : "Audio was received, but no OpenAI key is configured. A generated fallback transcript will be used.";
+  let transcriptStatus = "Your recording is being transcribed.";
   let transcriptionError: string | null = null;
 
   try {
@@ -81,10 +84,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       transcriptSource = "openai";
       transcriptStatus = "OpenAI transcript completed successfully.";
     }
-  } catch (error) {
-    console.error(error);
-    transcriptionError = error instanceof Error ? error.message : "Unknown transcription error.";
-    transcriptStatus = "OpenAI transcription failed. A generated fallback transcript will be used instead.";
+  } catch {
+    transcriptionError = "Speech processing could not finish. Your recording can be retried.";
+    transcriptStatus = "Speech processing is temporarily unavailable.";
+  }
+
+  if (!transcript) {
+    if (!reservation.alreadyUploaded) await releaseFailedAudioUpload(id, reservationDay);
+    return NextResponse.json({ error: "Speech processing could not finish. Please retry your recording. Your allowance has not been charged.", transcriptSource: null }, { status: 503 });
   }
 
   const session = await uploadSessionAudio(id, audioBytes, transcript, {

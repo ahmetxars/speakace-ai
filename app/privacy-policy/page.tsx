@@ -45,7 +45,7 @@ const privacyCopy: Record<PublicLanguage, PrivacyCopy> = {
     heading: "Privacy Policy",
     intro: "This policy explains what SpeakAce collects, why it is used, which providers process it, and how you can control or delete your information.",
     controller: "Data controller",
-    controllerText: "The legal entity below is the controller for personal information processed through SpeakAce.",
+    controllerText: "The site operator below is the controller for personal information processed through SpeakAce.",
     representativeLabel: "EU/UK representative",
     dpoLabel: "Data-protection contact",
     collect: "Account and practice data",
@@ -61,7 +61,7 @@ const privacyCopy: Record<PublicLanguage, PrivacyCopy> = {
       "Send account, billing, support, and consented practice emails"
     ],
     legal: "Legal bases",
-    legalText: "We process data to perform our contract with account holders and provide requested services; on consent for optional practice and marketing emails; for legitimate interests such as service security, fraud prevention, reliability, and limited first-party campaign measurement where those interests do not override your rights; and where needed to meet legal obligations. You can withdraw consent at any time without affecting earlier lawful processing.",
+    legalText: "We process data to perform our contract with account holders and provide requested services; on consent for optional practice and marketing emails; for legitimate interests such as service security, fraud prevention, reliability, and service reliability where those interests do not override your rights; optional usage measurement requires cookie consent; and where needed to meet legal obligations. You can withdraw consent at any time without affecting earlier lawful processing.",
     emailFlow: "Requested guide and follow-up emails",
     emailFlowText: "A score-diagnostic request sends one guide email. The three practice follow-ups do not start until you confirm ownership from that email. Once confirmed, they are scheduled for days 2, 4, and 7; the last may include a SpeakAce Plus annual offer. Creating an account stops the anonymous sequence. Teacher and school requests receive the requested walkthrough or demo communication instead of the learner sequence. An unsubscribe is durable: the public form will not reactivate that address; use authenticated account settings or contact support if you later want to opt in again.",
     third: "Third-party services",
@@ -83,7 +83,7 @@ const privacyCopy: Record<PublicLanguage, PrivacyCopy> = {
     heading: "Gizlilik Politikası",
     intro: "Bu politika SpeakAce'in hangi bilgileri topladığını, neden kullandığını, hangi sağlayıcıların işlediğini ve bilgilerinizi nasıl yönetip sildirebileceğinizi açıklar.",
     controller: "Veri sorumlusu",
-    controllerText: "Aşağıdaki tüzel kişi, SpeakAce üzerinden işlenen kişisel bilgilerin veri sorumlusudur.",
+    controllerText: "Aşağıda belirtilen site işletmecisi, SpeakAce üzerinden işlenen kişisel bilgilerin veri sorumlusudur.",
     representativeLabel: "AB/BK temsilcisi",
     dpoLabel: "Veri koruma iletişimi",
     collect: "Hesap ve pratik verileri",
@@ -93,7 +93,7 @@ const privacyCopy: Record<PublicLanguage, PrivacyCopy> = {
     use: "Bilgileri nasıl kullanıyoruz",
     useItems: ["Hesap oluşturmak ve yönetmek", "Speaking pratiği, geri bildirim ve gelişim takibi sunmak", "Ürün kalitesini, güvenilirliği ve deneyimi geliştirmek", "İstenen içeriği teslim etmek ve talebi getiren birinci taraf kampanyayı ölçmek", "Hesap, ödeme, destek ve izin verilen pratik e-postalarını göndermek"],
     legal: "Hukuki dayanaklar",
-    legalText: "Hesap sahipleriyle sözleşmeyi yürütmek ve istenen hizmeti sunmak için; isteğe bağlı pratik ve pazarlama e-postalarında onaya dayanarak; haklarınız ağır basmadığı sürece hizmet güvenliği, dolandırıcılığı önleme, güvenilirlik ve sınırlı birinci taraf kampanya ölçümü gibi meşru menfaatler için; ayrıca yasal yükümlülükler gerektiğinde veri işleriz. Önceki hukuka uygun işlemleri etkilemeden onayınızı istediğiniz zaman geri çekebilirsiniz.",
+    legalText: "Hesap sahipleriyle sözleşmeyi yürütmek ve istenen hizmeti sunmak için; isteğe bağlı pratik ve pazarlama e-postalarında onaya dayanarak; haklarınız ağır basmadığı sürece hizmet güvenliği, dolandırıcılığı önleme, güvenilirlik gibi meşru menfaatler için; ayrıca yasal yükümlülükler gerektiğinde veri işleriz. Önceki hukuka uygun işlemleri etkilemeden onayınızı istediğiniz zaman geri çekebilirsiniz.",
     emailFlow: "İstenen rehber ve takip e-postaları",
     emailFlowText: "Skor rehberi talebi tek bir rehber e-postası gönderir. Üç pratik takip e-postası, o e-postadan adres sahipliğini doğrulayana kadar başlamaz. Doğrulama sonrası 2., 4. ve 7. gün için planlanır; son mesaj yıllık SpeakAce Plus teklifi içerebilir. Hesap açmanız anonim seriyi durdurur. Öğretmen ve okul talepleri öğrenci serisi yerine istenen tanıtım veya demo iletişimini alır. Abonelikten çıkış kalıcıdır: halka açık form adresi yeniden etkinleştirmez; tekrar katılmak için oturum açılmış hesap ayarlarını kullanın veya destekle iletişime geçin.",
     third: "Üçüncü taraf hizmetler",
@@ -218,7 +218,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PrivacyPolicyPage() {
   const copy = await getPrivacyCopy();
-  const controller = getPrivacyControllerIdentity();
+  let controller: ReturnType<typeof getPrivacyControllerIdentity> | null = null;
+  try { controller = getPrivacyControllerIdentity(); } catch { /* Keep the notice accessible while the operator completes identity details. */ }
+  const tr = (await getServerLanguage()) === "tr";
   const sections = [
     [copy.collect, copy.collectText],
     [copy.leadData, copy.leadDataText],
@@ -234,6 +236,7 @@ export default async function PrivacyPolicyPage() {
     <main className="page-shell section">
       <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
         <span className="eyebrow">{copy.eyebrow}</span>
+        <p className="practice-copy">{tr ? "Güncelleme: 1 Kasım 2026 · Sürüm: 2026-11-01" : "Updated 1 November 2026 · Version: 2026-11-01"}</p>
         <h1>{copy.heading}</h1>
         <p className="practice-copy">{copy.intro}</p>
 
@@ -241,25 +244,28 @@ export default async function PrivacyPolicyPage() {
           <strong>{copy.controller}</strong>
           <p className="practice-copy">{copy.controllerText}</p>
           <address className="practice-copy" style={{ fontStyle: "normal" }}>
-            <strong>{controller.legalName}</strong>
+            <strong>{controller?.legalName ?? "SpeakAce — independent site operator"}</strong>
             <br />
-            {controller.postalAddress}
+            {controller?.postalAddress ?? (tr ? "Gizlilik başvuruları için iletişim:" : "Contact for privacy requests:")}
             <br />
             <a href={`mailto:${siteConfig.contactEmail}`}>{siteConfig.contactEmail}</a>
           </address>
-          {controller.representative ? (
+          {controller?.representative ? (
             <p className="practice-copy">
-              <strong>{copy.representativeLabel}:</strong> {controller.representative}
+              <strong>{copy.representativeLabel}:</strong> {controller?.representative}
             </p>
           ) : null}
-          {controller.dpoEmail ? (
+          {controller?.dpoEmail ? (
             <p className="practice-copy">
               <strong>{copy.dpoLabel}:</strong>{" "}
-              <a href={`mailto:${controller.dpoEmail}`}>{controller.dpoEmail}</a>
+              <a href={`mailto:${controller?.dpoEmail}`}>{controller?.dpoEmail}</a>
             </p>
           ) : null}
         </section>
 
+        <section className="card" style={{ padding: "1rem" }}><strong>{tr ? "Çerezler ve isteğe bağlı ölçüm" : "Cookies and optional measurement"}</strong><p>{tr ? "Reklam, Google Analytics, Microsoft Clarity ve PostHog izleme araçları devre dışıdır. Site içi kullanım analitiği yalnızca çerez panelinden açıkça izin verdiğinizde çalışır. Gerekli oturum, güvenlik ve tercih kayıtları hizmeti sunmak içindir." : "Advertising, Google Analytics, Microsoft Clarity and PostHog tracking are disabled. First-party usage analytics run only after you opt in through the cookie panel. Necessary sign-in, security and preference storage support the service."} <a href="/cookie-policy">{tr ? "Çerez envanteri ve tercihler" : "Cookie inventory and choices"}</a></p></section>
+        <section className="card" style={{ padding: "1rem" }}><strong>{tr ? "Yapay zekâ ve yurt dışı sağlayıcılar" : "AI and international providers"}</strong><p>{tr ? "Gönderdiğiniz ses OpenAI ile yazıya çevrilir; metin ve yazma taslakları geri bildirim için OpenAI'ye iletilebilir. Barındırma Vercel, veri saklama Neon PostgreSQL, e-posta Resend, ödeme Lemon Squeezy üzerindedir. Kart bilgilerinizi SpeakAce saklamaz. Bu sağlayıcılar Türkiye dışında veri işleyebilir. Hassas kişisel bilgi veya başkalarına ait özel bilgiler göndermeyin. Türkiye'den yurt dışına aktarımda uygulanacak KVKK güvencelerini bizden sorabilirsiniz; bir onay kutusu tek başına bu yükümlülüklerin yerine geçtiği anlamına gelmez." : "Submitted audio is transcribed with OpenAI; transcripts and writing drafts may be sent to OpenAI for feedback. Hosting uses Vercel, storage Neon PostgreSQL, email Resend and payments Lemon Squeezy. SpeakAce does not store your card details. These providers may process data outside your country. Do not submit sensitive personal information or private information about others. Ask us about applicable international transfer safeguards; a checkbox does not by itself replace those obligations."}</p></section>
+        <section className="card" style={{ padding: "1rem" }}><strong>{tr ? "Hesap e-postaları ve pazarlama izni" : "Account emails and marketing choice"}</strong><p>{tr ? "Hesap doğrulama, parola sıfırlama ve gerekli hizmet bildirimleri hesabınızı işletmek için gönderilir. Pratik önerileri ve teklifler için kayıt sırasında ayrıca isteğe bağlı izin istenir. Bu izni vermemeniz hesap açmanıza engel olmaz. Eski hesaplarda kayıtlı açık izin olmadan pazarlama serileri başlatılmaz." : "Verification, password resets and essential service notices support your account. Practice tips and offers require a separate optional signup choice. Declining does not prevent registration. Existing accounts without recorded opt-in are excluded from marketing sequences."}</p></section>
         {sections.slice(0, 2).map(([heading, text]) => (
           <section className="card" style={{ padding: "1rem", display: "grid", gap: "0.75rem" }} key={heading}>
             <strong>{heading}</strong>
@@ -286,6 +292,10 @@ export default async function PrivacyPolicyPage() {
           </section>
         ))}
 
+        <section className="card" style={{ padding: "1rem", display: "grid", gap: "0.75rem" }}>
+          <strong>{tr ? "KVKK kapsamındaki başvurular" : "Privacy requests under Turkish law"}</strong>
+          <p className="practice-copy">{tr ? "KVKK m.11 kapsamında verilerinizin işlenip işlenmediğini öğrenme, bilgi talep etme, işleme amacını ve amaca uygun kullanımı öğrenme, aktarılan üçüncü kişileri bilme, düzeltme, şartları oluştuğunda silme/yok etme ve bu işlemlerin alıcılara bildirilmesini isteme, yalnızca otomatik analizle aleyhinize sonuç çıkmasına itiraz etme ve kanuna aykırı işleme nedeniyle zararın giderilmesini talep etme haklarınız bulunur. Talebinizi hesabınıza kayıtlı e-posta adresinden aşağıdaki iletişim adresine gönderebilirsiniz. Kimliğinizi doğrulamak için yalnızca gerekli bilgileri isteriz. Başvurular, mevzuattaki usullere göre en geç 30 gün içinde yanıtlanır." : "Under Article 11 of the Turkish data protection law, you may ask whether your data are processed, obtain information about purposes and recipients, seek correction or deletion where applicable and notification to recipients, object to adverse outcomes based solely on automated analysis, and seek remedies for unlawful processing. Send a request from your account’s registered email address to the contact below. We request only necessary identity verification and respond under the applicable procedure within 30 days."}</p>
+        </section>
         <section className="card" style={{ padding: "1rem", display: "grid", gap: "0.75rem" }}>
           <strong>{copy.contact}</strong>
           <p className="practice-copy">

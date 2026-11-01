@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getRequestIp: vi.fn(),
   getSession: vi.fn(),
   reserveSessionAudioUpload: vi.fn(),
+  releaseFailedAudioUpload: vi.fn(),
   uploadSessionAudio: vi.fn()
 }));
 
@@ -30,6 +31,7 @@ vi.mock("@/lib/server/rate-limit", () => ({
 vi.mock("@/lib/store", () => ({
   getSession: mocks.getSession,
   reserveSessionAudioUpload: mocks.reserveSessionAudioUpload,
+  releaseFailedAudioUpload: mocks.releaseFailedAudioUpload,
   uploadSessionAudio: mocks.uploadSessionAudio
 }));
 
@@ -76,6 +78,16 @@ describe("speaking audio upload quota", () => {
     expect(response.status).toBe(403);
     expect(mocks.transcribeAudio).not.toHaveBeenCalled();
     expect(mocks.uploadSessionAudio).not.toHaveBeenCalled();
+  });
+
+  it("does not invent a transcript or charge allowance on provider failure", async () => {
+    mocks.reserveSessionAudioUpload.mockResolvedValue({reserved:true,alreadyUploaded:false});
+    mocks.transcribeAudio.mockRejectedValue(new Error("provider error with sensitive details"));
+    const response = await POST(uploadRequest(), {params:Promise.resolve({id:"session-1"})});
+    expect(response.status).toBe(503);
+    expect(mocks.releaseFailedAudioUpload).toHaveBeenCalledWith("session-1",expect.any(String));
+    expect(mocks.uploadSessionAudio).not.toHaveBeenCalled();
+    expect(JSON.stringify(await response.json())).not.toContain("sensitive details");
   });
 
   it("transcribes after an idempotent usage reservation succeeds", async () => {

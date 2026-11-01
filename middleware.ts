@@ -1,10 +1,12 @@
+import { CONSENT_COOKIE, parseCookieConsent } from "@/lib/cookie-consent";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
   const forwardedProto = request.headers.get("x-forwarded-proto");
 
-  if (forwardedProto === "http") {
+  const localHost = ["localhost", "127.0.0.1", "[::1]"].includes(request.nextUrl.hostname);
+  if (forwardedProto === "http" && !localHost) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.protocol = "https";
     return NextResponse.redirect(redirectUrl, 308);
@@ -32,11 +34,15 @@ export function middleware(request: NextRequest) {
   requestHeaders.set("x-current-path", request.nextUrl.pathname);
   requestHeaders.set("x-maintenance-mode", maintenanceMode ? "true" : "false");
 
-  return NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders
     }
   });
+  if (!parseCookieConsent(request.cookies.get(CONSENT_COOKIE)?.value)?.analytics && request.cookies.has("speakace_visitor_id")) {
+    response.cookies.set("speakace_visitor_id", "", { path: "/", maxAge: 0 });
+  }
+  return response;
 }
 
 export const config = {

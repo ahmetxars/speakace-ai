@@ -6,6 +6,7 @@ import {
   evaluateStoredSession,
   getProgressSummary,
   reserveSessionAudioUpload,
+  releaseFailedAudioUpload,
   resetStore,
   uploadSessionAudio
 } from "@/lib/store";
@@ -76,6 +77,21 @@ describe("session store", () => {
     expect(first).toEqual({ reserved: true, alreadyUploaded: false });
     expect(second).toEqual({ reserved: true, alreadyUploaded: true });
     expect(summary.freeSessionsRemaining).toBe(3);
+  });
+
+  it("refunds failed transcription once and preserves a successful retry", async () => {
+    const member = createMemberProfile("retry@example.com", "Retry");
+    await upsertMember(member);
+    const created = await createSession({userId:member.id,examType:"IELTS",taskType:"ielts-part-1",difficulty:"Starter"});
+    if (!("session" in created)) throw new Error("Expected session.");
+    const id = created.session!.id;
+    await reserveSessionAudioUpload(id, 24000);
+    await releaseFailedAudioUpload(id);
+    await releaseFailedAudioUpload(id);
+    expect((await getProgressSummary(member.id)).freeSessionsRemaining).toBe(4);
+    await uploadSessionAudio(id,24000,"I enjoy reading because it helps me relax after a busy day.");
+    await releaseFailedAudioUpload(id);
+    expect((await getProgressSummary(member.id)).freeSessionsRemaining).toBe(3);
   });
 
   it("builds a report after audio upload", async () => {

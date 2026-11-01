@@ -1,31 +1,23 @@
-import { PostHog } from "posthog-node";
-
-type PostHogCaptureClient = Pick<PostHog, "capture" | "identify">;
-
+// External analytics are disabled. Keep this no-op interface for existing call
+// sites; service, billing and AI usage records remain in our own database.
+type PostHogCaptureClient = {
+  capture: (event: {
+    distinctId: string;
+    event: string;
+    properties?: Record<string, unknown>;
+  }) => void;
+  identify: (event: {
+    distinctId: string;
+    properties?: Record<string, unknown>;
+  }) => void;
+};
 const noopPostHogClient: PostHogCaptureClient = {
   capture: () => undefined,
-  identify: () => undefined
+  identify: () => undefined,
 };
-
-let posthogClient: PostHogCaptureClient | null = null;
-
 export function isPostHogConfigured() {
-  return process.env.NEXT_PUBLIC_ENABLE_ANALYTICS !== "false"
-    && Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim());
+  return false;
 }
-
 export function getPostHogClient(): PostHogCaptureClient {
-  const posthogKey = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim();
-  if (!isPostHogConfigured() || !posthogKey) {
-    return noopPostHogClient;
-  }
-
-  if (!posthogClient) {
-    posthogClient = new PostHog(posthogKey, {
-      host: process.env.NEXT_PUBLIC_POSTHOG_HOST?.trim() || "https://eu.i.posthog.com",
-      flushAt: 1,
-      flushInterval: 0
-    });
-  }
-  return posthogClient;
+  return noopPostHogClient;
 }

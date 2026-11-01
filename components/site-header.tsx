@@ -1,4 +1,5 @@
 "use client";
+import { EditorialPublicHeader } from "@/components/editorial-public-header";
 
 import type { Route } from "next";
 import Image from "next/image";
@@ -521,7 +522,7 @@ export function SiteHeader() {
   const [localeOpen, setLocaleOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const hideHeader = pathname.startsWith("/admin") || pathname.startsWith("/maintenance");
+  const hideHeader = pathname === "/" || pathname.startsWith("/admin") || pathname.startsWith("/maintenance");
 
   const localeRef = useRef<HTMLDivElement>(null);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -593,15 +594,8 @@ export function SiteHeader() {
       <header className="auth-site-header">
         <div className="auth-site-header-inner">
           <Link href="/" className="auth-site-brand" aria-label="SpeakAce home">
-            <span className="auth-site-brand-mark" aria-hidden="true">SA</span>
-            <Image
-              src="/brand/speakace-logo.webp"
-              alt="SpeakAce"
-              width={120}
-              height={41}
-              priority
-              className="nav-logo-img"
-            />
+            <span className="auth-site-brand-mark" aria-hidden="true">≋</span>
+            <span className="auth-wordmark">SpeakAce<span>.</span></span>
           </Link>
 
           <span className="auth-site-trust"><LockKeyhole size={14} />{authLabels.secure}</span>
@@ -625,6 +619,8 @@ export function SiteHeader() {
       </header>
     );
   }
+
+  if (!pathname.startsWith("/app")) return <EditorialPublicHeader />;
 
   return (
     <header

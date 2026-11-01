@@ -1,3 +1,5 @@
+import { CONSENT_COOKIE, parseCookieConsent } from "@/lib/cookie-consent";
+import type { AccountConsent } from "@/lib/account-consent";
 import { createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -80,6 +82,7 @@ async function getGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
 }
 
 async function findOrCreateGoogleUser(input: {
+  consent?: AccountConsent;
   googleUser: GoogleUserInfo;
   memberType?: MemberProfile["memberType"];
   organizationName?: string | null;
@@ -121,7 +124,9 @@ async function findOrCreateGoogleUser(input: {
       return { profile: await ensureSchoolAccountAccess(existing[0]), isNewUser: false };
     }
 
+    if (!input.consent?.legalAccepted) throw new Error("account_consent_required");
     const profile = await signUpWithGoogle({
+      consent: input.consent,
       email: normalizedEmail,
       name: displayName,
       memberType: input.memberType,
@@ -151,7 +156,9 @@ async function findOrCreateGoogleUser(input: {
     }
   }
 
+  if (!input.consent?.legalAccepted) throw new Error("account_consent_required");
   const newProfile = await signUpWithGoogle({
+    consent: input.consent,
     email: normalizedEmail,
     name: displayName,
     memberType: input.memberType,
@@ -200,6 +207,8 @@ export async function GET(request: Request) {
     }
 
     const parsedState = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
+      legalAccepted?: boolean;
+      marketingConsent?: boolean;
       nonce?: string | null;
       cta?: string | null;
       ctaEvent?: string | null;
@@ -241,6 +250,7 @@ export async function GET(request: Request) {
 
     const { profile, isNewUser } = await findOrCreateGoogleUser({
       googleUser,
+      consent: { legalAccepted: parsedState.legalAccepted === true, marketingConsent: parsedState.marketingConsent === true },
       memberType,
       organizationName,
       referralCode,
@@ -249,7 +259,7 @@ export async function GET(request: Request) {
     if (isNewUser) {
       const visitorId = normalizeAnalyticsVisitorId(cookieStore.get(ANALYTICS_VISITOR_COOKIE)?.value);
       try {
-        await trackAnalyticsEvent({
+        if (parseCookieConsent(cookieStore.get(CONSENT_COOKIE)?.value)?.analytics) await trackAnalyticsEvent({
           userId: profile.id,
           visitorId,
           event: "signup_completed",
@@ -307,6 +317,7 @@ export async function GET(request: Request) {
     response.cookies.set(getSessionCookieName(), session.token, getSessionCookieOptions(session.expiresAt));
     return clearGoogleOAuthStateCookie(response);
   } catch (err) {
+    if (err instanceof Error && err.message === "account_consent_required") return clearGoogleOAuthStateCookie(NextResponse.redirect(`${siteUrl}/auth?mode=signup&error=consent_required`));
     console.error("[Google OAuth callback error]", err);
     return clearGoogleOAuthStateCookie(NextResponse.redirect(`${siteUrl}/auth?error=google_failed`));
   }

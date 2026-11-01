@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
-import Script from "next/script";
+import { CookieConsentPanel } from "@/components/cookie-consent";
 import { CheckoutRecoveryPrompt } from "@/components/checkout-recovery-prompt";
-import { FloatingThemeToggle } from "@/components/floating-theme-toggle";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MarketingStickyCta } from "@/components/marketing-sticky-cta";
 import { Providers } from "@/components/providers";
 import { getServerDirection, getServerLanguage } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
+import "@fontsource/dm-sans/400.css";
+import "@fontsource/dm-sans/500.css";
+import "@fontsource/dm-sans/600.css";
+import "@fontsource/dm-sans/700.css";
+import "@fontsource/instrument-serif/latin-400-italic.css";
 import "./globals.css";
+import "./refresh.css";
+import "./editorial.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.domain),
@@ -82,42 +88,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <head>
         <link rel="canonical" href={canonicalUrl} />
         {maintenanceMode ? <meta name="robots" content="noindex,nofollow" /> : null}
-        {!hideGlobalChrome ? (
-          <>
-            <Script
-              id="google-adsense"
-              src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5993485576421978"
-              strategy="lazyOnload"
-              crossOrigin="anonymous"
-            />
-            <Script src="https://www.googletagmanager.com/gtag/js?id=G-806S0CWRWX" strategy="lazyOnload" />
-            <Script id="google-analytics" strategy="lazyOnload">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', 'G-806S0CWRWX');
-              `}
-            </Script>
-            {process.env.NEXT_PUBLIC_CLARITY_ID ? (
-              <Script id="microsoft-clarity" strategy="lazyOnload">
-                {`
-                  (function(c,l,a,r,i,t,y){
-                    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-                  })(window, document, "clarity", "script", "${process.env.NEXT_PUBLIC_CLARITY_ID}");
-                `}
-              </Script>
-            ) : null}
-          </>
-        ) : null}
+
       </head>
-      <body suppressHydrationWarning>
+      <body className={currentPath.startsWith("/admin") ? "admin-site" : currentPath.startsWith("/app") ? "application-site" : currentPath.startsWith("/auth") ? "auth-site" : "public-site"} suppressHydrationWarning>
         {/* Prevent flash of wrong theme — runs synchronously before React hydration */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('speakace-theme');if(t==='dark'||t==='light'){document.body.dataset.theme=t;}else{document.body.dataset.theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}}catch(e){}})();`
+            __html: `(function(){try{if(document.body.classList.contains('public-site')||document.body.classList.contains('auth-site')){document.body.dataset.theme='light';return;}var t=localStorage.getItem('speakace-theme');if(t==='dark'||t==='light'){document.body.dataset.theme=t;}else{document.body.dataset.theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}}catch(e){}})();`
           }}
         />
         <Providers initialLanguage={language}>
@@ -173,8 +150,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           />
           {!hideGlobalChrome ? <SiteHeader /> : null}
           {children}
+          {!hideGlobalChrome ? <CookieConsentPanel /> : null}
           {!hideGlobalChrome ? <CheckoutRecoveryPrompt /> : null}
-          {!hideGlobalChrome ? <FloatingThemeToggle /> : null}
           {!hideGlobalChrome ? <MarketingStickyCta /> : null}
           {!hideGlobalChrome ? <SiteFooter /> : null}
         </Providers>

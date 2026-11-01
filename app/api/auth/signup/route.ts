@@ -1,3 +1,5 @@
+import { CONSENT_COOKIE, parseCookieConsent } from "@/lib/cookie-consent";
+import { hasRequiredAccountConsent } from "@/lib/account-consent";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
@@ -18,13 +20,15 @@ import { getPrivacySafeAnalyticsId } from "@/lib/server/analytics-identity";
 import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  let body;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
+  if (!body || !hasRequiredAccountConsent(body)) return NextResponse.json({ error: "Please accept the Terms of Use and acknowledge the Privacy Notice before creating an account." }, { status: 400 });
   const email = String(body.email ?? "").trim().toLowerCase();
   const posthog = getPostHogClient();
   const analyticsId = getPrivacySafeAnalyticsId("signup", email);
 
   try {
-    const exposeAuthUrls = process.env.APP_ENV !== "production";
+    const exposeAuthUrls = process.env.NODE_ENV !== "production" && process.env.APP_ENV !== "production";
     const ip = getRequestIp(request);
     const limit = checkRateLimit({
       key: `signup:${ip}`,
@@ -41,6 +45,7 @@ export async function POST(request: Request) {
     }
 
     const profile = await signUpWithPassword({
+      consent: { legalAccepted: true, marketingConsent: body.marketingConsent === true },
       email: body.email ?? "",
       password: body.password ?? "",
       name: body.name ?? "",
@@ -85,7 +90,7 @@ export async function POST(request: Request) {
       : "";
     const safePath = rawPath ? (rawPath.startsWith("/") ? rawPath : `/${rawPath}`) : "/auth/signup";
     try {
-      await trackAnalyticsEvent({
+      if (parseCookieConsent(cookieStore.get(CONSENT_COOKIE)?.value)?.analytics) await trackAnalyticsEvent({
         userId: profile.id,
         visitorId,
         event: "signup_completed",

@@ -21,8 +21,9 @@ function parseDataUrl(dataUrl: string) {
     throw new Error("Invalid audio payload.");
   }
 
-  const mimeMatch = header.match(/^data:(.+);base64$/);
-  const mimeType = mimeMatch?.[1] ?? "audio/webm";
+  const mimeMatch = header.match(/^data:(audio\/[a-z0-9.+-]+(?:;codecs=[a-z0-9.,-]+)?);base64$/i);
+  if (!mimeMatch || !/^[A-Za-z0-9+/]+={0,2}$/.test(body)) throw new Error("Invalid audio payload.");
+  const mimeType = mimeMatch[1];
   return {
     mimeType,
     buffer: Buffer.from(body, "base64")
@@ -85,8 +86,7 @@ export async function transcribeAudio({
   clearTimeout(timeout);
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`OpenAI transcription failed: ${text}`);
+    throw new Error(await getOpenAiServiceError(response));
   }
 
   const data = (await response.json()) as {
@@ -230,8 +230,7 @@ export async function generateFeedbackReport({
 
   clearTimeout(feedbackTimeout);
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`OpenAI feedback failed: ${text}`);
+    throw new Error(await getOpenAiServiceError(response));
   }
 
   const data = (await response.json()) as {
@@ -371,8 +370,7 @@ export async function generateWritingFeedbackReport({
 
   clearTimeout(writingTimeout);
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`OpenAI writing feedback failed: ${text}`);
+    throw new Error(await getOpenAiServiceError(response));
   }
 
   const data = (await response.json()) as {
@@ -429,4 +427,11 @@ function buildToeflSystemPrompt(taskType: string) {
     return "You are a TOEFL iBT Speaking evaluator simulator. Evaluate only from the transcript. This is TOEFL Task 3, an academic concept plus example summary. Judge concept accuracy, clarity, and how well the example is explained. Use a 0-4 scale. Return strict JSON only.";
   }
   return "You are a TOEFL iBT Speaking evaluator simulator. Evaluate only from the transcript. This is TOEFL Task 4, a lecture summary. Judge whether the response clearly identifies the main topic and organizes the lecture's main points accurately. Use a 0-4 scale. Return strict JSON only.";
+}
+
+async function getOpenAiServiceError(response: Response) {
+  // Never expose provider response bodies, credentials, or submitted content.
+  if (response.status === 401 || response.status === 403) return "AI service authentication is unavailable. Please contact support.";
+  if (response.status === 429) return "AI service capacity is temporarily unavailable. Please retry later.";
+  return "AI processing is temporarily unavailable. Please retry your saved recording.";
 }

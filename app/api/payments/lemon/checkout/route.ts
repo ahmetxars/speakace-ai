@@ -1,3 +1,4 @@
+import { CONSENT_COOKIE, parseCookieConsent } from "@/lib/cookie-consent";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
@@ -55,6 +56,7 @@ function normalizeCheckoutParam(value: string | null, maxLength: number) {
 }
 
 function applyCheckoutCookies(input: {
+  analyticsAllowed: boolean;
   response: NextResponse;
   existingVisitorId: string | null;
   visitorId: string;
@@ -66,7 +68,7 @@ function applyCheckoutCookies(input: {
   billing: CheckoutBillingInterval;
   checkoutId: string;
 }) {
-  if (!input.existingVisitorId) {
+  if (input.analyticsAllowed && !input.existingVisitorId) {
     input.response.cookies.set(ANALYTICS_VISITOR_COOKIE, input.visitorId, {
       httpOnly: true,
       sameSite: "lax",
@@ -112,14 +114,15 @@ export async function GET(request: Request) {
   const ctaEvent = normalizeCheckoutParam(searchParams.get("cta_event"), 80);
   const checkoutId = normalizeCheckoutId(searchParams.get("checkout_id")) ?? crypto.randomUUID();
   const cookieStore = await cookies();
+  const analyticsAllowed = parseCookieConsent(cookieStore.get(CONSENT_COOKIE)?.value)?.analytics === true;
   const token = cookieStore.get(getSessionCookieName())?.value;
   const profile = await getAuthenticatedUser(token);
-  const existingVisitorId = normalizeAnalyticsVisitorId(
+  const existingVisitorId = analyticsAllowed ? normalizeAnalyticsVisitorId(
     cookieStore.get(ANALYTICS_VISITOR_COOKIE)?.value
-  );
+  ) : null;
   const visitorId = existingVisitorId ?? crypto.randomUUID();
 
-  if (isVerifiedCheckoutNavigation(request)) {
+  if (analyticsAllowed && isVerifiedCheckoutNavigation(request)) {
     try {
       await trackAnalyticsEvent({
         userId: profile?.id,
@@ -165,6 +168,7 @@ export async function GET(request: Request) {
 
   const response = NextResponse.redirect(checkoutUrl || commerceConfig.plusMonthlyCheckout);
   return applyCheckoutCookies({
+    analyticsAllowed,
     response,
     existingVisitorId,
     visitorId,

@@ -1769,7 +1769,7 @@ export async function listAdminMembers(): Promise<AdminMemberRecord[]> {
       (
         select count(*)::int
         from speaking_sessions ss
-        where ss.user_id = u.id
+        where ss.user_id = u.id and ss.audio_uploaded = true
       ) as total_practice_sessions,
       (
         select round(avg(fr.overall_score), 1)
@@ -2050,27 +2050,29 @@ export async function listInstitutionBreakdown(): Promise<AdminInstitutionRecord
 
   const sql = getSql();
   const rows = await sql<AdminInstitutionRecord[]>`
-    select
-      coalesce(nullif(trim(u.organization_name), ''), 'Independent') as "organizationName",
-      count(*) filter (where u.member_type = 'teacher')::int as teachers,
-      count(*) filter (where u.member_type = 'student')::int as students,
-      count(*) filter (where u.member_type = 'school')::int as schools,
-      (
-        select round(avg(fr.overall_score), 1)
-        from speaking_sessions ss
-        inner join feedback_reports fr on fr.session_id = ss.id
-        inner join users su on su.id = ss.user_id
-        where coalesce(nullif(trim(su.organization_name), ''), 'Independent') = coalesce(nullif(trim(u.organization_name), ''), 'Independent')
-      ) as "averageScore",
-      (
-        select count(*)::int
-        from speaking_sessions ss
-        inner join users su on su.id = ss.user_id
-        where coalesce(nullif(trim(su.organization_name), ''), 'Independent') = coalesce(nullif(trim(u.organization_name), ''), 'Independent')
-      ) as "totalSessions"
-    from users u
-    group by coalesce(nullif(trim(u.organization_name), ''), 'Independent')
-    order by students desc, teachers desc, "organizationName" asc
+    with normalized_users as (
+      select id, member_type, coalesce(nullif(trim(organization_name), ''), 'Independent') as organization_name
+      from users
+    ), organization_counts as (
+      select organization_name,
+        count(*) filter (where member_type = 'teacher')::int as teachers,
+        count(*) filter (where member_type = 'student')::int as students,
+        count(*) filter (where member_type = 'school')::int as schools
+      from normalized_users group by organization_name
+    ), practice_totals as (
+      select u.organization_name, count(*)::int as total_sessions,
+        round(avg(fr.overall_score), 1) as average_score
+      from normalized_users u
+      join speaking_sessions ss on ss.user_id = u.id
+      left join feedback_reports fr on fr.session_id = ss.id
+      where ss.audio_uploaded = true
+      group by u.organization_name
+    )
+    select o.organization_name as "organizationName", o.teachers, o.students, o.schools,
+      p.average_score as "averageScore", coalesce(p.total_sessions, 0)::int as "totalSessions"
+    from organization_counts o
+    left join practice_totals p on p.organization_name = o.organization_name
+    order by o.students desc, o.teachers desc, o.organization_name asc
   `;
 
   return rows.map((row) => ({

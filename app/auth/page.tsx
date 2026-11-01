@@ -1,4 +1,5 @@
 "use client";
+import { ACCOUNT_LEGAL_VERSION } from "@/lib/account-consent";
 
 import type { Route } from "next";
 import Link from "next/link";
@@ -178,6 +179,10 @@ function AuthPageInner() {
   const [mode, setMode] = useState<"signin" | "signup">(
     searchParams.get("mode") === "signup" ? "signup" : "signin"
   );
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -221,6 +226,13 @@ function AuthPageInner() {
   }, []);
 
   const submit = async () => {
+    if (submitting) return;
+    if (mode === "signup" && (!termsAccepted || !privacyAcknowledged)) {
+      setError(tr ? "Hesap açmadan önce kullanım koşullarını kabul et ve gizlilik bildirimini okuduğunu belirt." : "Accept the Terms of Use and acknowledge the Privacy Notice to create an account.");
+      return;
+    }
+    setSubmitting(true);
+    try {
     setError("");
     setNotice("");
     setSuccessToast("");
@@ -231,6 +243,7 @@ function AuthPageInner() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email,
+        termsAccepted, privacyAcknowledged, marketingConsent, legalVersion: ACCOUNT_LEGAL_VERSION,
         password,
         name,
         memberType,
@@ -327,6 +340,8 @@ function AuthPageInner() {
       return;
     }
     router.push((requestedNext ?? (mode === "signup" && memberType === "student" ? "/app/onboarding" : "/app")) as Route);
+    } catch { setError(tr ? "Bağlantı kurulamadı. Lütfen tekrar dene." : "Could not connect. Please try again."); }
+    finally { setSubmitting(false); }
   };
 
   useEffect(() => {
@@ -429,6 +444,8 @@ function AuthPageInner() {
   const isResetMode = Boolean(resetToken);
   const isSignup = !isResetMode && mode === "signup";
   const googleParams = new URLSearchParams();
+  if (termsAccepted && privacyAcknowledged) googleParams.set("legalVersion", ACCOUNT_LEGAL_VERSION);
+  if (marketingConsent) googleParams.set("marketingConsent", "true");
   googleParams.set("mode", mode);
   if (safeNext) {
     googleParams.set("next", safeNext);
@@ -459,7 +476,9 @@ function AuthPageInner() {
   }
 
   const googleErrorMessage =
-    authError === "google_not_configured"
+    authError === "consent_required"
+      ? tr ? "Yeni hesabını oluşturmak için kullanım koşulları ve gizlilik bildirimini onaylayıp Google ile tekrar devam et." : "To create your new account, acknowledge the Terms and Privacy Notice, then continue with Google again."
+      : authError === "google_not_configured"
       ? tr
         ? "Google ile giriş henüz yapılandırılmamış. Yönetici önce Google OAuth ayarlarını tamamlamalı."
         : "Google sign-in is not configured yet. An admin needs to finish the Google OAuth setup first."
@@ -592,6 +611,7 @@ function AuthPageInner() {
             <>
               <a
                 href={`/api/auth/google${googleParams.size ? `?${googleParams.toString()}` : ""}`}
+                onClick={(event) => { if (isSignup && (!termsAccepted || !privacyAcknowledged)) { event.preventDefault(); setError(tr ? "Önce aşağıdaki kullanım ve gizlilik onaylarını tamamla." : "Complete the Terms and Privacy acknowledgements below first."); } }}
                 className="auth-google-button"
               >
                 <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -726,6 +746,12 @@ function AuthPageInner() {
               </small>
             </label>
 
+            {isSignup && <div className="auth-consent-fields">
+              <label><input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} /><span><Link href="/terms" target="_blank">{tr ? "Kullanım koşullarını" : "Terms of Use"}</Link>{tr ? " okudum ve kabul ediyorum." : " — I have read and accept these terms."}</span></label>
+              <label><input type="checkbox" checked={privacyAcknowledged} onChange={(event) => setPrivacyAcknowledged(event.target.checked)} /><span><Link href="/privacy-policy" target="_blank">{tr ? "Gizlilik ve KVKK aydınlatma metnini" : "Privacy Notice"}</Link>{tr ? " okudum; hesap ve pratik verilerimin nasıl işlendiğini biliyorum." : " — I understand how my account and practice data are processed."}</span></label>
+              <label><input type="checkbox" checked={marketingConsent} onChange={(event) => setMarketingConsent(event.target.checked)} /><span>{tr ? "Pratik önerileri ve SpeakAce teklifleri içeren e-postalar almak istiyorum. İsteğe bağlı; her zaman abonelikten çıkabilirim." : "Email me practice tips and SpeakAce offers. Optional; I can unsubscribe anytime."}</span></label>
+              <p>{tr ? "Doğrulama, parola ve hizmetle ilgili gerekli e-postalar bu isteğe bağlı izinden bağımsızdır." : "Essential verification, password and service emails are separate from this optional choice."}</p>
+            </div>}
             {error ? <p className="auth-inline-message auth-inline-error">{error}</p> : null}
             {googleErrorMessage ? <p className="auth-inline-message auth-inline-error">{googleErrorMessage}</p> : null}
             {notice ? <p className="auth-inline-message auth-inline-notice">{notice}</p> : null}
@@ -753,8 +779,8 @@ function AuthPageInner() {
                   {ui.reset}
                 </button>
               ) : (
-                <button className="button button-primary auth-submit" type="button" onClick={submit}>
-                  {isSignup ? ui.create : ui.signIn}
+                <button className="button button-primary auth-submit" type="button" onClick={submit} disabled={submitting}>
+                  {submitting ? (tr ? "Bekle…" : "Please wait…") : isSignup ? ui.create : ui.signIn}
                 </button>
               )}
               <Link className="button button-secondary auth-guest" href="/app/practice">

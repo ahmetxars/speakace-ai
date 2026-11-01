@@ -1,7 +1,17 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { trackClientEvent } from "@/lib/analytics-client";
 
 describe("trackClientEvent", () => {
+  beforeEach(() => {
+    vi.stubGlobal("document", { cookie: `speakace_consent=${encodeURIComponent(JSON.stringify({version:"2026-11-01",analytics:true,savedAt:Date.now()}))}` });
+  });
+  it("sends no analytics before opt-in", async () => {
+    vi.stubGlobal("document", { cookie: "" });
+    const fetchMock = vi.fn(); const sendBeacon = vi.fn();
+    vi.stubGlobal("fetch", fetchMock); vi.stubGlobal("navigator", {sendBeacon});
+    await trackClientEvent({event:"pricing_view",path:"/pricing"});
+    expect(fetchMock).not.toHaveBeenCalled(); expect(sendBeacon).not.toHaveBeenCalled();
+  });
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();

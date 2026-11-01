@@ -1,3 +1,5 @@
+import { ACCOUNT_LEGAL_VERSION, type AccountConsent } from "@/lib/account-consent";
+import { ensureAccountConsentSchema } from "@/lib/server/account-consent";
 import { createHash, randomBytes } from "node:crypto";
 import { compare, hash } from "bcryptjs";
 import { cookies } from "next/headers";
@@ -142,6 +144,7 @@ export async function getAuthenticatedUserFromCookies() {
 }
 
 export async function signUpWithPassword(input: {
+  consent?: AccountConsent;
   email: string;
   password: string;
   name: string;
@@ -193,6 +196,7 @@ export async function signUpWithPassword(input: {
   const autoVerified = isAdminEmail(normalizedEmail);
 
   if (hasDatabaseUrl()) {
+    await ensureAccountConsentSchema();
     const sql = getSql();
     const existing = await sql<{ id: string }[]>`
       select id from users where email = ${normalizedEmail} limit 1
@@ -204,12 +208,18 @@ export async function signUpWithPassword(input: {
     const rows = await sql<MemberProfile[]>`
       insert into users (
         id, email, name, role, member_type, organization_name, plan, password_hash, email_verified,
-        admin_access, teacher_access, billing_status, trial_ends_at, referral_code_used, created_at
+        admin_access, teacher_access, billing_status, trial_ends_at, referral_code_used, created_at,
+        terms_accepted_at, privacy_acknowledged_at, legal_version, marketing_consent_at, email_opt_out
       )
       values (
         ${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.memberType}, ${profile.organizationName ?? null},
         ${profile.plan}, ${passwordHash}, ${autoVerified}, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false},
-        ${profile.billingStatus ?? "free"}, ${profile.trialEndsAt ?? null}, ${profile.referralCodeUsed ?? null}, ${profile.createdAt}
+        ${profile.billingStatus ?? "free"}, ${profile.trialEndsAt ?? null}, ${profile.referralCodeUsed ?? null}, ${profile.createdAt},
+        ${input.consent?.legalAccepted ? new Date().toISOString() : null},
+        ${input.consent?.legalAccepted ? new Date().toISOString() : null},
+        ${input.consent?.legalAccepted ? ACCOUNT_LEGAL_VERSION : null},
+        ${input.consent?.legalAccepted && input.consent?.marketingConsent ? new Date().toISOString() : null},
+        ${!(input.consent?.legalAccepted && input.consent?.marketingConsent)}
       )
       returning
         id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan,
@@ -226,6 +236,7 @@ export async function signUpWithPassword(input: {
 }
 
 export async function signUpWithGoogle(input: {
+  consent?: AccountConsent;
   email: string;
   name?: string;
   memberType?: MemberProfile["memberType"];
@@ -271,6 +282,7 @@ export async function signUpWithGoogle(input: {
   });
 
   if (hasDatabaseUrl()) {
+    await ensureAccountConsentSchema();
     const sql = getSql();
     const existing = await sql<{ id: string }[]>`
       select id from users where email = ${normalizedEmail} limit 1
@@ -282,12 +294,18 @@ export async function signUpWithGoogle(input: {
     const rows = await sql<MemberProfile[]>`
       insert into users (
         id, email, name, role, member_type, organization_name, plan, password_hash, email_verified,
-        admin_access, teacher_access, billing_status, trial_ends_at, referral_code_used, created_at
+        admin_access, teacher_access, billing_status, trial_ends_at, referral_code_used, created_at,
+        terms_accepted_at, privacy_acknowledged_at, legal_version, marketing_consent_at, email_opt_out
       )
       values (
         ${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.memberType}, ${profile.organizationName ?? null},
         ${profile.plan}, null, true, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false},
-        ${profile.billingStatus ?? "free"}, ${profile.trialEndsAt ?? null}, ${profile.referralCodeUsed ?? null}, ${profile.createdAt}
+        ${profile.billingStatus ?? "free"}, ${profile.trialEndsAt ?? null}, ${profile.referralCodeUsed ?? null}, ${profile.createdAt},
+        ${input.consent?.legalAccepted ? new Date().toISOString() : null},
+        ${input.consent?.legalAccepted ? new Date().toISOString() : null},
+        ${input.consent?.legalAccepted ? ACCOUNT_LEGAL_VERSION : null},
+        ${input.consent?.legalAccepted && input.consent?.marketingConsent ? new Date().toISOString() : null},
+        ${!(input.consent?.legalAccepted && input.consent?.marketingConsent)}
       )
       returning
         id, email, name, role, member_type as "memberType", organization_name as "organizationName", plan,

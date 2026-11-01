@@ -39,10 +39,18 @@ function analyticsRequest(event: string, path = "/pricing") {
 describe("analytics tracking policy", () => {
   beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
-    mocks.cookieGet.mockReturnValue({ value: "visitor-1234567890" });
+    mocks.cookieGet.mockImplementation((name: string) => ({ value: name === "speakace_consent" ? encodeURIComponent(JSON.stringify({ version: "2026-11-01", analytics: true, savedAt: Date.now() })) : "visitor-1234567890" }));
     mocks.getAuthenticatedUserFromCookies.mockResolvedValue(null);
     mocks.checkRateLimit.mockReturnValue({ allowed: true, retryAfterSeconds: 0 });
     mocks.getRequestIp.mockReturnValue("127.0.0.1");
+  });
+
+  it("ignores tracking and expires the visitor cookie without consent", async () => {
+    mocks.cookieGet.mockReturnValue(undefined);
+    const response = await POST(analyticsRequest("pricing_view"));
+    expect(response.status).toBe(204);
+    expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
   });
 
   it("records public pricing events without requiring an account", async () => {

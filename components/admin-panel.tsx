@@ -1,4 +1,5 @@
 "use client";
+import { AdminServiceCheck } from "@/components/admin-service-check";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -445,7 +446,7 @@ function AdminDailyOverview({
     },
     {
       label: "PostHog",
-      detail: systemHealth.posthogConfigured ? "Harici event akışı bağlı" : "Anahtar eksik; birinci taraf verisi çalışıyor",
+      detail: systemHealth.posthogConfigured ? "Harici event akışı bağlı" : "Harici izleme kapalı; analitik yalnızca izinle çalışır",
       ready: systemHealth.posthogConfigured
     }
   ];
@@ -633,6 +634,8 @@ function AdminDailyOverview({
 }
 
 export function AdminPanel(props: {
+  dataErrors?: string[];
+  overviewUnavailable?: boolean;
   sessionLabel: string;
   systemHealth: AdminSystemHealth;
   overview: AdminOverview;
@@ -1349,9 +1352,12 @@ export function AdminPanel(props: {
 
         {/* Content */}
         <main className="adm-content">
+          {activeTab === "system" && <AdminServiceCheck />}
+          {Boolean(props.dataErrors?.length) && <div className="adm-data-alert" role="alert"><strong>Bazı bilgiler yüklenemedi.</strong><p>{props.dataErrors?.join(", ")}. Bu bölümlerde görünen boş değerler gerçek bir sıfır değildir.</p><button className="button button-secondary" type="button" onClick={() => router.refresh()}>Yeniden dene</button></div>}
+
 
           {/* ── OVERVIEW TAB ─────────────────────── */}
-          {activeTab === "overview" && (
+          {activeTab === "overview" && !props.overviewUnavailable && (
             <AdminDailyOverview
               overview={props.overview}
               members={props.members}

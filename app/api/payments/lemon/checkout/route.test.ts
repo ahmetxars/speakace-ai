@@ -37,7 +37,7 @@ describe("Lemon checkout redirect", () => {
     mocks.getAuthenticatedUser.mockReset();
     mocks.trackAnalyticsEvent.mockReset();
     mocks.cookieGet.mockImplementation((name: string) =>
-      name === "speakace_session"
+      name === "speakace_consent" ? { value: encodeURIComponent(JSON.stringify({version:"2026-11-01",analytics:true,savedAt:Date.now()})) } : name === "speakace_session"
         ? { value: "session-token" }
         : { value: "visitor-1234567890" }
     );
@@ -46,6 +46,14 @@ describe("Lemon checkout redirect", () => {
       email: "learner@example.com",
       name: "Learner"
     });
+  });
+
+  it("allows checkout without optional analytics or a visitor cookie", async () => {
+    mocks.cookieGet.mockReturnValue(undefined);
+    const response = await GET(checkoutNavigationRequest("https://speakace.org/api/payments/lemon/checkout?plan=plus"));
+    expect(response.status).toBe(307);
+    expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
+    expect(response.headers.get("set-cookie") || "").not.toContain("speakace_visitor_id");
   });
 
   it("records an authenticated checkout from its attributed CTA", async () => {

@@ -41,6 +41,15 @@ export default async function AdminPage() {
         listAdminCustomBlogPosts()
       ]);
 
+    const resultLabels = ["Genel bakış", "Üyeler", "Ödemeler", "Giriş hareketleri", "Referans kodları", "Kurumlar", "İçerikler"];
+    const dataResults = [overviewResult, membersResult, billingEventsResult, authActivityResult, referralCodesResult, institutionsResult, customPostsResult];
+    const dataErrors = dataResults.flatMap((result, index) => {
+      if (result.status !== "rejected") return [];
+      const code = typeof result.reason?.code === "string" ? result.reason.code : "QUERY_FAILED";
+      console.error("[admin data]", resultLabels[index], code);
+      return [`${resultLabels[index]} (${code})`];
+    });
+    const overviewUnavailable = overviewResult.status === "rejected";
     const overview =
       overviewResult.status === "fulfilled"
         ? overviewResult.value
@@ -196,9 +205,7 @@ export default async function AdminPage() {
       emailLegalIdentityConfigured: emailConfiguration.legalIdentityConfigured,
       commercialEmailConfigured: emailConfiguration.ready,
       analyticsConfigured: process.env.NEXT_PUBLIC_ENABLE_ANALYTICS !== "false",
-      posthogConfigured:
-        process.env.NEXT_PUBLIC_ENABLE_ANALYTICS !== "false"
-        && Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim()),
+      posthogConfigured: false,
       lifecycleDailyBudget: resolveEmailLifecycleDailyBudget()
     };
 
@@ -228,6 +235,8 @@ export default async function AdminPage() {
 
     return (
       <AdminPanel
+        dataErrors={dataErrors}
+        overviewUnavailable={overviewUnavailable}
         sessionLabel={payload.sessionLabel}
         systemHealth={payload.systemHealth}
         overview={payload.overview}

@@ -1,5 +1,20 @@
 # PROJECT_CONTEXT.md
 
+
+## November 2026 restoration
+
+See `docs/2026-11-restoration.md` for the implementation and verification record. The React homepage is now `components/editorial-home.tsx`, with scoped `app/editorial.css`; `app/refresh.css` owns shared identity and cookie/auth controls. Fonts are local Fontsource assets. Public/auth pages use the light paper identity while retaining the workspace theme preference.
+
+`components/cookie-consent.tsx` and `lib/cookie-consent.ts` gate optional first-party analytics. Third-party GA/AdSense/Clarity/PostHog and `/ingest` proxies are disabled. Never re-enable a tracker before consent. Signup stores separate versioned Terms/Privacy acknowledgements and optional marketing consent using `lib/server/account-consent.ts`. All lifecycle email selectors and send paths require recorded marketing consent. Existing users are not backfilled.
+
+Privacy identity may be a named individual; the privacy page does not require publishing a home address. Commercial email still requires both real sender name and postal address. Cookie approval, account terms and optional email marketing are separate choices.
+
+`listInstitutionBreakdown` now uses normalized aggregation CTEs; the previous PostgreSQL 42803 was confirmed against production. Admin partial-query failures are visible. `/api/admin/services` is an authenticated, rate-limited synthetic provider check. Transcription failures return 503 and release a new quota reservation, without generated transcripts; production evaluation requires real text.
+
+Signed-in `Providers.updatePlan` refreshes billing state with GET; it never requests a client-selected paid entitlement. Corrupt stale browser profiles are discarded during session bootstrap.
+
+The speaking upload/evaluate and writing submit/evaluate routes are present. Earlier “not found” observations below describe outdated exploration, not the current route tree.
+
 ## Overview
 
 SpeakAce AI is a single-repo Next.js 15 application for AI-assisted English speaking and writing practice, primarily around IELTS and TOEFL preparation.

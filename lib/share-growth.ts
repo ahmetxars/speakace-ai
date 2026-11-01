@@ -1,3 +1,4 @@
+import { hasAnalyticsConsent } from "@/lib/cookie-consent";
 import { ExamType } from "@/lib/types";
 
 export const SHARE_ATTRIBUTION_STORAGE_KEY = "speakace-share-attribution";
@@ -34,7 +35,7 @@ export function buildSharePricingHref(slug: string) {
 }
 
 export function getShareAttributionFromStorage() {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined" || !hasAnalyticsConsent()) return null;
   try {
     const raw = window.localStorage.getItem(SHARE_ATTRIBUTION_STORAGE_KEY);
     if (!raw) return null;
@@ -46,7 +47,7 @@ export function getShareAttributionFromStorage() {
 }
 
 export function persistShareAttribution(path: string) {
-  if (typeof window === "undefined" || !path.startsWith("/share/")) return;
+  if (typeof window === "undefined" || !hasAnalyticsConsent() || !path.startsWith("/share/")) return;
   try {
     window.localStorage.setItem(
       SHARE_ATTRIBUTION_STORAGE_KEY,

@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    typedRoutes: true
-  },
+  typedRoutes: true,
+  outputFileTracingRoot: process.cwd(),
   eslint: {
     ignoreDuringBuilds: false
   },
@@ -13,11 +12,11 @@ const nextConfig: NextConfig = {
   async headers() {
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://eu.i.posthog.com https://eu-assets.i.posthog.com https://www.googletagmanager.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' ",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://eu.i.posthog.com https://eu-assets.i.posthog.com https://api.resend.com wss:",
+      "connect-src 'self' wss:",
       "media-src 'self' blob:",
       "frame-src 'none'",
       "object-src 'none'",
@@ -40,22 +39,6 @@ const nextConfig: NextConfig = {
     ];
   },
   skipTrailingSlashRedirect: true,
-  async rewrites() {
-    return [
-      {
-        source: "/ingest/static/:path*",
-        destination: "https://eu-assets.i.posthog.com/static/:path*"
-      },
-      {
-        source: "/ingest/array/:path*",
-        destination: "https://eu-assets.i.posthog.com/array/:path*"
-      },
-      {
-        source: "/ingest/:path*",
-        destination: "https://eu.i.posthog.com/:path*"
-      }
-    ];
-  },
   async redirects() {
     return [
       {

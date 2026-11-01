@@ -47,22 +47,14 @@ describe("PostHog server configuration", () => {
     expect(mocks.PostHog).not.toHaveBeenCalled();
   });
 
-  it("initializes the configured EU client once", async () => {
+  it("keeps external server tracking disabled even with a key", async () => {
     vi.stubEnv("NEXT_PUBLIC_ENABLE_ANALYTICS", "true");
     vi.stubEnv("NEXT_PUBLIC_POSTHOG_KEY", "phc_test");
-    vi.stubEnv("NEXT_PUBLIC_POSTHOG_HOST", "");
     const { getPostHogClient, isPostHogConfigured } = await import("@/lib/posthog-server");
-
-    const firstClient = getPostHogClient();
-    const secondClient = getPostHogClient();
-
-    expect(isPostHogConfigured()).toBe(true);
-    expect(firstClient).toBe(secondClient);
-    expect(mocks.PostHog).toHaveBeenCalledTimes(1);
-    expect(mocks.PostHog).toHaveBeenCalledWith("phc_test", {
-      host: "https://eu.i.posthog.com",
-      flushAt: 1,
-      flushInterval: 0
-    });
+    const client = getPostHogClient();
+    client.capture({ distinctId: "user-1", event: "test" });
+    expect(isPostHogConfigured()).toBe(false);
+    expect(mocks.PostHog).not.toHaveBeenCalled();
+    expect(mocks.capture).not.toHaveBeenCalled();
   });
 });

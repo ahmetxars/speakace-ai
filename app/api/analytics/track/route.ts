@@ -1,3 +1,4 @@
+import { CONSENT_COOKIE, parseCookieConsent } from "@/lib/cookie-consent";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { AnalyticsEventName, trackAnalyticsEvent } from "@/lib/analytics-store";
@@ -66,6 +67,12 @@ const ALLOWED_EVENTS = new Set<AnalyticsEventName>([
 
 export async function POST(request: Request) {
   try {
+    const consentStore = await cookies();
+    if (!parseCookieConsent(consentStore.get(CONSENT_COOKIE)?.value)?.analytics) {
+      const response = new NextResponse(null, { status: 204 });
+      response.cookies.set(ANALYTICS_VISITOR_COOKIE, "", { path: "/", maxAge: 0 });
+      return response;
+    }
     const body = await request.json();
     const event = typeof body.event === "string" ? body.event : "";
     if (!ALLOWED_EVENTS.has(event as AnalyticsEventName)) {

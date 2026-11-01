@@ -1,3 +1,4 @@
+import { hasAnalyticsConsent } from "@/lib/cookie-consent";
 import type { AnalyticsEventName } from "@/lib/analytics-store";
 import { canTrackAnalyticsAnonymously } from "@/lib/analytics-policy";
 
@@ -30,7 +31,7 @@ const GA_EVENT_MAP: Partial<Record<AnalyticsEventName, string>> = {
 };
 
 export async function trackClientEvent(input: ClientAnalyticsInput) {
-  if (process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === "false") return;
+  if (process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === "false" || !hasAnalyticsConsent()) return;
 
   const occurredAt = new Date().toISOString();
   const eventId = input.eventId ?? (typeof crypto !== "undefined" ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
