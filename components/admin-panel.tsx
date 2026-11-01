@@ -1235,9 +1235,7 @@ export function AdminPanel(props: {
       {/* ── Sidebar ─────────────────────────────── */}
       <aside className="adm-sidebar">
         <div className="adm-brand">
-          <div className="adm-brand-icon">
-            <Mic2 size={18} />
-          </div>
+          <div className="adm-brand-icon" aria-hidden="true">≋</div>
           {!sidebarCollapsed && (
             <div className="adm-brand-copy">
               <span className="adm-brand-name">SpeakAce</span>

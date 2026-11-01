@@ -25,9 +25,9 @@ export function NotificationsCenter() {
 
   return (
     <div className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
-      <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.8rem" }}>
+      <section className="workspace-page-intro">
         <span className="eyebrow">{tr ? "Bildirimler" : "Notifications"}</span>
-        <h1 style={{ margin: 0 }}>{tr ? "Action center" : "Action center"}</h1>
+        <h1 style={{ margin: 0 }}>{tr ? "Bildirimlerin." : "Your notifications."}</h1>
         <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
           {tr ? "Homework, onay, risk ve günlük görev bildirimleri burada toplanır." : "Homework, approval, risk, and daily mission notifications are collected here."}
         </p>

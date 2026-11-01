@@ -58,13 +58,13 @@ export function ImprovementHub() {
 
   return (
     <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
-      <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "0.85rem" }}>
-        <span className="eyebrow">Improvement hub</span>
-        <h1 style={{ margin: 0 }}>{tr ? "SpeakAce growth OS" : "SpeakAce growth OS"}</h1>
+      <section className="workspace-page-intro">
+        <span className="eyebrow">{tr ? "GELİŞİM ALANIN" : "YOUR IMPROVEMENT SPACE"}</span>
+        <h1 style={{ margin: 0 }}>{tr ? "Gelişimine yön ver." : "Give your progress direction."}</h1>
         <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
           {tr
-            ? "Placement, kişisel plan, band ilerlemesi, hata defteri, retry döngüsü, mock exam, teacher mode, reminder sistemi, referral ve proof katmanı burada birleşir."
-            : "Placement, personal planning, band progress, mistakes, retry mode, mock exam, teacher mode, reminders, referral, and proof all connect here."}
+            ? "Hedefini belirle, önceki cevaplarından öğren ve bugünkü çalışman için tek bir odak seç."
+            : "Set your target, learn from previous answers and choose one focus for today's practice."}
         </p>
       </section>
 

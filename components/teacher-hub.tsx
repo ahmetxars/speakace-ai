@@ -519,7 +519,7 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
             ) : (
               <>
             <section className="teacher-workspace-kpis" aria-label={tr ? "Genel istatistikler" : "Overview metrics"}>
-              <TeacherStat label={tr ? "Sınıf" : "Classes"} value={String(dashboardAnalytics?.totalClasses ?? classes.length)} />
+              <TeacherStat label={tr ? "Sınıf" : "Classes"} value={String(classes.length)} />
               <TeacherStat label={tr ? "Aktif öğrenci" : "Active students"} value={String(dashboardAnalytics?.activeStudents ?? 0)} detail={`${dashboardAnalytics?.totalStudents ?? 0} ${tr ? "toplam" : "total"}`} />
               <TeacherStat label={tr ? "Sınıf ortalaması" : "Class average"} value={dashboardAnalytics?.averageScore ? dashboardAnalytics.averageScore.toFixed(1) : "-"} />
               <TeacherStat
@@ -552,7 +552,7 @@ export function TeacherHub({ initialClassId }: { initialClassId?: string }) {
                 ) : (
                   <WorkspaceEmpty
                     title={tr ? "Henüz sınıf aktivitesi yok" : "No class activity yet"}
-                    body={tr ? "İlk sınıfını oluşturduğunda aktivite burada görünecek." : "Activity will appear here after you create your first class."}
+                    body={tr ? "Öğrenciler pratiklerini tamamladıkça sınıf aktivitesi burada görünecek." : "Activity will appear here as learners complete their practice."}
                   />
                 )}
               </article>

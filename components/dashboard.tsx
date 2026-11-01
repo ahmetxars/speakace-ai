@@ -50,7 +50,7 @@ type RecordingRecoveryStatus = {
 
 export function Dashboard() {
   const router = useRouter();
-  const { signedIn, currentUser, language, signOut } = useAppState();
+  const { signedIn, currentUser, language } = useAppState();
   const tr = language === "tr";
   const [summary, setSummary] = useState<ProgressSummary>(emptySummary);
   const [loadingSummary, setLoadingSummary] = useState(true);
@@ -382,7 +382,7 @@ export function Dashboard() {
       return {
         icon: "mic" as const,
         badge: tr ? "Başlangıç" : "Get started",
-        headline: tr ? "İlk speaking pratiğini başlat" : "Start your first speaking practice",
+        headline: tr ? "İlk konuşma pratiğini başlat" : "Start your first speaking practice",
         context: tr
           ? "İlk oturum yaklaşık 5 dakika sürer. Sistem skor ortalamanı ve gelişim alanlarını buradan takip etmeye başlar."
           : "Your first session takes about 5 minutes. The system begins tracking your scores and growth areas from session one.",
@@ -594,7 +594,7 @@ export function Dashboard() {
       ? `${summary.totalSessions} deneme tamamlandi, seri ${summary.streakDays} gun oldu.`
       : `${summary.totalSessions} sessions completed, and your streak is now ${summary.streakDays} days.`
     : tr
-      ? "Bugun ilk denemeni atip dashboardu veriyle doldurmaya baslayabilirsin."
+      ? "Bugün kısa bir pratikle başla. Skorlarını ve gelişim alanlarını burada takip et."
       : "Start your first attempt today and begin filling the dashboard with real data.";
   const trialEndsAt = currentUser?.trialEndsAt ? new Date(currentUser.trialEndsAt) : null;
   const hasValidTrialEnd = Boolean(trialEndsAt && !Number.isNaN(trialEndsAt.getTime()));
@@ -684,6 +684,72 @@ export function Dashboard() {
 
   return (
     <div className="page-shell section db-page">
+
+      {/* HERO */}
+      <section className="db-hero card">
+        <div className="db-hero-copy">
+          <span className="eyebrow">{tr ? "ÇALIŞMA DEFTERİN" : "YOUR LEARNING JOURNAL"}</span>
+          <h1 className="db-hero-name">
+            {firstName
+              ? tr ? `Merhaba, ${firstName}` : `Hi, ${firstName}`
+              : tr ? "Hos geldin" : "Welcome back"}
+          </h1>
+          <p className="db-hero-status">{heroStatus}</p>
+          <div className="db-hero-actions">
+            <Link className="button button-primary" href="/app/practice">
+              <Mic size={15} />
+              {tr ? "Pratiğe başla" : "Start practice"}
+            </Link>
+            <Link className="button button-secondary" href="/app/profile">
+              {tr ? "Profil" : "Profile"}
+            </Link>
+          </div>
+        </div>
+        <Link className="workspace-daily-card" href={nextAction.href}>
+          <span>{tr ? "BİR SONRAKİ ADIMIN" : "YOUR NEXT STEP"}<ArrowRight size={16} /></span>
+          <strong>{nextAction.headline}</strong>
+          <p>{nextAction.context}</p>
+          <span>{nextAction.cta}<ArrowRight size={16} /></span>
+        </Link>
+        <div className="db-hero-stats">
+          {loadingSummary ? (
+            <>
+              <div className="db-hero-stat db-hero-stat-primary"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
+              <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
+              <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
+              <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
+            </>
+          ) : (
+            <>
+              <div className="db-hero-stat db-hero-stat-primary">
+                <span className="db-hero-stat-label">{tr ? "ortalama skor" : "avg score"}</span>
+                <strong>{summary.averageScore || "—"}</strong>
+                {scoreGap !== null ? (
+                  <span className="db-gap-badge" data-positive={scoreGap <= 0 ? "true" : "false"}>
+                    {scoreGap <= 0
+                      ? (tr ? "hedefte" : "on target")
+                      : `−${scoreGap} ${tr ? "hedefe" : "to goal"}`}
+                  </span>
+                ) : null}
+              </div>
+              <div className="db-hero-stat">
+                <Target size={14} />
+                <strong>{targetScore || "—"}</strong>
+                <span>{targetLabel}</span>
+              </div>
+              <div className="db-hero-stat">
+                <Flame size={14} />
+                <strong>{summary.streakDays}</strong>
+                <span>{tr ? "günlük seri" : "day streak"}</span>
+              </div>
+              <div className="db-hero-stat">
+                <strong>{summary.totalSessions}</strong>
+                <span>{tr ? "toplam" : "sessions"}</span>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
 
       {/* TRIAL VALUE PROOF */}
       {showTrialValueProof ? (
@@ -872,90 +938,6 @@ export function Dashboard() {
         </section>
       ) : null}
 
-      {/* HERO */}
-      <section className="db-hero card">
-        <div className="db-hero-copy">
-          <span className="eyebrow">{tr ? "Ogrenci dashboard" : "Student dashboard"}</span>
-          <h1 className="db-hero-name">
-            {firstName
-              ? tr ? `Merhaba, ${firstName}` : `Hi, ${firstName}`
-              : tr ? "Hos geldin" : "Welcome back"}
-          </h1>
-          <p className="db-hero-status">{heroStatus}</p>
-          <div className="db-hero-actions">
-            <Link className="button button-primary" href="/app/practice">
-              <Mic size={15} />
-              {tr ? "Speaking baslat" : "Start practice"}
-            </Link>
-            <Link className="button button-secondary" href="/app/profile">
-              {tr ? "Profil" : "Profile"}
-            </Link>
-            <button className="button button-secondary" type="button" onClick={signedIn ? signOut : undefined}>
-              {signedIn ? (tr ? "Cikis" : "Sign out") : tr ? "Misafir" : "Guest"}
-            </button>
-          </div>
-        </div>
-        <div className="db-hero-stats">
-          {loadingSummary ? (
-            <>
-              <div className="db-hero-stat db-hero-stat-primary"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
-              <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
-              <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
-              <div className="db-hero-stat"><div className="skeleton skeleton-stat" style={{ width: "3rem" }} /></div>
-            </>
-          ) : (
-            <>
-              <div className="db-hero-stat db-hero-stat-primary">
-                <span className="db-hero-stat-label">{tr ? "ort skor" : "avg score"}</span>
-                <strong>{summary.averageScore || "—"}</strong>
-                {scoreGap !== null ? (
-                  <span className="db-gap-badge" data-positive={scoreGap <= 0 ? "true" : "false"}>
-                    {scoreGap <= 0
-                      ? (tr ? "hedefte" : "on target")
-                      : `−${scoreGap} ${tr ? "hedefe" : "to goal"}`}
-                  </span>
-                ) : null}
-              </div>
-              <div className="db-hero-stat">
-                <Target size={14} />
-                <strong>{targetScore || "—"}</strong>
-                <span>{targetLabel}</span>
-              </div>
-              <div className="db-hero-stat">
-                <Flame size={14} />
-                <strong>{summary.streakDays}</strong>
-                <span>{tr ? "gün seri" : "day streak"}</span>
-              </div>
-              <div className="db-hero-stat">
-                <strong>{summary.totalSessions}</strong>
-                <span>{tr ? "toplam" : "sessions"}</span>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* DECISION STRIP */}
-      {!loadingSummary ? (
-        <section className="db-decision-strip card" data-variant={nextAction.variant}>
-          <div className="db-decision-badge">
-            {nextAction.icon === "flame" ? <Flame size={14} /> :
-             nextAction.icon === "book" ? <BookOpenCheck size={14} /> :
-             nextAction.icon === "target" ? <Target size={14} /> :
-             nextAction.icon === "sparkles" ? <Sparkles size={14} /> :
-             <Mic size={14} />}
-            <span>{nextAction.badge}</span>
-          </div>
-          <div className="db-decision-content">
-            <strong>{nextAction.headline}</strong>
-            <p>{nextAction.context}</p>
-          </div>
-          <Link className="button button-primary db-decision-cta" href={nextAction.href}>
-            {nextAction.cta}
-          </Link>
-        </section>
-      ) : null}
-
       {/* PERSONALIZED INSIGHT */}
       {profile?.onboardingComplete && (profile?.englishBackground || profile?.biggestChallenge) ? (
         <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.7rem" }}>
@@ -982,9 +964,9 @@ export function Dashboard() {
       {/* PROGRESS & HISTORY */}
       <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "1rem" }}>
         <div className="dashboard-section-head">
-          <span className="eyebrow">{tr ? "Gecmis & ilerleme" : "Progress & history"}</span>
+          <span className="eyebrow">{tr ? "Geçmiş ve ilerleme" : "Progress & history"}</span>
           <Link href="/app/analytics" style={{ fontSize: "0.85rem", color: "var(--muted)", textDecoration: "none" }}>
-            {tr ? "Tum gecmis →" : "View all →"}
+            {tr ? "Tüm geçmiş →" : "View all →"}
           </Link>
         </div>
         {summary.recentSessions.length ? (
@@ -1073,7 +1055,7 @@ export function Dashboard() {
           {/* STREAK CALENDAR */}
           <div className="card db-streak-card">
             <div className="dashboard-section-head">
-              <span className="eyebrow">{tr ? "Son 7 gun" : "Last 7 days"}</span>
+              <span className="eyebrow">{tr ? "Son 7 gün" : "Last 7 days"}</span>
               <span className="dashboard-chip">{summary.streakDays}d</span>
             </div>
             <div className="db-streak-grid">
@@ -1092,14 +1074,14 @@ export function Dashboard() {
           {signedIn && !currentUser?.isTeacher ? (
             <div className="card db-class-card">
               <div className="dashboard-section-head">
-                <span className="eyebrow">{tr ? "Sinif ve odevler" : "Class & homework"}</span>
+                <span className="eyebrow">{tr ? "Sınıf ve ödevler" : "Class & homework"}</span>
                 {(pendingHomeworkCount + classCount) > 0 ? (
                   <span className="dashboard-chip">{pendingHomeworkCount + classCount}</span>
                 ) : null}
               </div>
 
               <div className="db-join-block">
-                <strong>{tr ? "Sinifa katil" : "Join a class"}</strong>
+                <strong>{tr ? "Sınıfa katıl" : "Join a class"}</strong>
                 <div className="dashboard-join-row">
                   <input
                     value={joinCode}
@@ -1107,7 +1089,7 @@ export function Dashboard() {
                     placeholder={tr ? "Kod gir" : "Enter code"}
                   />
                   <button type="button" className="button button-primary" onClick={joinClass}>
-                    {tr ? "Katil" : "Join"}
+                    {tr ? "Katıl" : "Join"}
                   </button>
                 </div>
                 {joinNotice ? <p className="dashboard-success-copy">{joinNotice}</p> : null}

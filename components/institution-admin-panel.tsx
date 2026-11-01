@@ -287,7 +287,7 @@ export function InstitutionAdminPanel() {
 
   return (
     <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
-      <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.65rem" }}>
+      <section className="workspace-page-intro">
         <span className="eyebrow">{tr ? "Institution control" : "Institution control"}</span>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", flexWrap: "wrap" }}>
           <div>

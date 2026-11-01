@@ -1,0 +1,475 @@
+/* SpeakAce learning workspace — shares the editorial site's paper, ink and cobalt. */
+body.application-site {
+  --background: #f5f4ee;
+  --bg: #f5f4ee;
+  --bg-strong: #eeeee4;
+  --foreground: #202722;
+  --text: #202722;
+  --card: #fcfcf8;
+  --card-foreground: #202722;
+  --surface: #fcfcf8;
+  --surface-strong: #eeeee5;
+  --popover: #fcfcf8;
+  --popover-foreground: #202722;
+  --primary: #3155df;
+  --primary-foreground: #fff;
+  --accent: #3155df;
+  --accent-foreground: #fff;
+  --accent-cool: #3155df;
+  --sa-accent: #3155df;
+  --sa-accent-deep: #2442b9;
+  --sa-accent-cool: #3155df;
+  --secondary: #eeeee5;
+  --secondary-foreground: #202722;
+  --muted: #687064;
+  --muted-foreground: #687064;
+  --line: #d9ddd1;
+  --border: #d9ddd1;
+  --input: #d9ddd1;
+  --highlight: #e5edab;
+  --workspace-blue-wash: #eaf0ff;
+  --shadow: none;
+  --radius: 6px;
+  --radius-xl: 8px;
+  --radius-lg: 8px;
+  --radius-md: 5px;
+  --max-width: 1280px;
+  color: var(--foreground);
+  background: var(--background);
+  font: 400 15px/1.6 "DM Sans", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body.application-site[data-theme="dark"] {
+  --background: #17241e;
+  --bg: #17241e;
+  --bg-strong: #1b2c23;
+  --foreground: #f1f2e9;
+  --text: #f1f2e9;
+  --card: #1e3026;
+  --card-foreground: #f1f2e9;
+  --surface: #1e3026;
+  --surface-strong: #263a2e;
+  --popover: #1e3026;
+  --popover-foreground: #f1f2e9;
+  --primary: #b4c0ff;
+  --primary-foreground: #17241e;
+  --accent: #dfe8a8;
+  --accent-foreground: #202722;
+  --accent-cool: #b4c0ff;
+  --sa-accent: #b4c0ff;
+  --sa-accent-deep: #c6ceff;
+  --sa-accent-cool: #b4c0ff;
+  --secondary: #263a2e;
+  --secondary-foreground: #edf0e5;
+  --muted: #acb8a7;
+  --muted-foreground: #acb8a7;
+  --line: #3b4b3e;
+  --border: #3b4b3e;
+  --input: #3b4b3e;
+  --workspace-blue-wash: #2b3a49;
+}
+body.application-site *, body.application-site *::before, body.application-site *::after { box-sizing: border-box; }
+body.application-site button, body.application-site input, body.application-site select, body.application-site textarea { font-family: inherit; }
+body.application-site a, body.application-site button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+body.application-site :is(a, button, input, textarea, select, summary):focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+body.application-site ::selection { background: #e5edab; color: #202722; }
+body.application-site .app-shell { min-height: calc(100dvh - 138px); padding-top: 0; }
+body.application-site .app-main { padding-bottom: 0; min-width: 0; outline: none; }
+body.application-site .page-shell { width: min(1280px, calc(100% - 96px)); margin-inline: auto; }
+body.application-site .section { padding-top: 52px; padding-bottom: 96px; }
+body.application-site .card { background: var(--surface); border: 1px solid var(--border); border-radius: 7px; box-shadow: none; }
+body.application-site .card:hover { box-shadow: none; }
+body.application-site .button { min-height: 44px; border-radius: 5px; padding: 11px 19px; gap: 9px; font-size: 13px; font-weight: 600; line-height: 1.4; box-shadow: none; transition: background 160ms ease, color 160ms ease, transform 160ms ease; }
+body.application-site .button-primary { background: var(--accent); color: var(--accent-foreground); border: 1px solid transparent; box-shadow: none; }
+body.application-site .button-primary:hover { filter: brightness(.95); box-shadow: none; transform: translateY(-1px); }
+body.application-site .button-secondary { background: transparent; border: 1px solid var(--border); color: var(--foreground); }
+body.application-site .button-secondary:hover { background: var(--secondary); border-color: var(--muted); box-shadow: none; }
+body.application-site .button:active { transform: translateY(1px); }
+body.application-site .eyebrow { background: none; border: 0; padding: 0; border-radius: 0; font-size: 10px; letter-spacing: .13em; font-weight: 600; color: var(--muted); }
+body.application-site .app-main h1 { font-family: "Instrument Serif", Georgia, serif; font-weight: 400 !important; font-size: clamp(38px, 4.8vw, 64px) !important; line-height: 1.02; letter-spacing: -.035em; text-wrap: balance; color: var(--foreground); }
+body.application-site .app-main :is(h2,h3) { font-family: "DM Sans", sans-serif; letter-spacing: -.025em; font-weight: 500; }
+body.application-site .app-main h2 { font-size: 23px; }
+body.application-site .app-main p { text-wrap: pretty; }
+body.application-site .app-main :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) { border: 1px solid var(--border); border-radius: 5px; background: var(--surface); color: var(--foreground); min-height: 44px; box-shadow: none; font-size: 14px; }
+body.application-site .app-main :is(input, textarea)::placeholder { color: var(--muted); opacity: .85; }
+body.application-site .app-main strong { font-weight: 600; }
+
+/* Persistent, direct navigation replaces the old marketing mega-menu. */
+.workspace-header { position: sticky; top: 0; z-index: 70; background: var(--background); border-bottom: 1px solid var(--line); }
+.workspace-topbar { width: min(1280px, calc(100% - 96px)); margin: auto; min-height: 83px; display: flex; align-items: center; gap: 25px; }
+.workspace-brand { color: var(--foreground); text-decoration: none; display: inline-flex; align-items: center; font-size: 24px; font-weight: 650; letter-spacing: -1px; white-space: nowrap; }
+.workspace-brand > span { width: 33px; height: 34px; display: grid; place-items: center; background: #3155df; color: #fff; font-size: 24px; border-radius: 8px 8px 8px 1px; margin-right: 10px; }
+.workspace-brand i { color: #3155df; font-style: normal; }
+.workspace-edition { border-left: 1px solid var(--line); padding-left: 24px; color: var(--muted); font-size: 11px; }
+.workspace-tools { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+.workspace-resource-link { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); text-decoration: none; font-size: 12px; margin-right: 12px; }
+.workspace-tools > select { border: 0; padding: 5px; font-size: 11px; color: var(--muted); background: transparent; cursor: pointer; }
+.workspace-tools > select option { background: var(--surface); color: var(--foreground); }
+.workspace-icon-button { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; }
+.workspace-icon-button:hover { background: var(--secondary); color: var(--foreground); }
+.workspace-account { position: relative; margin-left: 8px; }
+.workspace-account summary { display: flex; align-items: center; gap: 9px; cursor: pointer; list-style: none; font-size: 12px; }
+.workspace-account summary::-webkit-details-marker { display: none; }
+.workspace-account-name { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspace-avatar { display: grid; place-items: center; width: 33px; height: 33px; background: var(--highlight); color: #202722; border: 1px solid #cbd496; border-radius: 50%; font-size: 13px; }
+.workspace-account-menu { position: absolute; right: 0; top: calc(100% + 17px); width: 238px; padding: 8px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 12px 32px #0b211818; border-radius: 7px; }
+.workspace-account-caption { padding: 11px 10px 14px; border-bottom: 1px solid var(--line); margin-bottom: 6px; font-size: 13px; overflow-wrap: anywhere; }
+.workspace-account-caption small { display: block; color: var(--muted); font-size: 9px; letter-spacing: .12em; margin-top: 4px; }
+.workspace-account-menu a, .workspace-account-menu button { display: flex; align-items: center; gap: 10px; padding: 10px; width: 100%; border: 0; background: transparent; color: var(--foreground); font-size: 12px; text-decoration: none; text-align: left; border-radius: 3px; cursor: pointer; }
+.workspace-account-menu :is(a,button):hover { background: var(--secondary); }
+.workspace-account-menu button { border-top: 1px solid var(--line); margin-top: 5px; padding-top: 14px; }
+.workspace-navigation-wrap { border-top: 1px solid var(--line); }
+.workspace-navigation { width: min(1280px, calc(100% - 96px)); margin: auto; display: flex; align-items: stretch; gap: 31px; min-height: 54px; }
+.workspace-navigation a { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 15px 0; font-size: 12px; color: var(--muted); border-bottom: 2px solid transparent; text-decoration: none; white-space: nowrap; transition: color 160ms ease; }
+.workspace-navigation a:hover { color: var(--foreground); }
+.workspace-navigation a[aria-current="page"] { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.workspace-navigation .workspace-profile-link { margin-left: auto; }
+.workspace-skip { position: fixed; top: -100px; left: 20px; padding: 12px 18px; color: #fff; background: #3155df; z-index: 90; }
+.workspace-skip:focus { top: 12px; }
+
+/* The journal: an open editorial greeting, one real next action, four quiet metrics. */
+body.application-site .db-page { display: grid; gap: 28px; }
+body.application-site .db-hero { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(300px,.75fr); gap: 30px 60px; padding: 0 0 34px; background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; }
+body.application-site .db-hero-copy { gap: 13px; align-content: center; padding-block: 20px; }
+body.application-site .db-hero-name { margin: 0; }
+body.application-site .db-hero-status { font-size: 14px; max-width: 500px; line-height: 1.8; }
+body.application-site .db-hero-actions { margin-top: 7px; }
+.workspace-daily-card { background: var(--highlight); color: #202722; border: 1px solid #d1d99b; padding: 27px; border-radius: 6px; display: grid; gap: 13px; text-decoration: none; align-content: start; }
+.workspace-daily-card > span:first-child { display: flex; align-items: center; justify-content: space-between; font-size: 9px; font-weight: 600; letter-spacing: .13em; }
+.workspace-daily-card > strong { font: 400 30px/1.1 "Instrument Serif", Georgia, serif; letter-spacing: -.5px; }
+.workspace-daily-card > p { margin: 0; color: #566047; font-size: 12px; line-height: 1.7; }
+.workspace-daily-card > span:last-child { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; border-top: 1px solid #bac584; padding-top: 14px; margin-top: 4px; }
+.workspace-daily-card:hover { background: #dce6a0; }
+body.application-site .db-hero-stats { grid-column: 1/-1; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 0; padding-top: 25px; border-top: 1px solid var(--line); }
+body.application-site .db-hero-stat, body.application-site .db-hero-stat-primary { border: 0; border-radius: 0; background: transparent; padding: 0 24px; text-align: left; align-content: center; justify-items: start; box-shadow: none; gap: 8px; }
+body.application-site .db-hero-stat:first-child { padding-left: 0; }
+body.application-site .db-hero-stat + .db-hero-stat { border-left: 1px solid var(--line); }
+body.application-site .db-hero-stat strong { font: 400 38px/1 "Instrument Serif", Georgia, serif; color: var(--foreground); font-variant-numeric: tabular-nums; }
+body.application-site .db-hero-stat > svg { display: none; }
+body.application-site .db-hero-stat span { font-size: 10px; color: var(--muted); }
+body.application-site .db-body-grid { grid-template-columns: minmax(0,1.6fr) minmax(280px,.8fr); gap: 28px; }
+body.application-site .db-left-col, body.application-site .db-sidebar { gap: 22px; }
+body.application-site .db-banner { padding: 22px 25px; border-radius: 6px; background: var(--workspace-blue-wash) !important; border-color: var(--line) !important; }
+body.application-site .db-focus-card { background: var(--surface); padding: 28px; }
+body.application-site .db-roadmap-block { border: 0; border-radius: 4px; background: var(--secondary); padding: 20px; }
+body.application-site .db-roadmap-block strong { color: var(--foreground); }
+body.application-site .db-workspace-grid { gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+body.application-site .db-workspace-card { border: 0; border-radius: 0; border-right: 1px solid var(--line); padding: 22px; background: var(--surface); box-shadow: none; transform: none; }
+body.application-site .db-workspace-card:last-child { border-right: 0; }
+body.application-site .db-workspace-card:hover { background: var(--secondary); transform: none; box-shadow: none; }
+body.application-site .db-workspace-icon { border-radius: 4px; background: transparent; padding: 0; width: auto; color: var(--primary); }
+body.application-site .db-workspace-card strong { font-size: 15px; }
+body.application-site .db-workspace-card p { font-size: 12px; }
+body.application-site .db-workspace-cta { color: var(--primary); font-size: 11px; }
+body.application-site .db-streak-day > div { border-radius: 4px; background: var(--secondary); border-color: var(--line); }
+body.application-site .db-streak-day > div[data-active="true"] { background: var(--highlight); color: #202722; border-color: #c8d38c; }
+body.application-site .dashboard-chip, body.application-site .db-gap-badge { border-radius: 3px; background: var(--secondary); border: 0; color: var(--muted); }
+
+/* Speaking studio: numbered setup, a compact exam desk, and a prompt list. */
+body.application-site .practice-workbench { display: grid; grid-template-columns: minmax(0,1fr) 320px; align-items: start; gap: 28px 36px; }
+.practice-page-heading { grid-column: 1/-1; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+.practice-page-heading .eyebrow { display: block; margin-bottom: 15px; }
+.practice-page-heading h1 { margin: 0 0 14px; }
+.practice-page-heading p { margin: 0; color: var(--muted); font-size: 14px; }
+.practice-step-guide { display: flex; grid-column: 1/-1; list-style: none; margin: 0 0 4px; padding: 0; gap: 35px; }
+.practice-step-guide li { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 11px; }
+.practice-step-guide span { display: grid; place-items: center; width: 25px; height: 25px; border: 1px solid var(--line); border-radius: 50%; color: var(--primary); font-size: 9px; }
+.practice-mode-section { grid-column: 1/-1; display: grid; gap: 14px; }
+.practice-modes { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.practice-mode-option { position: relative; display: grid; gap: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--foreground); border-radius: 6px; padding: 22px; text-align: left; cursor: pointer; }
+.practice-mode-option strong { font-size: 14px; padding-right: 20px; }
+.practice-mode-option > span { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.practice-mode-option::after { content: ""; position: absolute; right: 18px; top: 24px; height: 13px; width: 13px; border: 1px solid var(--line); border-radius: 50%; }
+.practice-mode-option[aria-pressed="true"] { border-color: var(--primary); background: var(--workspace-blue-wash); }
+.practice-mode-option[aria-pressed="true"]::after { border: 4px solid var(--primary); }
+.practice-mode-option:hover:not(:disabled) { border-color: var(--primary); }
+.practice-mock-card { grid-column: 2; grid-row: 4 / span 2; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 22px; }
+.practice-mock-card.is-active { border-color: var(--primary); background: var(--workspace-blue-wash); }
+.practice-mock-card > div:first-child { padding: 0 !important; }
+.practice-mock-card p { font-size: 12px !important; }
+.practice-mock-card.is-active { grid-column: 1/-1; grid-row: auto; }
+.practice-exam-section { grid-column: 1; display: grid; gap: 17px; }
+.practice-exam-switch { display: flex; gap: 0; border-bottom: 1px solid var(--line); }
+.practice-exam-switch button { border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); padding: 8px 24px 12px; font-size: 16px; font-weight: 500; cursor: pointer; }
+.practice-exam-switch button[aria-pressed="true"] { border-bottom-color: var(--primary); color: var(--primary); }
+.practice-task-switch { display: flex; flex-wrap: wrap; gap: 8px; }
+.practice-task-switch button { padding: 8px 15px; border: 1px solid var(--line); border-radius: 4px; background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; }
+.practice-task-switch button[aria-pressed="true"] { border-color: var(--primary); color: var(--primary); background: var(--workspace-blue-wash); }
+.practice-topic-section { grid-column: 1; display: grid; gap: 18px; }
+.practice-topic-options { display: grid; border-top: 1px solid var(--line); }
+.practice-prompt-row { display: flex; align-items: center; gap: 20px; padding: 21px 0; border-bottom: 1px solid var(--line); }
+.practice-prompt-row > span { font: 400 27px "Instrument Serif", serif; color: var(--muted); }
+.practice-prompt-row > div { min-width: 0; flex: 1; }
+.practice-prompt-row strong { display: block; font-size: 14px; margin-bottom: 5px; }
+.practice-prompt-row small { color: var(--muted); font-size: 10px; }
+.practice-prompt-row .button { min-height: 36px; padding: 8px 16px; font-size: 11px; }
+body.application-site .practice-workbench > :is(details,button), body.application-site .practice-workbench > .practice-meta { grid-column: 1; }
+body.application-site .practice-overlay-panel { background: var(--surface); color: var(--foreground); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 24px 90px #10221930; }
+body.application-site .practice-overlay-number { font-family: "Instrument Serif", serif; color: var(--primary); }
+
+/* Shared page anatomy: profile, review, plan and improvement views. */
+body.application-site .inside-page { display: grid; gap: 30px; }
+body.application-site .inside-header { border: 0; border-bottom: 1px solid var(--line); background: transparent; box-shadow: none; padding: 0 0 32px; border-radius: 0; }
+body.application-site .inside-header::before { display: none; }
+body.application-site .inside-kicker { color: var(--muted); font-size: 10px; letter-spacing: .12em; font-weight: 500; }
+body.application-site .inside-title { margin-top: 12px; }
+body.application-site .inside-lede { font-size: 14px; line-height: 1.8; color: var(--muted); max-width: 650px; }
+body.application-site .inside-avatar { background: var(--highlight); color: #202722; border: 1px solid #c9d294; border-radius: 6px; box-shadow: none; width: 76px; height: 88px; font: 400 35px "Instrument Serif", serif; }
+body.application-site .inside-metric-strip { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; padding-bottom: 25px; }
+body.application-site .inside-metric { padding: 8px 26px; }
+body.application-site .inside-metric:first-child { padding-left: 0; }
+body.application-site .inside-metric-value { font: 400 39px/1.1 "Instrument Serif", serif; color: var(--foreground); font-variant-numeric: tabular-nums; }
+body.application-site .inside-metric-label, body.application-site .inside-metric-note { font-size: 10px; color: var(--muted); }
+body.application-site .inside-layout { gap: 32px; }
+body.application-site .inside-section { background: var(--surface); border: 1px solid var(--line); box-shadow: none; border-radius: 6px; padding: 28px; }
+body.application-site .inside-section.is-accent { background: var(--workspace-blue-wash); border-color: var(--line); }
+body.application-site .inside-section.is-warm { background: var(--secondary); border-color: var(--line); }
+body.application-site .inside-section-head { padding-bottom: 22px; margin-bottom: 22px; border-bottom: 1px solid var(--line); }
+body.application-site .inside-section-head h2, body.application-site .inside-section-head h3 { margin-top: 8px; font-size: 21px; font-weight: 500; }
+body.application-site .inside-section-copy { color: var(--muted); font-size: 12px; line-height: 1.75; }
+body.application-site .inside-field-label { font-size: 12px; font-weight: 600; }
+body.application-site .inside-field-help { font-size: 11px; color: var(--muted); }
+body.application-site .inside-day, body.application-site .inside-filter button { border-radius: 4px; color: var(--muted); background: transparent; border: 1px solid var(--line); }
+body.application-site .inside-day.is-active, body.application-site .inside-filter .is-active { color: var(--primary); background: var(--workspace-blue-wash); border-color: var(--primary); box-shadow: none; }
+body.application-site .inside-empty { border-radius: 5px; background: transparent; padding: 40px 20px; border: 1px dashed var(--line); }
+body.application-site .inside-empty h3 { font: 400 30px "Instrument Serif", serif; }
+body.application-site .inside-row { background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 21px 0; }
+body.application-site .inside-row:hover { background: var(--secondary); box-shadow: none; transform: none; }
+body.application-site .inside-savebar { background: var(--background); border: 0; border-top: 1px solid var(--line); border-radius: 0; padding: 20px 0; box-shadow: none; }
+
+/* Writing is a paper desk, with the prompt index beside an open draft. */
+body.application-site .writing-studio { padding-block: 45px 90px; }
+body.application-site .writing-studio-head { padding-bottom: 28px; border-bottom: 1px solid var(--line); }
+body.application-site .writing-studio-title-row { gap: 25px; }
+body.application-site .writing-studio-title-row h1 { margin: 12px 0; }
+body.application-site .writing-studio-title-row p { font-size: 14px; color: var(--muted); max-width: 620px; }
+body.application-site .writing-studio-kicker { color: var(--muted); font-size: 10px; letter-spacing: .1em; }
+body.application-site .writing-task-switcher { background: transparent; border: 1px solid var(--line); padding: 4px; border-radius: 5px; }
+body.application-site .writing-task-switcher a { border-radius: 3px; font-size: 12px; }
+body.application-site .writing-task-switcher a[aria-current="page"] { background: var(--workspace-blue-wash); color: var(--primary); box-shadow: none; }
+body.application-site .writing-studio-grid { grid-template-columns: 300px minmax(0,1fr); gap: 32px; margin-top: 30px; }
+body.application-site .writing-prompt-panel { background: transparent; padding: 0; border: 0; border-radius: 0; box-shadow: none; }
+body.application-site .writing-panel-heading { border-bottom: 1px solid var(--line); padding: 0 0 18px; }
+body.application-site .writing-panel-heading small { background: transparent; border: 0; border-radius: 0; color: var(--muted); }
+body.application-site .writing-difficulty-field { background: transparent; border: 0; padding: 10px 0; border-radius: 0; }
+body.application-site .writing-prompt-options { gap: 0; }
+body.application-site .writing-prompt-options button { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; padding: 19px 10px; box-shadow: none; transform: none; }
+body.application-site .writing-prompt-options button.is-active { background: var(--workspace-blue-wash); border-left: 2px solid var(--primary); box-shadow: none; }
+body.application-site .writing-prompt-options button strong { font-size: 12px; font-weight: 500; }
+body.application-site .writing-prompt-options button p { font-size: 11px; line-height: 1.65; color: var(--muted); }
+body.application-site .writing-prompt-options button > span { font: 400 24px "Instrument Serif", serif; }
+body.application-site .writing-editor-panel { border-radius: 6px; padding: 30px; background: var(--surface); border: 1px solid var(--line); box-shadow: none; }
+body.application-site .writing-editor-head h2 { font: 400 30px/1.1 "Instrument Serif", serif; margin-top: 8px; }
+body.application-site .writing-editor-status { background: transparent; padding: 0; color: var(--muted); font-size: 10px; }
+body.application-site .writing-task-brief { background: var(--secondary); border: 0; border-left: 2px solid var(--primary); border-radius: 0; padding: 19px; margin-top: 25px; }
+body.application-site .writing-task-brief p { font-size: 13px; line-height: 1.8; }
+body.application-site .writing-editor-panel textarea { border: 0; border-radius: 0; background: transparent; padding: 15px 0; line-height: 2; font-size: 15px; min-height: 330px; }
+body.application-site .writing-editor-meta { color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+body.application-site .writing-progress-track { height: 3px; border-radius: 0; background: var(--secondary); }
+body.application-site .writing-progress-track > span { background: var(--primary); }
+body.application-site .writing-editor-footer { border: 0; background: transparent; padding: 22px 0 0; }
+body.application-site .writing-live-check span { color: var(--primary); font-size: 10px; }
+body.application-site .writing-live-check p { color: var(--muted); font-size: 12px; }
+body.application-site .writing-hub-hero, body.application-site .writing-hub-task { background: var(--surface); box-shadow: none; border-radius: 6px; }
+body.application-site .writing-result-columns .card { padding: 25px !important; }
+body.application-site .teacher-class-card, body.application-site .teacher-student-card { background: var(--surface); border-radius: 6px; box-shadow: none; }
+
+@media (max-width: 1100px) {
+  .workspace-edition { display: none; }
+  .workspace-navigation { gap: 23px; }
+  .workspace-navigation a { font-size: 11px; gap: 6px; }
+  body.application-site .practice-workbench { grid-template-columns: minmax(0,1fr) 270px; gap: 25px; }
+}
+@media (max-width: 900px) {
+  body.application-site .page-shell, .workspace-topbar, .workspace-navigation { width: calc(100% - 48px); }
+  body.application-site .db-hero { gap: 28px; }
+  body.application-site .db-body-grid { grid-template-columns: minmax(0,1fr); }
+  body.application-site .db-sidebar { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  body.application-site .db-class-card { grid-column: 1/-1; }
+  body.application-site .practice-workbench { grid-template-columns: minmax(0,1fr); }
+  .practice-mock-card { grid-column: 1; grid-row: auto; }
+  body.application-site .writing-studio-grid { grid-template-columns: 240px minmax(0,1fr); gap: 20px; }
+  body.application-site .writing-editor-panel { padding: 22px; }
+  .workspace-navigation-wrap { overflow-x: auto; scrollbar-width: none; }
+  .workspace-navigation-wrap::-webkit-scrollbar { display: none; }
+  .workspace-navigation { min-width: 720px; margin-inline: 24px; }
+}
+@media (max-width: 640px) {
+  body.application-site .page-shell, .workspace-topbar { width: calc(100% - 36px); }
+  .workspace-topbar { min-height: 70px; gap: 8px; }
+  .workspace-brand { font-size: 21px; }
+  .workspace-brand > span { width: 28px; height: 30px; font-size: 21px; margin-right: 7px; }
+  .workspace-resource-link, .workspace-account-name, .workspace-tools > .workspace-icon-button { display: none; }
+  .workspace-tools { gap: 6px; }
+  .workspace-account { margin-left: 2px; }
+  .workspace-account summary { gap: 6px; }
+  .workspace-navigation { gap: 24px; margin-inline: 18px; min-height: 48px; min-width: 690px; }
+  .workspace-navigation a { padding-block: 14px; font-size: 11px; }
+  .workspace-navigation .workspace-profile-link { margin-left: 0; }
+  body.application-site .section { padding-block: 32px 70px; }
+  body.application-site .app-main h1 { font-size: 44px !important; }
+  body.application-site .db-hero { grid-template-columns: minmax(0,1fr); gap: 24px; }
+  body.application-site .db-hero-copy { padding: 0; }
+  .workspace-daily-card { padding: 23px; }
+  body.application-site .db-hero-stats { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  body.application-site .db-hero-stat, body.application-site .db-hero-stat-primary { padding-inline: 12px; gap: 5px; }
+  body.application-site .db-hero-stat:first-child { padding-left: 0; }
+  body.application-site .db-hero-stat strong { font-size: 29px; }
+  body.application-site .db-hero-stat span { font-size: 8px; }
+  body.application-site .db-sidebar { grid-template-columns: minmax(0,1fr); }
+  body.application-site .db-banner { padding: 20px; }
+  body.application-site .db-workspace-grid { grid-template-columns: minmax(0,1fr); }
+  body.application-site .db-workspace-card { border: 0; border-bottom: 1px solid var(--line); }
+  body.application-site .db-workspace-card:last-child { border-bottom: 0; }
+  .practice-modes { grid-template-columns: minmax(0,1fr); gap: 8px; }
+  .practice-mode-option { padding: 18px; gap: 5px; }
+  .practice-mode-option::after { top: 20px; }
+  .practice-step-guide { gap: 15px; justify-content: space-between; }
+  .practice-step-guide li { font-size: 9px; gap: 5px; }
+  .practice-step-guide span { width: 22px; height: 22px; }
+  .practice-prompt-row { gap: 12px; }
+  .practice-prompt-row strong { font-size: 12px; }
+  body.application-site .inside-header { padding-bottom: 25px; gap: 20px; }
+  body.application-site .inside-section { padding: 21px; }
+  body.application-site .inside-metric { padding: 10px 14px; }
+  body.application-site .inside-metric-value { font-size: 31px; }
+  body.application-site .inside-avatar { width: 54px; height: 65px; font-size: 27px; }
+  body.application-site .inside-layout { grid-template-columns: minmax(0,1fr); gap: 22px; }
+  body.application-site .writing-studio { padding-block: 30px 70px; }
+  body.application-site .writing-studio-grid { grid-template-columns: minmax(0,1fr); gap: 24px; }
+  body.application-site .writing-prompt-options { max-height: 265px; overflow-y: auto; }
+  body.application-site .writing-editor-panel { padding: 20px; }
+  body.application-site .writing-studio-title-row { flex-wrap: wrap; }
+  body.application-site .writing-editor-head { flex-wrap: wrap; }
+  body.application-site .writing-editor-head h2 { font-size: 27px; }
+  body.application-site .writing-editor-panel textarea { min-height: 310px; font-size: 16px; }
+  body.application-site .writing-result-columns .card { padding: 20px !important; }
+  body.application-site .app-main .grid { grid-template-columns: minmax(0,1fr) !important; }
+  body.application-site .app-main .button { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.application-site *, body.application-site *::before, body.application-site *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* Secondary destinations use the same open page heading and flat work surfaces. */
+body.application-site .workspace-page-intro { display: grid; gap: 15px; background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 0 0 32px; border-radius: 0; box-shadow: none; margin-bottom: 16px; }
+body.application-site .workspace-page-intro h1 { margin: 0; }
+body.application-site .workspace-page-intro p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.8; max-width: 650px; }
+.workspace-settings { display: grid; gap: 20px; }
+body.application-site .workspace-settings > .grid { gap: 20px; }
+body.application-site .workspace-settings > .grid > .card { padding: 25px !important; background: var(--surface) !important; }
+body.application-site .workspace-settings > .grid > .card > strong { font-size: 16px; font-weight: 500; }
+body.application-site .workspace-settings > .grid > .card > p { font-size: 12px; color: var(--muted); line-height: 1.8; }
+body.application-site .workspace-settings [aria-pressed="true"] { background: var(--workspace-blue-wash); border-color: var(--primary); color: var(--primary); }
+body.application-site .study-lists-shell { gap: 28px !important; }
+body.application-site .study-lists-shell > .card { padding: 25px !important; }
+body.application-site .study-lists-shell .pill { background: var(--secondary); border: 0; border-radius: 3px; color: var(--muted); }
+body.application-site .billing-page > .card { padding: 0 !important; border: 0; background: transparent; box-shadow: none; gap: 28px; }
+body.application-site .billing-page h1 { padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+body.application-site .billing-decision-card, body.application-site .billing-growth-card { background: var(--workspace-blue-wash); }
+body.application-site .billing-plus-card { background: var(--highlight); color: #202722; border-color: #c8d38c; }
+body.application-site .billing-plus-card p { color: #526044; }
+body.application-site .inside-rail { top: 160px; }
+body.application-site .writing-hub { padding-block: 52px 96px; }
+body.application-site .writing-hub-hero { border: 0; border-radius: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 0 0 35px; box-shadow: none; }
+body.application-site .writing-hub-copy h1 { margin-block: 16px; max-width: 18ch; }
+body.application-site .writing-hub-copy > p { font-size: 14px; line-height: 1.8; color: var(--muted); }
+body.application-site .writing-kicker { color: var(--muted); font-size: 10px; letter-spacing: .12em; }
+body.application-site .writing-metric-stack { background: transparent; border-color: var(--line); }
+body.application-site .writing-metric-stack > div { border-color: var(--line); background: transparent; }
+body.application-site .writing-metric-stack strong { font: 400 43px/1.1 "Instrument Serif", serif; color: var(--foreground); }
+body.application-site .writing-metric-stack span { color: var(--muted); font-size: 10px; }
+body.application-site .writing-track-grid { gap: 28px; margin-top: 32px; }
+body.application-site .writing-track { border-radius: 6px; border: 1px solid var(--line); padding: 30px; box-shadow: none; background: var(--surface); }
+body.application-site .writing-track-primary { background: var(--highlight); color: #202722; border-color: #cbd496; }
+body.application-site .writing-track-primary :is(p,.writing-track-head span,.writing-track-copy h2,.writing-prompt-list a) { color: #38432e; }
+body.application-site .writing-track-head i { font: 400 52px/1 "Instrument Serif", serif; color: inherit; background: transparent; }
+body.application-site .writing-track-copy h2 { font: 400 37px "Instrument Serif", serif; color: inherit; }
+body.application-site .writing-track-copy p { font-size: 13px; }
+body.application-site .writing-prompt-list a { border-radius: 0; border: 0; border-bottom: 1px solid color-mix(in srgb,var(--foreground) 15%,transparent); background: transparent; padding-inline: 0; box-shadow: none; }
+body.application-site .writing-progress-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; box-shadow: none; padding: 27px; }
+body.application-site .writing-progress-empty-icon { background: transparent; color: var(--primary); border-radius: 0; }
+@media(max-width:640px) {
+  body.application-site .inside-rail { position: static; }
+  body.application-site .writing-hub { padding-block: 32px 70px; }
+  body.application-site .writing-track { padding: 24px; }
+  body.application-site .writing-metric-stack { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }
+  body.application-site .writing-metric-stack > div { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px; padding: 15px 10px; border: 0; border-right: 1px solid var(--line); }
+  body.application-site .writing-metric-stack > div:last-child { border-right: 0; }
+  body.application-site .writing-metric-stack strong { font-size: 33px; }
+  body.application-site .writing-progress-panel { padding: 21px; }
+  body.application-site .workspace-settings > .grid > .card { padding: 21px !important; }
+}
+body.application-site .db-hero-stat-primary { grid-column: auto; grid-row: auto; }
+body.application-site .db-hero-stat strong { order: 1; }
+body.application-site .db-hero-stat span { order: 2; }
+.practice-mock-heading { display: grid; gap: 20px; }
+.practice-mock-heading > .button { width: 100%; }
+body.application-site .practice-mock-heading strong { font-size: 15px !important; }
+body.application-site .practice-workbench > details { border-radius: 5px !important; background: transparent; }
+/* Guided setup and educator tools retain their data flows in the same visual system. */
+body.application-site .inside-onboarding-shell { background: var(--surface); border: 1px solid var(--line); border-radius: 7px; box-shadow: none; }
+body.application-site .inside-onboarding-aside { background: var(--highlight); color: #202722; border: 0; }
+body.application-site .inside-onboarding-aside :is(h1,h2,h3,p,.inside-kicker) { color: #202722; }
+body.application-site .inside-onboarding-step { background: transparent; color: #526044; border-color: #c5cf94; border-radius: 4px; }
+body.application-site .inside-onboarding-step.is-active { background: #f5f8dc; color: #202722; box-shadow: none; border-color: #a7b570; }
+body.application-site .inside-onboarding-content { background: var(--surface); }
+body.application-site .inside-choice { border-radius: 5px; border-color: var(--line); background: transparent; color: var(--foreground); box-shadow: none; }
+body.application-site .inside-choice.is-selected { border-color: var(--primary); background: var(--workspace-blue-wash); color: var(--primary); }
+body.application-site .teacher-workspace-page { padding-block: 40px 96px; }
+body.application-site .teacher-workspace { --teacher-accent: var(--primary); --teacher-accent-strong: var(--primary); --teacher-soft: var(--secondary); --teacher-accent-soft: var(--workspace-blue-wash); }
+body.application-site .teacher-workspace-toolbar { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; padding: 0 0 22px; margin-bottom: 22px; }
+body.application-site .teacher-workspace-toolbar nav button { border-radius: 4px; }
+body.application-site .teacher-workspace-toolbar nav button.is-active { background: var(--workspace-blue-wash); color: var(--primary); box-shadow: none; }
+body.application-site .teacher-workspace-toolbar-context > span { border-radius: 4px; background: var(--workspace-blue-wash); color: var(--primary); }
+body.application-site .teacher-workspace-head { padding-block: 12px 28px; border-bottom: 1px solid var(--line); }
+body.application-site .teacher-workspace-first-class { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); box-shadow: none; margin-top: 28px; }
+body.application-site .teacher-workspace-first-class::before { display: none; }
+body.application-site .teacher-workspace-first-class-form { background: var(--secondary); border: 1px solid var(--line); border-radius: 5px; color: var(--foreground); box-shadow: none; }
+body.application-site .teacher-workspace-main .button-primary { background: var(--accent); color: var(--accent-foreground); border-color: transparent; }
+body.application-site .teacher-workspace-main .button-secondary { background: transparent; color: var(--foreground); border-color: var(--line); }
+body.application-site .teacher-workspace-stat, body.application-site .teacher-workspace-class-card, body.application-site .teacher-workspace-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; box-shadow: none; }
+@media(max-width:760px) { body.application-site .app-main .grid { grid-template-columns: minmax(0,1fr) !important; } }
+
+/* Operator console: the same brand, with denser data surfaces. */
+body.admin-site .adm-shell {
+  --adm-bg: #f5f4ee; --adm-sidebar: #202f27; --adm-sidebar-soft: #314738;
+  --adm-surface: #fcfcf8; --adm-surface-soft: #eeeee5; --adm-text: #202722;
+  --adm-muted: #687064; --adm-line: #d9ddd1; --adm-accent: #3155df;
+  --adm-accent-strong: #2442b9; --adm-accent-soft: #eaf0ff;
+  font-family: "DM Sans", Arial, sans-serif;
+}
+body.admin-site[data-theme="dark"] .adm-shell {
+  --adm-bg: #17241e; --adm-sidebar: #142019; --adm-sidebar-soft: #263a2e;
+  --adm-surface: #1e3026; --adm-surface-soft: #263a2e; --adm-text: #f1f2e9;
+  --adm-muted: #acb8a7; --adm-line: #3b4b3e; --adm-accent: #b4c0ff;
+  --adm-accent-strong: #d1d9ff; --adm-accent-soft: #2b3a49;
+}
+body.admin-site .adm-brand-icon { background: #3155df; color: #fff; border-radius: 8px 8px 8px 1px; font-size: 27px; }
+body.admin-site .adm-brand-name { font-family: "DM Sans", sans-serif; letter-spacing: -.7px; }
+body.admin-site .adm-header { background: var(--adm-bg); border-bottom-color: var(--adm-line); box-shadow: none; }
+body.admin-site .adm-header h1 { font-family: "Instrument Serif", Georgia, serif; font-size: 33px; font-weight: 400; letter-spacing: -.7px; }
+body.admin-site .adm-daily-hero { background: var(--adm-surface); color: var(--adm-text); border: 1px solid var(--adm-line); border-radius: 6px; box-shadow: none; }
+body.admin-site .adm-daily-intro h2 { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(35px,3.8vw,54px); font-weight: 400; line-height: 1.05; letter-spacing: -1px; }
+body.admin-site .adm-daily-intro p { color: var(--adm-muted); }
+body.admin-site .adm-daily-hero .adm-eyebrow { color: var(--adm-muted); }
+body.admin-site .adm-goal-card { background: var(--adm-accent-soft); color: var(--adm-text); border: 1px solid var(--adm-line); border-radius: 5px; }
+body.admin-site :is(.adm-panel-card,.adm-stat-card,.adm-card,.adm-signal-card) { border-radius: 6px; box-shadow: none; }
+body.admin-site .adm-kpi strong, body.admin-site .adm-stat-value { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+body.admin-site :is(.adm-primary-btn,.adm-secondary-btn) { border-radius: 4px; box-shadow: none; }
+body.admin-site .adm-primary-btn { background: #3155df; color: #fff; }
+body.admin-site .adm-daily-hero .adm-primary-btn { background: #3155df; color: #fff; }
+body.admin-site > main, body.admin-site .page-shell { font-family: "DM Sans", sans-serif; }
+body.admin-site .page-shell h1 { font: 400 42px/1.1 "Instrument Serif", Georgia, serif; letter-spacing: -1px; }
+@media(max-width:640px) {
+  body.application-site .writing-prompt-options { display: grid; grid-template-columns: minmax(0,1fr); max-height: 265px; overflow-y: auto; overflow-x: hidden; }
+  body.application-site .writing-prompt-options button { min-width: 0; width: 100%; flex: none; }
+}
+body.application-site .teacher-workspace-head p, body.application-site .teacher-workspace-first-class-copy p { color: var(--muted); }
+body.application-site .teacher-workspace-first-class-copy h2 { color: var(--foreground); font: 400 36px/1.1 "Instrument Serif", Georgia, serif; }
+body.admin-site .adm-daily-intro h2 { color: var(--adm-text); }
+body.admin-site .adm-daily-intro h2 strong { color: var(--adm-accent); font-weight: 400; }
+body.admin-site .adm-daily-hero .adm-secondary-btn { color: var(--adm-text); border-color: var(--adm-line); }
+body.admin-site .adm-goal-head > span, body.admin-site .adm-goal-foot { color: var(--adm-muted); }
+body.admin-site .adm-goal-track { background: var(--adm-line); }
+body.admin-site .adm-goal-track > span { background: var(--adm-accent); }

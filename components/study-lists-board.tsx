@@ -240,9 +240,9 @@ export function StudyListsBoard() {
 
   return (
     <main className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
-      <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
+      <section className="workspace-page-intro">
         <span className="eyebrow">{tr ? "Çalışma listeleri" : "Study lists"}</span>
-        <h1 style={{ margin: 0 }}>{tr ? "Görevli çalışma klasörlerin" : "Your study folders with tasks"}</h1>
+        <h1 style={{ margin: 0 }}>{tr ? "Kütüphanen, senin düzenin." : "Your library, your way."}</h1>
         <p style={{ color: "var(--muted)", maxWidth: 760, lineHeight: 1.7 }}>
           {tr
             ? "Kaydettiğin promptlari klasorlerde topla, her klasore gorevler ekle, bitis tarihi belirle ve sure ilerledikce otomatik mail + bildirim al."
@@ -376,7 +376,7 @@ export function StudyListsBoard() {
                   <strong>{tr ? "Kaydedilen promptlar" : "Saved prompts"}</strong>
                   {selectedItems.length ? (
                     selectedItems.map((item) => (
-                      <div key={item.id} className="card" style={{ padding: "0.9rem", background: "rgba(255,255,255,0.7)", display: "grid", gap: "0.55rem" }}>
+                      <div key={item.id} className="card" style={{ padding: "0.9rem", background: "var(--surface)", display: "grid", gap: "0.55rem" }}>
                         <strong>{item.title}</strong>
                         <div className="practice-meta">{item.examType} · {humanizeTaskType(item.taskType, tr)}</div>
                         <div style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap" }}>
@@ -401,7 +401,7 @@ export function StudyListsBoard() {
                       </div>
                     ))
                   ) : (
-                    <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.7)" }}>
+                    <div className="card" style={{ padding: "1rem", background: "var(--surface)" }}>
                       {tr ? "Bu klasörde henüz kayıtlı prompt yok." : "There are no saved prompts in this folder yet."}
                     </div>
                   )}
@@ -413,7 +413,7 @@ export function StudyListsBoard() {
                     selectedTasks.map((task) => {
                       const timing = describeTaskTiming(task, tr);
                       return (
-                        <div key={task.id} className="card" style={{ padding: "0.9rem", background: "rgba(255,255,255,0.7)", display: "grid", gap: "0.55rem" }}>
+                        <div key={task.id} className="card" style={{ padding: "0.9rem", background: "var(--surface)", display: "grid", gap: "0.55rem" }}>
                           <div style={{ display: "flex", justifyContent: "space-between", gap: "0.7rem", alignItems: "center", flexWrap: "wrap" }}>
                             <strong>{task.title}</strong>
                             <span className="pill">{task.completedAt ? (tr ? "Tamamlandi" : "Completed") : tr ? "Aktif" : "Active"}</span>
@@ -447,7 +447,7 @@ export function StudyListsBoard() {
                       );
                     })
                   ) : (
-                    <div className="card" style={{ padding: "1rem", background: "rgba(255,255,255,0.7)" }}>
+                    <div className="card" style={{ padding: "1rem", background: "var(--surface)" }}>
                       {tr ? "Bu klasörde henüz görev yok. Yukarıdan sırayla görev ekleyebilirsin." : "There are no tasks in this folder yet. Add tasks above one by one."}
                     </div>
                   )}

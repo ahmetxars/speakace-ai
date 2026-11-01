@@ -15,9 +15,11 @@ import "@fontsource/dm-sans/500.css";
 import "@fontsource/dm-sans/600.css";
 import "@fontsource/dm-sans/700.css";
 import "@fontsource/instrument-serif/latin-400-italic.css";
+import "@fontsource/instrument-serif/400.css";
 import "./globals.css";
 import "./refresh.css";
 import "./editorial.css";
+import "./workspace.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.domain),

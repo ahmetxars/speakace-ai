@@ -38,7 +38,7 @@ export function AnalyticsDashboard() {
 
   return (
     <div className="page-shell section" style={{ display: "grid", gap: "1rem" }}>
-      <section className="card" style={{ padding: "1.4rem", display: "grid", gap: "0.8rem" }}>
+      <section className="workspace-page-intro">
         <span className="eyebrow">{tr ? "Gerçek analytics" : "Real analytics"}</span>
         <h1 style={{ margin: 0 }}>{tr ? "Kullanım özeti" : "Usage summary"}</h1>
       </section>

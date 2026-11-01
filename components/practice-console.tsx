@@ -1259,25 +1259,27 @@ export function PracticeConsole() {
   };
 
   return (
-    <div className="page-shell section">
+    <div className="page-shell section practice-workspace">
 
-      <div style={{ maxWidth: 700, margin: "0 auto", display: "grid", gap: "2rem" }}>
+      <div className="practice-workbench">
 
         {/* HEADER */}
-        <div style={{ textAlign: "center" }}>
-          <h1 style={{ fontSize: "clamp(1.5rem, 3vw, 2.2rem)", fontWeight: 800, margin: "0 0 0.5rem" }}>
-            {tr ? "Speaking Pratik" : "Speaking Practice"}
-          </h1>
-          <p style={{ color: "var(--muted-foreground)", margin: 0, fontSize: "0.95rem" }}>
-            {tr ? "Sınavı seç, konu seç, başla." : "Pick your exam, choose a topic, start speaking."}
-          </p>
-        </div>
+        <header className="practice-page-heading">
+          <span className="eyebrow">{tr ? "01 / KONUŞMA STÜDYOSU" : "01 / SPEAKING STUDIO"}</span>
+          <h1>{tr ? "Bir cevap. Yeni bir adım." : "One answer. A step forward."}</h1>
+          <p>{tr ? "Sınavını ve konunu seç. Sesini kaydet, geri bildirimi bir sonraki cevabına taşı." : "Choose your exam and topic. Record an answer, then take one improvement into your next attempt."}</p>
+        </header>
+        <ol className="practice-step-guide" aria-label={tr ? "Pratik adımları" : "Practice steps"}>
+          <li><span>01</span>{tr ? "Biçimini seç" : "Choose a format"}</li>
+          <li><span>02</span>{tr ? "Bir konu bul" : "Find your topic"}</li>
+          <li><span>03</span>{tr ? "Kaydet ve incele" : "Record & review"}</li>
+        </ol>
 
         {/* PRACTICE MODES — 3 cards (drill, interview, pronunciation) */}
         {runMode !== "simulation" ? (
-          <div style={{ display: "grid", gap: "0.7rem" }}>
-            <strong style={{ fontSize: "0.95rem" }}>{tr ? "Çalışma modu" : "Practice mode"}</strong>
-            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+          <section className="practice-mode-section">
+            <strong>{tr ? "Nasıl çalışmak istersin?" : "How would you like to practise?"}</strong>
+            <div className="practice-modes">
               {[
                 {
                   value: "drill",
@@ -1310,39 +1312,25 @@ export function PracticeConsole() {
                       }
                     }}
                     disabled={mode !== "idle"}
-                    style={{
-                      flex: "1 1 180px",
-                      textAlign: "left",
-                      padding: "0.95rem 1rem",
-                      borderRadius: 14,
-                      border: active ? "1.5px solid var(--primary)" : "1px solid var(--border)",
-                      background: active ? "color-mix(in oklch, var(--primary) 10%, var(--card) 90%)" : "var(--card)",
-                      color: "var(--foreground)",
-                      cursor: mode === "idle" ? "pointer" : "not-allowed"
-                    }}
+                    className="practice-mode-option"
+                    aria-pressed={active}
                   >
-                    <div style={{ fontWeight: 700, marginBottom: "0.35rem", color: active ? "var(--primary)" : "var(--foreground)" }}>{option.label}</div>
-                    <div style={{ fontSize: "0.82rem", lineHeight: 1.55, color: "var(--muted-foreground)" }}>{option.description}</div>
+                    <strong>{option.label}</strong>
+                    <span>{option.description}</span>
                   </button>
                 );
               })}
             </div>
-          </div>
+          </section>
         ) : null}
 
         {/* MOCK EXAM — separate prominent block */}
-        <div style={{
-          borderRadius: 16,
-          border: runMode === "simulation" ? "2px solid var(--primary)" : "1.5px solid var(--border)",
-          background: runMode === "simulation" ? "color-mix(in oklch, var(--primary) 6%, var(--card) 94%)" : "var(--card)",
-          overflow: "hidden",
-          transition: "border-color 0.2s, background 0.2s"
-        }}>
+        <aside className={`practice-mock-card${runMode === "simulation" ? " is-active" : ""}`}>
           <div style={{ padding: "1.1rem 1.25rem", display: "grid", gap: "0.75rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+            <div className="practice-mock-heading">
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.35rem" }}>
-                  <span style={{ fontSize: "1.1rem" }}>🧪</span>
+                  <span style={{ fontSize: "1.1rem" }}>04</span>
                   <strong style={{ fontSize: "1rem", color: runMode === "simulation" ? "var(--primary)" : "var(--foreground)" }}>
                     {tr ? "Mock Exam" : "Mock Exam"}
                   </strong>
@@ -1424,40 +1412,29 @@ export function PracticeConsole() {
                   ? (tr ? "Ücretsiz pratik yarın yenilenir" : "Free practice resets tomorrow")
                   : mode === "saving"
                   ? (tr ? "Kaydediliyor..." : "Saving...")
-                  : (tr ? "🧪 Mock Exam'i Başlat" : "🧪 Start Mock Exam")}
+                  : (tr ? "Mock Exam'i Başlat" : "Start Mock Exam")}
               </button>
             </div>
           ) : null}
-        </div>
+        </aside>
 
         {/* EXAM + TASK SELECTOR — only for non-mock modes */}
         {runMode !== "simulation" ? (
         <>
-        <div style={{ display: "grid", gap: "1rem" }}>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div className="practice-exam-section">
+          <div className="practice-exam-switch">
             {(["IELTS", "TOEFL"] as ExamType[]).map(exam => (
               <button
                 key={exam}
                 type="button"
                 onClick={() => handleExamChange(exam)}
                 disabled={mode !== "idle"}
-                style={{
-                  padding: "0.55rem 1.5rem",
-                  borderRadius: 999,
-                  border: "2px solid",
-                  borderColor: examType === exam ? "var(--primary)" : "var(--border)",
-                  background: examType === exam ? "var(--primary)" : "transparent",
-                  color: examType === exam ? "#fff" : "var(--foreground)",
-                  fontWeight: 700,
-                  fontSize: "0.9rem",
-                  cursor: "pointer",
-                  transition: "all 0.15s"
-                }}
+                aria-pressed={examType === exam}
               >{exam}</button>
             ))}
           </div>
 
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <div className="practice-task-switch">
             {taskOptions[examType].map(option => {
               const meta = getTaskCardMeta(option, tr);
               return (
@@ -1466,18 +1443,7 @@ export function PracticeConsole() {
                   type="button"
                   onClick={() => handleTaskChange(option)}
                   disabled={mode !== "idle"}
-                  style={{
-                    padding: "0.45rem 1.1rem",
-                    borderRadius: 999,
-                    border: "1.5px solid",
-                    borderColor: taskType === option ? "var(--primary)" : "var(--border)",
-                    background: taskType === option ? "oklch(0.623 0.214 259.815 / 0.1)" : "transparent",
-                    color: taskType === option ? "var(--primary)" : "var(--foreground)",
-                    fontWeight: 600,
-                    fontSize: "0.85rem",
-                    cursor: "pointer",
-                    transition: "all 0.15s"
-                  }}
+                  aria-pressed={taskType === option}
                 >{meta.title}</button>
               );
             })}
@@ -1485,7 +1451,7 @@ export function PracticeConsole() {
         </div>
 
         {/* TOPIC SELECTION */}
-        <div style={{ display: "grid", gap: "1rem" }}>
+        <section className="practice-topic-section">
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
             <strong style={{ fontSize: "0.95rem" }}>
@@ -1493,7 +1459,7 @@ export function PracticeConsole() {
             </strong>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button type="button" className="button button-secondary" onClick={surpriseMe} disabled={!availablePrompts.length || mode !== "idle"} style={{ padding: "0.45rem 1rem", fontSize: "0.85rem" }}>
-                {tr ? "🎲 Sürpriz" : "🎲 Surprise"}
+                {tr ? "Rastgele seç" : "Surprise me"}
               </button>
               <button type="button" className="button button-secondary" onClick={() => setShowAllTopics(c => !c)} disabled={mode !== "idle"} style={{ padding: "0.45rem 1rem", fontSize: "0.85rem" }}>
                 {showAllTopics ? (tr ? "Gizle" : "Hide") : (tr ? "Tümü" : "Browse all")}
@@ -1501,36 +1467,15 @@ export function PracticeConsole() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gap: "0.6rem" }}>
-            {recommendedPrompts.map(prompt => (
-              <div
-                key={prompt.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "1rem",
-                  padding: "0.9rem 1.1rem",
-                  borderRadius: 12,
-                  border: "1.5px solid",
-                  borderColor: preferredPromptId === prompt.id ? "var(--primary)" : "var(--border)",
-                  background: preferredPromptId === prompt.id ? "oklch(0.623 0.214 259.815 / 0.06)" : "var(--card)",
-                  transition: "all 0.15s",
-                  cursor: "pointer"
-                }}
-                onClick={() => !canStartPractice || mode !== "idle" ? undefined : void pickPromptAndStart(prompt.id)}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, marginBottom: "0.2rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{prompt.title}</div>
-                  <div style={{ fontSize: "0.8rem", color: "var(--muted-foreground)" }}>{humanizeTaskType(prompt.taskType, tr)} · {tr ? translateDifficulty(prompt.difficulty) : prompt.difficulty}</div>
+          <div className="practice-topic-options">
+            {recommendedPrompts.map((prompt, index) => (
+              <div key={prompt.id} className="practice-prompt-row">
+                <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <strong>{prompt.title}</strong>
+                  <small>{humanizeTaskType(prompt.taskType, tr)} · {tr ? translateDifficulty(prompt.difficulty) : prompt.difficulty}</small>
                 </div>
-                <button
-                  type="button"
-                  className="button button-primary"
-                  onClick={e => { e.stopPropagation(); void pickPromptAndStart(prompt.id); }}
-                  disabled={!canStartPractice || mode !== "idle"}
-                  style={{ flexShrink: 0, padding: "0.45rem 1rem", fontSize: "0.85rem" }}
-                >
+                <button type="button" className="button button-primary" onClick={() => void pickPromptAndStart(prompt.id)} disabled={!canStartPractice || mode !== "idle"}>
                   {tr ? "Başla" : "Start"}
                 </button>
               </div>
@@ -1564,7 +1509,7 @@ export function PracticeConsole() {
               </div>
             </div>
           ) : null}
-        </div>
+        </section>
         </>
         ) : null}
 
@@ -1724,17 +1669,17 @@ export function PracticeConsole() {
             type="button"
             onClick={() => void startSession()}
             disabled={!canStartPractice || mode === "permission" || mode === "prep" || mode === "speak" || mode === "saving"}
-            style={{ width: "100%", padding: "1rem", fontSize: "1rem", fontWeight: 700, borderRadius: 14 }}
+            style={{ width: "100%" }}
           >
             {practiceBlockedByQuota
               ? (tr ? "Ücretsiz pratik yarın yenilenir" : "Free practice resets tomorrow")
               : mode === "saving"
               ? (tr ? "Kaydediliyor..." : "Saving...")
               : runMode === "interview"
-                ? (tr ? "🗣 Interview Modunu Başlat" : "🗣 Start Interview Mode")
+                ? (tr ? "Interview Modunu Başlat" : "Start Interview Mode")
                 : runMode === "pronunciation"
-                  ? (tr ? "🔊 Telaffuz Drillini Başlat" : "🔊 Start Pronunciation Drill")
-                  : (tr ? "🎙 Konuşmaya Başla" : "🎙 Start Speaking")}
+                  ? (tr ? "Telaffuz Drillini Başlat" : "Start Pronunciation Drill")
+                  : (tr ? "Konuşmaya Başla" : "Start Speaking")}
           </button>
         ) : null}
 

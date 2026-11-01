@@ -38,9 +38,12 @@ export default function SettingsPage() {
 
   return (
     <main className="page-shell section">
-      <div className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
-        <span className="eyebrow">{tr ? "Ayarlar" : "Settings"}</span>
-        <h1 style={{ margin: 0 }}>{tr ? "Uygulama tercihleri" : "App preferences"}</h1>
+      <div className="workspace-settings">
+        <header className="workspace-page-intro">
+          <span className="eyebrow">{tr ? "HESABIN / TERCİHLERİN" : "YOUR ACCOUNT / YOUR PREFERENCES"}</span>
+          <h1>{tr ? "Kendine göre ayarla." : "Make yourself at home."}</h1>
+          <p>{tr ? "Dilini, görünümünü ve hesap tercihlerini buradan yönet." : "Manage your language, appearance and account preferences in one place."}</p>
+        </header>
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
           <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
             <strong>{tr ? "Arayüz dili" : "Interface language"}</strong>

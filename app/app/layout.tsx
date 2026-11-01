@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { AppMobileNav } from "@/components/app-mobile-nav";
 
 export const metadata: Metadata = {
   robots: {
@@ -13,10 +12,9 @@ export const metadata: Metadata = {
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell">
-      <main className="app-main">
+      <main className="app-main" id="workspace-main" tabIndex={-1}>
         {children}
       </main>
-      <AppMobileNav />
     </div>
   );
 }
