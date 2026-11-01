@@ -33,3 +33,9 @@ The original OpenAI credential returned `401 invalid_api_key`. The operator repl
 Resend API access and the sending domain were valid. A synthetic verification message reached provider status `delivered`. The Resend dashboard also displayed an unpaid-invoice warning; settling billing remains the account owner's action. This technical test does not remove that warning or guarantee future delivery.
 
 Marketing must remain blocked until real commercial sender requirements are configured. The code records explicit signup opt-in but never interprets old `email_opt_out=false` alone as consent.
+
+## Production verification result
+
+Production verification on 1 November 2026 succeeded for real OpenAI transcription (`source: openai`), four-category speaking feedback with a next exercise, and four-category writing feedback with corrections. The authenticated service check returned success for Postgres, OpenAI and Resend. Public legal/auth pages returned 200, tracking without consent returned 204 without recording an event, and unauthenticated service checks returned 401. The final automatic suite contains 213 passing tests. QA accounts were removed and the user population returned to 401.
+
+Unavailable commercial capture forms now fall back to an email contact link and the footer guide offer remains hidden until genuine sender configuration is ready. This does not disable transactional signup or password emails.

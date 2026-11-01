@@ -1,3 +1,4 @@
+import { getCommercialEmailConfigurationStatus } from "@/lib/server/email";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
@@ -97,7 +98,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             __html: `(function(){try{if(document.body.classList.contains('public-site')||document.body.classList.contains('auth-site')){document.body.dataset.theme='light';return;}var t=localStorage.getItem('speakace-theme');if(t==='dark'||t==='light'){document.body.dataset.theme=t;}else{document.body.dataset.theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}}catch(e){}})();`
           }}
         />
-        <Providers initialLanguage={language}>
+        <Providers initialLanguage={language} commercialEmailEnabled={getCommercialEmailConfigurationStatus().ready}>
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{

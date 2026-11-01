@@ -11,6 +11,7 @@ import { MemberProfile, SubscriptionPlan } from "@/lib/types";
 export type ThemeMode = "light" | "dark";
 
 interface AppContextValue {
+  commercialEmailEnabled: boolean;
   language: Language;
   setLanguage: (language: Language) => void;
   theme: ThemeMode;
@@ -25,7 +26,7 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-export function Providers({ children, initialLanguage = defaultLanguage }: { children: ReactNode; initialLanguage?: Language }) {
+export function Providers({ children, initialLanguage = defaultLanguage, commercialEmailEnabled = false }: { children: ReactNode; initialLanguage?: Language; commercialEmailEnabled?: boolean }) {
   const pathname = usePathname();
   const [language, setLanguageState] = useState<Language>(
     isPublicLanguage(initialLanguage) ? initialLanguage : defaultLanguage
@@ -216,7 +217,7 @@ export function Providers({ children, initialLanguage = defaultLanguage }: { chi
   };
 
   return (
-    <AppContext.Provider value={{ language, setLanguage, theme, setTheme, signedIn, signOut, currentUser, setGuestProfile, refreshSession, updatePlan }}>
+    <AppContext.Provider value={{ commercialEmailEnabled, language, setLanguage, theme, setTheme, signedIn, signOut, currentUser, setGuestProfile, refreshSession, updatePlan }}>
       {children}
     </AppContext.Provider>
   );

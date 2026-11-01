@@ -213,7 +213,7 @@ const footerText: Record<PublicLanguage, FooterText> = {
 
 export function SiteFooter() {
   const pathname = usePathname();
-  const { language } = useAppState();
+  const { language, commercialEmailEnabled } = useAppState();
 
   if (
     pathname === "/" ||
@@ -294,18 +294,20 @@ export function SiteFooter() {
           </nav>
         ))}
       </div>
-      <div className="public-footer-newsletter">
-        <div>
-          <span>{t.weeklyLabel}</span>
-          <h3>{t.newsletterTitle}</h3>
-          <p>{t.newsletterBody}</p>
+      {commercialEmailEnabled && (
+        <div className="public-footer-newsletter">
+          <div>
+            <span>{t.weeklyLabel}</span>
+            <h3>{t.newsletterTitle}</h3>
+            <p>{t.newsletterBody}</p>
+          </div>
+          <LeadCaptureForm
+            source="footer_newsletter"
+            variant="compact"
+            showName={false}
+          />
         </div>
-        <LeadCaptureForm
-          source="footer_newsletter"
-          variant="compact"
-          showName={false}
-        />
-      </div>
+      )}
       <div className="public-footer-bottom">
         <p>
           © {currentYear} SpeakAce. {t.copyright}

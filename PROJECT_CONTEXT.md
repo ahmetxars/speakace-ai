@@ -13,6 +13,10 @@ Privacy identity may be a named individual; the privacy page does not require pu
 
 Signed-in `Providers.updatePlan` refreshes billing state with GET; it never requests a client-selected paid entitlement. Corrupt stale browser profiles are discarded during session bootstrap.
 
+The updated Sensitive OpenAI credential was verified on the production deployment with real transcription, speaking feedback, writing feedback and an authenticated synthetic model request. Resend signup verification reached `delivered`, issued a session, and rejected token reuse; all QA accounts were removed.
+
+Commercial lead forms are hidden or replaced with a contact link when real sender configuration is incomplete, using a server-computed readiness boolean. This prevents collecting addresses for unavailable automatic campaigns.
+
 The speaking upload/evaluate and writing submit/evaluate routes are present. Earlier “not found” observations below describe outdated exploration, not the current route tree.
 
 ## Overview

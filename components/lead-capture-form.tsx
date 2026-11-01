@@ -1,4 +1,5 @@
 "use client";
+import { siteConfig } from "@/lib/site";
 
 import { type FormEvent, useState } from "react";
 import { useAppState } from "@/components/providers";
@@ -117,7 +118,7 @@ export function LeadCaptureForm({
   variant?: "default" | "compact";
   showName?: boolean;
 }) {
-  const { language } = useAppState();
+  const { language, commercialEmailEnabled } = useAppState();
   const publicLanguage = normalizePublicLanguage(language);
   const copy = labels[publicLanguage];
   const [name, setName] = useState("");
@@ -189,6 +190,11 @@ export function LeadCaptureForm({
         minWidth: "220px"
       }
     : undefined;
+
+  if (!commercialEmailEnabled) {
+    const contact = {en:"Contact us by email",tr:"E-posta ile iletişime geç",de:"Kontaktiere uns per E-Mail",es:"Escríbenos por email",fr:"Contactez-nous par e-mail"}[publicLanguage];
+    return <a className="button button-secondary" href={`mailto:${siteConfig.contactEmail}`}>{contact} ↗</a>;
+  }
 
   return (
     <form
