@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { localeOptions } from "@/lib/copy";
+import { publicLocaleOptions } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
 
 export default function SettingsPage() {
@@ -46,15 +46,15 @@ export default function SettingsPage() {
             <strong>{tr ? "Arayüz dili" : "Interface language"}</strong>
             <p>{tr ? `Seçili dil: ${language.toUpperCase()}` : `Current selection: ${language.toUpperCase()}`}</p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.6rem" }}>
-              {localeOptions.map((locale) => (
+              {publicLocaleOptions.map((locale) => (
                 <button
                   key={locale.code}
                   className="button button-secondary"
                   type="button"
                   onClick={() => setLanguage(locale.code)}
+                  aria-pressed={language === locale.code}
                   style={{ justifyContent: "center", gap: "0.45rem" }}
                 >
-                  <span aria-hidden="true">{locale.flag}</span>
                   <span>{locale.nativeLabel}</span>
                 </button>
               ))}

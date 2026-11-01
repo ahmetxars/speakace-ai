@@ -19,6 +19,10 @@ Commercial lead forms are hidden or replaced with a contact link when real sende
 
 The speaking upload/evaluate and writing submit/evaluate routes are present. Earlier “not found” observations below describe outdated exploration, not the current route tree.
 
+Dashboard routing separates platform capabilities from institution identity. `isAdmin`/`adminAccess` alone must not route an ordinary learner account to `/app/institution-admin`: the operator has no institution membership. `resolveDashboardRole` retains school routing for authorized `memberType: school` accounts and teacher routing for authorized teachers. The personal workspace header exposes `/admin` separately. Preserve server API privilege checks when changing navigation.
+
+Microphone requests may remain pending indefinitely in the browser. Practice must allow exiting during permission setup; its request generation guard releases a stream arriving after cancellation/unmount. Writing report printing deliberately opens a same-origin blank window, then clears `opener`; using the `noopener` window feature would return no usable window handle and leave the report blank. Settings only expose `publicLocaleOptions`, matching the provider's accepted language set.
+
 ## Overview
 
 SpeakAce AI is a single-repo Next.js 15 application for AI-assisted English speaking and writing practice, primarily around IELTS and TOEFL preparation.

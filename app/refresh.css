@@ -253,8 +253,11 @@ body.auth-site {
   --sa-accent: #3155df;
   --sa-accent-deep: #2342bc;
   --sa-accent-cool: #53632d;
-  --accent: #e5edab;
-  --accent-foreground: #202722;
+  --accent: #3155df;
+  --accent-foreground: #ffffff;
+  --highlight: #e5edab;
+  --accent-deep: #2342bc;
+  --accent-soft: #eef0ff;
   --secondary: #ebece2;
   --secondary-foreground: #202722;
   --border: #dcded4;
@@ -569,8 +572,11 @@ body.admin-site:not([data-theme="dark"]) {
   --surface-strong: #eeefe7;
   --primary: #3155df;
   --sa-accent: #3155df;
-  --accent: #e5edab;
-  --accent-foreground: #202722;
+  --accent: #3155df;
+  --accent-foreground: #ffffff;
+  --highlight: #e5edab;
+  --accent-deep: #2342bc;
+  --accent-soft: #eef0ff;
   --line: #dcded4;
   --border: #dcded4;
   --muted: #60675f;
@@ -585,8 +591,12 @@ body.application-site[data-theme="dark"],
 body.admin-site[data-theme="dark"] {
   --primary: #8da1ff;
   --sa-accent: #8da1ff;
-  --accent: #c8d38c;
-  --accent-foreground: #202722;
+  --accent: #3155df;
+  --accent-foreground: #ffffff;
+  --highlight: #c8d38c;
+}
+.application-site[data-theme="dark"] .public-wordmark {
+  color: var(--foreground);
 }
 .application-site .card,
 .application-site .button,
@@ -596,6 +606,16 @@ body.admin-site[data-theme="dark"] {
 }
 .application-site .button-primary {
   box-shadow: none;
+}
+.writing-result-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (max-width: 640px) {
+  .writing-result-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .application-site .inside-title,
 .application-site .dashboard-hero h1 {

@@ -2,7 +2,6 @@
 import { EditorialPublicHeader } from "@/components/editorial-public-header";
 
 import type { Route } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -516,6 +515,9 @@ export function SiteHeader() {
     dashboardRole === "student"
       ? { href: "/app/profile" as Route, label: labels.profile }
       : { href: "/app/settings" as Route, label: labels.settings };
+  if (currentUser?.isAdmin && currentUser.memberType !== "school") {
+    accountItems.unshift({ href: "/admin", label: language === "tr" ? "Site yönetimi" : "Site admin" });
+  }
   const groups = useMemo(() => navGroups(labels), [labels]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
@@ -648,39 +650,8 @@ export function SiteHeader() {
           gap: "1rem"
         }}
       >
-        {/* Logo */}
-        <Link
-          href="/"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            textDecoration: "none",
-            flexShrink: 0
-          }}
-        >
-          <div
-            style={{
-              width: "32px",
-              height: "32px",
-              background: "linear-gradient(135deg, var(--primary), var(--accent))",
-              borderRadius: "8px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-          >
-            <span style={{ color: "white", fontWeight: 700, fontSize: "12px" }}>SA</span>
-          </div>
-          <Image
-            src="/brand/speakace-logo.webp"
-            alt="SpeakAce"
-            width={120}
-            height={41}
-            priority
-            className="nav-logo-img"
-            style={{ height: "22px", width: "auto" }}
-          />
+        <Link href="/" className="public-wordmark" aria-label="SpeakAce home">
+          <span className="public-wordmark-icon" aria-hidden="true">≋</span>SpeakAce<span>.</span>
         </Link>
 
         {/* Desktop nav */}

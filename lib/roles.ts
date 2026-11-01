@@ -8,7 +8,11 @@ export function resolveDashboardRole(profile: MemberProfile | null | undefined):
   }
 
   if (profile.isAdmin || profile.adminAccess) {
-    return "school";
+    // Platform access is a capability, not an institution membership. The
+    // operator can use the learner tools without being sent to an empty school.
+    if (profile.memberType === "school") return "school";
+    if (profile.memberType === "teacher" && (profile.isTeacher || profile.teacherAccess)) return "teacher";
+    return "student";
   }
 
   if (profile.isTeacher || profile.teacherAccess) {

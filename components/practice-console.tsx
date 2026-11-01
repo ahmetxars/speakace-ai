@@ -236,6 +236,7 @@ export function PracticeConsole() {
   const sessionRef = useRef<SpeakingSession | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const microphoneRequestRef = useRef(0);
   const chunksRef = useRef<Blob[]>([]);
   const autoStartedRef = useRef(false);
   const dismissUpgradePrompt = useCallback(() => {
@@ -432,6 +433,8 @@ export function PracticeConsole() {
   }, [mode, remainingSeconds, session, tr]);
 
   const cleanupMedia = useCallback(() => {
+    microphoneRequestRef.current += 1;
+    setMicPermissionPending(false);
     if (recorderRef.current && recorderRef.current.state !== "inactive") {
       recorderRef.current.stop();
     }
@@ -638,6 +641,7 @@ export function PracticeConsole() {
     }
 
     setMicPermissionPending(true);
+    const requestId = ++microphoneRequestRef.current;
     trackMicrophoneEvent("microphone_permission_requested", targetSession, "practice_first_score");
 
     try {
@@ -649,6 +653,13 @@ export function PracticeConsole() {
           channelCount: 1
         }
       });
+
+      // Browser permission prompts cannot be aborted. Ignore a late answer
+      // after the learner exits or navigates away, and release the device.
+      if (requestId !== microphoneRequestRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return false;
+      }
 
       streamRef.current = stream;
       setMicReady(true);
@@ -752,6 +763,7 @@ export function PracticeConsole() {
       setMicPermissionPending(false);
       return true;
     } catch (microphoneError) {
+      if (requestId !== microphoneRequestRef.current) return false;
       cleanupMedia();
       setMicReady(false);
       setMicPermissionPending(false);
@@ -1801,7 +1813,7 @@ export function PracticeConsole() {
             </div>
             <div className="practice-overlay-actions">
               {(mode === "prep" || mode === "permission") ? (
-                <button className="button button-secondary" type="button" onClick={endEarly} disabled={mode === "permission" && micPermissionPending}>
+                <button className="button button-secondary" type="button" onClick={endEarly}>
                   {selectedMicrophoneCopy.exit}
                 </button>
               ) : null}

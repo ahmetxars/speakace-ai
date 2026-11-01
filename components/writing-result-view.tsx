@@ -45,8 +45,9 @@ export function WritingResultView({ session, summary }: { session: WritingSessio
     if (currentUser?.id) {
       void trackClientEvent({ userId: currentUser.id, event: "writing_pdf_export", path: `/app/writing/results/${session.id}` });
     }
-    const win = window.open("", "_blank", "noopener,noreferrer,width=960,height=1200");
+    const win = window.open("", "_blank", "width=960,height=1200");
     if (!win) return;
+    win.opener = null;
     const report = session.report;
     win.document.write(`<!doctype html><html><head><meta charset="utf-8" /><title>${escapeHtml(session.prompt.title)}</title><style>
       body{font-family:Arial,sans-serif;margin:40px;color:#111827}.hero,.card{border:1px solid #d9e3ef;border-radius:16px;padding:20px;margin-bottom:18px}.score{font-size:54px;font-weight:800;color:#2563eb}.row{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid #eef2f7}.row:last-child{border-bottom:none}h1,h2,h3{margin:0 0 10px}p,li{line-height:1.6;font-size:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -75,10 +76,11 @@ export function WritingResultView({ session, summary }: { session: WritingSessio
           <p style={{ margin: "0 0 0.45rem", color: "var(--muted-foreground)" }}>{taskLabel}</p>
           <div style={{ fontSize: "4.6rem", lineHeight: 1, fontWeight: 900, color: "var(--primary)" }}>{session.report.overall}</div>
           <p style={{ margin: "0.35rem 0 0", color: "var(--muted-foreground)" }}>{session.report.scaleLabel}</p>
+          <p style={{ color: "var(--muted-foreground)", fontSize: "0.85rem" }}>{session.report.caution}</p>
           {delta !== null ? <p style={{ margin: "0.45rem 0 0", fontWeight: 700, color: delta >= 0 ? "oklch(0.55 0.18 165)" : "oklch(0.55 0.2 20)" }}>{delta >= 0 ? `+${delta}` : `${delta}`} {tr ? "aynı task'in son denemesine göre" : "vs your last draft on this task"}</p> : null}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <div className="writing-result-columns">
           <section className="card" style={{ padding: "1.1rem" }}>
             <strong style={{ display: "block", marginBottom: "0.85rem" }}>{tr ? "Kategori skorları" : "Category scores"}</strong>
             <div style={{ display: "grid", gap: "0.7rem" }}>
@@ -103,7 +105,7 @@ export function WritingResultView({ session, summary }: { session: WritingSessio
           </section>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <div className="writing-result-columns">
           <section className="card" style={{ padding: "1.1rem" }}>
             <strong style={{ display: "block", marginBottom: "0.7rem", color: "oklch(0.45 0.18 165)" }}>{tr ? "Güçlü yönler" : "Strengths"}</strong>
             <ul style={{ margin: 0, paddingLeft: "1.15rem", display: "grid", gap: "0.45rem" }}>
@@ -145,7 +147,7 @@ export function WritingResultView({ session, summary }: { session: WritingSessio
           <strong>{tr ? "Original vs corrected" : "Original vs corrected"}</strong>
           {comparePairs.map((pair, index) => (
             <div key={index} style={{ borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+              <div className="writing-result-columns" style={{ gap: 0 }}>
                 <div style={{ padding: "1rem", background: "var(--card)", borderRight: "1px solid var(--border)" }}>
                   <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted-foreground)", marginBottom: "0.4rem" }}>{tr ? "Senin draft'in" : "Your draft"}</div>
                   <p style={{ margin: 0, lineHeight: 1.75 }}>{pair.original || "—"}</p>
@@ -225,7 +227,7 @@ export function WritingResultView({ session, summary }: { session: WritingSessio
           </section>
         ) : null}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+        <div className="writing-result-columns">
           <section className="card" style={{ padding: "1.1rem" }}>
             <strong style={{ display: "block", marginBottom: "0.7rem" }}>{tr ? "Senin yazın" : "Your writing"}</strong>
             <p style={{ margin: 0, lineHeight: 1.85, color: "var(--muted-foreground)" }}>{session.draftText}</p>
