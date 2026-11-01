@@ -604,7 +604,10 @@ body.admin-site[data-theme="dark"] {
 .application-site input {
   border-radius: 6px;
 }
-.application-site .button-primary {
+.application-site .button-primary,
+.admin-site .button-primary {
+  background: var(--accent);
+  color: var(--accent-foreground);
   box-shadow: none;
 }
 .writing-result-columns {
