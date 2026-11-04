@@ -444,6 +444,13 @@ export default async function ResourcesPage() {
         tabLabel={copy.libraryTabLabel}
         searchPlaceholder={copy.searchPlaceholder}
         resultLabel={copy.resultLabel}
+        emptyLabel={{
+          en: "No resources match this search. Try a different topic or category.",
+          tr: "Bu aramayla eşleşen kaynak yok. Başka bir konu veya kategori dene.",
+          de: "Keine passenden Ressourcen. Versuche ein anderes Thema oder eine andere Kategorie.",
+          es: "No hay recursos que coincidan. Prueba otro tema o categoría.",
+          fr: "Aucune ressource correspondante. Essayez un autre sujet ou une autre catégorie."
+        }[normalizePublicLanguage(language)]}
         openLabel={copy.openLabel}
         showMoreLabel={copy.showMoreLabel}
         categories={copy.categories}

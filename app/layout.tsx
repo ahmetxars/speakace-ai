@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { CookieConsentPanel } from "@/components/cookie-consent";
 import { CheckoutRecoveryPrompt } from "@/components/checkout-recovery-prompt";
+import { SiteMotion } from "@/components/motion/site-motion";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { MarketingStickyCta } from "@/components/marketing-sticky-cta";
@@ -20,6 +21,7 @@ import "./globals.css";
 import "./refresh.css";
 import "./editorial.css";
 import "./workspace.css";
+import "./motion.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.domain),
@@ -153,6 +155,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           />
           {!hideGlobalChrome ? <SiteHeader /> : null}
           {children}
+          <SiteMotion />
           {!hideGlobalChrome ? <CookieConsentPanel /> : null}
           {!hideGlobalChrome ? <CheckoutRecoveryPrompt /> : null}
           {!hideGlobalChrome ? <MarketingStickyCta /> : null}

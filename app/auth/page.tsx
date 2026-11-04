@@ -588,9 +588,10 @@ function AuthPageInner() {
             </div>
 
             {!resetToken ? (
-              <div className="auth-mode-switch" role="tablist" aria-label={ui.access}>
+              <div className="auth-mode-switch" role="group" aria-label={ui.access}>
                 <button
                   className={`auth-mode-tab ${isSignup ? "is-active" : ""}`}
+                  aria-pressed={isSignup}
                   type="button"
                   onClick={() => setMode("signup")}
                 >
@@ -598,6 +599,7 @@ function AuthPageInner() {
                 </button>
                 <button
                   className={`auth-mode-tab ${!isSignup ? "is-active" : ""}`}
+                  aria-pressed={!isSignup}
                   type="button"
                   onClick={() => setMode("signin")}
                 >
@@ -752,9 +754,9 @@ function AuthPageInner() {
               <label><input type="checkbox" checked={marketingConsent} onChange={(event) => setMarketingConsent(event.target.checked)} /><span>{tr ? "Pratik önerileri ve SpeakAce teklifleri içeren e-postalar almak istiyorum. İsteğe bağlı; her zaman abonelikten çıkabilirim." : "Email me practice tips and SpeakAce offers. Optional; I can unsubscribe anytime."}</span></label>
               <p>{tr ? "Doğrulama, parola ve hizmetle ilgili gerekli e-postalar bu isteğe bağlı izinden bağımsızdır." : "Essential verification, password and service emails are separate from this optional choice."}</p>
             </div>}
-            {error ? <p className="auth-inline-message auth-inline-error">{error}</p> : null}
-            {googleErrorMessage ? <p className="auth-inline-message auth-inline-error">{googleErrorMessage}</p> : null}
-            {notice ? <p className="auth-inline-message auth-inline-notice">{notice}</p> : null}
+            {error ? <p className="auth-inline-message auth-inline-error" role="alert">{error}</p> : null}
+            {googleErrorMessage ? <p className="auth-inline-message auth-inline-error" role="alert">{googleErrorMessage}</p> : null}
+            {notice ? <p className="auth-inline-message auth-inline-notice" role="status">{notice}</p> : null}
             {needsVerification ? (
               <button
                 className="button button-secondary"

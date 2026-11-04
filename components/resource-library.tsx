@@ -1,5 +1,7 @@
 "use client";
 
+import { usePanelFeedback } from "@/components/motion/use-panel-feedback";
+import { handleTabKeys } from "@/lib/tab-navigation";
 import type { Route } from "next";
 import Link from "next/link";
 import { startTransition, useDeferredValue, useState } from "react";
@@ -22,6 +24,7 @@ type ResourceLibraryProps = {
   tabLabel: string;
   searchPlaceholder: string;
   resultLabel: string;
+  emptyLabel: string;
   openLabel: string;
   showMoreLabel: string;
   categories: Record<"all" | ResourceCategory, string>;
@@ -42,6 +45,7 @@ export function ResourceLibrary({
   tabLabel,
   searchPlaceholder,
   resultLabel,
+  emptyLabel,
   openLabel,
   showMoreLabel,
   categories,
@@ -49,6 +53,7 @@ export function ResourceLibrary({
 }: ResourceLibraryProps) {
   const [activeCategory, setActiveCategory] = useState<"all" | ResourceCategory>("all");
   const [query, setQuery] = useState("");
+  const feedback = usePanelFeedback(activeCategory);
   const [visibleLimit, setVisibleLimit] = useState(6);
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
   const categoryOrder: Array<"all" | ResourceCategory> = ["all", "exam", "skills", "tools", "habit"];
@@ -59,7 +64,7 @@ export function ResourceLibrary({
   });
 
   return (
-    <section className="resource-library" aria-labelledby="resource-library-title">
+    <section {...feedback.input} className="resource-library" aria-labelledby="resource-library-title">
       <div className="resource-library-head">
         <div>
           <span className="content-kicker">{eyebrow}</span>
@@ -69,12 +74,15 @@ export function ResourceLibrary({
       </div>
 
       <div className="resource-library-controls">
-        <div className="resource-library-tabs" role="tablist" aria-label={tabLabel}>
+        <div className="resource-library-tabs" role="tablist" onKeyDown={handleTabKeys} aria-label={tabLabel}>
           {categoryOrder.map((category) => (
             <button
               key={category}
               type="button"
               role="tab"
+              id={`resource-tab-${category}`}
+              aria-controls="resource-results"
+              tabIndex={activeCategory === category ? 0 : -1}
               aria-selected={activeCategory === category}
               className={activeCategory === category ? "is-active" : ""}
               onClick={() => startTransition(() => {
@@ -102,7 +110,7 @@ export function ResourceLibrary({
         </label>
       </div>
 
-      <div className="resource-library-grid" role="tabpanel">
+      <div className="resource-library-grid" role="tabpanel" ref={feedback.ref} id="resource-results" aria-labelledby={`resource-tab-${activeCategory}`}>
         {visibleItems.slice(0, visibleLimit).map((item, index) => {
           const Icon = categoryIcons[item.category];
           return (
@@ -122,6 +130,8 @@ export function ResourceLibrary({
           );
         })}
       </div>
+
+      {visibleItems.length === 0 ? <p className="resource-library-empty" role="status"><Search size={20} aria-hidden="true" />{emptyLabel}</p> : null}
 
       {visibleItems.length > visibleLimit ? (
         <button

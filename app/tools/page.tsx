@@ -23,7 +23,7 @@ export default function ToolsHubPage() {
   return (
     <>
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
-        <div className="section-head">
+        <div className="section-head" data-reveal>
           <span className="eyebrow">Tools</span>
           <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.8rem)", lineHeight: 0.96 }}>
             Free speaking tools, planners, and generators.

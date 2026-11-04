@@ -1144,3 +1144,15 @@ If you discover:
 - resolved contradictions in docs or billing flows
 
 update this file so future agents do not need to repeat the same discovery work.
+
+
+### Motion enhancement (2026-11-04)
+
+- `app/motion.css` is imported last after workspace.css and owns shared duration/easing tokens. `lib/client-motion.ts` reads those tokens for small native Web Animations enhancements; no added runtime dependency.
+- Root `SiteMotion` observes selected public/auth groups once, with visible SSR fallback. It deliberately skips /app and /admin. Focus, reduced motion, hidden-tab and route cleanup settle active animations.
+- Homepage `PreviewScenes` reserves intrinsic height for question, transcript and audience variants. Inactive scenes are inert/aria-hidden; only active scenes carry target IDs. Retry-button focus is transferred to its visible equivalent. Keep previews explicitly illustrative.
+- Homepage FAQ `MotionDisclosure` enhances native details with cancellable measured-height motion and keyboard instant state. Do not replace native fallback with hidden initial content.
+- `usePanelFeedback` handles deliberate pointer category/billing selections; search typing and keyboard selection remain still. Blog/resource tab navigation is shared in `lib/tab-navigation.ts`.
+- Workspace branding selectors must remain scoped to `.workspace-header .workspace-brand`; the unscoped selector previously leaked into the homepage preview.
+- Application motion is limited to functional control, genuine report and real mic state. Do not animate timers or scores or trigger fake recording behavior.
+- Full audit, changed-file map, bundle comparison, manual checks and limits: `docs/2026-11-04-motion.md`.

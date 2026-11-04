@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePanelFeedback } from "@/components/motion/use-panel-feedback";
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
 import { TrackedLink } from "@/components/tracked-link";
@@ -23,6 +24,7 @@ declare global {
 
 export function PricingCards() {
   const [billing, setBilling] = useState<"weekly" | "annual">("weekly");
+  const feedback = usePanelFeedback(billing, 0);
   const { currentUser } = useAppState();
   const isAnnual = billing === "annual";
   const isSignedIn = Boolean(currentUser?.id);
@@ -95,7 +97,7 @@ export function PricingCards() {
       : "Use your first checkout on the same account you plan to practice with.";
 
   return (
-    <div style={{ display: "grid", gap: "1.2rem" }}>
+    <div className="pricing-motion" {...feedback.input} style={{ display: "grid", gap: "1.2rem" }}>
       <div style={{ display: "flex", justifyContent: "center", gap: 0 }}>
         <div
           className="card"
@@ -110,6 +112,7 @@ export function PricingCards() {
           <button
             type="button"
             onClick={() => setBilling("weekly")}
+            aria-pressed={!isAnnual}
             style={{
               padding: "0.5rem 1.2rem",
               borderRadius: 999,
@@ -119,7 +122,7 @@ export function PricingCards() {
               cursor: "pointer",
               background: !isAnnual ? "var(--primary)" : "transparent",
               color: !isAnnual ? "#fff" : "var(--muted)",
-              transition: "all 0.18s"
+              transition: "background-color var(--motion-ui) var(--motion-ease), color var(--motion-ui) var(--motion-ease)"
             }}
           >
             Weekly
@@ -127,6 +130,7 @@ export function PricingCards() {
           <button
             type="button"
             onClick={() => setBilling("annual")}
+            aria-pressed={isAnnual}
             style={{
               padding: "0.5rem 1.2rem",
               borderRadius: 999,
@@ -136,7 +140,7 @@ export function PricingCards() {
               cursor: "pointer",
               background: isAnnual ? "var(--primary)" : "transparent",
               color: isAnnual ? "#fff" : "var(--muted)",
-              transition: "all 0.18s",
+              transition: "background-color var(--motion-ui) var(--motion-ease), color var(--motion-ui) var(--motion-ease)",
               display: "flex",
               alignItems: "center",
               gap: "0.45rem"
@@ -162,7 +166,7 @@ export function PricingCards() {
       </div>
 
       <div className="marketing-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
-        <article className="card pricing-card">
+        <article className="card pricing-card" data-reveal>
           <h3>Free</h3>
           <div className="price-tag">$0</div>
           <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
@@ -179,12 +183,12 @@ export function PricingCards() {
           </Link>
         </article>
 
-        <article className="card pricing-card" data-featured="true">
+        <article className="card pricing-card" data-featured="true" data-reveal data-reveal-delay="90">
           <div className="pill" style={{ marginBottom: "0.8rem", width: "fit-content" }}>
             {isAnnual ? "Best value for serious prep" : "Best first upgrade"}
           </div>
           <h3>{commerceConfig.plusPlanName}</h3>
-          <div className="price-tag">
+          <div className="price-tag" ref={feedback.ref}>
             {isAnnual ? (
               <>
                 <span

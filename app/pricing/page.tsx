@@ -336,7 +336,7 @@ export default async function PricingPage() {
     <>
       <MarketingSchema />
       <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
-        <div className="section-head">
+        <div className="section-head" data-reveal>
           <span className="eyebrow">{copy.eyebrow}</span>
           <h1 style={{ fontSize: "clamp(2.7rem, 6vw, 5rem)", lineHeight: 0.95 }}>
             {copy.heading}

@@ -349,7 +349,7 @@
   letter-spacing: -1.4px;
   margin-top: 13px;
 }
-.editorial-site .prompt-panel #question {
+.editorial-site .prompt-panel .example-question {
   margin-top: 17px;
   font-size: 13px;
   max-width: 245px;
@@ -740,19 +740,19 @@
   line-height: 1;
   color: var(--blue);
 }
-.editorial-site .audience-right > h3 {
+.editorial-site .audience-right .audience-scene > h3 {
   margin-top: 34px;
   font-size: 22px;
   letter-spacing: -0.5px;
 }
-.editorial-site .audience-right > p {
+.editorial-site .audience-right .audience-scene > p {
   font-size: 13px;
   line-height: 1.8;
   color: #5c6453;
   margin-top: 10px;
   max-width: 420px;
 }
-.editorial-site .audience-right > a {
+.editorial-site .audience-right .audience-scene > a {
   display: inline-flex;
   gap: 30px;
   color: var(--blue);
@@ -1241,7 +1241,7 @@
   .editorial-site .prompt-panel h2 br {
     display: none;
   }
-  .editorial-site .prompt-panel #question {
+  .editorial-site .prompt-panel .example-question {
     max-width: 100%;
     font-size: 13px;
     margin-top: 11px;
@@ -1442,14 +1442,14 @@
   .editorial-site .notebook-bottom {
     font-size: 18px;
   }
-  .editorial-site .audience-right > h3 {
+  .editorial-site .audience-right .audience-scene > h3 {
     font-size: 23px;
     margin-top: 31px;
   }
-  .editorial-site .audience-right > p {
+  .editorial-site .audience-right .audience-scene > p {
     font-size: 13px;
   }
-  .editorial-site .audience-right > a {
+  .editorial-site .audience-right .audience-scene > a {
     font-size: 12px;
   }
   .editorial-site .plans-section {

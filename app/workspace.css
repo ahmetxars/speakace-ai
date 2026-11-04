@@ -97,9 +97,9 @@ body.application-site .app-main strong { font-weight: 600; }
 /* Persistent, direct navigation replaces the old marketing mega-menu. */
 .workspace-header { position: sticky; top: 0; z-index: 70; background: var(--background); border-bottom: 1px solid var(--line); }
 .workspace-topbar { width: min(1280px, calc(100% - 96px)); margin: auto; min-height: 83px; display: flex; align-items: center; gap: 25px; }
-.workspace-brand { color: var(--foreground); text-decoration: none; display: inline-flex; align-items: center; font-size: 24px; font-weight: 650; letter-spacing: -1px; white-space: nowrap; }
-.workspace-brand > span { width: 33px; height: 34px; display: grid; place-items: center; background: #3155df; color: #fff; font-size: 24px; border-radius: 8px 8px 8px 1px; margin-right: 10px; }
-.workspace-brand i { color: #3155df; font-style: normal; }
+.workspace-header .workspace-brand { color: var(--foreground); text-decoration: none; display: inline-flex; align-items: center; font-size: 24px; font-weight: 650; letter-spacing: -1px; white-space: nowrap; }
+.workspace-header .workspace-brand > span { width: 33px; height: 34px; display: grid; place-items: center; background: #3155df; color: #fff; font-size: 24px; border-radius: 8px 8px 8px 1px; margin-right: 10px; }
+.workspace-header .workspace-brand i { color: #3155df; font-style: normal; }
 .workspace-edition { border-left: 1px solid var(--line); padding-left: 24px; color: var(--muted); font-size: 11px; }
 .workspace-tools { margin-left: auto; display: flex; gap: 12px; align-items: center; }
 .workspace-resource-link { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); text-decoration: none; font-size: 12px; margin-right: 12px; }
@@ -297,8 +297,8 @@ body.application-site .teacher-class-card, body.application-site .teacher-studen
 @media (max-width: 640px) {
   body.application-site .page-shell, .workspace-topbar { width: calc(100% - 36px); }
   .workspace-topbar { min-height: 70px; gap: 8px; }
-  .workspace-brand { font-size: 21px; }
-  .workspace-brand > span { width: 28px; height: 30px; font-size: 21px; margin-right: 7px; }
+  .workspace-header .workspace-brand { font-size: 21px; }
+  .workspace-header .workspace-brand > span { width: 28px; height: 30px; font-size: 21px; margin-right: 7px; }
   .workspace-resource-link, .workspace-account-name, .workspace-tools > .workspace-icon-button { display: none; }
   .workspace-tools { gap: 6px; }
   .workspace-account { margin-left: 2px; }

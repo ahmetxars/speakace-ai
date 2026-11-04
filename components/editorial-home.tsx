@@ -1,6 +1,9 @@
 "use client";
 import Link from "next/link";
-import { useState, type KeyboardEvent } from "react";
+import { PreviewScenes } from "@/components/motion/preview-scenes";
+import { MotionDisclosure } from "@/components/motion/motion-disclosure";
+import { useLayoutEffect, useRef, useState } from "react";
+import { handleTabKeys } from "@/lib/tab-navigation";
 import { useAppState } from "@/components/providers";
 import type { Language } from "@/lib/copy";
 import { homeTurkish } from "@/lib/home-translations";
@@ -19,46 +22,30 @@ export function EditorialHome() {
   const [retry, setRetry] = useState(false);
   const [role, setRole] = useState<keyof typeof homeRoles>("students");
   const [menuOpen, setMenuOpen] = useState(false);
-  const sample = {
-    ...homeExamples[topic],
-    ...(tr ? homeFeedbackTurkish[topic] : {}),
-  };
-  const audience = (tr ? homeRolesTurkish : homeRoles)[role];
+  const [instantMotion, setInstantMotion] = useState(false);
+  const retryControl = useRef<HTMLButtonElement>(null);
+  const restoreRetryFocus = useRef(false);
+  useLayoutEffect(() => {
+    if (!restoreRetryFocus.current) return;
+    retryControl.current?.focus({ preventScroll: true });
+    restoreRetryFocus.current = false;
+  }, [retry]);
+  const samples = homeExamples.map((example, index) => ({
+    ...example,
+    ...(tr ? homeFeedbackTurkish[index] : {}),
+  }));
+  const roles = tr ? homeRolesTurkish : homeRoles;
+  const roleKeys = Object.keys(homeRoles) as Array<keyof typeof homeRoles>;
   const changeTopic = (direction: number) => {
-    setTopic((topic + direction + homeExamples.length) % homeExamples.length);
+    setTopic((current) => (current + direction + homeExamples.length) % homeExamples.length);
     setRetry(false);
-  };
-  const handleTabKeys = (event: KeyboardEvent<HTMLElement>) => {
-    const keys = [
-      "ArrowRight",
-      "ArrowDown",
-      "ArrowLeft",
-      "ArrowUp",
-      "Home",
-      "End",
-    ];
-    if (!keys.includes(event.key)) return;
-    const tabs = Array.from(
-      event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
-    );
-    const index = tabs.indexOf(event.target as HTMLButtonElement);
-    if (index < 0) return;
-    event.preventDefault();
-    const next =
-      event.key === "Home"
-        ? 0
-        : event.key === "End"
-          ? tabs.length - 1
-          : (index +
-              (["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1) +
-              tabs.length) %
-            tabs.length;
-    tabs[next].click();
-    tabs[next].focus();
   };
   return (
     <div
       className="editorial-site"
+      data-instant-motion={instantMotion || undefined}
+      onKeyDownCapture={() => setInstantMotion(true)}
+      onPointerDownCapture={() => setInstantMotion(false)}
       onKeyDown={(event) => {
         if (event.key === "Escape") setMenuOpen(false);
       }}
@@ -107,7 +94,7 @@ export function EditorialHome() {
         </div>
         <button
           className="menu-button"
-          aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+          aria-label={tr ? (menuOpen ? "Menüyü kapat" : "Menüyü aç") : (menuOpen ? "Close navigation" : "Open navigation")}
           aria-expanded={menuOpen}
           aria-controls="mobile-nav"
           onClick={() => setMenuOpen(!menuOpen)}
@@ -143,18 +130,21 @@ export function EditorialHome() {
       </nav>
       <main id="main">
         <section className="hero wrap">
+          <svg className="hero-frequency" viewBox="0 0 600 180" fill="none" aria-hidden="true">
+            <path d="M0 90H120C145 90 148 55 163 55S180 135 195 135S210 20 226 20S241 160 257 160S273 45 289 45S305 125 322 125S340 70 357 70S375 90 405 90H600" />
+            <path d="M0 104H110C145 104 148 83 163 83S180 122 195 122S210 56 226 56S241 143 257 143S273 70 289 70S305 118 322 118S340 91 357 91S375 104 405 104H600" />
+          </svg>
           <div className="hero-main">
             <h1>
               {tr ? (
                 <>
-                  IELTS speaking.
-                  <br /> Bir sonraki denemen
-                  <br /> <em>daha iyi olsun.</em>
+                  <span className="hero-title-lead">IELTS speaking.</span>
+                  <span className="hero-title-follow">Bir sonraki denemen<br /><em>daha iyi olsun.</em></span>
                 </>
               ) : (
                 <>
-                  IELTS speaking.
-                  <br /> A <em>clearer</em> next attempt.
+                  <span className="hero-title-lead">IELTS speaking.</span>
+                  <span className="hero-title-follow">A <em>clearer</em> next attempt.</span>
                 </>
               )}
             </h1>
@@ -197,7 +187,7 @@ export function EditorialHome() {
           id="practice"
           aria-labelledby="demo-title"
         >
-          <div className="workbench">
+          <div className="workbench" data-reveal>
             <div className="workbench-header">
               <div className="workspace-brand">
                 <span className="tiny-mark" aria-hidden="true">
@@ -214,19 +204,18 @@ export function EditorialHome() {
             <div className="workbench-body">
               <aside className="prompt-panel">
                 <div className="prompt-top">
-                  <span id="exam-tag">{sample.tag}</span>
-                  <span className="topic-count">0{topic + 1} / 03</span>
+                  <span id="exam-tag">{samples[topic].tag}</span>
+                  <span className="topic-count" aria-live="polite" aria-atomic="true">0{topic + 1} / 03</span>
                 </div>
-                <div>
-                  <span className="prompt-caption">
-                    {t("LET’S TALK ABOUT")}
-                  </span>
-                  <h2
-                    id="demo-title"
-                    dangerouslySetInnerHTML={{ __html: sample.title }}
-                  />
-                  <p id="question">{sample.question}</p>
-                </div>
+                <PreviewScenes active={topic} mode="question">
+                  {samples.map((sample, index) => (
+                    <div key={index}>
+                      <span className="prompt-caption">{t("LET’S TALK ABOUT")}</span>
+                      <h2 id={index === topic ? "demo-title" : undefined} dangerouslySetInnerHTML={{ __html: sample.title }} />
+                      <p className="example-question" id={index === topic ? "question" : undefined}>{sample.question}</p>
+                    </div>
+                  ))}
+                </PreviewScenes>
                 <div className="prompt-bottom">
                   <div className="waveform" aria-hidden="true">
                     <i></i>
@@ -266,19 +255,22 @@ export function EditorialHome() {
                     <i></i>
                   </div>
                   <p>{t("Small steps. Spoken out loud.")}</p>
+                  <div className="question-progress" aria-hidden="true">
+                    {samples.map((_, index) => <i key={index} data-active={topic === index} />)}
+                  </div>
                   <div className="topic-controls">
                     <span>{t("Explore a question")}</span>
                     <button
                       onClick={() => changeTopic(-1)}
                       id="previous-topic"
-                      aria-label="Previous example question"
+                      aria-label={tr ? "Önceki örnek soru" : "Previous example question"}
                     >
                       ←
                     </button>
                     <button
                       onClick={() => changeTopic(1)}
                       id="next-topic"
-                      aria-label="Next example question"
+                      aria-label={tr ? "Sonraki örnek soru" : "Next example question"}
                     >
                       →
                     </button>
@@ -330,58 +322,37 @@ export function EditorialHome() {
                   aria-labelledby={retry ? "tab-retry" : "tab-first"}
                   tabIndex={0}
                 >
-                  <div className="transcript-label">
-                    <span>{t("YOUR TRANSCRIPT")}</span>
-                    <span id="answer-duration">
-                      {t("EXAMPLE 0")}
-                      {topic + 1}
-                    </span>
-                  </div>
-                  <blockquote
-                    id="transcript"
-                    dangerouslySetInnerHTML={{
-                      __html: retry ? sample.retry : sample.first,
-                    }}
-                  />
-                  <div className="coach-note">
-                    <span className="note-icon" aria-hidden="true">
-                      ↳
-                    </span>
-                    <div>
-                      <h3 id="feedback-title">
-                        {retry ? sample.retryHeading : sample.heading}
-                      </h3>
-                      <p id="feedback-text">
-                        {retry ? sample.retryFeedback : sample.feedback}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="next-step">
-                    <span className="step-star" aria-hidden="true">
-                      ✳
-                    </span>
-                    <p id="next-instruction">
-                      <strong>
-                        {retry
-                          ? tr
-                            ? "Devam et"
-                            : "Keep going"
-                          : tr
-                            ? "Sonraki denemen"
-                            : "Your next attempt"}
-                      </strong>
-                      {retry ? sample.retryNext : sample.next}
-                    </p>
-                    <button id="show-retry" onClick={() => setRetry(!retry)}>
-                      {retry
-                        ? tr
-                          ? "İlk cevaba dön ↶"
-                          : "Back to first answer ↶"
-                        : tr
-                          ? "Yeni denemeyi gör →"
-                          : "See the retry →"}
-                    </button>
-                  </div>
+                  <PreviewScenes active={topic * 2 + Number(retry)}>
+                    {samples.flatMap((sample, sampleIndex) => [false, true].map((isRetry) => {
+                      const selected = sampleIndex === topic && isRetry === retry;
+                      return (
+                        <div key={`${sampleIndex}-${isRetry}`}>
+                          <div className="transcript-label">
+                            <span>{t("YOUR TRANSCRIPT")}</span>
+                            <span id={selected ? "answer-duration" : undefined}>{t("EXAMPLE 0")}{sampleIndex + 1}</span>
+                          </div>
+                          <blockquote id={selected ? "transcript" : undefined} dangerouslySetInnerHTML={{ __html: isRetry ? sample.retry : sample.first }} />
+                          <div className="coach-note">
+                            <span className="note-icon" aria-hidden="true">↳</span>
+                            <div>
+                              <h3 id={selected ? "feedback-title" : undefined}>{isRetry ? sample.retryHeading : sample.heading}</h3>
+                              <p id={selected ? "feedback-text" : undefined}>{isRetry ? sample.retryFeedback : sample.feedback}</p>
+                            </div>
+                          </div>
+                          <div className="next-step">
+                            <span className="step-star" aria-hidden="true">✳</span>
+                            <p id={selected ? "next-instruction" : undefined}>
+                              <strong>{isRetry ? (tr ? "Devam et" : "Keep going") : (tr ? "Sonraki denemen" : "Your next attempt")}</strong>
+                              {isRetry ? sample.retryNext : sample.next}
+                            </p>
+                            <button ref={selected ? retryControl : undefined} id={selected ? "show-retry" : undefined} onClick={() => { restoreRetryFocus.current = true; setRetry((current) => !current); }}>
+                              {isRetry ? (tr ? "İlk cevaba dön ↶" : "Back to first answer ↶") : (tr ? "Yeni denemeyi gör →" : "See the retry →")}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }))}
+                  </PreviewScenes>
                 </div>
                 <p className="demo-footnote">
                   {" "}
@@ -418,7 +389,7 @@ export function EditorialHome() {
           </div>
         </section>
         <section className="loop-section wrap" aria-labelledby="loop-title">
-          <div className="section-intro">
+          <div className="section-intro" data-reveal>
             <div>
               <h2 id="loop-title">
                 {" "}
@@ -433,7 +404,7 @@ export function EditorialHome() {
             </p>
           </div>
           <div className="loop-rows">
-            <article>
+            <article data-reveal>
               <span className="row-number">01</span>
               <h3>
                 {" "}
@@ -449,7 +420,7 @@ export function EditorialHome() {
                 ↗
               </span>
             </article>
-            <article>
+            <article data-reveal data-reveal-delay="90">
               <span className="row-number">02</span>
               <h3>
                 {" "}
@@ -465,7 +436,7 @@ export function EditorialHome() {
                 ≋
               </span>
             </article>
-            <article>
+            <article data-reveal data-reveal-delay="180">
               <span className="row-number">03</span>
               <h3>
                 {" "}
@@ -495,7 +466,7 @@ export function EditorialHome() {
           aria-labelledby="audience-title"
         >
           <div className="wrap audience-grid">
-            <div className="audience-left">
+            <div className="audience-left" data-reveal>
               <span className="eyebrow">{t("A PLACE FOR YOUR PRACTICE")}</span>
               <h2 id="audience-title">
                 {" "}
@@ -554,6 +525,11 @@ export function EditorialHome() {
               aria-labelledby={`role-${role}`}
               tabIndex={0}
             >
+              <PreviewScenes active={roleKeys.indexOf(role)}>
+                {roleKeys.map((roleKey) => {
+                  const audience = roles[roleKey];
+                  const selected = roleKey === role;
+                  return <div key={roleKey} className="audience-scene">
               <div className="notebook">
                 <div className="notebook-top">
                   <span>{audience.label}</span>
@@ -563,35 +539,38 @@ export function EditorialHome() {
                   <span className="hand-check" aria-hidden="true">
                     ✓
                   </span>
-                  <span id="note-one">{audience.notes[0]}</span>
+                  <span id={selected ? "note-one" : undefined}>{audience.notes[0]}</span>
                 </div>
                 <div className="notebook-line">
                   <span className="hand-check" aria-hidden="true">
                     ✓
                   </span>
-                  <span id="note-two">{audience.notes[1]}</span>
+                  <span id={selected ? "note-two" : undefined}>{audience.notes[1]}</span>
                 </div>
                 <div className="notebook-line">
                   <span className="hand-check" aria-hidden="true">
                     ✓
                   </span>
-                  <span id="note-three">{audience.notes[2]}</span>
+                  <span id={selected ? "note-three" : undefined}>{audience.notes[2]}</span>
                 </div>
                 <div className="notebook-bottom">
-                  <span id="note-caption">{audience.caption}</span>
+                  <span id={selected ? "note-caption" : undefined}>{audience.caption}</span>
                   <span className="notebook-flower" aria-hidden="true">
                     ✳
                   </span>
                 </div>
               </div>
-              <h3 id="role-title">{audience.title}</h3>
-              <p id="role-description">{audience.description}</p>
+              <h3 id={selected ? "role-title" : undefined}>{audience.title}</h3>
+              <p id={selected ? "role-description" : undefined}>{audience.description}</p>
               <a
-                id="role-link"
+                id={selected ? "role-link" : undefined}
                 href={audience.url.replace("https://speakace.org", "")}
               >
                 {audience.link} <span aria-hidden="true">↗</span>
               </a>
+                  </div>;
+                })}
+              </PreviewScenes>
             </div>
           </div>
         </section>
@@ -600,7 +579,7 @@ export function EditorialHome() {
           id="plans"
           aria-labelledby="plans-title"
         >
-          <div className="section-intro">
+          <div className="section-intro" data-reveal>
             <div>
               <span className="eyebrow">
                 {t("START WITH YOUR OWN EXPERIENCE")}
@@ -618,7 +597,7 @@ export function EditorialHome() {
             </p>
           </div>
           <div className="plan-comparison">
-            <article className="free-plan">
+            <article className="free-plan" data-reveal>
               <span className="eyebrow">{t("A PLACE TO START")}</span>
               <div className="plan-title">
                 <h3>{t("Free")}</h3>
@@ -635,7 +614,7 @@ export function EditorialHome() {
                 {t("Start practising free")} <span aria-hidden="true">↗</span>
               </a>
             </article>
-            <article className="plus-plan">
+            <article className="plus-plan" data-reveal data-reveal-delay="90">
               <span className="eyebrow">{t("MORE ROOM TO GROW")}</span>
               <div className="plan-title">
                 <h3>SpeakAce Plus</h3>
@@ -671,51 +650,43 @@ export function EditorialHome() {
             </h2>
           </div>
           <div className="questions">
-            <details>
-              <summary>
+            <MotionDisclosure title={<>
                 {" "}
                 {t("Is the AI score an official IELTS band?")}{" "}
-                <span aria-hidden="true">+</span>
-              </summary>
+                </>}>
               <p>
                 {" "}
                 {t(
                   "No. It is a practice estimate that helps you review your answer and track your practice. It does not replace an official exam or an examiner’s judgement.",
                 )}{" "}
               </p>
-            </details>
-            <details>
-              <summary>
+            </MotionDisclosure>
+            <MotionDisclosure title={<>
                 {" "}
                 {t("Can I try it without creating an account?")}{" "}
-                <span aria-hidden="true">+</span>
-              </summary>
+                </>}>
               <p>
                 {" "}
                 {t(
                   "You can explore the interactive example without an account. Create a free account to record your answer, get personalised feedback and save your progress.",
                 )}{" "}
               </p>
-            </details>
-            <details>
-              <summary>
+            </MotionDisclosure>
+            <MotionDisclosure title={<>
                 {" "}
                 {t("Does SpeakAce also support TOEFL?")}{" "}
-                <span aria-hidden="true">+</span>
-              </summary>
+                </>}>
               <p>
                 {" "}
                 {t(
                   "Yes. You can practise TOEFL-style speaking tasks as well as IELTS tasks, with transcript review and focused feedback.",
                 )}{" "}
               </p>
-            </details>
-            <details>
-              <summary>
+            </MotionDisclosure>
+            <MotionDisclosure title={<>
                 {" "}
                 {t("Can I use it with my students?")}
-                <span aria-hidden="true">+</span>
-              </summary>
+                </>}>
               <p>
                 {" "}
                 {t(
@@ -725,7 +696,7 @@ export function EditorialHome() {
                   {t("Explore the teacher workflow ↗")}
                 </a>
               </p>
-            </details>
+            </MotionDisclosure>
           </div>
         </section>
         <section className="final-section wrap">
@@ -736,7 +707,7 @@ export function EditorialHome() {
             <span aria-hidden="true">↗</span>
           </div>
           <div className="final-main">
-            <h2>
+            <h2 data-reveal>
               {" "}
               {t("A little less hesitation.")} <br />{" "}
               <em>{t("A little more you.")}</em>

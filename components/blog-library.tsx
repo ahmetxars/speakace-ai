@@ -1,5 +1,7 @@
 "use client";
 
+import { usePanelFeedback } from "@/components/motion/use-panel-feedback";
+import { handleTabKeys } from "@/lib/tab-navigation";
 import type { Route } from "next";
 import Link from "next/link";
 import { startTransition, useDeferredValue, useState } from "react";
@@ -55,6 +57,7 @@ export function BlogLibrary({
 }: BlogLibraryProps) {
   const [activeCategory, setActiveCategory] = useState<"all" | BlogCategory>("all");
   const [query, setQuery] = useState("");
+  const feedback = usePanelFeedback(activeCategory);
   const [visibleLimit, setVisibleLimit] = useState(12);
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
   const categoryOrder: Array<"all" | BlogCategory> = ["all", "ielts", "toefl", "skills", "strategy"];
@@ -66,7 +69,7 @@ export function BlogLibrary({
   });
 
   return (
-    <section className="blog-library" aria-labelledby="blog-library-title">
+    <section {...feedback.input} className="blog-library" aria-labelledby="blog-library-title">
       <div className="blog-library-head">
         <div>
           <span className="content-kicker">{eyebrow}</span>
@@ -76,12 +79,15 @@ export function BlogLibrary({
       </div>
 
       <div className="blog-library-controls">
-        <div className="blog-library-tabs" role="tablist" aria-label={tabLabel}>
+        <div className="blog-library-tabs" role="tablist" onKeyDown={handleTabKeys} aria-label={tabLabel}>
           {categoryOrder.map((category) => (
             <button
               key={category}
               type="button"
               role="tab"
+              id={`blog-tab-${category}`}
+              aria-controls="blog-results"
+              tabIndex={activeCategory === category ? 0 : -1}
               aria-selected={activeCategory === category}
               className={activeCategory === category ? "is-active" : ""}
               onClick={() => startTransition(() => {
@@ -110,7 +116,7 @@ export function BlogLibrary({
       </div>
 
       {visiblePosts.length ? (
-        <div className="blog-library-grid" role="tabpanel">
+        <div className="blog-library-grid" role="tabpanel" ref={feedback.ref} id="blog-results" aria-labelledby={`blog-tab-${activeCategory}`}>
           {visiblePosts.slice(0, visibleLimit).map((post, index) => (
             <article key={post.slug} className="blog-library-card">
               <div className="blog-library-card-meta">
@@ -127,7 +133,7 @@ export function BlogLibrary({
           ))}
         </div>
       ) : (
-        <div className="blog-library-empty" role="tabpanel">{emptyLabel}</div>
+        <div className="blog-library-empty" role="tabpanel" ref={feedback.ref} id="blog-results" aria-labelledby={`blog-tab-${activeCategory}`}><span role="status">{emptyLabel}</span></div>
       )}
 
       {visiblePosts.length > visibleLimit ? (
