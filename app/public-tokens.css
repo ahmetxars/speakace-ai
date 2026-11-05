@@ -1,0 +1,21 @@
+/* Canonical public identity. Homepage aliases retain their original computed values. */
+:root {
+  --public-paper: #f5f4ee;
+  --public-ink: #202722;
+  --public-muted: #60675f;
+  --public-blue: #3155df;
+  --public-lime: #e5edab;
+  --public-line: #dcded4;
+  --public-white: #fff;
+  --public-font: "DM Sans", Arial, sans-serif;
+  --public-heading: Manrope, ui-sans-serif, system-ui, sans-serif;
+  --public-serif: "Instrument Serif", Georgia, serif;
+  --public-radius: 5px;
+  --public-card-radius: 8px;
+  --public-max: 1280px;
+  --public-gutter: 48px;
+  --public-fast: 140ms;
+  --public-ui: 200ms;
+  --public-panel: 280ms;
+  --public-enter: cubic-bezier(0.22, 1, 0.36, 1);
+}

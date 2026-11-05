@@ -387,7 +387,6 @@ export default function SpeakingTimerClient() {
                     fontSize: "1.6rem",
                     fontWeight: 800,
                     color: "var(--success, #3bb86e)",
-                    animation: "pulse 1s ease-in-out infinite",
                   }}
                 >
                   Time&apos;s up!
@@ -495,12 +494,7 @@ export default function SpeakingTimerClient() {
         </Link>
       </div>
 
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.06); }
-        }
-      `}</style>
+
     </main>
   );
 }

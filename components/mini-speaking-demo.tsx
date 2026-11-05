@@ -196,10 +196,6 @@ export function MiniSpeakingDemo({
     <div
       className="marketing-demo-card"
       style={{
-        background: "linear-gradient(180deg, color-mix(in oklch, var(--card) 95%, white 5%), color-mix(in oklch, var(--surface-strong) 88%, var(--card) 12%))",
-        border: "1px solid var(--border)",
-        borderRadius: "22px",
-        boxShadow: "0 24px 60px oklch(0.22 0.03 250 / 0.08)",
         display: "grid",
         gap: "1rem"
       }}

@@ -17,9 +17,8 @@ export function SiteMotion() {
     const focus = (event: FocusEvent) => { active.forEach((target, animation) => { if (event.target instanceof Node && target.contains(event.target)) animation.finish(); }); };
     document.addEventListener("focusin", focus);
     const selectors = [
-      "[data-reveal]", ".programme-hero-copy", ".programme-preview", ".programme-section-intro", ".programme-workflow-steps",
-      ".about-story-hero-copy", ".about-story-principle-grid", ".about-story-loop-copy",
-      ".resource-hub-hero-copy", ".resource-library-head", ".resource-hub-reading-head",
+      "[data-reveal]", ".public-page-hero-copy", ".public-section-head", ".audience-workflow",
+      ".resource-library-head",
       ".blog-index-hero", ".blog-library-head", ".auth-entry-frame", ".hero-grid > :first-child"
     ];
     const targets = Array.from(document.querySelectorAll<HTMLElement>(selectors.join(",")));

@@ -4,10 +4,10 @@ import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { CookieConsentPanel } from "@/components/cookie-consent";
 import { CheckoutRecoveryPrompt } from "@/components/checkout-recovery-prompt";
+import { PublicPageFrame } from "@/components/public/page-primitives";
 import { SiteMotion } from "@/components/motion/site-motion";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { MarketingStickyCta } from "@/components/marketing-sticky-cta";
 import { Providers } from "@/components/providers";
 import { getServerDirection, getServerLanguage } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
@@ -17,11 +17,13 @@ import "@fontsource/dm-sans/600.css";
 import "@fontsource/dm-sans/700.css";
 import "@fontsource/instrument-serif/latin-400-italic.css";
 import "@fontsource/instrument-serif/400.css";
+import "./public-tokens.css";
 import "./globals.css";
 import "./refresh.css";
 import "./editorial.css";
 import "./workspace.css";
 import "./motion.css";
+import "./public-design.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.domain),
@@ -154,11 +156,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             }}
           />
           {!hideGlobalChrome ? <SiteHeader /> : null}
-          {children}
+          {currentPath !== "/" && !currentPath.startsWith("/app") && !currentPath.startsWith("/admin") && !isMaintenancePage ? <PublicPageFrame>{children}</PublicPageFrame> : children}
           <SiteMotion />
           {!hideGlobalChrome ? <CookieConsentPanel /> : null}
           {!hideGlobalChrome ? <CheckoutRecoveryPrompt /> : null}
-          {!hideGlobalChrome ? <MarketingStickyCta /> : null}
           {!hideGlobalChrome ? <SiteFooter /> : null}
         </Providers>
       </body>

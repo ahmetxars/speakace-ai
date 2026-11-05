@@ -1,11 +1,11 @@
 .editorial-site {
-  --paper: #f5f4ee;
-  --ink: #202722;
-  --muted: #60675f;
-  --blue: #3155df;
-  --lime: #e5edab;
-  --line: #dcded4;
-  --white: #fff;
+  --paper: var(--public-paper);
+  --ink: var(--public-ink);
+  --muted: var(--public-muted);
+  --blue: var(--public-blue);
+  --lime: var(--public-lime);
+  --line: var(--public-line);
+  --white: var(--public-white);
   --radius: 5px;
 }
 .editorial-site * {

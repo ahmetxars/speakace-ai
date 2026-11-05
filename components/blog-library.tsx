@@ -2,10 +2,9 @@
 
 import { usePanelFeedback } from "@/components/motion/use-panel-feedback";
 import { handleTabKeys } from "@/lib/tab-navigation";
-import type { Route } from "next";
-import Link from "next/link";
+import { ResourceCard } from "@/components/public/page-primitives";
+import { LibrarySearch } from "@/components/public/library-search";
 import { startTransition, useDeferredValue, useState } from "react";
-import { ArrowUpRight, Search } from "lucide-react";
 
 export type BlogLibraryPost = {
   slug: string;
@@ -31,12 +30,27 @@ type BlogLibraryProps = {
 };
 
 function resolveCategory(post: BlogLibraryPost): BlogCategory {
-  const value = `${post.title} ${post.description} ${post.keywords.join(" ")}`.toLocaleLowerCase();
+  const value =
+    `${post.title} ${post.description} ${post.keywords.join(" ")}`.toLocaleLowerCase();
   if (value.includes("toefl")) return "toefl";
-  if (["fluency", "pronunciation", "vocabulary", "grammar", "coherence"].some((term) => value.includes(term))) {
+  if (
+    ["fluency", "pronunciation", "vocabulary", "grammar", "coherence"].some(
+      (term) => value.includes(term),
+    )
+  ) {
     return "skills";
   }
-  if (["strategy", "score", "band", "plan", "mistake", "test day", "note-taking"].some((term) => value.includes(term))) {
+  if (
+    [
+      "strategy",
+      "score",
+      "band",
+      "plan",
+      "mistake",
+      "test day",
+      "note-taking",
+    ].some((term) => value.includes(term))
+  ) {
     return "strategy";
   }
   return "ielts";
@@ -55,21 +69,37 @@ export function BlogLibrary({
   categories,
   posts,
 }: BlogLibraryProps) {
-  const [activeCategory, setActiveCategory] = useState<"all" | BlogCategory>("all");
+  const [activeCategory, setActiveCategory] = useState<"all" | BlogCategory>(
+    "all",
+  );
   const [query, setQuery] = useState("");
   const feedback = usePanelFeedback(activeCategory);
   const [visibleLimit, setVisibleLimit] = useState(12);
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
-  const categoryOrder: Array<"all" | BlogCategory> = ["all", "ielts", "toefl", "skills", "strategy"];
+  const categoryOrder: Array<"all" | BlogCategory> = [
+    "all",
+    "ielts",
+    "toefl",
+    "skills",
+    "strategy",
+  ];
   const visiblePosts = posts.filter((post) => {
     const category = resolveCategory(post);
-    const matchesCategory = activeCategory === "all" || category === activeCategory;
-    const searchable = `${post.title} ${post.description} ${post.keywords.join(" ")}`.toLocaleLowerCase();
-    return matchesCategory && (!deferredQuery || searchable.includes(deferredQuery));
+    const matchesCategory =
+      activeCategory === "all" || category === activeCategory;
+    const searchable =
+      `${post.title} ${post.description} ${post.keywords.join(" ")}`.toLocaleLowerCase();
+    return (
+      matchesCategory && (!deferredQuery || searchable.includes(deferredQuery))
+    );
   });
 
   return (
-    <section {...feedback.input} className="blog-library" aria-labelledby="blog-library-title">
+    <section
+      {...feedback.input}
+      className="blog-library"
+      aria-labelledby="blog-library-title"
+    >
       <div className="blog-library-head">
         <div>
           <span className="content-kicker">{eyebrow}</span>
@@ -79,7 +109,12 @@ export function BlogLibrary({
       </div>
 
       <div className="blog-library-controls">
-        <div className="blog-library-tabs" role="tablist" onKeyDown={handleTabKeys} aria-label={tabLabel}>
+        <div
+          className="blog-library-tabs"
+          role="tablist"
+          onKeyDown={handleTabKeys}
+          aria-label={tabLabel}
+        >
           {categoryOrder.map((category) => (
             <button
               key={category}
@@ -90,60 +125,72 @@ export function BlogLibrary({
               tabIndex={activeCategory === category ? 0 : -1}
               aria-selected={activeCategory === category}
               className={activeCategory === category ? "is-active" : ""}
-              onClick={() => startTransition(() => {
-                setActiveCategory(category);
-                setVisibleLimit(12);
-              })}
+              onClick={() =>
+                startTransition(() => {
+                  setActiveCategory(category);
+                  setVisibleLimit(12);
+                })
+              }
             >
               {categories[category]}
             </button>
           ))}
         </div>
 
-        <label className="blog-library-search">
-          <Search size={15} aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setVisibleLimit(12);
-            }}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-          />
-        </label>
+        <LibrarySearch
+          value={query}
+          label={searchPlaceholder}
+          onChange={(value) => {
+            setQuery(value);
+            setVisibleLimit(12);
+          }}
+        />
       </div>
 
       {visiblePosts.length ? (
-        <div className="blog-library-grid" role="tabpanel" ref={feedback.ref} id="blog-results" aria-labelledby={`blog-tab-${activeCategory}`}>
+        <div
+          className="blog-library-grid public-resource-grid"
+          role="tabpanel"
+          ref={feedback.ref}
+          id="blog-results"
+          aria-labelledby={`blog-tab-${activeCategory}`}
+        >
           {visiblePosts.slice(0, visibleLimit).map((post, index) => (
-            <article key={post.slug} className="blog-library-card">
-              <div className="blog-library-card-meta">
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <span>{post.keywords[0] ?? categories[resolveCategory(post)]}</span>
-              </div>
-              <h3>{post.title}</h3>
-              <p>{post.description}</p>
-              <Link href={`/blog/${post.slug}` as Route}>
-                {readLabel}
-                <ArrowUpRight size={15} aria-hidden="true" />
-              </Link>
-            </article>
+            <ResourceCard
+              key={post.slug}
+              href={`/blog/${post.slug}`}
+              category={post.keywords[0] ?? categories[resolveCategory(post)]}
+              title={post.title}
+              description={post.description}
+              action={readLabel}
+              index={index}
+            />
           ))}
         </div>
       ) : (
-        <div className="blog-library-empty" role="tabpanel" ref={feedback.ref} id="blog-results" aria-labelledby={`blog-tab-${activeCategory}`}><span role="status">{emptyLabel}</span></div>
+        <div
+          className="blog-library-empty"
+          role="tabpanel"
+          ref={feedback.ref}
+          id="blog-results"
+          aria-labelledby={`blog-tab-${activeCategory}`}
+        >
+          <span role="status">{emptyLabel}</span>
+        </div>
       )}
 
       {visiblePosts.length > visibleLimit ? (
         <button
           type="button"
           className="blog-library-more"
-          onClick={() => startTransition(() => setVisibleLimit((current) => current + 12))}
+          onClick={() =>
+            startTransition(() => setVisibleLimit((current) => current + 12))
+          }
         >
           {showMoreLabel}
-          <span>{visibleLimit} / {visiblePosts.length}</span>
+          <span>
+            {visibleLimit} / {visiblePosts.length}
+          </span>
         </button>
       ) : null}
 

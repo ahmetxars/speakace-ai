@@ -1,20 +1,21 @@
 "use client";
 
-import Link from "next/link";
-import { usePanelFeedback } from "@/components/motion/use-panel-feedback";
 import { useEffect, useState } from "react";
-import posthog from "posthog-js";
-import { TrackedLink } from "@/components/tracked-link";
+import { ArrowUpRight, Check, Download, MessageSquareText } from "lucide-react";
 import { useAppState } from "@/components/providers";
+import { usePanelFeedback } from "@/components/motion/use-panel-feedback";
+import { TrackedLink } from "@/components/tracked-link";
 import { trackClientEvent } from "@/lib/analytics-client";
+import { normalizePublicLanguage } from "@/lib/copy";
+import { buildPlanCheckoutPath, commerceConfig } from "@/lib/commerce";
+import { PLAN_LIMITS } from "@/lib/membership";
+import { pricingCopy } from "@/lib/pricing-copy";
 import {
-  buildPlanCheckoutPath,
-  commerceConfig,
-  commerceNumbers,
-  formatUsd,
-  getAnnualMonthlyEquivalent,
-  getAnnualSavingsPercentFromWeekly
-} from "@/lib/commerce";
+  PageCTA,
+  PageHero,
+  PageSection,
+  PublicButton,
+} from "@/components/public/page-primitives";
 
 declare global {
   interface Window {
@@ -23,246 +24,306 @@ declare global {
 }
 
 export function PricingCards() {
+  const { currentUser, signedIn, language } = useAppState();
+  const t = pricingCopy[normalizePublicLanguage(language)];
   const [billing, setBilling] = useState<"weekly" | "annual">("weekly");
-  const feedback = usePanelFeedback(billing, 0);
-  const { currentUser } = useAppState();
-  const isAnnual = billing === "annual";
-  const isSignedIn = Boolean(currentUser?.id);
-  const currentPlan = currentUser?.plan ?? "free";
-  const isPaidUser = currentPlan === "plus" || currentPlan === "pro" || currentPlan === "lifetime";
-  const annualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
-  const annualSavings = getAnnualSavingsPercentFromWeekly(commerceNumbers.plusWeeklyPrice, commerceNumbers.plusAnnualPrice);
-
+  const [demoPlan, setDemoPlan] = useState<"free" | "plus">("free");
+  const feedback = usePanelFeedback(billing);
+  const demoFeedback = usePanelFeedback(demoPlan);
+  const paid = signedIn && currentUser?.plan && currentUser.plan !== "free";
+  const annual = billing === "annual";
   useEffect(() => {
     void trackClientEvent({
       userId: currentUser?.id,
       event: "pricing_view",
-      path: "/pricing"
+      path: "/pricing",
     });
-    posthog.capture("pricing_view", { page: "/pricing" });
   }, [currentUser?.id]);
-
-  const trackPlusIntent = () => {
-    void trackClientEvent({
-      userId: currentUser?.id,
-      event: "pricing_plus_click",
-      path: `/pricing/plus/${billing}`,
-      source: "pricing_primary",
-      plan: "plus"
-    });
-
-    posthog.capture("pricing_plus_click", {
-      billing,
-      plan: "plus"
-    });
-  };
-
-  const fireCheckoutGa = () => {
-    if (typeof window === "undefined" || typeof window.gtag !== "function") return;
-
-    window.gtag("event", "begin_checkout", {
-      currency: "USD",
-      value: isAnnual ? commerceNumbers.plusAnnualPrice : commerceNumbers.plusWeeklyPrice,
-      items: [
-        {
-          item_id: isAnnual ? "plus_annual" : "plus_weekly",
-          item_name: isAnnual ? "SpeakAce Plus - Annual" : "SpeakAce Plus - Weekly",
-          price: isAnnual ? commerceNumbers.plusAnnualPrice : commerceNumbers.plusWeeklyPrice,
-          quantity: 1
-        }
-      ]
-    });
-  };
-
-  const plusCtaHref = isPaidUser
-    ? "/app/billing"
-    : buildPlanCheckoutPath({
-        plan: "plus",
-        billing,
-        campaign: "pricing_primary"
-      });
-  const plusCtaLabel = isPaidUser
-    ? `Manage ${currentPlan === "lifetime" ? "Lifetime" : currentPlan === "pro" ? "Pro" : "Plus"}`
-    : isSignedIn
-      ? isAnnual
-        ? "Upgrade this account annually"
-        : "Upgrade this account weekly"
-      : isAnnual
-        ? "Get annual savings"
-        : "Unlock full feedback";
-  const plusSupportNote = isPaidUser
-    ? "Your current account is already paid. Use billing to manage or change plans."
-    : isSignedIn
-      ? "Checkout upgrades this same account. You can return and keep practicing right away."
-      : "Use your first checkout on the same account you plan to practice with.";
-
+  const rows = [
+    {
+      label: t.sessions,
+      free: PLAN_LIMITS.free.sessionsPerDay,
+      plus: PLAN_LIMITS.plus.sessionsPerDay,
+    },
+    {
+      label: t.minutes,
+      free: PLAN_LIMITS.free.speakingMinutesPerDay,
+      plus: PLAN_LIMITS.plus.speakingMinutesPerDay,
+    },
+    { label: t.feedback, free: t.included, plus: t.included },
+    { label: t.writing, free: t.included, plus: t.included },
+    { label: t.export, free: t.unavailable, plus: t.included },
+  ];
   return (
-    <div className="pricing-motion" {...feedback.input} style={{ display: "grid", gap: "1.2rem" }}>
-      <div style={{ display: "flex", justifyContent: "center", gap: 0 }}>
-        <div
-          className="card"
-          style={{
-            display: "inline-flex",
-            gap: 0,
-            padding: "0.3rem",
-            borderRadius: 999,
-            background: "var(--surface-strong)"
-          }}
-        >
+    <main className="public-container pricing-page">
+      <PageHero eyebrow={t.eyebrow} title={t.title} description={t.intro} />
+      <section
+        className="pricing-offers"
+        {...feedback.input}
+        aria-label={t.offer}
+      >
+        <div className="public-segmented" role="group" aria-label={t.offer}>
           <button
             type="button"
+            aria-pressed={!annual}
             onClick={() => setBilling("weekly")}
-            aria-pressed={!isAnnual}
-            style={{
-              padding: "0.5rem 1.2rem",
-              borderRadius: 999,
-              border: "none",
-              fontWeight: 600,
-              fontSize: "0.9rem",
-              cursor: "pointer",
-              background: !isAnnual ? "var(--primary)" : "transparent",
-              color: !isAnnual ? "#fff" : "var(--muted)",
-              transition: "background-color var(--motion-ui) var(--motion-ease), color var(--motion-ui) var(--motion-ease)"
-            }}
           >
-            Weekly
+            {t.weekly}
           </button>
           <button
             type="button"
+            aria-pressed={annual}
             onClick={() => setBilling("annual")}
-            aria-pressed={isAnnual}
-            style={{
-              padding: "0.5rem 1.2rem",
-              borderRadius: 999,
-              border: "none",
-              fontWeight: 600,
-              fontSize: "0.9rem",
-              cursor: "pointer",
-              background: isAnnual ? "var(--primary)" : "transparent",
-              color: isAnnual ? "#fff" : "var(--muted)",
-              transition: "background-color var(--motion-ui) var(--motion-ease), color var(--motion-ui) var(--motion-ease)",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.45rem"
-            }}
           >
-            Annual
-            {!isAnnual ? (
-              <span
-                style={{
-                  background: "rgba(47,125,75,0.14)",
-                  color: "var(--success)",
-                  borderRadius: 6,
-                  padding: "0.1rem 0.5rem",
-                  fontSize: "0.78rem",
-                  fontWeight: 700
-                }}
-              >
-                Save {annualSavings}%
-              </span>
-            ) : null}
+            {t.annual}
           </button>
         </div>
-      </div>
-
-      <div className="marketing-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
-        <article className="card pricing-card" data-reveal>
-          <h3>Free</h3>
-          <div className="price-tag">$0</div>
-          <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
-            See your score before you pay.
-          </div>
-          <ul>
-            <li>4 daily speaking sessions</li>
-            <li>8 daily speaking minutes</li>
-            <li>Starter score view and transcript preview</li>
-            <li>Enough to test the workflow before upgrading</li>
-          </ul>
-          <Link className="button button-secondary" href="/auth">
-            Start free
-          </Link>
-        </article>
-
-        <article className="card pricing-card" data-featured="true" data-reveal data-reveal-delay="90">
-          <div className="pill" style={{ marginBottom: "0.8rem", width: "fit-content" }}>
-            {isAnnual ? "Best value for serious prep" : "Best first upgrade"}
-          </div>
-          <h3>{commerceConfig.plusPlanName}</h3>
-          <div className="price-tag" ref={feedback.ref}>
-            {isAnnual ? (
-              <>
-                <span
-                  style={{
-                    textDecoration: "line-through",
-                    color: "var(--muted)",
-                    fontSize: "0.85em",
-                    fontWeight: 400,
-                    marginRight: "0.4rem"
-                  }}
-                >
-                  {commerceConfig.plusMonthlyPrice}/wk
-                </span>
-                {commerceConfig.plusAnnualPrice}/yr
-              </>
-            ) : (
-              <>{commerceConfig.plusMonthlyPrice}/week</>
-            )}
-          </div>
-          <div className="practice-meta" style={{ marginBottom: "0.8rem" }}>
-            {isAnnual
-              ? `${commerceConfig.plusAnnualPrice}/year = ${formatUsd(annualMonthlyEquivalent)}/month and ${annualSavings}% less than staying weekly`
-              : `${commerceConfig.plusMonthlyPrice}/week = ${formatUsd(commerceNumbers.plusWeeklyPrice * 4)}/month for a lower-friction first step`}
-          </div>
-          <ul>
-            <li>Keep practicing the same day instead of waiting for tomorrow</li>
-            <li>Full feedback after every speaking attempt</li>
-            <li>18 daily sessions and 35 speaking minutes</li>
-            <li>Writing Task 2 scoring with corrected version</li>
-            <li>Built for faster IELTS score improvement without private-lesson pricing</li>
-            {isAnnual ? <li>Best if your exam prep cycle will last more than a few weeks</li> : <li>Best if you want a lighter first purchase before committing longer-term</li>}
-          </ul>
-          <TrackedLink
-            className="button button-primary"
-            href={plusCtaHref}
-            userId={currentUser?.id}
-            analyticsEvent={isPaidUser ? "pricing_plus_click" : "checkout_initiated"}
-            analyticsPath={isPaidUser ? "/pricing/manage-plan" : `/pricing/plus/${billing}`}
-            onClick={() => {
-              if (isPaidUser) {
-                posthog.capture("pricing_manage_plan_click", {
-                  billing,
-                  current_plan: currentPlan
-                });
-                return;
+        <div className="pricing-offer-grid">
+          <article className="pricing-offer">
+            <div className="pricing-offer-top">
+              <span>01</span>
+              <span>{t.forever}</span>
+            </div>
+            <h2>{t.free}</h2>
+            <div className="pricing-amount">$0</div>
+            <p>{t.freeNote}</p>
+            <ul>
+              <li>
+                <Check size={15} />
+                {PLAN_LIMITS.free.sessionsPerDay} · {t.sessions}
+              </li>
+              <li>
+                <Check size={15} />
+                {PLAN_LIMITS.free.speakingMinutesPerDay} · {t.minutes}
+              </li>
+              <li>
+                <Check size={15} />
+                {t.feedback}
+              </li>
+              <li>
+                <Check size={15} />
+                {t.writing}
+              </li>
+            </ul>
+            <PublicButton
+              href={
+                signedIn
+                  ? "/app/practice"
+                  : "/auth?mode=signup&cta=pricing_free"
               }
-              trackPlusIntent();
-              fireCheckoutGa();
-            }}
-          >
-            {plusCtaLabel}
-          </TrackedLink>
-          <div className="practice-meta">
-            {isAnnual
-              ? "Charged once per year. Best for learners who already expect a full exam-prep cycle."
-              : "3 days free, then $3.99/week unless cancelled. Keep the same account after upgrade."}
-          </div>
-          <div className="practice-meta">
-            {plusSupportNote}
-          </div>
-        </article>
-      </div>
-
-      {isPaidUser ? (
-        <div className="card" style={{ padding: "1rem 1.1rem", display: "grid", gap: "0.45rem" }}>
-          <strong>Already on a paid plan?</strong>
-          <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.65 }}>
-            Manage the plan attached to this account from Billing. Existing Pro and Lifetime access stays unchanged.
-          </p>
-          <Link className="button button-secondary" href="/app/billing" style={{ width: "fit-content" }}>
-            Manage billing
-          </Link>
+              secondary
+            >
+              {t.freeCta}
+            </PublicButton>
+          </article>
+          <article className="pricing-offer is-plus">
+            <div className="pricing-offer-top">
+              <span>02</span>
+              <span>{annual ? t.once : t.weekly}</span>
+            </div>
+            <h2>SpeakAce Plus</h2>
+            <div className="pricing-amount" ref={feedback.ref}>
+              {annual
+                ? commerceConfig.plusAnnualPrice
+                : commerceConfig.plusMonthlyPrice}
+              <small>{annual ? t.once : t.week}</small>
+            </div>
+            <p>{t.plusNote}</p>
+            <ul>
+              <li>
+                <Check size={15} />
+                {PLAN_LIMITS.plus.sessionsPerDay} · {t.sessions}
+              </li>
+              <li>
+                <Check size={15} />
+                {PLAN_LIMITS.plus.speakingMinutesPerDay} · {t.minutes}
+              </li>
+              <li>
+                <Check size={15} />
+                {t.feedback} + {t.writing}
+              </li>
+              <li>
+                <Check size={15} />
+                {t.export}
+              </li>
+            </ul>
+            <TrackedLink
+              className="public-button"
+              href={
+                paid
+                  ? "/app/billing"
+                  : buildPlanCheckoutPath({
+                      plan: "plus",
+                      billing,
+                      campaign: "pricing_primary",
+                    })
+              }
+              userId={currentUser?.id}
+              analyticsEvent={
+                paid ? "pricing_plus_click" : "checkout_initiated"
+              }
+              analyticsPath={
+                paid ? "/pricing/manage-plan" : `/pricing/plus/${billing}`
+              }
+              onClick={() => {
+                if (paid) return;
+                void trackClientEvent({
+                  userId: currentUser?.id,
+                  event: "pricing_plus_click",
+                  path: `/pricing/plus/${billing}`,
+                  source: "pricing_primary",
+                  plan: "plus",
+                });
+              }}
+            >
+              {paid ? t.manage : t.plusCta}
+              <ArrowUpRight size={18} />
+            </TrackedLink>
+            <p className="pricing-terms">{annual ? t.annualTerms : t.trial}</p>
+          </article>
         </div>
-      ) : null}
-    </div>
+        <p className="pricing-account-note">{paid ? t.paid : t.account}</p>
+      </section>
+      <PageSection eyebrow={t.comparison} title={t.comparisonTitle}>
+        <div
+          className="pricing-comparison"
+          role="region"
+          aria-label={t.comparison}
+          tabIndex={0}
+        >
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">{t.comparison}</th>
+                <th scope="col">Free</th>
+                <th scope="col">Plus</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.label}>
+                  <th scope="row">{row.label}</th>
+                  <td>{row.free}</td>
+                  <td>{row.plus}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="pricing-footnote">{t.quotaNote}</p>
+      </PageSection>
+      <PageSection
+        eyebrow={t.demoEyebrow}
+        title={t.demoTitle}
+        description={t.demoBody}
+      >
+        <div className="pricing-demo" {...demoFeedback.input}>
+          <div className="pricing-demo-notebook">
+            <span className="public-kicker">IELTS · Speaking Part 1</span>
+            <h3>{t.samplePrompt}</h3>
+            <blockquote>{t.sampleAnswer}</blockquote>
+            <div className="audience-note">
+              <MessageSquareText size={20} />
+              <strong>{t.sampleFeedback}</strong>
+            </div>
+            <small>{t.sample}</small>
+          </div>
+          <div className="pricing-demo-controls">
+            <div
+              className="public-segmented"
+              role="group"
+              aria-label={t.demoEyebrow}
+            >
+              <button
+                aria-pressed={demoPlan === "free"}
+                type="button"
+                onClick={() => setDemoPlan("free")}
+              >
+                Free
+              </button>
+              <button
+                aria-pressed={demoPlan === "plus"}
+                type="button"
+                onClick={() => setDemoPlan("plus")}
+              >
+                Plus
+              </button>
+            </div>
+            <div ref={demoFeedback.ref} className="pricing-demo-allowance">
+              <div>
+                <strong>{PLAN_LIMITS[demoPlan].sessionsPerDay}</strong>
+                <span>{t.sessions}</span>
+              </div>
+              <div>
+                <strong>{PLAN_LIMITS[demoPlan].speakingMinutesPerDay}</strong>
+                <span>{t.minutes}</span>
+              </div>
+              <div
+                className={
+                  "pricing-demo-export " +
+                  (demoPlan === "plus" ? "is-included" : "")
+                }
+              >
+                <Download size={20} />
+                <span>
+                  {t.report}
+                  <small>
+                    {demoPlan === "plus" ? t.included : t.unavailable}
+                  </small>
+                </span>
+                {demoPlan === "plus" && <Check size={17} />}
+              </div>
+              <p>{t.reportNote}</p>
+            </div>
+          </div>
+        </div>
+      </PageSection>
+      <PageSection eyebrow={t.checkoutEyebrow} title={t.checkoutTitle}>
+        <ol className="pricing-checkout-steps">
+          {t.checkoutSteps.map((step, index) => (
+            <li key={step.title}>
+              <span>0{index + 1}</span>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </li>
+          ))}
+        </ol>
+      </PageSection>
+      <PageSection title={t.faqTitle}>
+        <div className="public-faq-list">
+          {t.faqs.map((item) => (
+            <details key={item.q}>
+              <summary>
+                {item.q}
+                <span aria-hidden="true">+</span>
+              </summary>
+              <p>{item.a}</p>
+            </details>
+          ))}
+        </div>
+        <a className="public-text-link" href={commerceConfig.customerPortalUrl}>
+          {t.portal} ↗
+        </a>
+      </PageSection>
+      <section className="pricing-school public-section" id="schools">
+        <span className="public-kicker">{t.schools}</span>
+        <div>
+          <h2>{t.schoolTitle}</h2>
+          <p>{t.schoolBody}</p>
+          <PublicButton href="/for-schools" secondary>
+            {t.schoolCta}
+          </PublicButton>
+        </div>
+      </section>
+      <PageCTA title={t.closing} description={t.closingBody}>
+        <PublicButton
+          href={
+            signedIn ? "/app/practice" : "/auth?mode=signup&cta=pricing_close"
+          }
+        >
+          {t.freeCta}
+        </PublicButton>
+      </PageCTA>
+    </main>
   );
 }

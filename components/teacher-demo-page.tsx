@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -12,8 +12,16 @@ import {
   CircleAlert,
   LayoutDashboard,
   Plus,
-  UsersRound
+  UsersRound,
 } from "lucide-react";
+import {
+  PageHero,
+  PageSection,
+  PageCTA,
+  PublicButton,
+} from "@/components/public/page-primitives";
+import { AudienceScene } from "@/components/public/audience-scene";
+import { handleTabKeys } from "@/lib/tab-navigation";
 import { useAppState } from "@/components/providers";
 import { normalizePublicLanguage, type PublicLanguage } from "@/lib/copy";
 
@@ -43,7 +51,12 @@ type DemoCopy = {
   latest: string;
   focus: string;
   status: string;
-  rows: Array<{ learner: string; score: string; focus: string; status: string }>;
+  rows: Array<{
+    learner: string;
+    score: string;
+    focus: string;
+    status: string;
+  }>;
   viewAll: string;
   sectionEyebrow: string;
   sectionTitle: string;
@@ -74,7 +87,11 @@ const demoCopy: Record<PublicLanguage, DemoCopy> = {
     attention: "Need attention",
     activity: "Practice activity",
     actionQueue: "Action queue",
-    actions: ["2 learners missed the due date", "Pronunciation is the class-wide focus", "6 new attempts are ready to review"],
+    actions: [
+      "2 learners missed the due date",
+      "Pronunciation is the class-wide focus",
+      "6 new attempts are ready to review",
+    ],
     openQueue: "Review priority list",
     roster: "Learner pulse",
     learner: "Learner",
@@ -82,23 +99,55 @@ const demoCopy: Record<PublicLanguage, DemoCopy> = {
     focus: "Current focus",
     status: "Status",
     rows: [
-      { learner: "Student 04", score: "6.5", focus: "Fluency", status: "Improving" },
-      { learner: "Student 11", score: "5.5", focus: "Pronunciation", status: "Follow up" },
-      { learner: "Student 16", score: "7.0", focus: "Development", status: "On track" },
-      { learner: "Student 18", score: "6.0", focus: "Vocabulary", status: "Homework due" }
+      {
+        learner: "Student 04",
+        score: "6.5",
+        focus: "Fluency",
+        status: "Improving",
+      },
+      {
+        learner: "Student 11",
+        score: "5.5",
+        focus: "Pronunciation",
+        status: "Follow up",
+      },
+      {
+        learner: "Student 16",
+        score: "7.0",
+        focus: "Development",
+        status: "On track",
+      },
+      {
+        learner: "Student 18",
+        score: "6.0",
+        focus: "Vocabulary",
+        status: "Homework due",
+      },
     ],
     viewAll: "Open full roster",
     sectionEyebrow: "Built around the next lesson",
     sectionTitle: "The dashboard does not just report. It helps you decide.",
-    sectionBody: "Every area is arranged around a real teacher question, so you can move from signal to action without assembling the story yourself.",
+    sectionBody:
+      "Every area is arranged around a real teacher question, so you can move from signal to action without assembling the story yourself.",
     features: [
-      { title: "Who should I help first?", body: "Risk and due-date signals bring the right learners to the top." },
-      { title: "What should the class practise?", body: "Skill patterns show where a shared follow-up will have the most value." },
-      { title: "Did the assignment work?", body: "Completion, attempts, and results stay connected to the task." }
+      {
+        title: "Who should I help first?",
+        body: "Risk and due-date signals bring the right learners to the top.",
+      },
+      {
+        title: "What should the class practise?",
+        body: "Skill patterns show where a shared follow-up will have the most value.",
+      },
+      {
+        title: "Did the assignment work?",
+        body: "Completion, attempts, and results stay connected to the task.",
+      },
     ],
     closingEyebrow: "Try the real workflow",
-    closingTitle: "Create one class. Invite a few learners. Judge it with real activity.",
-    closingBody: "The teacher workspace is free to explore, and your first class takes only a short join code to start."
+    closingTitle:
+      "Create one class. Invite a few learners. Judge it with real activity.",
+    closingBody:
+      "The teacher workspace is free to explore, and your first class takes only a short join code to start.",
   },
   tr: {
     eyebrow: "Etkileşimli öğretmen önizlemesi",
@@ -119,7 +168,11 @@ const demoCopy: Record<PublicLanguage, DemoCopy> = {
     attention: "Dikkat gerekli",
     activity: "Pratik aktivitesi",
     actionQueue: "Aksiyon sırası",
-    actions: ["2 öğrenci son tarihi kaçırdı", "Sınıf genelinde odak telaffuz", "6 yeni deneme incelemeye hazır"],
+    actions: [
+      "2 öğrenci son tarihi kaçırdı",
+      "Sınıf genelinde odak telaffuz",
+      "6 yeni deneme incelemeye hazır",
+    ],
     openQueue: "Öncelik listesini incele",
     roster: "Öğrenci nabzı",
     learner: "Öğrenci",
@@ -127,52 +180,310 @@ const demoCopy: Record<PublicLanguage, DemoCopy> = {
     focus: "Mevcut odak",
     status: "Durum",
     rows: [
-      { learner: "Öğrenci 04", score: "6.5", focus: "Akıcılık", status: "Gelişiyor" },
-      { learner: "Öğrenci 11", score: "5.5", focus: "Telaffuz", status: "Takip et" },
-      { learner: "Öğrenci 16", score: "7.0", focus: "Geliştirme", status: "Yolunda" },
-      { learner: "Öğrenci 18", score: "6.0", focus: "Kelime", status: "Ödev bekliyor" }
+      {
+        learner: "Öğrenci 04",
+        score: "6.5",
+        focus: "Akıcılık",
+        status: "Gelişiyor",
+      },
+      {
+        learner: "Öğrenci 11",
+        score: "5.5",
+        focus: "Telaffuz",
+        status: "Takip et",
+      },
+      {
+        learner: "Öğrenci 16",
+        score: "7.0",
+        focus: "Geliştirme",
+        status: "Yolunda",
+      },
+      {
+        learner: "Öğrenci 18",
+        score: "6.0",
+        focus: "Kelime",
+        status: "Ödev bekliyor",
+      },
     ],
     viewAll: "Tüm listeyi aç",
     sectionEyebrow: "Sonraki ders etrafında kuruldu",
     sectionTitle: "Panel yalnız raporlamaz. Karar vermene yardım eder.",
-    sectionBody: "Her alan gerçek bir öğretmen sorusuna göre düzenlendi; hikâyeyi kendin birleştirmeden sinyalden aksiyona geçersin.",
+    sectionBody:
+      "Her alan gerçek bir öğretmen sorusuna göre düzenlendi; hikâyeyi kendin birleştirmeden sinyalden aksiyona geçersin.",
     features: [
-      { title: "Önce kime yardım etmeliyim?", body: "Risk ve son tarih sinyalleri doğru öğrencileri üste taşır." },
-      { title: "Sınıf ne çalışmalı?", body: "Beceri örüntüleri ortak tekrarın en değerli olacağı alanı gösterir." },
-      { title: "Ödev işe yaradı mı?", body: "Tamamlama, deneme ve sonuçlar görevle bağlantılı kalır." }
+      {
+        title: "Önce kime yardım etmeliyim?",
+        body: "Risk ve son tarih sinyalleri doğru öğrencileri üste taşır.",
+      },
+      {
+        title: "Sınıf ne çalışmalı?",
+        body: "Beceri örüntüleri ortak tekrarın en değerli olacağı alanı gösterir.",
+      },
+      {
+        title: "Ödev işe yaradı mı?",
+        body: "Tamamlama, deneme ve sonuçlar görevle bağlantılı kalır.",
+      },
     ],
     closingEyebrow: "Gerçek akışı dene",
-    closingTitle: "Bir sınıf oluştur. Birkaç öğrenci çağır. Gerçek aktiviteyle değerlendir.",
-    closingBody: "Öğretmen alanını ücretsiz keşfedebilirsin; ilk sınıfı başlatmak için kısa bir katılım kodu yeterli."
+    closingTitle:
+      "Bir sınıf oluştur. Birkaç öğrenci çağır. Gerçek aktiviteyle değerlendir.",
+    closingBody:
+      "Öğretmen alanını ücretsiz keşfedebilirsin; ilk sınıfı başlatmak için kısa bir katılım kodu yeterli.",
   },
   de: {
-    eyebrow: "Interaktive Lehrervorschau", title: "Sieh vor dem Unterricht, was Aufmerksamkeit braucht.", body: "Diese Demo zeigt die Lehrerseite von SpeakAce: Aktivität, Aufgaben, Risiken und nächste Entscheidungen in einer ruhigen Ansicht.", primary: "Erste Klasse erstellen", secondary: "Lehrerprogramm ansehen", demoNote: "Beispieldaten · keine Anmeldung nötig",
-    className: "IELTS Abend · B2", week: "Diese Woche", overview: "Übersicht", students: "Lernende", assignments: "Aufgaben", announcements: "Mitteilungen", classAverage: "Klassenschnitt", weeklyAttempts: "Versuche diese Woche", completion: "Aufgaben erledigt", attention: "Brauchen Hilfe", activity: "Übungsaktivität", actionQueue: "Aktionsliste", actions: ["2 Lernende verpassten die Frist", "Aussprache ist Klassenfokus", "6 Versuche warten auf Prüfung"], openQueue: "Prioritäten prüfen", roster: "Lernendenpuls", learner: "Lernende", latest: "Letztes Band", focus: "Aktueller Fokus", status: "Status",
-    rows: [{ learner: "Lernende 04", score: "6.5", focus: "Flüssigkeit", status: "Verbessert sich" }, { learner: "Lernende 11", score: "5.5", focus: "Aussprache", status: "Nachfassen" }, { learner: "Lernende 16", score: "7.0", focus: "Entwicklung", status: "Im Plan" }, { learner: "Lernende 18", score: "6.0", focus: "Wortschatz", status: "Aufgabe fällig" }], viewAll: "Ganze Liste öffnen",
-    sectionEyebrow: "Für die nächste Stunde", sectionTitle: "Das Dashboard berichtet nicht nur. Es hilft entscheiden.", sectionBody: "Jeder Bereich beantwortet eine echte Lehrerfrage und führt vom Signal zur Aktion.", features: [{ title: "Wem helfe ich zuerst?", body: "Risiken und Fristen priorisieren die richtigen Lernenden." }, { title: "Was soll die Klasse üben?", body: "Fähigkeitsmuster zeigen den besten gemeinsamen Fokus." }, { title: "Hat die Aufgabe funktioniert?", body: "Erledigung, Versuche und Ergebnisse bleiben verbunden." }], closingEyebrow: "Echten Ablauf testen", closingTitle: "Eine Klasse erstellen, Lernende einladen, mit echter Aktivität bewerten.", closingBody: "Der Lehrerbereich ist kostenlos zu erkunden; ein kurzer Code startet die Klasse."
+    eyebrow: "Interaktive Lehrervorschau",
+    title: "Sieh vor dem Unterricht, was Aufmerksamkeit braucht.",
+    body: "Diese Demo zeigt die Lehrerseite von SpeakAce: Aktivität, Aufgaben, Risiken und nächste Entscheidungen in einer ruhigen Ansicht.",
+    primary: "Erste Klasse erstellen",
+    secondary: "Lehrerprogramm ansehen",
+    demoNote: "Beispieldaten · keine Anmeldung nötig",
+    className: "IELTS Abend · B2",
+    week: "Diese Woche",
+    overview: "Übersicht",
+    students: "Lernende",
+    assignments: "Aufgaben",
+    announcements: "Mitteilungen",
+    classAverage: "Klassenschnitt",
+    weeklyAttempts: "Versuche diese Woche",
+    completion: "Aufgaben erledigt",
+    attention: "Brauchen Hilfe",
+    activity: "Übungsaktivität",
+    actionQueue: "Aktionsliste",
+    actions: [
+      "2 Lernende verpassten die Frist",
+      "Aussprache ist Klassenfokus",
+      "6 Versuche warten auf Prüfung",
+    ],
+    openQueue: "Prioritäten prüfen",
+    roster: "Lernendenpuls",
+    learner: "Lernende",
+    latest: "Letztes Band",
+    focus: "Aktueller Fokus",
+    status: "Status",
+    rows: [
+      {
+        learner: "Lernende 04",
+        score: "6.5",
+        focus: "Flüssigkeit",
+        status: "Verbessert sich",
+      },
+      {
+        learner: "Lernende 11",
+        score: "5.5",
+        focus: "Aussprache",
+        status: "Nachfassen",
+      },
+      {
+        learner: "Lernende 16",
+        score: "7.0",
+        focus: "Entwicklung",
+        status: "Im Plan",
+      },
+      {
+        learner: "Lernende 18",
+        score: "6.0",
+        focus: "Wortschatz",
+        status: "Aufgabe fällig",
+      },
+    ],
+    viewAll: "Ganze Liste öffnen",
+    sectionEyebrow: "Für die nächste Stunde",
+    sectionTitle: "Das Dashboard berichtet nicht nur. Es hilft entscheiden.",
+    sectionBody:
+      "Jeder Bereich beantwortet eine echte Lehrerfrage und führt vom Signal zur Aktion.",
+    features: [
+      {
+        title: "Wem helfe ich zuerst?",
+        body: "Risiken und Fristen priorisieren die richtigen Lernenden.",
+      },
+      {
+        title: "Was soll die Klasse üben?",
+        body: "Fähigkeitsmuster zeigen den besten gemeinsamen Fokus.",
+      },
+      {
+        title: "Hat die Aufgabe funktioniert?",
+        body: "Erledigung, Versuche und Ergebnisse bleiben verbunden.",
+      },
+    ],
+    closingEyebrow: "Echten Ablauf testen",
+    closingTitle:
+      "Eine Klasse erstellen, Lernende einladen, mit echter Aktivität bewerten.",
+    closingBody:
+      "Der Lehrerbereich ist kostenlos zu erkunden; ein kurzer Code startet die Klasse.",
   },
   es: {
-    eyebrow: "Vista docente interactiva", title: "Ve qué necesita atención antes de empezar la clase.", body: "Esta demo muestra el lado docente de SpeakAce: actividad, tareas, riesgo y decisiones para la próxima lección en una sola vista.", primary: "Crear primera clase", secondary: "Ver programa docente", demoNote: "Datos ilustrativos · sin iniciar sesión",
-    className: "IELTS tarde · B2", week: "Esta semana", overview: "Resumen", students: "Estudiantes", assignments: "Tareas", announcements: "Avisos", classAverage: "Media de clase", weeklyAttempts: "Intentos semanales", completion: "Tareas completas", attention: "Necesitan atención", activity: "Actividad", actionQueue: "Acciones", actions: ["2 alumnos pasaron la fecha", "Pronunciación es el foco común", "6 intentos listos para revisar"], openQueue: "Revisar prioridades", roster: "Pulso de alumnos", learner: "Estudiante", latest: "Último band", focus: "Foco actual", status: "Estado",
-    rows: [{ learner: "Estudiante 04", score: "6.5", focus: "Fluidez", status: "Mejorando" }, { learner: "Estudiante 11", score: "5.5", focus: "Pronunciación", status: "Seguimiento" }, { learner: "Estudiante 16", score: "7.0", focus: "Desarrollo", status: "En línea" }, { learner: "Estudiante 18", score: "6.0", focus: "Vocabulario", status: "Tarea pendiente" }], viewAll: "Abrir lista completa",
-    sectionEyebrow: "Construido para la próxima clase", sectionTitle: "El panel no solo informa. Ayuda a decidir.", sectionBody: "Cada área responde una pregunta docente real para pasar de señal a acción.", features: [{ title: "¿A quién ayudo primero?", body: "Riesgo y fechas ponen arriba a los alumnos correctos." }, { title: "¿Qué debe practicar la clase?", body: "Los patrones muestran el mejor foco compartido." }, { title: "¿Funcionó la tarea?", body: "Finalización, intentos y resultados siguen conectados." }], closingEyebrow: "Prueba el flujo real", closingTitle: "Crea una clase, invita alumnos y evalúa con actividad real.", closingBody: "Puedes explorar gratis; un código corto basta para empezar."
+    eyebrow: "Vista docente interactiva",
+    title: "Ve qué necesita atención antes de empezar la clase.",
+    body: "Esta demo muestra el lado docente de SpeakAce: actividad, tareas, riesgo y decisiones para la próxima lección en una sola vista.",
+    primary: "Crear primera clase",
+    secondary: "Ver programa docente",
+    demoNote: "Datos ilustrativos · sin iniciar sesión",
+    className: "IELTS tarde · B2",
+    week: "Esta semana",
+    overview: "Resumen",
+    students: "Estudiantes",
+    assignments: "Tareas",
+    announcements: "Avisos",
+    classAverage: "Media de clase",
+    weeklyAttempts: "Intentos semanales",
+    completion: "Tareas completas",
+    attention: "Necesitan atención",
+    activity: "Actividad",
+    actionQueue: "Acciones",
+    actions: [
+      "2 alumnos pasaron la fecha",
+      "Pronunciación es el foco común",
+      "6 intentos listos para revisar",
+    ],
+    openQueue: "Revisar prioridades",
+    roster: "Pulso de alumnos",
+    learner: "Estudiante",
+    latest: "Último band",
+    focus: "Foco actual",
+    status: "Estado",
+    rows: [
+      {
+        learner: "Estudiante 04",
+        score: "6.5",
+        focus: "Fluidez",
+        status: "Mejorando",
+      },
+      {
+        learner: "Estudiante 11",
+        score: "5.5",
+        focus: "Pronunciación",
+        status: "Seguimiento",
+      },
+      {
+        learner: "Estudiante 16",
+        score: "7.0",
+        focus: "Desarrollo",
+        status: "En línea",
+      },
+      {
+        learner: "Estudiante 18",
+        score: "6.0",
+        focus: "Vocabulario",
+        status: "Tarea pendiente",
+      },
+    ],
+    viewAll: "Abrir lista completa",
+    sectionEyebrow: "Construido para la próxima clase",
+    sectionTitle: "El panel no solo informa. Ayuda a decidir.",
+    sectionBody:
+      "Cada área responde una pregunta docente real para pasar de señal a acción.",
+    features: [
+      {
+        title: "¿A quién ayudo primero?",
+        body: "Riesgo y fechas ponen arriba a los alumnos correctos.",
+      },
+      {
+        title: "¿Qué debe practicar la clase?",
+        body: "Los patrones muestran el mejor foco compartido.",
+      },
+      {
+        title: "¿Funcionó la tarea?",
+        body: "Finalización, intentos y resultados siguen conectados.",
+      },
+    ],
+    closingEyebrow: "Prueba el flujo real",
+    closingTitle: "Crea una clase, invita alumnos y evalúa con actividad real.",
+    closingBody: "Puedes explorar gratis; un código corto basta para empezar.",
   },
   fr: {
-    eyebrow: "Aperçu enseignant interactif", title: "Voyez quoi prioriser avant le début du cours.", body: "Cette démo montre l’espace enseignant SpeakAce : activité, devoirs, risques et décisions du prochain cours dans une vue calme.", primary: "Créer ma première classe", secondary: "Voir le programme enseignant", demoNote: "Données illustratives · sans connexion",
-    className: "IELTS soir · B2", week: "Cette semaine", overview: "Aperçu", students: "Élèves", assignments: "Devoirs", announcements: "Annonces", classAverage: "Moyenne de classe", weeklyAttempts: "Essais cette semaine", completion: "Devoirs terminés", attention: "À suivre", activity: "Activité", actionQueue: "Actions", actions: ["2 élèves ont dépassé l’échéance", "La prononciation est le focus commun", "6 essais sont à revoir"], openQueue: "Voir les priorités", roster: "Pouls des élèves", learner: "Élève", latest: "Dernier band", focus: "Focus actuel", status: "Statut",
-    rows: [{ learner: "Élève 04", score: "6.5", focus: "Fluidité", status: "En progrès" }, { learner: "Élève 11", score: "5.5", focus: "Prononciation", status: "À relancer" }, { learner: "Élève 16", score: "7.0", focus: "Développement", status: "Dans le rythme" }, { learner: "Élève 18", score: "6.0", focus: "Vocabulaire", status: "Devoir attendu" }], viewAll: "Ouvrir la liste complète",
-    sectionEyebrow: "Pensé pour le prochain cours", sectionTitle: "Le tableau ne fait pas que rapporter. Il aide à décider.", sectionBody: "Chaque zone répond à une vraie question pédagogique et mène du signal à l’action.", features: [{ title: "Qui aider en premier ?", body: "Risques et échéances font remonter les bons élèves." }, { title: "Que doit travailler la classe ?", body: "Les tendances indiquent le meilleur focus commun." }, { title: "Le devoir a-t-il fonctionné ?", body: "Achèvement, essais et résultats restent reliés." }], closingEyebrow: "Tester le vrai flux", closingTitle: "Créez une classe, invitez quelques élèves et jugez sur l’activité réelle.", closingBody: "L’espace enseignant est gratuit à explorer; un code court suffit pour démarrer."
-  }
+    eyebrow: "Aperçu enseignant interactif",
+    title: "Voyez quoi prioriser avant le début du cours.",
+    body: "Cette démo montre l’espace enseignant SpeakAce : activité, devoirs, risques et décisions du prochain cours dans une vue calme.",
+    primary: "Créer ma première classe",
+    secondary: "Voir le programme enseignant",
+    demoNote: "Données illustratives · sans connexion",
+    className: "IELTS soir · B2",
+    week: "Cette semaine",
+    overview: "Aperçu",
+    students: "Élèves",
+    assignments: "Devoirs",
+    announcements: "Annonces",
+    classAverage: "Moyenne de classe",
+    weeklyAttempts: "Essais cette semaine",
+    completion: "Devoirs terminés",
+    attention: "À suivre",
+    activity: "Activité",
+    actionQueue: "Actions",
+    actions: [
+      "2 élèves ont dépassé l’échéance",
+      "La prononciation est le focus commun",
+      "6 essais sont à revoir",
+    ],
+    openQueue: "Voir les priorités",
+    roster: "Pouls des élèves",
+    learner: "Élève",
+    latest: "Dernier band",
+    focus: "Focus actuel",
+    status: "Statut",
+    rows: [
+      {
+        learner: "Élève 04",
+        score: "6.5",
+        focus: "Fluidité",
+        status: "En progrès",
+      },
+      {
+        learner: "Élève 11",
+        score: "5.5",
+        focus: "Prononciation",
+        status: "À relancer",
+      },
+      {
+        learner: "Élève 16",
+        score: "7.0",
+        focus: "Développement",
+        status: "Dans le rythme",
+      },
+      {
+        learner: "Élève 18",
+        score: "6.0",
+        focus: "Vocabulaire",
+        status: "Devoir attendu",
+      },
+    ],
+    viewAll: "Ouvrir la liste complète",
+    sectionEyebrow: "Pensé pour le prochain cours",
+    sectionTitle: "Le tableau ne fait pas que rapporter. Il aide à décider.",
+    sectionBody:
+      "Chaque zone répond à une vraie question pédagogique et mène du signal à l’action.",
+    features: [
+      {
+        title: "Qui aider en premier ?",
+        body: "Risques et échéances font remonter les bons élèves.",
+      },
+      {
+        title: "Que doit travailler la classe ?",
+        body: "Les tendances indiquent le meilleur focus commun.",
+      },
+      {
+        title: "Le devoir a-t-il fonctionné ?",
+        body: "Achèvement, essais et résultats restent reliés.",
+      },
+    ],
+    closingEyebrow: "Tester le vrai flux",
+    closingTitle:
+      "Créez une classe, invitez quelques élèves et jugez sur l’activité réelle.",
+    closingBody:
+      "L’espace enseignant est gratuit à explorer; un code court suffit pour démarrer.",
+  },
 };
 
 const bars = [36, 58, 44, 76, 64, 92, 71];
 
-const demoUnits: Record<PublicLanguage, { attempts: string; priorities: string; urgent: string }> = {
+const demoUnits: Record<
+  PublicLanguage,
+  { attempts: string; priorities: string; urgent: string }
+> = {
   en: { attempts: "attempts", priorities: "priorities", urgent: "urgent" },
   tr: { attempts: "deneme", priorities: "öncelik", urgent: "acil" },
   de: { attempts: "Versuche", priorities: "Prioritäten", urgent: "dringend" },
   es: { attempts: "intentos", priorities: "prioridades", urgent: "urgentes" },
-  fr: { attempts: "essais", priorities: "priorités", urgent: "urgents" }
+  fr: { attempts: "essais", priorities: "priorités", urgent: "urgents" },
 };
 
 type DemoView = "overview" | "students" | "assignments" | "announcements";
@@ -182,57 +493,65 @@ export function TeacherDemoPage() {
   const publicLanguage = normalizePublicLanguage(language);
   const copy = demoCopy[publicLanguage];
   const units = demoUnits[publicLanguage];
+  const id = useId();
+  const [queueOpen, setQueueOpen] = useState(false);
   const [activeView, setActiveView] = useState<DemoView>("overview");
-  const views: Array<{ key: DemoView; label: string; icon: typeof LayoutDashboard }> = [
+  const views: Array<{
+    key: DemoView;
+    label: string;
+    icon: typeof LayoutDashboard;
+  }> = [
     { key: "overview", label: copy.overview, icon: LayoutDashboard },
     { key: "students", label: copy.students, icon: UsersRound },
     { key: "assignments", label: copy.assignments, icon: BookOpenCheck },
-    { key: "announcements", label: copy.announcements, icon: BellRing }
+    { key: "announcements", label: copy.announcements, icon: BellRing },
   ];
-  const showActivity = activeView === "overview" || activeView === "assignments";
+  const showActivity =
+    activeView === "overview" || activeView === "assignments";
   const showRoster = activeView === "overview" || activeView === "students";
-  const panelTitle = views.find((view) => view.key === activeView)?.label ?? copy.overview;
+  const panelTitle =
+    views.find((view) => view.key === activeView)?.label ?? copy.overview;
 
   return (
-    <main className="teacher-demo-page">
-      <section className="teacher-demo-hero page-shell">
-        <div className="teacher-demo-hero-copy">
-          <span className="teacher-demo-kicker">{copy.eyebrow}</span>
-          <h1>{copy.title}</h1>
-          <p>{copy.body}</p>
-          <div className="teacher-demo-actions">
-            <Link className="button button-primary" href="/auth?mode=signup&cta=teacher_demo">{copy.primary}<ArrowRight size={16} /></Link>
-            <Link className="button button-secondary" href="/for-teachers">{copy.secondary}</Link>
-          </div>
-          <span className="teacher-demo-note"><CheckCircle2 size={14} />{copy.demoNote}</span>
-        </div>
-        <aside className="teacher-demo-snapshot" aria-label={copy.overview}>
-          <div className="teacher-demo-snapshot-head">
-            <span className="teacher-demo-snapshot-icon"><LayoutDashboard size={19} /></span>
-            <div><small>{copy.overview}</small><strong>{copy.className}</strong></div>
-            <span className="teacher-demo-live"><i />{copy.week}</span>
-          </div>
-          <div className="teacher-demo-snapshot-metrics">
-            <article><UsersRound size={17} /><span>{copy.students}</span><strong>18</strong></article>
-            <article><BookOpenCheck size={17} /><span>{copy.completion}</span><strong>78%</strong></article>
-          </div>
-          <div className="teacher-demo-priority">
-            <span><CircleAlert size={17} />{copy.attention}</span>
-            <strong>4</strong>
-            <small>2 {units.urgent}</small>
-          </div>
-        </aside>
-      </section>
+    <main className="public-container teacher-demo-page">
+      <PageHero
+        eyebrow={copy.eyebrow}
+        title={copy.title}
+        description={copy.body}
+        visual={<AudienceScene audience="teachers" locale={publicLanguage} />}
+        actions={
+          <>
+            <PublicButton href="/auth?mode=signup&cta=teacher_demo">
+              {copy.primary}
+            </PublicButton>
+            <PublicButton href="/for-teachers" secondary>
+              {copy.secondary}
+            </PublicButton>
+          </>
+        }
+      >
+        <p className="teacher-demo-note">
+          <CheckCircle2 size={14} />
+          {copy.demoNote}
+        </p>
+      </PageHero>
 
-      <section className="teacher-demo-browser page-shell" aria-label={copy.overview}>
+      <section className="teacher-demo-browser" aria-label={copy.overview}>
         <aside className="teacher-demo-sidebar">
           <div className="teacher-demo-brand">SA</div>
-          <nav role="tablist" aria-label={copy.overview}>
+          <nav
+            role="tablist"
+            aria-label={copy.overview}
+            onKeyDown={handleTabKeys}
+          >
             {views.map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
                 type="button"
                 role="tab"
+                id={`${id}-tab-${key}`}
+                aria-controls={`${id}-panel`}
+                tabIndex={activeView === key ? 0 : -1}
                 aria-selected={activeView === key}
                 className={activeView === key ? "is-active" : ""}
                 onClick={() => setActiveView(key)}
@@ -242,79 +561,200 @@ export function TeacherDemoPage() {
               </button>
             ))}
           </nav>
-          <Link href="/auth?mode=signup&cta=teacher_demo_sidebar"><Plus size={16} /><span>{copy.primary}</span></Link>
+          <Link href="/auth?mode=signup&cta=teacher_demo_sidebar">
+            <Plus size={16} />
+            <span>{copy.primary}</span>
+          </Link>
         </aside>
 
-        <div className="teacher-demo-main" role="tabpanel">
+        <div
+          className="teacher-demo-main"
+          id={`${id}-panel`}
+          aria-labelledby={`${id}-tab-${activeView}`}
+          role="tabpanel"
+          tabIndex={0}
+        >
           <header className="teacher-demo-main-head">
-            <div><span>{panelTitle}</span><h2>{copy.className}</h2></div>
+            <div>
+              <span>{panelTitle}</span>
+              <h2>{copy.className}</h2>
+            </div>
             <span>{copy.week}</span>
           </header>
 
           <div className="teacher-demo-kpis">
-            <article><span>{copy.classAverage}</span><strong>6.4</strong><small>+0.3</small></article>
-            <article><span>{copy.weeklyAttempts}</span><strong>62</strong><small>+18%</small></article>
-            <article><span>{copy.completion}</span><strong>78%</strong><small>14 / 18</small></article>
-            <article className="is-alert"><span>{copy.attention}</span><strong>4</strong><small><CircleAlert size={13} />2 {units.urgent}</small></article>
+            <article>
+              <span>{copy.classAverage}</span>
+              <strong>6.4</strong>
+              <small>+0.3</small>
+            </article>
+            <article>
+              <span>{copy.weeklyAttempts}</span>
+              <strong>62</strong>
+              <small>+18%</small>
+            </article>
+            <article>
+              <span>{copy.completion}</span>
+              <strong>78%</strong>
+              <small>14 / 18</small>
+            </article>
+            <article className="is-alert">
+              <span>{copy.attention}</span>
+              <strong>4</strong>
+              <small>
+                <CircleAlert size={13} />2 {units.urgent}
+              </small>
+            </article>
           </div>
 
-          <div className={`teacher-demo-panels${showActivity ? " has-chart" : ""}`}>
+          <div
+            className={`teacher-demo-panels${showActivity ? " has-chart" : ""}`}
+          >
             {showActivity ? (
               <article className="teacher-demo-panel teacher-demo-activity">
-                <div className="teacher-demo-panel-head"><div><span>{copy.activity}</span><strong>62 {units.attempts}</strong></div><BarChart3 size={18} /></div>
-                <div className="teacher-demo-chart" aria-hidden="true">
-                  {bars.map((height, index) => <span key={`${height}-${index}`} style={{ height: `${height}%` }} />)}
+                <div className="teacher-demo-panel-head">
+                  <div>
+                    <span>{copy.activity}</span>
+                    <strong>62 {units.attempts}</strong>
+                  </div>
+                  <BarChart3 size={18} />
                 </div>
-                <div className="teacher-demo-chart-labels"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+                <div className="teacher-demo-chart" aria-hidden="true">
+                  {bars.map((height, index) => (
+                    <span
+                      key={`${height}-${index}`}
+                      style={{ height: `${height}%` }}
+                    />
+                  ))}
+                </div>
+                <div className="teacher-demo-chart-labels">
+                  <span>M</span>
+                  <span>T</span>
+                  <span>W</span>
+                  <span>T</span>
+                  <span>F</span>
+                  <span>S</span>
+                  <span>S</span>
+                </div>
               </article>
             ) : null}
 
             <article className="teacher-demo-panel teacher-demo-actions-panel">
-              <div className="teacher-demo-panel-head"><div><span>{activeView === "announcements" ? copy.announcements : copy.actionQueue}</span><strong>3 {units.priorities}</strong></div><CircleAlert size={18} /></div>
-              <div className="teacher-demo-action-list">
-                {copy.actions.map((action, index) => <div key={action}><span>0{index + 1}</span><p>{action}</p><ChevronRight size={15} /></div>)}
+              <div className="teacher-demo-panel-head">
+                <div>
+                  <span>
+                    {activeView === "announcements"
+                      ? copy.announcements
+                      : copy.actionQueue}
+                  </span>
+                  <strong>3 {units.priorities}</strong>
+                </div>
+                <CircleAlert size={18} />
               </div>
-              <button type="button">{copy.openQueue}<ArrowRight size={15} /></button>
+              <div className="teacher-demo-action-list">
+                {copy.actions.map((action, index) => (
+                  <div key={action}>
+                    <span>0{index + 1}</span>
+                    <p>{action}</p>
+                    <ChevronRight size={15} />
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                aria-expanded={queueOpen}
+                aria-controls={`${id}-queue`}
+                onClick={() => setQueueOpen(!queueOpen)}
+              >
+                {copy.openQueue}
+                <ArrowRight size={15} />
+              </button>
+              {queueOpen && (
+                <div id={`${id}-queue`} className="teacher-demo-queue-detail">
+                  {copy.features.map((item) => (
+                    <div key={item.title}>
+                      <strong>{item.title}</strong>
+                      <p>{item.body}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </article>
           </div>
 
           {showRoster ? (
             <article className="teacher-demo-panel teacher-demo-roster">
-              <div className="teacher-demo-panel-head"><div><span>{copy.roster}</span><strong>18 {copy.students.toLowerCase()}</strong></div><UsersRound size={18} /></div>
+              <div className="teacher-demo-panel-head">
+                <div>
+                  <span>{copy.roster}</span>
+                  <strong>18 {copy.students.toLowerCase()}</strong>
+                </div>
+                <UsersRound size={18} />
+              </div>
               <div className="teacher-demo-roster-table">
-                <div className="teacher-demo-roster-head"><span>{copy.learner}</span><span>{copy.latest}</span><span>{copy.focus}</span><span>{copy.status}</span></div>
+                <div className="teacher-demo-roster-head">
+                  <span>{copy.learner}</span>
+                  <span>{copy.latest}</span>
+                  <span>{copy.focus}</span>
+                  <span>{copy.status}</span>
+                </div>
                 {copy.rows.map((row, index) => (
                   <div className="teacher-demo-roster-row" key={row.learner}>
-                    <span><i>{String(index + 4).padStart(2, "0")}</i><b>{row.learner}</b></span>
+                    <span>
+                      <i>{String(index + 4).padStart(2, "0")}</i>
+                      <b>{row.learner}</b>
+                    </span>
                     <strong>{row.score}</strong>
                     <span>{row.focus}</span>
-                    <span data-status={index === 1 || index === 3 ? "attention" : "good"}>{row.status}</span>
+                    <span
+                      data-status={
+                        index === 1 || index === 3 ? "attention" : "good"
+                      }
+                    >
+                      {row.status}
+                    </span>
                   </div>
                 ))}
               </div>
-              <button type="button" className="teacher-demo-roster-link">{copy.viewAll}<ArrowRight size={15} /></button>
+              {activeView !== "students" && (
+                <button
+                  type="button"
+                  className="teacher-demo-roster-link"
+                  onClick={() => setActiveView("students")}
+                >
+                  {copy.students}
+                  <ArrowRight size={15} />
+                </button>
+              )}
             </article>
           ) : null}
         </div>
       </section>
 
-      <section className="teacher-demo-decisions page-shell">
-        <div className="teacher-demo-section-intro">
-          <span className="teacher-demo-kicker">{copy.sectionEyebrow}</span>
-          <h2>{copy.sectionTitle}</h2>
-          <p>{copy.sectionBody}</p>
-        </div>
-        <div className="teacher-demo-decision-list">
-          {copy.features.map((feature, index) => (
-            <article key={feature.title}><span>0{index + 1}</span><div><h3>{feature.title}</h3><p>{feature.body}</p></div></article>
+      <PageSection
+        eyebrow={copy.sectionEyebrow}
+        title={copy.sectionTitle}
+        description={copy.sectionBody}
+      >
+        <div className="marketing-reading-features">
+          {copy.features.map((item, index) => (
+            <article key={item.title}>
+              <span>0{index + 1}</span>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </article>
           ))}
         </div>
-      </section>
-
-      <section className="teacher-demo-closing page-shell">
-        <div><span className="teacher-demo-kicker">{copy.closingEyebrow}</span><h2>{copy.closingTitle}</h2><p>{copy.closingBody}</p></div>
-        <Link className="button button-primary" href="/auth?mode=signup&cta=teacher_demo_bottom">{copy.primary}<ArrowRight size={16} /></Link>
-      </section>
+      </PageSection>
+      <PageCTA
+        eyebrow={copy.closingEyebrow}
+        title={copy.closingTitle}
+        description={copy.closingBody}
+      >
+        <PublicButton href="/auth?mode=signup&cta=teacher_demo_bottom">
+          {copy.primary}
+        </PublicButton>
+      </PageCTA>
     </main>
   );
 }

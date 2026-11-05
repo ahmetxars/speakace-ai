@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { BookOpenText, Gauge, Timer, Wrench } from "lucide-react";
+import {
+  PageHero,
+  PageSection,
+  PageCTA,
+  PublicButton,
+  ResourceCard,
+} from "@/components/public/page-primitives";
 import { siteConfig } from "@/lib/site";
 import { toolPages } from "@/lib/seo-growth";
-import { getToolVisual } from "@/lib/tool-visuals";
 
 export const metadata: Metadata = {
   title: "Free IELTS Speaking Tools | SpeakAce",
@@ -15,91 +21,95 @@ export const metadata: Metadata = {
       "Use free IELTS calculators, cue-card generators, timers, and planners to start a focused speaking session.",
     url: `${siteConfig.domain}/tools`,
     siteName: siteConfig.name,
-    type: "website"
-  }
+    type: "website",
+  },
 };
 
 export default function ToolsHubPage() {
+  const standalone = [
+    {
+      href: "/ielts-band-estimator",
+      title: "IELTS Band Score Estimator",
+      description:
+        "Reflect on six speaking habits and get a practice estimate with suggested next steps. This self-assessment does not analyse a recording.",
+      category: "Calculator",
+      icon: Gauge,
+    },
+    {
+      href: "/speaking-timer",
+      title: "Speaking Practice Timer",
+      description:
+        "Set the IELTS part, prepare your notes and keep an eye on the clock while you practise.",
+      category: "Timer",
+      icon: Timer,
+    },
+    {
+      href: "/speaking-phrase-bank",
+      title: "IELTS Speaking Phrase Bank",
+      description:
+        "Find openers, linkers and ways to develop an example. Adapt them to your own ideas rather than memorising a script.",
+      category: "Reference",
+      icon: BookOpenText,
+    },
+  ];
   return (
-    <>
-      <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
-        <div className="section-head" data-reveal>
-          <span className="eyebrow">Tools</span>
-          <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.8rem)", lineHeight: 0.96 }}>
-            Free speaking tools, planners, and generators.
-          </h1>
-          <p>
-            Start with calculators, generators, and simple planners when you want a low-friction
-            way to move into speaking practice.
-          </p>
-        </div>
-        <div className="marketing-grid">
-          {/* Standalone interactive tools — always shown at top */}
-          <article className="card feature-card interactive-link-card">
-            <div className="tool-card-visual" aria-hidden="true">
-              <span className="tool-card-icon">🎯</span>
-              <span className="pill tool-card-badge">Free</span>
-            </div>
-            <h2 style={{ fontSize: "1.35rem" }}>IELTS Band Score Estimator</h2>
-            <p>Estimate your IELTS speaking band score across fluency, pronunciation, grammar, and vocabulary — instantly.</p>
-            <div className="interactive-link-card-footer">
-              <span className="interactive-link-card-tag">Interactive</span>
-              <Link className="button button-secondary" href="/ielts-band-estimator">
-                Open tool
-              </Link>
-            </div>
-          </article>
-          <article className="card feature-card interactive-link-card">
-            <div className="tool-card-visual" aria-hidden="true">
-              <span className="tool-card-icon">⏱️</span>
-              <span className="pill tool-card-badge">Free</span>
-            </div>
-            <h2 style={{ fontSize: "1.35rem" }}>Speaking Practice Timer</h2>
-            <p>A dedicated timer for IELTS Part 1, Part 2, and Part 3 speaking practice — set the part, start the clock, and stay on time.</p>
-            <div className="interactive-link-card-footer">
-              <span className="interactive-link-card-tag">Interactive</span>
-              <Link className="button button-secondary" href="/speaking-timer">
-                Open tool
-              </Link>
-            </div>
-          </article>
-          <article className="card feature-card interactive-link-card">
-            <div className="tool-card-visual" aria-hidden="true">
-              <span className="tool-card-icon">📚</span>
-              <span className="pill tool-card-badge">Free</span>
-            </div>
-            <h2 style={{ fontSize: "1.35rem" }}>IELTS Phrase Bank</h2>
-            <p>Browse high-scoring IELTS speaking phrases by category — openers, linkers, examples, and conclusions — ready to practise.</p>
-            <div className="interactive-link-card-footer">
-              <span className="interactive-link-card-tag">Reference</span>
-              <Link className="button button-secondary" href="/speaking-phrase-bank">
-                Open tool
-              </Link>
-            </div>
-          </article>
-
-          {toolPages.map((item) => (
-            <article key={item.slug} className="card feature-card interactive-link-card">
-              <div className="tool-card-visual" aria-hidden="true">
-                <span className="tool-card-icon">
-                  {item.slug === "ielts-speaking-band-score-calculator"
-                    ? "4×"
-                    : getToolVisual(item.slug).emoji}
-                </span>
-                <span className="pill tool-card-badge">{getToolVisual(item.slug).badge}</span>
-              </div>
-              <h2 style={{ fontSize: "1.35rem" }}>{item.title}</h2>
-              <p>{item.description}</p>
-              <div className="interactive-link-card-footer">
-                <span className="interactive-link-card-tag">AI-powered</span>
-                <Link className="button button-secondary" href={`/tools/${item.slug}`}>
-                  {item.actionLabel ?? "Open tool"}
-                </Link>
-              </div>
-            </article>
+    <main className="public-container tools-directory">
+      <PageHero
+        eyebrow="Practice toolkit"
+        title={
+          <>
+            One small tool.
+            <br />
+            <em>A more focused session.</em>
+          </>
+        }
+        description="Choose a timer, a calculator or a planning exercise. These tools help you prepare and reflect; they do not award an official exam score."
+      />
+      <PageSection
+        eyebrow="Start here"
+        title="Keep a useful tool within reach."
+      >
+        <div className="public-resource-grid">
+          {standalone.map((item, index) => (
+            <ResourceCard
+              key={item.href}
+              {...item}
+              index={index}
+              icon={<item.icon size={23} />}
+              action="Open tool"
+            />
           ))}
         </div>
-      </main>
-    </>
+      </PageSection>
+      <PageSection
+        eyebrow="Prompts & planning"
+        title="Choose the part of practice you need."
+      >
+        <div className="public-resource-grid">
+          {toolPages.map((item, index) => (
+            <ResourceCard
+              key={item.slug}
+              href={`/tools/${item.slug}`}
+              category={
+                item.slug.includes("calculator")
+                  ? "Calculator"
+                  : "Practice helper"
+              }
+              title={item.title}
+              description={item.description}
+              index={index}
+              icon={<Wrench size={20} />}
+              action={item.actionLabel ?? "Open tool"}
+            />
+          ))}
+        </div>
+      </PageSection>
+      <PageCTA
+        title="Take your notes into a real answer."
+        description="Open a speaking prompt and work on one thing at a time."
+      >
+        <PublicButton href="/app/practice">Start free practice</PublicButton>
+      </PageCTA>
+    </main>
   );
 }

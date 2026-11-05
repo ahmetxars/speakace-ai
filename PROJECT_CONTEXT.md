@@ -25,6 +25,14 @@ Authenticated UI now uses `components/workspace-header.tsx` and the scoped `app/
 
 Microphone requests may remain pending indefinitely in the browser. Practice must allow exiting during permission setup; its request generation guard releases a stream arriving after cancellation/unmount. Writing report printing deliberately opens a same-origin blank window, then clears `opener`; using the `noopener` window feature would return no usable window handle and leave the report blank. Settings only expose `publicLocaleOptions`, matching the provider's accepted language set.
 
+## November 2026 public design migration
+
+See `docs/2026-11-05-public-design-migration.md`. The homepage remains the reference and its main markup is protected. `app/public-tokens.css` is the shared public token owner; `app/public-design.css` and `components/public/*` own the public shell, reading/tool surfaces and composable hero/section/card/CTA/search components. `EditorialPublicHeader` now serves both the homepage and all public/auth routes, with account and mobile variants; `PublicFooter` uses the original four-bar mark. `PublicPageFrame` excludes `/`, `/app*`, `/admin*` and maintenance. Keep private workspace styles independent.
+
+Audience copy lives in `lib/audience-copy.ts`; three product-scene families and meaningful feature tabs replace the old programme preview scores/usage percentages. Shared resource/blog cards preserve filtering and search state. Teacher demo data is illustrative; its navigation and priority controls are interactive. The generic marketing component no longer contains legacy gradients or fabricated score deltas. Case scenarios are explicitly authored examples, not verified customers.
+
+Pricing content lives in `lib/pricing-copy.ts` and `components/pricing-cards.tsx`. Free includes real speaking/writing feedback; do not claim it only unlocks full feedback after payment. Limits derive from `PLAN_LIMITS`; Plus increases daily volume and allows report export. The public Lemon checkouts were inspected: weekly $3.99 with three-day trial; the current $49.99 Plus Annual checkout is **one payment**, without recurring wording. The operator explicitly chose to leave merchant settings unchanged after initially requesting annual renewal. Do not silently label that offer a recurring annual subscription, promise an annual trial, infer an expiry or overwrite existing entitlements. Preserve checkout URLs/attribution and webhook processing until an actual merchant change is requested and verified.
+
 ## Overview
 
 SpeakAce AI is a single-repo Next.js 15 application for AI-assisted English speaking and writing practice, primarily around IELTS and TOEFL preparation.

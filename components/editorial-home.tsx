@@ -1,14 +1,14 @@
 "use client";
-import Link from "next/link";
 import { PreviewScenes } from "@/components/motion/preview-scenes";
 import { MotionDisclosure } from "@/components/motion/motion-disclosure";
 import { useState } from "react";
+import { EditorialPublicHeader } from "@/components/editorial-public-header";
+import { PublicFooter } from "@/components/public/footer";
 import { HeroProductShowcase, PracticeSignal, AudienceProductScene, FinalCTAVisual } from "@/components/voice-in-motion/product-scenes";
 import { FeedbackTransformation } from "@/components/voice-in-motion/feedback-transformation";
 import { ScrollPracticeJourney } from "@/components/voice-in-motion/scroll-practice-journey";
 import { handleTabKeys } from "@/lib/tab-navigation";
 import { useAppState } from "@/components/providers";
-import type { Language } from "@/lib/copy";
 import { homeTurkish } from "@/lib/home-translations";
 import {
   homeExamples,
@@ -18,13 +18,12 @@ import {
 } from "@/lib/home-demo-data";
 
 export function EditorialHome() {
-  const { language, setLanguage } = useAppState();
+  const { language } = useAppState();
   const tr = language === "tr";
   const t = (text: string) => (tr ? (homeTurkish[text] ?? text) : text);
   const [topic, setTopic] = useState(0);
   const [retry, setRetry] = useState(false);
   const [role, setRole] = useState<keyof typeof homeRoles>("students");
-  const [menuOpen, setMenuOpen] = useState(false);
   const [instantMotion, setInstantMotion] = useState(false);
   const [autoplayPaused, setAutoplayPaused] = useState(false);
   const samples = homeExamples.map((example, index) => ({
@@ -44,88 +43,12 @@ export function EditorialHome() {
       data-autoplay-paused={autoplayPaused || undefined}
       onKeyDownCapture={() => setInstantMotion(true)}
       onPointerDownCapture={() => setInstantMotion(false)}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") setMenuOpen(false);
-      }}
     >
       <a className="skip" href="#main">
         {" "}
         {t("Skip to content")}{" "}
       </a>
-      <header className="site-header wrap">
-        <Link className="brand" href="/" aria-label="SpeakAce home">
-          <span className="brand-mark" aria-hidden="true">
-            <i></i>
-            <i></i>
-            <i></i>
-            <i></i>
-          </span>
-          SpeakAce<span className="brand-dot">.</span>
-        </Link>
-        <nav aria-label="Main navigation">
-          <a href="#practice">{t("The practice")}</a>
-          <a href="#for-you">{t("For you")}</a>
-          <a href="#plans">{t("Plans")}</a>
-          <a href="/resources">
-            {" "}
-            {t("Resources")} <span aria-hidden="true">↗</span>
-          </a>
-        </nav>
-        <div className="header-actions">
-          <select
-            className="editorial-locale"
-            aria-label="Language"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value as Language)}
-          >
-            <option value="en">EN</option>
-            <option value="tr">TR</option>
-          </select>
-          <a className="sign-in" href="/auth?mode=signin">
-            {" "}
-            {t("Sign in")}{" "}
-          </a>
-          <a className="button small" href="/app/practice">
-            {" "}
-            {t("Start free")} <span aria-hidden="true">↗</span>
-          </a>
-        </div>
-        <button
-          className="menu-button"
-          aria-label={tr ? (menuOpen ? "Menüyü kapat" : "Menüyü aç") : (menuOpen ? "Close navigation" : "Open navigation")}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-nav"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          <span></span>
-          <span></span>
-        </button>
-      </header>
-      <nav
-        onClick={() => setMenuOpen(false)}
-        id="mobile-nav"
-        className="mobile-nav"
-        aria-label="Mobile navigation"
-        hidden={!menuOpen}
-      >
-        <a href="#practice">{t("The practice")}</a>
-        <a href="#for-you">{t("For you")}</a>
-        <a href="#plans">{t("Plans")}</a>
-        <a href="/resources">{t("Resources")}</a>
-        <a href="/auth?mode=signin">{t("Sign in")}</a>
-        <label className="mobile-locale">
-          {tr ? "Dil" : "Language"}
-          <select
-            className="editorial-locale"
-            aria-label="Mobile language"
-            value={language}
-            onChange={(event) => setLanguage(event.target.value as Language)}
-          >
-            <option value="en">English</option>
-            <option value="tr">Türkçe</option>
-          </select>
-        </label>
-      </nav>
+      <EditorialPublicHeader home />
       <main id="main">
         <section className="hero wrap">
           <div className="voice-hero-layout">
@@ -577,34 +500,7 @@ export function EditorialHome() {
           </div>
         </section>
       </main>
-      <footer className="site-footer wrap">
-        <div className="footer-top">
-          <Link className="brand" href="/">
-            <span className="brand-mark" aria-hidden="true">
-              <i></i>
-              <i></i>
-              <i></i>
-              <i></i>
-            </span>
-            SpeakAce<span className="brand-dot">.</span>
-          </Link>
-          <p>{t("A clearer next attempt.")}</p>
-          <div>
-            <a href="/about">{t("About")}</a>
-            <a href="/contact">{t("Contact")}</a>
-            <a href="/resources">{t("Resources")}</a>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <span>© 2026 SpeakAce</span>
-          <span>{t("Independent IELTS & TOEFL practice.")}</span>
-          <div>
-            <a href="/cookie-policy">{t("Cookies")}</a>
-            <a href="/privacy-policy">{t("Privacy")}</a>
-            <a href="/terms">{t("Terms")}</a>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter compact home />
     </div>
   );
 }

@@ -1,3 +1,9 @@
+import {
+  PageHero,
+  PublicButton,
+  Breadcrumb,
+} from "@/components/public/page-primitives";
+import { AudioLines } from "lucide-react";
 import type { Metadata } from "next";
 import type { Route } from "next";
 import Link from "next/link";
@@ -13,21 +19,126 @@ const pageDescription =
   "Practise 79 IELTS Speaking topics and questions for Parts 1, 2 and 3. Browse common prompts, cue cards, and follow-ups, then try one free with AI feedback.";
 
 const part1Topics = [
-  { topic: "Home", questions: ["Do you live in a house or an apartment?", "What do you like about your home?", "Would you like to change anything about it?"] },
-  { topic: "Hometown", questions: ["What is your hometown like?", "What do you like most about it?", "Has it changed in recent years?"] },
-  { topic: "Work", questions: ["What kind of work do you do?", "What do you enjoy about your job?", "Would you like to change your job in the future?"] },
-  { topic: "Study", questions: ["What do you study?", "Why did you choose that subject?", "What part of your studies do you enjoy most?"] },
-  { topic: "Travel", questions: ["Do you enjoy traveling?", "What type of places do you like to visit?", "Do you prefer traveling alone or with others?"] },
-  { topic: "Technology", questions: ["What technology do you use every day?", "Do you enjoy learning new apps?", "Has technology improved your life?"] },
-  { topic: "Food", questions: ["What food do you enjoy eating?", "Do you cook often?", "Is food culture important in your country?"] },
-  { topic: "Sports", questions: ["Do you play any sports?", "What sports are popular in your area?", "Did you enjoy sports as a child?"] },
-  { topic: "Weather", questions: ["What kind of weather do you like?", "Does the weather affect your mood?", "What season do you prefer?"] },
-  { topic: "Music", questions: ["Do you like listening to music?", "When do you usually listen to it?", "Has your taste in music changed?"] },
-  { topic: "Reading", questions: ["Do you enjoy reading books?", "What kind of books do you prefer?", "Did you read more when you were younger?"] },
-  { topic: "Daily routine", questions: ["What is your usual morning routine?", "Do you prefer busy days or calm days?", "Has your routine changed recently?"] },
-  { topic: "Friends", questions: ["How often do you spend time with friends?", "What do you usually do together?", "Is friendship important to you?"] },
-  { topic: "Shopping", questions: ["Do you enjoy shopping?", "What do you usually buy online?", "Do you prefer big malls or small shops?"] },
-  { topic: "Education", questions: ["Do you think education is important?", "What makes a good teacher?", "Should learning be more practical?"] }
+  {
+    topic: "Home",
+    questions: [
+      "Do you live in a house or an apartment?",
+      "What do you like about your home?",
+      "Would you like to change anything about it?",
+    ],
+  },
+  {
+    topic: "Hometown",
+    questions: [
+      "What is your hometown like?",
+      "What do you like most about it?",
+      "Has it changed in recent years?",
+    ],
+  },
+  {
+    topic: "Work",
+    questions: [
+      "What kind of work do you do?",
+      "What do you enjoy about your job?",
+      "Would you like to change your job in the future?",
+    ],
+  },
+  {
+    topic: "Study",
+    questions: [
+      "What do you study?",
+      "Why did you choose that subject?",
+      "What part of your studies do you enjoy most?",
+    ],
+  },
+  {
+    topic: "Travel",
+    questions: [
+      "Do you enjoy traveling?",
+      "What type of places do you like to visit?",
+      "Do you prefer traveling alone or with others?",
+    ],
+  },
+  {
+    topic: "Technology",
+    questions: [
+      "What technology do you use every day?",
+      "Do you enjoy learning new apps?",
+      "Has technology improved your life?",
+    ],
+  },
+  {
+    topic: "Food",
+    questions: [
+      "What food do you enjoy eating?",
+      "Do you cook often?",
+      "Is food culture important in your country?",
+    ],
+  },
+  {
+    topic: "Sports",
+    questions: [
+      "Do you play any sports?",
+      "What sports are popular in your area?",
+      "Did you enjoy sports as a child?",
+    ],
+  },
+  {
+    topic: "Weather",
+    questions: [
+      "What kind of weather do you like?",
+      "Does the weather affect your mood?",
+      "What season do you prefer?",
+    ],
+  },
+  {
+    topic: "Music",
+    questions: [
+      "Do you like listening to music?",
+      "When do you usually listen to it?",
+      "Has your taste in music changed?",
+    ],
+  },
+  {
+    topic: "Reading",
+    questions: [
+      "Do you enjoy reading books?",
+      "What kind of books do you prefer?",
+      "Did you read more when you were younger?",
+    ],
+  },
+  {
+    topic: "Daily routine",
+    questions: [
+      "What is your usual morning routine?",
+      "Do you prefer busy days or calm days?",
+      "Has your routine changed recently?",
+    ],
+  },
+  {
+    topic: "Friends",
+    questions: [
+      "How often do you spend time with friends?",
+      "What do you usually do together?",
+      "Is friendship important to you?",
+    ],
+  },
+  {
+    topic: "Shopping",
+    questions: [
+      "Do you enjoy shopping?",
+      "What do you usually buy online?",
+      "Do you prefer big malls or small shops?",
+    ],
+  },
+  {
+    topic: "Education",
+    questions: [
+      "Do you think education is important?",
+      "What makes a good teacher?",
+      "Should learning be more practical?",
+    ],
+  },
 ];
 
 const cueCards = [
@@ -40,18 +151,74 @@ const cueCards = [
   "Describe a book or article that taught you something.",
   "Describe a time when you solved a problem.",
   "Describe an interesting conversation you had.",
-  "Describe a goal you want to achieve in the future."
+  "Describe a goal you want to achieve in the future.",
 ];
 
 const part3Topics = [
-  { topic: "Education", questions: ["Why do some students learn faster than others?", "Should schools focus more on practical skills?", "How can technology improve education?"] },
-  { topic: "Technology", questions: ["How has technology changed communication?", "Do smartphones improve productivity?", "Should children have limits on technology use?"] },
-  { topic: "Travel", questions: ["Why do people travel more today?", "How can tourism affect local communities?", "Will virtual travel become more common?"] },
-  { topic: "Food habits", questions: ["Why do food habits change over time?", "Should schools teach healthy eating?", "Do people eat more convenience food now?"] },
-  { topic: "Work life", questions: ["Why do people change jobs more often now?", "Is remote work good for productivity?", "What makes a job satisfying?"] },
-  { topic: "Environment", questions: ["Why is environmental awareness growing?", "Should governments restrict car use more strongly?", "How can cities become greener?"] },
-  { topic: "Media", questions: ["How does social media influence opinions?", "Do people trust online information too easily?", "Should media companies be regulated more strictly?"] },
-  { topic: "Health and lifestyle", questions: ["Why do people care more about fitness today?", "Should employers support healthy habits?", "How can stress affect daily life?"] }
+  {
+    topic: "Education",
+    questions: [
+      "Why do some students learn faster than others?",
+      "Should schools focus more on practical skills?",
+      "How can technology improve education?",
+    ],
+  },
+  {
+    topic: "Technology",
+    questions: [
+      "How has technology changed communication?",
+      "Do smartphones improve productivity?",
+      "Should children have limits on technology use?",
+    ],
+  },
+  {
+    topic: "Travel",
+    questions: [
+      "Why do people travel more today?",
+      "How can tourism affect local communities?",
+      "Will virtual travel become more common?",
+    ],
+  },
+  {
+    topic: "Food habits",
+    questions: [
+      "Why do food habits change over time?",
+      "Should schools teach healthy eating?",
+      "Do people eat more convenience food now?",
+    ],
+  },
+  {
+    topic: "Work life",
+    questions: [
+      "Why do people change jobs more often now?",
+      "Is remote work good for productivity?",
+      "What makes a job satisfying?",
+    ],
+  },
+  {
+    topic: "Environment",
+    questions: [
+      "Why is environmental awareness growing?",
+      "Should governments restrict car use more strongly?",
+      "How can cities become greener?",
+    ],
+  },
+  {
+    topic: "Media",
+    questions: [
+      "How does social media influence opinions?",
+      "Do people trust online information too easily?",
+      "Should media companies be regulated more strictly?",
+    ],
+  },
+  {
+    topic: "Health and lifestyle",
+    questions: [
+      "Why do people care more about fitness today?",
+      "Should employers support healthy habits?",
+      "How can stress affect daily life?",
+    ],
+  },
 ];
 
 const topicStats = [
@@ -59,43 +226,46 @@ const topicStats = [
     href: "#part-1",
     eyebrow: "Part 1",
     value: "15 topics · 45 questions",
-    description: "Short questions about familiar life, habits, work, study, and preferences."
+    description:
+      "Short questions about familiar life, habits, work, study, and preferences.",
   },
   {
     href: "#part-2",
     eyebrow: "Part 2",
     value: "10 cue cards",
-    description: "Long-turn prompts for stories, people, places, objects, skills, and experiences."
+    description:
+      "Long-turn prompts for stories, people, places, objects, skills, and experiences.",
   },
   {
     href: "#part-3",
     eyebrow: "Part 3",
     value: "8 themes · 24 questions",
-    description: "Deeper opinion, comparison, cause-and-effect, and future-focused discussion."
-  }
+    description:
+      "Deeper opinion, comparison, cause-and-effect, and future-focused discussion.",
+  },
 ];
 
 const faqs = [
   {
     question: "What topics appear in IELTS Speaking?",
     answer:
-      "Common topic families include home, work, study, technology, travel, education, people, places, objects, experiences, and social change. The exact wording varies, so practise developing ideas rather than memorising one answer."
+      "Common topic families include home, work, study, technology, travel, education, people, places, objects, experiences, and social change. The exact wording varies, so practise developing ideas rather than memorising one answer.",
   },
   {
     question: "Are these official current IELTS questions?",
     answer:
-      "No. This is an independent practice collection based on common IELTS-style topic families, not a leaked or guaranteed exam list. Use it to build flexible answers you can adapt to new wording."
+      "No. This is an independent practice collection based on common IELTS-style topic families, not a leaked or guaranteed exam list. Use it to build flexible answers you can adapt to new wording.",
   },
   {
     question: "How should I practise IELTS Speaking topics?",
     answer:
-      "Choose one prompt, record your first answer without a script, review one weakness, and answer the same prompt again with one specific improvement. Repeating a focused topic is usually more useful than reading many prompts without speaking."
+      "Choose one prompt, record your first answer without a script, review one weakness, and answer the same prompt again with one specific improvement. Repeating a focused topic is usually more useful than reading many prompts without speaking.",
   },
   {
     question: "Should I memorise sample answers for these topics?",
     answer:
-      "Use samples to notice structure and development, but do not memorise them word for word. Personal examples and flexible language make it easier to respond naturally when the examiner changes the question."
-  }
+      "Use samples to notice structure and development, but do not memorise them word for word. Personal examples and flexible language make it easier to respond naturally when the examiner changes the question.",
+  },
 ];
 
 const structuredData = {
@@ -109,7 +279,7 @@ const structuredData = {
       description: pageDescription,
       inLanguage: "en",
       breadcrumb: { "@id": `${pageUrl}#breadcrumb` },
-      mainEntity: { "@id": `${pageUrl}#topics` }
+      mainEntity: { "@id": `${pageUrl}#topics` },
     },
     {
       "@type": "BreadcrumbList",
@@ -119,15 +289,15 @@ const structuredData = {
           "@type": "ListItem",
           position: 1,
           name: "Home",
-          item: siteConfig.domain
+          item: siteConfig.domain,
         },
         {
           "@type": "ListItem",
           position: 2,
           name: "IELTS Speaking Topics",
-          item: pageUrl
-        }
-      ]
+          item: pageUrl,
+        },
+      ],
     },
     {
       "@type": "ItemList",
@@ -138,8 +308,8 @@ const structuredData = {
         "@type": "ListItem",
         position: index + 1,
         name: topic.title,
-        url: `${pageUrl}/${topic.slug}`
-      }))
+        url: `${pageUrl}/${topic.slug}`,
+      })),
     },
     {
       "@type": "FAQPage",
@@ -149,11 +319,11 @@ const structuredData = {
         name: item.question,
         acceptedAnswer: {
           "@type": "Answer",
-          text: item.answer
-        }
-      }))
-    }
-  ]
+          text: item.answer,
+        },
+      })),
+    },
+  ],
 };
 
 export const metadata: Metadata = {
@@ -168,8 +338,8 @@ export const metadata: Metadata = {
       follow: true,
       "max-video-preview": -1,
       "max-image-preview": "large",
-      "max-snippet": -1
-    }
+      "max-snippet": -1,
+    },
   },
   openGraph: {
     title: `${pageTitle} | ${siteConfig.name}`,
@@ -182,67 +352,63 @@ export const metadata: Metadata = {
         url: `${siteConfig.domain}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "SpeakAce IELTS Speaking topics and practice questions"
-      }
-    ]
+        alt: "SpeakAce IELTS Speaking topics and practice questions",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: `${pageTitle} | ${siteConfig.name}`,
     description: pageDescription,
-    images: [`${siteConfig.domain}/og-image.png`]
-  }
+    images: [`${siteConfig.domain}/og-image.png`],
+  },
 };
 
 export default function IeltsSpeakingTopicsPage() {
   return (
     <>
-      <main className="page-shell section" style={{ display: "grid", gap: "1.2rem" }}>
-        <nav aria-label="Breadcrumb" style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
-          <Link href="/">Home</Link>
-          <span aria-hidden="true"> / </span>
-          <span aria-current="page">IELTS Speaking topics</span>
-        </nav>
-
-        <div className="section-head">
-          <span className="eyebrow">79 IELTS-style practice prompts</span>
-          <h1 style={{ fontSize: "clamp(2.8rem, 6vw, 4.6rem)", lineHeight: 0.96 }}>
-            IELTS Speaking Topics for Parts 1, 2 and 3
-          </h1>
-          <p>
-            Browse 15 Part 1 categories, 10 Part 2 cue cards, and 24 Part 3 questions. Choose one
-            prompt, speak before you script, and use the free diagnostic to turn topic reading into
-            a scored retry.
+      <main className="public-container topics-page">
+        <Breadcrumb
+          label="Breadcrumb"
+          items={[
+            { href: "/", label: "Home" },
+            { label: "IELTS Speaking topics" },
+          ]}
+        />
+        <PageHero
+          eyebrow="79 IELTS-style practice prompts"
+          title="IELTS Speaking Topics for Parts 1, 2 and 3"
+          description="Browse 15 Part 1 categories, 10 Part 2 cue cards, and 24 Part 3 questions. Choose one prompt, speak before you script, and use the free diagnostic to turn topic reading into a scored retry."
+          actions={
+            <>
+              <PublicButton href="/free-ielts-speaking-test#try-free-demo">
+                Practise one topic free
+              </PublicButton>
+              <PublicButton href="/tools/ielts-cue-card-generator" secondary>
+                Generate a cue card
+              </PublicButton>
+            </>
+          }
+        >
+          <p className="pricing-footnote">
+            Independent practice prompts · No memorisation required · AI
+            estimate, not an official IELTS score
           </p>
-          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
-            <TrackedLink
-              className="button button-primary"
-              href="/free-ielts-speaking-test#try-free-demo"
-              analyticsEvent="marketing_cta_click"
-              analyticsPath="/ielts-speaking-topics/hero/free-test"
-            >
-              Practise one topic free
-            </TrackedLink>
-            <TrackedLink
-              className="button button-secondary"
-              href="/tools/ielts-cue-card-generator"
-              analyticsEvent="marketing_cta_click"
-              analyticsPath="/ielts-speaking-topics/hero/cue-card-generator"
-            >
-              Generate a cue card
-            </TrackedLink>
-          </div>
-          <p style={{ fontSize: "0.92rem", margin: 0 }}>
-            Independent practice prompts · No memorisation required · AI estimate, not an official IELTS score
-          </p>
-        </div>
+        </PageHero>
 
-        <section className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }} aria-labelledby="topic-map-title">
+        <section
+          className="public-section"
+          style={{ display: "grid", gap: "1rem" }}
+          aria-labelledby="topic-map-title"
+        >
           <div>
             <span className="eyebrow">Choose your part</span>
-            <h2 id="topic-map-title" style={{ margin: "0.8rem 0 0.4rem" }}>Find a speaking topic in one step</h2>
+            <h2 id="topic-map-title" style={{ margin: "0.8rem 0 0.4rem" }}>
+              Find a speaking topic in one step
+            </h2>
             <p className="practice-copy" style={{ margin: 0 }}>
-              Start with the section that matches your weakest answer type. Each link jumps to visible questions on this page.
+              Start with the section that matches your weakest answer type. Each
+              link jumps to visible questions on this page.
             </p>
           </div>
           <div className="marketing-grid">
@@ -251,7 +417,10 @@ export default function IeltsSpeakingTopicsPage() {
                 <span className="eyebrow">{item.eyebrow}</span>
                 <h3 style={{ margin: "0.7rem 0 0.45rem" }}>{item.value}</h3>
                 <p>{item.description}</p>
-                <Link className="button button-secondary" href={item.href as Route}>
+                <Link
+                  className="button button-secondary"
+                  href={item.href as Route}
+                >
                   Jump to {item.eyebrow}
                 </Link>
               </article>
@@ -259,24 +428,46 @@ export default function IeltsSpeakingTopicsPage() {
           </div>
         </section>
 
-        <section id="part-1" className="card" style={{ padding: "1.5rem", scrollMarginTop: "6rem" }}>
+        <section
+          id="part-1"
+          className="public-section"
+          style={{ scrollMarginTop: "6rem" }}
+        >
           <span className="eyebrow">Part 1</span>
-          <h2 style={{ margin: "0.8rem 0 1rem" }}>IELTS Speaking Part 1 topic categories</h2>
+          <h2 style={{ margin: "0.8rem 0 1rem" }}>
+            IELTS Speaking Part 1 topic categories
+          </h2>
           <p className="practice-copy" style={{ marginBottom: "1rem" }}>
-            Part 1 questions look simple, but they often reveal weak fluency, vague examples, and
-            rushed structure. Use these topic categories to practice more deliberately, then move
-            into a <Link href="/free-ielts-speaking-test">free IELTS speaking test</Link> or a full
+            Part 1 questions look simple, but they often reveal weak fluency,
+            vague examples, and rushed structure. Use these topic categories to
+            practice more deliberately, then move into a{" "}
+            <Link href="/free-ielts-speaking-test">
+              free IELTS speaking test
+            </Link>{" "}
+            or a full
             <Link href="/app/practice"> AI speaking session</Link>.
           </p>
           <div className="marketing-grid">
             {part1Topics.map((item) => (
               <article key={item.topic} className="card feature-card">
                 <h3>{item.topic}</h3>
-                <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.2rem", lineHeight: 1.8, color: "var(--muted)" }}>
-                  {item.questions.map((question) => <li key={question}>{question}</li>)}
+                <ul
+                  style={{
+                    margin: "0.5rem 0 0",
+                    paddingLeft: "1.2rem",
+                    lineHeight: 1.8,
+                    color: "var(--muted)",
+                  }}
+                >
+                  {item.questions.map((question) => (
+                    <li key={question}>{question}</li>
+                  ))}
                 </ul>
                 <div style={{ marginTop: "0.9rem" }}>
-                  <Link className="button button-secondary" href="/ielts-speaking-part-1-questions">
+                  <Link
+                    className="button button-secondary"
+                    href="/ielts-speaking-part-1-questions"
+                  >
                     Open Part 1 practice
                   </Link>
                 </div>
@@ -287,22 +478,37 @@ export default function IeltsSpeakingTopicsPage() {
 
         <AdSenseUnit />
 
-        <section id="part-2" className="card" style={{ padding: "1.5rem", scrollMarginTop: "6rem" }}>
+        <section
+          id="part-2"
+          className="public-section"
+          style={{ scrollMarginTop: "6rem" }}
+        >
           <span className="eyebrow">Part 2</span>
-          <h2 style={{ margin: "0.8rem 0 1rem" }}>IELTS Speaking Part 2 cue card topics</h2>
+          <h2 style={{ margin: "0.8rem 0 1rem" }}>
+            IELTS Speaking Part 2 cue card topics
+          </h2>
           <p className="practice-copy" style={{ marginBottom: "1rem" }}>
-            These IELTS cue card topics are useful because they show the kinds of prompts that test
-            story flow, detail choice, and time control. If you want topic-specific help, open a related
-            topic page or <Link href="/app/practice">practice directly with AI</Link>.
+            These IELTS cue card topics are useful because they show the kinds
+            of prompts that test story flow, detail choice, and time control. If
+            you want topic-specific help, open a related topic page or{" "}
+            <Link href="/app/practice">practice directly with AI</Link>.
           </p>
           <div className="marketing-grid">
             {cueCards.map((topic, index) => (
               <article key={topic} className="card feature-card">
-                <div className="pill" style={{ marginBottom: "0.8rem" }}>Cue card {index + 1}</div>
+                <div className="pill" style={{ marginBottom: "0.8rem" }}>
+                  Cue card {index + 1}
+                </div>
                 <h3>{topic}</h3>
-                <p>Use one clear opening, one real example, and one closing thought so the answer feels complete rather than rushed.</p>
+                <p>
+                  Use one clear opening, one real example, and one closing
+                  thought so the answer feels complete rather than rushed.
+                </p>
                 <div style={{ marginTop: "0.9rem" }}>
-                  <Link className="button button-secondary" href="/free-ielts-speaking-test">
+                  <Link
+                    className="button button-secondary"
+                    href="/free-ielts-speaking-test"
+                  >
                     Try a free IELTS speaking test
                   </Link>
                 </div>
@@ -311,23 +517,46 @@ export default function IeltsSpeakingTopicsPage() {
           </div>
         </section>
 
-        <section id="part-3" className="card" style={{ padding: "1.5rem", scrollMarginTop: "6rem" }}>
+        <section
+          id="part-3"
+          className="public-section"
+          style={{ scrollMarginTop: "6rem" }}
+        >
           <span className="eyebrow">Part 3</span>
-          <h2 style={{ margin: "0.8rem 0 1rem" }}>IELTS Speaking Part 3 discussion topics</h2>
+          <h2 style={{ margin: "0.8rem 0 1rem" }}>
+            IELTS Speaking Part 3 discussion topics
+          </h2>
           <p className="practice-copy" style={{ marginBottom: "1rem" }}>
-            Part 3 usually becomes difficult when answers stay too short or abstract. Use the topic
-            areas below to rehearse opinion, comparison, and cause-effect answers before you take another
-            <Link href="/free-ielts-speaking-test"> free IELTS speaking test</Link>.
+            Part 3 usually becomes difficult when answers stay too short or
+            abstract. Use the topic areas below to rehearse opinion, comparison,
+            and cause-effect answers before you take another
+            <Link href="/free-ielts-speaking-test">
+              {" "}
+              free IELTS speaking test
+            </Link>
+            .
           </p>
           <div className="marketing-grid">
             {part3Topics.map((item) => (
               <article key={item.topic} className="card feature-card">
                 <h3>{item.topic}</h3>
-                <ul style={{ margin: "0.5rem 0 0", paddingLeft: "1.2rem", lineHeight: 1.8, color: "var(--muted)" }}>
-                  {item.questions.map((question) => <li key={question}>{question}</li>)}
+                <ul
+                  style={{
+                    margin: "0.5rem 0 0",
+                    paddingLeft: "1.2rem",
+                    lineHeight: 1.8,
+                    color: "var(--muted)",
+                  }}
+                >
+                  {item.questions.map((question) => (
+                    <li key={question}>{question}</li>
+                  ))}
                 </ul>
                 <div style={{ marginTop: "0.9rem" }}>
-                  <Link className="button button-secondary" href="/ielts-speaking-part-3-questions">
+                  <Link
+                    className="button button-secondary"
+                    href="/ielts-speaking-part-3-questions"
+                  >
                     Open Part 3 practice
                   </Link>
                 </div>
@@ -336,21 +565,31 @@ export default function IeltsSpeakingTopicsPage() {
           </div>
         </section>
 
-        <section className="card" style={{ padding: "1.5rem" }}>
+        <section className="public-section">
           <span className="eyebrow">Topic pages</span>
-          <h2 style={{ margin: "0.8rem 0 1rem" }}>Go deeper with focused topic practice</h2>
+          <h2 style={{ margin: "0.8rem 0 1rem" }}>
+            Go deeper with focused topic practice
+          </h2>
           <div className="marketing-grid">
             {seoTopicPages.map((topic) => (
-              <article key={topic.slug} className="card feature-card interactive-link-card">
+              <article
+                key={topic.slug}
+                className="card feature-card interactive-link-card"
+              >
                 <div className="tool-card-visual" aria-hidden="true">
-                  <span className="tool-card-icon">🎯</span>
+                  <AudioLines size={26} strokeWidth={1.3} />
                   <span className="pill tool-card-badge">Score-focused</span>
                 </div>
                 <h3>{topic.title}</h3>
                 <p>{topic.tip}</p>
                 <div className="interactive-link-card-footer">
-                  <span className="interactive-link-card-tag">IELTS topic practice</span>
-                  <Link className="button button-secondary" href={`/ielts-speaking-topics/${topic.slug}` as Route}>
+                  <span className="interactive-link-card-tag">
+                    IELTS topic practice
+                  </span>
+                  <Link
+                    className="button button-secondary"
+                    href={`/ielts-speaking-topics/${topic.slug}` as Route}
+                  >
                     Open topic page
                   </Link>
                 </div>
@@ -359,10 +598,16 @@ export default function IeltsSpeakingTopicsPage() {
           </div>
         </section>
 
-        <section id="faq" className="card" style={{ padding: "1.5rem", display: "grid", gap: "1rem" }}>
+        <section
+          id="faq"
+          className="public-section"
+          style={{ display: "grid", gap: "1rem" }}
+        >
           <div>
             <span className="eyebrow">FAQ</span>
-            <h2 style={{ margin: "0.8rem 0 0.4rem" }}>How to use IELTS Speaking topics well</h2>
+            <h2 style={{ margin: "0.8rem 0 0.4rem" }}>
+              How to use IELTS Speaking topics well
+            </h2>
           </div>
           <div className="marketing-grid">
             {faqs.map((item) => (
@@ -377,10 +622,13 @@ export default function IeltsSpeakingTopicsPage() {
         <div className="card institution-cta">
           <div>
             <span className="eyebrow">Practice next</span>
-            <h2 style={{ margin: "0.8rem 0 0.55rem" }}>Turn topic reading into real speaking practice</h2>
+            <h2 style={{ margin: "0.8rem 0 0.55rem" }}>
+              Turn topic reading into real speaking practice
+            </h2>
             <p className="practice-copy">
-              Reading topic lists is useful only if it leads into speaking. Open a free test, practice one
-              prompt with AI, or use pricing to unlock full feedback when you want deeper score analysis.
+              Reading topic lists is useful only if it leads into speaking. Open
+              a free test, practice one prompt with AI, or use pricing to unlock
+              full feedback when you want deeper score analysis.
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
@@ -392,7 +640,10 @@ export default function IeltsSpeakingTopicsPage() {
             >
               Start speaking practice
             </TrackedLink>
-            <Link className="button button-secondary" href="/free-ielts-speaking-test">
+            <Link
+              className="button button-secondary"
+              href="/free-ielts-speaking-test"
+            >
               Try a free IELTS speaking test
             </Link>
             <Link className="button button-secondary" href="/pricing">

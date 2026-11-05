@@ -3,9 +3,10 @@
 import { usePanelFeedback } from "@/components/motion/use-panel-feedback";
 import { handleTabKeys } from "@/lib/tab-navigation";
 import type { Route } from "next";
-import Link from "next/link";
+import { ResourceCard } from "@/components/public/page-primitives";
+import { LibrarySearch } from "@/components/public/library-search";
 import { startTransition, useDeferredValue, useState } from "react";
-import { ArrowUpRight, BookOpenText, Gauge, Repeat2, Search, Wrench } from "lucide-react";
+import { BookOpenText, Gauge, Repeat2, Search, Wrench } from "lucide-react";
 
 export type ResourceCategory = "exam" | "skills" | "tools" | "habit";
 
@@ -51,20 +52,36 @@ export function ResourceLibrary({
   categories,
   items,
 }: ResourceLibraryProps) {
-  const [activeCategory, setActiveCategory] = useState<"all" | ResourceCategory>("all");
+  const [activeCategory, setActiveCategory] = useState<
+    "all" | ResourceCategory
+  >("all");
   const [query, setQuery] = useState("");
   const feedback = usePanelFeedback(activeCategory);
   const [visibleLimit, setVisibleLimit] = useState(6);
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
-  const categoryOrder: Array<"all" | ResourceCategory> = ["all", "exam", "skills", "tools", "habit"];
+  const categoryOrder: Array<"all" | ResourceCategory> = [
+    "all",
+    "exam",
+    "skills",
+    "tools",
+    "habit",
+  ];
   const visibleItems = items.filter((item) => {
-    const matchesCategory = activeCategory === "all" || item.category === activeCategory;
-    const searchable = `${item.kicker} ${item.title} ${item.description}`.toLocaleLowerCase();
-    return matchesCategory && (!deferredQuery || searchable.includes(deferredQuery));
+    const matchesCategory =
+      activeCategory === "all" || item.category === activeCategory;
+    const searchable =
+      `${item.kicker} ${item.title} ${item.description}`.toLocaleLowerCase();
+    return (
+      matchesCategory && (!deferredQuery || searchable.includes(deferredQuery))
+    );
   });
 
   return (
-    <section {...feedback.input} className="resource-library" aria-labelledby="resource-library-title">
+    <section
+      {...feedback.input}
+      className="resource-library"
+      aria-labelledby="resource-library-title"
+    >
       <div className="resource-library-head">
         <div>
           <span className="content-kicker">{eyebrow}</span>
@@ -74,7 +91,12 @@ export function ResourceLibrary({
       </div>
 
       <div className="resource-library-controls">
-        <div className="resource-library-tabs" role="tablist" onKeyDown={handleTabKeys} aria-label={tabLabel}>
+        <div
+          className="resource-library-tabs"
+          role="tablist"
+          onKeyDown={handleTabKeys}
+          aria-label={tabLabel}
+        >
           {categoryOrder.map((category) => (
             <button
               key={category}
@@ -85,62 +107,71 @@ export function ResourceLibrary({
               tabIndex={activeCategory === category ? 0 : -1}
               aria-selected={activeCategory === category}
               className={activeCategory === category ? "is-active" : ""}
-              onClick={() => startTransition(() => {
-                setActiveCategory(category);
-                setVisibleLimit(6);
-              })}
+              onClick={() =>
+                startTransition(() => {
+                  setActiveCategory(category);
+                  setVisibleLimit(6);
+                })
+              }
             >
               {categories[category]}
             </button>
           ))}
         </div>
 
-        <label className="resource-library-search">
-          <Search size={15} aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setVisibleLimit(6);
-            }}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-          />
-        </label>
+        <LibrarySearch
+          value={query}
+          label={searchPlaceholder}
+          onChange={(value) => {
+            setQuery(value);
+            setVisibleLimit(6);
+          }}
+        />
       </div>
 
-      <div className="resource-library-grid" role="tabpanel" ref={feedback.ref} id="resource-results" aria-labelledby={`resource-tab-${activeCategory}`}>
+      <div
+        className="resource-library-grid public-resource-grid"
+        role="tabpanel"
+        ref={feedback.ref}
+        id="resource-results"
+        aria-labelledby={`resource-tab-${activeCategory}`}
+      >
         {visibleItems.slice(0, visibleLimit).map((item, index) => {
           const Icon = categoryIcons[item.category];
           return (
-            <article key={item.href} className="resource-library-card">
-              <div className="resource-library-card-topline">
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <Icon size={17} aria-hidden="true" />
-              </div>
-              <span className="resource-library-card-kicker">{item.kicker}</span>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-              <Link href={item.href}>
-                {openLabel}
-                <ArrowUpRight size={15} aria-hidden="true" />
-              </Link>
-            </article>
+            <ResourceCard
+              key={item.href}
+              href={item.href}
+              category={item.kicker}
+              title={item.title}
+              description={item.description}
+              action={openLabel}
+              index={index}
+              icon={<Icon size={18} aria-hidden="true" />}
+            />
           );
         })}
       </div>
 
-      {visibleItems.length === 0 ? <p className="resource-library-empty" role="status"><Search size={20} aria-hidden="true" />{emptyLabel}</p> : null}
+      {visibleItems.length === 0 ? (
+        <p className="resource-library-empty" role="status">
+          <Search size={20} aria-hidden="true" />
+          {emptyLabel}
+        </p>
+      ) : null}
 
       {visibleItems.length > visibleLimit ? (
         <button
           type="button"
           className="resource-library-more"
-          onClick={() => startTransition(() => setVisibleLimit((current) => current + 6))}
+          onClick={() =>
+            startTransition(() => setVisibleLimit((current) => current + 6))
+          }
         >
           {showMoreLabel}
-          <span>{visibleLimit} / {visibleItems.length}</span>
+          <span>
+            {visibleLimit} / {visibleItems.length}
+          </span>
         </button>
       ) : null}
 
