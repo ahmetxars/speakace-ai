@@ -15,6 +15,9 @@ export function FeedbackTransformation({ sample, topic, retry, tr, instant, onTo
 }) {
   const root = useRef<HTMLDivElement>(null);
   const previousTopic = useRef(topic);
+  const prompts = tr
+    ? ["Bir yer. Bir anı.", "Bir beceri. Bir neden.", "Bir gerekçe. Bir örnek."]
+    : ["A place. A memory.", "A skill. A reason.", "A reason. An example."];
   useEffect(() => {
     if (previousTopic.current === topic) return;
     previousTopic.current = topic;
@@ -30,7 +33,7 @@ export function FeedbackTransformation({ sample, topic, retry, tr, instant, onTo
       <div className="phrase-comparison">
         <span className="phrase-source"><span className="phrase-caption">{tr ? "İlk deneme" : "First attempt"}</span><span>{phrase(sample.first)}</span></span>
         <ArrowDownRight className="phrase-direction" size={24} aria-hidden="true" />
-        <span className="phrase-target"><span className="phrase-caption">{tr ? "Bir somut ayrıntı" : "One concrete detail"}</span><span className="phrase-detail-stack"><span className="phrase-prompt" aria-hidden={retry}>{tr ? "Bir yer. Bir anı." : "A place. A memory."}</span><span className="phrase-new" aria-hidden={!retry}>{phrase(sample.retry)}</span></span></span>
+        <span className="phrase-target"><span className="phrase-caption">{tr ? "Bir somut ayrıntı" : "One concrete detail"}</span><span className="phrase-detail-stack"><span className="phrase-prompt" aria-hidden={retry}>{prompts[topic] ?? (tr ? "Bir somut ayrıntı." : "One concrete detail.")}</span><span className="phrase-new" aria-hidden={!retry}>{phrase(sample.retry)}</span></span></span>
         <svg className="phrase-flow" viewBox="0 0 240 30" fill="none" aria-hidden="true"><path pathLength="1" d="M1 28H60C102 28 104 2 145 2H239" /></svg>
       </div>
       <div className="phrase-annotation"><CornerDownRight size={16} aria-hidden="true" /><span>{sample.next}</span><span className="annotation-resolution" aria-hidden="true"><Check size={13} /></span></div>
