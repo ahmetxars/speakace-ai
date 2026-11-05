@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { productExperienceLabel } from "@/lib/public-navigation";
 import { useAppState } from "@/components/providers";
 import { PublicBrand } from "./brand";
 import { publicDesignCopy } from "@/lib/public-design-copy";
@@ -65,16 +66,7 @@ export function PublicFooter({
         { href: "/ielts-speaking-topics", label: t.topics },
         {
           href: "/reviews",
-          label:
-            locale === "tr"
-              ? "Ürünü incele"
-              : locale === "de"
-                ? "Produkt ansehen"
-                : locale === "es"
-                  ? "Ver el producto"
-                  : locale === "fr"
-                    ? "Voir le produit"
-                    : "Review the product",
+          label: productExperienceLabel[locale],
         },
       ],
     },

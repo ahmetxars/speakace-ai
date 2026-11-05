@@ -1,17 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
-import {
-  Check,
-  FileText,
-  GraduationCap,
-  Mail,
-  MessageSquareText,
-  MoveRight,
-  School,
-  UsersRound,
-} from "lucide-react";
+
+import { Check, GraduationCap, Mail, School, UsersRound } from "lucide-react";
 import { LeadCaptureForm } from "@/components/lead-capture-form";
 import { useAppState } from "@/components/providers";
 import { siteConfig } from "@/lib/site";
@@ -25,11 +16,18 @@ import {
 import {
   PageCTA,
   PageHero,
-  PageSection,
   PublicButton,
 } from "@/components/public/page-primitives";
+import {
+  LearnerPreview,
+  StudentWorkflow,
+  TeacherWorkflow,
+  SchoolWorkflow,
+} from "@/components/public/audience-workflows";
+import "@/app/public-audience.css";
+import { audienceRefinementCopy } from "@/lib/audience-refinement-copy";
 import { AudienceScene } from "@/components/public/audience-scene";
-import { handleTabKeys } from "@/lib/tab-navigation";
+
 export type { ProgramAudience } from "@/lib/audience-copy";
 
 const routes = {
@@ -62,8 +60,7 @@ export function AudiencePage({ audience }: { audience: ProgramAudience }) {
   const t = publicDesignCopy[locale];
   const navigation = programNavigation[locale];
   const route = routes[audience];
-  const [stage, setStage] = useState(0);
-  const id = useId();
+  const school = audienceRefinementCopy[locale].school;
   return (
     <main className="public-container audience-page" data-audience={audience}>
       <nav className="audience-paths" aria-label={navigation.label}>
@@ -85,12 +82,20 @@ export function AudiencePage({ audience }: { audience: ProgramAudience }) {
         eyebrow={copy.eyebrow}
         title={copy.title}
         description={copy.body}
-        visual={<AudienceScene audience={audience} locale={locale} />}
+        visual={
+          audience === "students" ? (
+            <LearnerPreview locale={locale} />
+          ) : audience === "teachers" ? (
+            <AudienceScene audience="teachers" locale={locale} />
+          ) : undefined
+        }
         actions={
           <>
-            <PublicButton href={route.primary}>{copy.primary}</PublicButton>
+            <PublicButton href={route.primary}>
+              {audience === "schools" ? school.contact : copy.primary}
+            </PublicButton>
             <PublicButton href={route.secondary} secondary>
-              {copy.secondary}
+              {audience === "schools" ? school.demo : copy.secondary}
             </PublicButton>
           </>
         }
@@ -104,83 +109,32 @@ export function AudiencePage({ audience }: { audience: ProgramAudience }) {
           ))}
         </ul>
       </PageHero>
-      <PageSection
-        eyebrow={copy.outcomesEyebrow}
-        title={copy.outcomesTitle}
-        description={copy.outcomesBody}
-      >
-        <div className="audience-feature-explorer">
-          <div
-            role="tablist"
-            aria-label={copy.outcomesEyebrow}
-            onKeyDown={handleTabKeys}
-            className="audience-feature-tabs"
-          >
-            {copy.outcomes.map((item, index) => (
-              <button
-                key={item.title}
-                type="button"
-                role="tab"
-                id={`${id}-tab-${index}`}
-                aria-controls={`${id}-panel`}
-                aria-selected={stage === index}
-                tabIndex={stage === index ? 0 : -1}
-                onClick={() => setStage(index)}
-              >
-                <span>0{index + 1}</span>
-                <div>
-                  <strong>{item.title}</strong>
-                  <p>{item.body}</p>
-                </div>
-                <MoveRight size={18} />
-              </button>
-            ))}
-          </div>
-          <div
-            role="tabpanel"
-            id={`${id}-panel`}
-            aria-labelledby={`${id}-tab-${stage}`}
-            tabIndex={0}
-          >
-            <AudienceScene
-              audience={audience}
-              locale={locale}
-              stage={stage}
-              compact
-            />
-          </div>
-        </div>
-      </PageSection>
-      <PageSection eyebrow={copy.workflowEyebrow} title={copy.workflowTitle}>
-        <ol className="audience-workflow">
-          {copy.workflow.map((step, index) => {
-            const Icon = [
-              audience === "students" ? MessageSquareText : UsersRound,
-              FileText,
-              Check,
-            ][index];
-            return (
-              <li key={step.title}>
-                <div className="audience-step-visual">
-                  <span>0{index + 1}</span>
-                  <Icon size={32} strokeWidth={1.25} />
-                  <i />
-                  <i />
-                </div>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
-              </li>
-            );
-          })}
-        </ol>
-      </PageSection>
+      {audience === "students" ? (
+        <StudentWorkflow locale={locale} />
+      ) : audience === "teachers" ? (
+        <TeacherWorkflow locale={locale} />
+      ) : (
+        <SchoolWorkflow locale={locale} />
+      )}
       <section id="program-contact" className="audience-contact public-section">
         <div>
           <span className="public-kicker">
             {commercialEmailEnabled ? copy.leadEyebrow : t.contact}
           </span>
-          <h2>{commercialEmailEnabled ? copy.leadTitle : t.contactTitle}</h2>
-          <p>{commercialEmailEnabled ? copy.leadBody : t.contactBody}</p>
+          <h2>
+            {audience === "schools"
+              ? school.contactTitle
+              : commercialEmailEnabled
+                ? copy.leadTitle
+                : t.contactTitle}
+          </h2>
+          <p>
+            {audience === "schools"
+              ? school.contactBody
+              : commercialEmailEnabled
+                ? copy.leadBody
+                : t.contactBody}
+          </p>
         </div>
         <div
           className={
@@ -208,11 +162,11 @@ export function AudiencePage({ audience }: { audience: ProgramAudience }) {
         <PublicButton
           href={
             audience === "schools"
-              ? "mailto:aa.arslan@outlook.com.tr?subject=SpeakAce%20school%20pilot"
+              ? `mailto:${siteConfig.contactEmail}?subject=SpeakAce%20school%20pilot`
               : route.primary
           }
         >
-          {copy.closingPrimary}
+          {audience === "schools" ? school.contact : copy.closingPrimary}
         </PublicButton>
         <PublicButton href={route.secondary} secondary>
           {copy.closingSecondary}

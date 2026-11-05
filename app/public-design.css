@@ -151,7 +151,8 @@
   white-space: nowrap;
 }
 .public-chrome :where(a:hover, summary:hover),
-.public-chrome [aria-current="page"] {
+.public-chrome [aria-current],
+.public-chrome summary[data-active="true"] {
   color: var(--public-blue);
 }
 .public-nav-disclosure {
@@ -176,6 +177,11 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+.public-resource-nav > details > summary {
+  min-width: 32px;
+  min-height: 44px;
+  justify-content: center;
 }
 .public-resource-arrow {
   display: none;
@@ -471,6 +477,15 @@
   border-bottom: 1px solid var(--public-line);
   background: var(--public-white);
   transition: background var(--public-fast);
+}
+.public-resource-card h3 a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.public-resource-card:focus-within {
+  outline: 2px solid var(--public-blue);
+  outline-offset: -2px;
 }
 .public-resource-card:hover {
   background: #f0f2e8;
@@ -1258,108 +1273,11 @@
   margin: 0;
   font-size: 10px;
 }
-.audience-feature-explorer {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 7%;
-  align-items: center;
-}
-.audience-feature-tabs {
-  display: grid;
-}
-.audience-feature-tabs button {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  text-align: left;
-  padding: 27px 20px;
-  border: 0;
-  border-top: 1px solid var(--public-line);
-  background: transparent;
-  cursor: pointer;
-  color: var(--public-ink);
-  transition: background var(--public-ui);
-}
-.audience-feature-tabs button:last-child {
-  border-bottom: 1px solid var(--public-line);
-}
-.audience-feature-tabs button[aria-selected="true"] {
-  background: #e9ecdf;
-}
-.audience-feature-tabs button > span {
-  font-size: 10px;
-  color: var(--public-blue);
-  padding-top: 6px;
-}
-.audience-feature-tabs button > div {
-  flex: 1;
-}
-.audience-feature-tabs strong {
-  font-weight: 500;
-  font-size: 22px;
-  line-height: 1.3;
-  display: block;
-}
-.audience-feature-tabs p {
-  font-size: 13px;
-  margin: 12px 0 0;
-}
-.audience-feature-tabs svg {
-  margin-top: 5px;
-  color: var(--public-blue);
-  flex-shrink: 0;
-}
-.audience-feature-explorer [role="tabpanel"] {
-  min-width: 0;
-}
 .audience-scene.is-compact {
   padding: 18px;
 }
 .audience-scene.is-compact .audience-scene-workspace {
   animation-duration: 280ms;
-}
-.audience-workflow {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 40px;
-}
-.audience-step-visual {
-  position: relative;
-  border-top: 1px solid var(--public-line);
-  padding: 22px 0;
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  min-height: 105px;
-}
-.audience-step-visual > span {
-  font-family: var(--public-serif);
-  font-size: 46px;
-  color: var(--public-muted);
-}
-.audience-step-visual svg {
-  color: var(--public-blue);
-}
-.audience-step-visual i {
-  height: 4px;
-  width: 25px;
-  background: var(--public-line);
-  margin-left: auto;
-}
-.audience-step-visual i:last-child {
-  width: 10px;
-  margin-left: -22px;
-  background: var(--public-blue);
-}
-.audience-workflow h3 {
-  font-size: 22px;
-}
-.audience-workflow p {
-  font-size: 14px;
-  margin-bottom: 0;
 }
 .audience-contact {
   display: grid;
@@ -1414,49 +1332,6 @@
   .audience-page .public-page-hero {
     padding-top: 34px;
   }
-  .audience-feature-explorer {
-    grid-template-columns: 1fr;
-    gap: 26px;
-  }
-  .audience-feature-explorer [role="tabpanel"] {
-    max-width: 580px;
-    width: 100%;
-    justify-self: center;
-  }
-  .audience-feature-tabs button {
-    padding: 23px 12px;
-  }
-  .audience-feature-tabs strong {
-    font-size: 20px;
-  }
-  .audience-workflow {
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
-  .audience-workflow li {
-    display: grid;
-    grid-template-columns: 80px 1fr;
-    column-gap: 20px;
-  }
-  .audience-step-visual {
-    grid-row: span 2;
-    display: grid;
-    gap: 8px;
-    justify-content: start;
-    padding: 12px 0;
-  }
-  .audience-step-visual > span {
-    font-size: 30px;
-  }
-  .audience-step-visual i {
-    display: none;
-  }
-  .audience-workflow h3 {
-    padding-top: 15px;
-  }
-  .audience-workflow p {
-    margin-top: 8px;
-  }
   .audience-contact {
     grid-template-columns: 1fr;
     gap: 22px;
@@ -1500,9 +1375,6 @@
   .audience-signal-strip .voice-wave i {
     animation: none;
   }
-  .audience-feature-tabs button {
-    transition: none;
-  }
 }
 .public-page a.public-button,
 .public-chrome a.public-button {
@@ -1511,19 +1383,157 @@
 .public-page a.public-button.is-secondary {
   color: var(--public-ink);
 }
-/* Pricing is one decision, one comparison, then payment details. */
+/* Discovery controls belong to the directory; tool behavior stays in each tool. */
+.tool-discovery-summary {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+.tool-discovery-summary > p {
+  font-size: 13px;
+}
+.tool-empty {
+  padding: 35px 0;
+}
+.resource-intent-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  margin-bottom: 30px;
+  border: 1px solid var(--public-line);
+}
+.resource-intent-grid button {
+  text-align: left;
+  border: 0;
+  border-right: 1px solid var(--public-line);
+  background: transparent;
+  padding: 22px;
+  cursor: pointer;
+  font: inherit;
+}
+.resource-intent-grid button:last-child {
+  border-right: 0;
+}
+.resource-intent-grid strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+}
+.resource-intent-grid span {
+  display: block;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--public-muted);
+  margin-top: 12px;
+}
+.resource-intent-grid button[aria-pressed="true"] {
+  background: #eef0e0;
+}
+.library-reset {
+  font: inherit;
+  color: var(--public-blue);
+  font-size: 12px;
+  cursor: pointer;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  padding: 7px 0;
+  background: transparent;
+  margin-top: 20px;
+}
+@media (max-width: 768px) {
+  .resource-intent-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .resource-intent-grid button {
+    border-bottom: 1px solid var(--public-line);
+  }
+  .resource-intent-grid button:nth-child(2) {
+    border-right: 0;
+  }
+  .tool-discovery-summary {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+@media (max-width: 375px) {
+  .resource-intent-grid button {
+    padding: 16px;
+  }
+}
+/* Pricing: prices first, an allowance demonstration, then reference details. */
+.pricing-quick-prices {
+  display: none;
+}
+.pricing-shared {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 1050px;
+  margin: 22px auto 0;
+  font-size: 13px;
+}
+.pricing-shared svg {
+  flex-shrink: 0;
+  color: var(--public-blue);
+}
+.pricing-comparison .pricing-table-group th {
+  background: var(--public-paper);
+  padding-top: 26px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--public-muted);
+}
+@media (max-width: 600px) {
+  .pricing-quick-prices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--public-line);
+    margin-bottom: 20px;
+    background: white;
+    border-radius: 8px;
+  }
+  .pricing-quick-prices a {
+    display: grid;
+    padding: 16px;
+    gap: 4px;
+    text-decoration: none;
+    min-width: 0;
+  }
+  .pricing-quick-prices a + a {
+    border-left: 1px solid var(--public-line);
+    background: #eef0e0;
+  }
+  .pricing-quick-prices strong {
+    font-size: 30px;
+    letter-spacing: -1px;
+  }
+  .pricing-quick-prices :is(span, small) {
+    font-size: 11px;
+    color: var(--public-muted);
+  }
+}
 .pricing-page .public-page-hero {
   max-width: 100%;
-  padding-bottom: 45px;
+  padding-block: 44px 22px;
 }
 .pricing-page .public-page-hero-copy {
-  max-width: 1020px;
+  max-width: 850px;
 }
 .pricing-page .public-page-hero h1 {
-  max-width: 940px;
+  max-width: 850px;
+  font-size: clamp(36px, 4.3vw, 60px);
+  line-height: 1.06;
+}
+.pricing-page .public-page-hero p {
+  max-width: 660px;
+  font-size: 16px;
+  margin-top: 20px;
 }
 .pricing-offers {
-  padding-block: 36px 60px;
+  padding-block: 16px 42px;
   border-bottom: 1px solid var(--public-line);
 }
 .public-segmented {
@@ -1578,7 +1588,7 @@
   gap: 15px;
   font-size: 10px;
   color: var(--public-muted);
-  margin-bottom: 34px;
+  margin-bottom: 18px;
 }
 .pricing-offer h2 {
   font-size: 30px;
@@ -1629,7 +1639,7 @@
   width: 100%;
 }
 .pricing-offer p.pricing-terms {
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.65;
   margin-top: 17px;
 }
@@ -3634,6 +3644,7 @@
   }
 }
 .audience-lead.is-contact {
+  grid-template-columns: minmax(0, 1fr);
   background: transparent;
   border: 0;
   border-left: 1px solid var(--public-line);

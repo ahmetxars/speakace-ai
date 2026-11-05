@@ -9,6 +9,8 @@ import { trackClientEvent } from "@/lib/analytics-client";
 import { normalizePublicLanguage } from "@/lib/copy";
 import { buildPlanCheckoutPath, commerceConfig } from "@/lib/commerce";
 import { PLAN_LIMITS } from "@/lib/membership";
+import { pricingRefinementCopy } from "@/lib/pricing-refinement-copy";
+import { siteConfig } from "@/lib/site";
 import { pricingCopy } from "@/lib/pricing-copy";
 import {
   PageCTA,
@@ -26,6 +28,7 @@ declare global {
 export function PricingCards() {
   const { currentUser, signedIn, language } = useAppState();
   const t = pricingCopy[normalizePublicLanguage(language)];
+  const r = pricingRefinementCopy[normalizePublicLanguage(language)];
   const [billing, setBilling] = useState<"weekly" | "annual">("weekly");
   const [demoPlan, setDemoPlan] = useState<"free" | "plus">("free");
   const feedback = usePanelFeedback(billing);
@@ -56,7 +59,7 @@ export function PricingCards() {
   ];
   return (
     <main className="public-container pricing-page">
-      <PageHero eyebrow={t.eyebrow} title={t.title} description={t.intro} />
+      <PageHero eyebrow={t.eyebrow} title={r.title} description={r.intro} />
       <section
         className="pricing-offers"
         {...feedback.input}
@@ -78,8 +81,24 @@ export function PricingCards() {
             {t.annual}
           </button>
         </div>
+        <div className="pricing-quick-prices" aria-label={t.comparison}>
+          <a href="#free-plan">
+            <span>Free</span>
+            <strong>$0</strong>
+            <small>{t.forever}</small>
+          </a>
+          <a href="#plus-plan">
+            <span>Plus</span>
+            <strong>
+              {annual
+                ? commerceConfig.plusAnnualPrice
+                : commerceConfig.plusMonthlyPrice}
+            </strong>
+            <small>{annual ? t.once : t.week}</small>
+          </a>
+        </div>
         <div className="pricing-offer-grid">
-          <article className="pricing-offer">
+          <article id="free-plan" className="pricing-offer">
             <div className="pricing-offer-top">
               <span>01</span>
               <span>{t.forever}</span>
@@ -97,12 +116,7 @@ export function PricingCards() {
                 {PLAN_LIMITS.free.speakingMinutesPerDay} · {t.minutes}
               </li>
               <li>
-                <Check size={15} />
-                {t.feedback}
-              </li>
-              <li>
-                <Check size={15} />
-                {t.writing}
+                {t.export}: {t.unavailable}
               </li>
             </ul>
             <PublicButton
@@ -116,7 +130,7 @@ export function PricingCards() {
               {t.freeCta}
             </PublicButton>
           </article>
-          <article className="pricing-offer is-plus">
+          <article id="plus-plan" className="pricing-offer is-plus">
             <div className="pricing-offer-top">
               <span>02</span>
               <span>{annual ? t.once : t.weekly}</span>
@@ -129,6 +143,7 @@ export function PricingCards() {
               <small>{annual ? t.once : t.week}</small>
             </div>
             <p>{t.plusNote}</p>
+            <p className="pricing-terms">{annual ? t.annualTerms : t.trial}</p>
             <ul>
               <li>
                 <Check size={15} />
@@ -137,10 +152,6 @@ export function PricingCards() {
               <li>
                 <Check size={15} />
                 {PLAN_LIMITS.plus.speakingMinutesPerDay} · {t.minutes}
-              </li>
-              <li>
-                <Check size={15} />
-                {t.feedback} + {t.writing}
               </li>
               <li>
                 <Check size={15} />
@@ -179,43 +190,18 @@ export function PricingCards() {
               {paid ? t.manage : t.plusCta}
               <ArrowUpRight size={18} />
             </TrackedLink>
-            <p className="pricing-terms">{annual ? t.annualTerms : t.trial}</p>
           </article>
         </div>
+        <p className="pricing-shared">
+          <Check size={17} />
+          {r.shared}
+        </p>
         <p className="pricing-account-note">{paid ? t.paid : t.account}</p>
       </section>
-      <PageSection eyebrow={t.comparison} title={t.comparisonTitle}>
-        <div
-          className="pricing-comparison"
-          role="region"
-          aria-label={t.comparison}
-          tabIndex={0}
-        >
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">{t.comparison}</th>
-                <th scope="col">Free</th>
-                <th scope="col">Plus</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.label}>
-                  <th scope="row">{row.label}</th>
-                  <td>{row.free}</td>
-                  <td>{row.plus}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="pricing-footnote">{t.quotaNote}</p>
-      </PageSection>
       <PageSection
         eyebrow={t.demoEyebrow}
-        title={t.demoTitle}
-        description={t.demoBody}
+        title={r.demoTitle}
+        description={r.demoBody}
       >
         <div className="pricing-demo" {...demoFeedback.input}>
           <div className="pricing-demo-notebook">
@@ -278,7 +264,46 @@ export function PricingCards() {
           </div>
         </div>
       </PageSection>
-      <PageSection eyebrow={t.checkoutEyebrow} title={t.checkoutTitle}>
+      <PageSection eyebrow={t.comparison} title={t.comparisonTitle}>
+        <div
+          className="pricing-comparison"
+          role="region"
+          aria-label={t.comparison}
+          tabIndex={0}
+        >
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">{t.comparison}</th>
+                <th scope="col">Free</th>
+                <th scope="col">Plus</th>
+              </tr>
+            </thead>
+            {[
+              { label: r.allowance, items: rows.slice(0, 2) },
+              { label: r.feedback, items: rows.slice(2, 4) },
+              { label: r.reports, items: rows.slice(4) },
+            ].map((group) => (
+              <tbody key={group.label}>
+                <tr className="pricing-table-group">
+                  <th colSpan={3} scope="colgroup">
+                    {group.label}
+                  </th>
+                </tr>
+                {group.items.map((row) => (
+                  <tr key={row.label}>
+                    <th scope="row">{row.label}</th>
+                    <td>{row.free}</td>
+                    <td>{row.plus}</td>
+                  </tr>
+                ))}
+              </tbody>
+            ))}
+          </table>
+        </div>
+        <p className="pricing-footnote">{t.quotaNote}</p>
+      </PageSection>
+      <PageSection eyebrow={t.checkoutEyebrow} title={r.checkout}>
         <ol className="pricing-checkout-steps">
           {t.checkoutSteps.map((step, index) => (
             <li key={step.title}>
@@ -291,7 +316,11 @@ export function PricingCards() {
       </PageSection>
       <PageSection title={t.faqTitle}>
         <div className="public-faq-list">
-          {t.faqs.map((item) => (
+          {[
+            ...t.faqs,
+            { q: r.trialQuestion, a: r.trialAnswer },
+            { q: r.linkQuestion, a: r.linkAnswer },
+          ].map((item) => (
             <details key={item.q}>
               <summary>
                 {item.q}
@@ -301,6 +330,9 @@ export function PricingCards() {
             </details>
           ))}
         </div>
+        <p className="pricing-footnote">
+          <a href={`mailto:${siteConfig.contactEmail}`}>{r.help}</a>
+        </p>
         <a className="public-text-link" href={commerceConfig.customerPortalUrl}>
           {t.portal} ↗
         </a>

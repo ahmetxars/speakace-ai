@@ -28,6 +28,7 @@ import {
 } from "@/lib/copy";
 import { publicDesignCopy } from "@/lib/public-design-copy";
 import { resolveDashboardRole } from "@/lib/roles";
+import { publicSection, publicLanguageNotice } from "@/lib/public-navigation";
 import { PublicBrand } from "@/components/public/brand";
 
 type Menu = "audience" | "resources";
@@ -43,6 +44,7 @@ export function EditorialPublicHeader({
   const locale = normalizePublicLanguage(language);
   const t = publicDesignCopy[locale];
   const pathname = usePathname();
+  const section = publicSection(pathname ?? "/");
   const previousPathname = useRef(pathname);
   const root = useRef<HTMLDivElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
@@ -115,6 +117,15 @@ export function EditorialPublicHeader({
     { href: "/tools", title: t.tools },
   ] as const;
 
+  const activeLink = (href: string) =>
+    pathname === href
+      ? ("page" as const)
+      : (href === "/for-teachers" && pathname === "/teacher-demo") ||
+          (href === "/blog" && pathname?.startsWith("/blog/")) ||
+          (href === "/tools" && pathname?.startsWith("/tools/"))
+        ? ("location" as const)
+        : undefined;
+
   const disclosure = (kind: Menu, inMobile = false) => {
     const open = inMobile ? mobileGroup === kind : menu === kind;
     const panelId = id + (inMobile ? "-mobile-" : "-desktop-") + kind;
@@ -146,11 +157,7 @@ export function EditorialPublicHeader({
           aria-expanded={enhanced ? open : undefined}
           aria-controls={panelId}
           aria-label={kind === "resources" ? t.resourceMenu : undefined}
-          data-active={
-            (kind === "audience" &&
-              audiences.some((item) => item.href === pathname)) ||
-            undefined
-          }
+          data-active={section === kind || undefined}
         >
           {kind === "audience" ? t.forYou : null}
           <ChevronDown size={12} aria-hidden="true" />
@@ -162,7 +169,7 @@ export function EditorialPublicHeader({
                 key={href}
                 href={href}
                 onClick={close}
-                aria-current={pathname === href ? "page" : undefined}
+                aria-current={activeLink(href)}
               >
                 <span className="public-menu-icon">
                   <Icon size={19} />
@@ -182,7 +189,7 @@ export function EditorialPublicHeader({
                   key={href}
                   href={href}
                   onClick={close}
-                  aria-current={pathname === href ? "page" : undefined}
+                  aria-current={activeLink(href)}
                 >
                   <BookOpenText size={16} aria-hidden="true" />
                   <span>{title}</span>
@@ -195,7 +202,7 @@ export function EditorialPublicHeader({
                   key={href}
                   href={href}
                   onClick={close}
-                  aria-current={pathname === href ? "page" : undefined}
+                  aria-current={activeLink(href)}
                 >
                   <span>{title}</span>
                   <ArrowUpRight size={13} aria-hidden="true" />
@@ -237,24 +244,33 @@ export function EditorialPublicHeader({
             links.length;
     links[next]?.focus();
   };
-  const localeOptions = home
-    ? publicLocaleOptions.filter(
-        (item) =>
-          item.code === "en" || item.code === "tr" || item.code === locale,
-      )
-    : publicLocaleOptions;
+  const localeOptions = publicLocaleOptions;
   const localePicker = (mobilePicker = false) => (
-    <select
-      aria-label={mobilePicker ? t.language + " · mobile" : t.language}
-      value={locale}
-      onChange={(event) => setLanguage(event.target.value as Language)}
-    >
-      {localeOptions.map((item) => (
-        <option key={item.code} value={item.code}>
-          {mobilePicker ? item.nativeLabel : item.code.toUpperCase()}
-        </option>
-      ))}
-    </select>
+    <>
+      <select
+        aria-label={mobilePicker ? t.language + " · mobile" : t.language}
+        value={home && !["en", "tr"].includes(locale) ? "en" : locale}
+        title={publicLanguageNotice[locale]}
+        aria-describedby={`${id}-locale-${mobilePicker ? "mobile" : "desktop"}`}
+        onChange={(event) => setLanguage(event.target.value as Language)}
+      >
+        {localeOptions.map((item) => (
+          <option
+            key={item.code}
+            value={item.code}
+            disabled={home && !["en", "tr"].includes(item.code)}
+          >
+            {mobilePicker ? item.nativeLabel : item.code.toUpperCase()}
+          </option>
+        ))}
+      </select>
+      <span
+        className="sr-only"
+        id={`${id}-locale-${mobilePicker ? "mobile" : "desktop"}`}
+      >
+        {publicLanguageNotice[locale]}
+      </span>
+    </>
   );
 
   return (
@@ -316,7 +332,11 @@ export function EditorialPublicHeader({
                   <Link
                     href="/resources"
                     aria-current={
-                      pathname?.startsWith("/resources") ? "page" : undefined
+                      pathname === "/resources"
+                        ? "page"
+                        : section === "resources"
+                          ? "location"
+                          : undefined
                     }
                   >
                     {t.resources}
@@ -401,7 +421,17 @@ export function EditorialPublicHeader({
             {t.plans}
           </Link>
           <div className="public-mobile-resource-heading">
-            <Link href="/resources" onClick={close}>
+            <Link
+              href="/resources"
+              onClick={close}
+              aria-current={
+                pathname === "/resources"
+                  ? "page"
+                  : section === "resources"
+                    ? "location"
+                    : undefined
+              }
+            >
               {t.resources}
             </Link>
             {disclosure("resources", true)}

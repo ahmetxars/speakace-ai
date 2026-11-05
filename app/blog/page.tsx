@@ -296,7 +296,16 @@ export default async function BlogIndexPage() {
     (post, index, posts) =>
       posts.findIndex((candidate) => candidate.slug === post.slug) === index,
   );
-  const libraryPosts: BlogLibraryPost[] = combinedPosts.map((post) => ({
+  const promoted = new Set(
+    [featured, ...firstPath.slice(0, 3), ...secondPath.slice(0, 3)].map(
+      (post) => post.slug,
+    ),
+  );
+  const archive = [
+    ...combinedPosts.filter((post) => !promoted.has(post.slug)),
+    ...combinedPosts.filter((post) => promoted.has(post.slug)),
+  ];
+  const libraryPosts: BlogLibraryPost[] = archive.map((post) => ({
     slug: post.slug,
     title: getBlogPublicTitle(post.slug, post.title),
     description: getBlogPublicDescription(post.slug, post.description),

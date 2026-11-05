@@ -16,6 +16,7 @@ import {
 import { getBlogChromeCopy, getLocalizedBlogPosts } from "@/lib/blog-content";
 import { normalizePublicLanguage, type PublicLanguage } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
+import { getBlogPublicTitle, getBlogPublicDescription } from "@/lib/blog-seo";
 import { siteConfig } from "@/lib/site";
 
 type ResourceLocaleContent = {
@@ -1077,8 +1078,15 @@ export default async function ResourcesPage() {
           </div>
           <div>
             <span className="public-kicker">{copy.featuredEyebrow}</span>
-            <h2>{featuredArticle.title}</h2>
-            <p>{featuredArticle.description || copy.featuredDescription}</p>
+            <h2>
+              {getBlogPublicTitle(featuredArticle.slug, featuredArticle.title)}
+            </h2>
+            <p>
+              {getBlogPublicDescription(
+                featuredArticle.slug,
+                featuredArticle.description,
+              ) || copy.featuredDescription}
+            </p>
             <div className="public-actions">
               <PublicButton href={`/blog/${featuredArticle.slug}`}>
                 {copy.readArticle}
@@ -1129,8 +1137,11 @@ export default async function ResourcesPage() {
                 key={post.slug}
                 href={`/blog/${post.slug}`}
                 category={copy.latestEyebrow}
-                title={post.title}
-                description={post.description}
+                title={getBlogPublicTitle(post.slug, post.title)}
+                description={getBlogPublicDescription(
+                  post.slug,
+                  post.description,
+                )}
                 action={chrome.cta.read}
                 index={index}
               />

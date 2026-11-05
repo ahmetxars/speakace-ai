@@ -179,10 +179,10 @@ export function ResourceCard({
         <Link href={href as Route}>{title}</Link>
       </h3>
       <p>{description}</p>
-      <Link className="public-card-action" href={href as Route}>
+      <span className="public-card-action" aria-hidden="true">
         {action}
         <ArrowUpRight size={16} aria-hidden="true" />
-      </Link>
+      </span>
     </article>
   );
 }

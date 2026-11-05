@@ -5,16 +5,17 @@ import { useEffect, useMemo, useState } from "react";
 export function BlogAudioExample({
   title,
   transcript,
-  tr
+  tr,
 }: {
   title: string;
   transcript: string;
   tr: boolean;
 }) {
   const [playing, setPlaying] = useState(false);
-  const supported = typeof window !== "undefined" && "speechSynthesis" in window;
+  const [supported, setSupported] = useState<boolean | null>(null);
 
   useEffect(() => {
+    setSupported("speechSynthesis" in window);
     return () => {
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
@@ -34,6 +35,7 @@ export function BlogAudioExample({
 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(shortTranscript);
+    utterance.lang = "en-US";
     utterance.rate = 0.94;
     utterance.pitch = 1;
     utterance.onend = () => setPlaying(false);
@@ -48,20 +50,54 @@ export function BlogAudioExample({
       style={{
         marginTop: "1.3rem",
         padding: "1.15rem",
-        border: "1px solid color-mix(in oklch, var(--primary) 20%, var(--border) 80%)",
-        background: "color-mix(in oklch, var(--primary) 5%, var(--card) 95%)"
+        border:
+          "1px solid color-mix(in oklch, var(--primary) 20%, var(--border) 80%)",
+        background: "color-mix(in oklch, var(--primary) 5%, var(--card) 95%)",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "1rem",
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
         <div>
-          <div className="eyebrow">{tr ? "AI sesli örnek" : "AI audio example"}</div>
+          <div className="eyebrow">
+            {tr ? "Tarayıcı sesli örneği" : "Browser audio example"}
+          </div>
           <h3 style={{ margin: "0.35rem 0 0" }}>{title}</h3>
         </div>
-        <button type="button" className="button button-primary" onClick={togglePlayback} disabled={!supported}>
-          {supported ? (playing ? (tr ? "Durdur" : "Stop") : (tr ? "Oynat" : "Play sample")) : (tr ? "Tarayıcı desteklemiyor" : "Browser unsupported")}
+        <button
+          type="button"
+          className="button button-primary"
+          onClick={togglePlayback}
+          disabled={supported !== true}
+        >
+          {supported !== false
+            ? playing
+              ? tr
+                ? "Durdur"
+                : "Stop"
+              : tr
+                ? "Oynat"
+                : "Play sample"
+            : tr
+              ? "Tarayıcı desteklemiyor"
+              : "Browser unsupported"}
         </button>
       </div>
-      <p style={{ marginTop: "0.85rem", color: "var(--muted-foreground)", lineHeight: 1.75 }}>{shortTranscript}</p>
+      <p
+        style={{
+          marginTop: "0.85rem",
+          color: "var(--muted-foreground)",
+          lineHeight: 1.75,
+        }}
+      >
+        {shortTranscript}
+      </p>
     </section>
   );
 }

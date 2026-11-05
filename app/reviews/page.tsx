@@ -1,3 +1,6 @@
+import { getServerLanguage } from "@/lib/language";
+import { normalizePublicLanguage } from "@/lib/copy";
+import { discoveryRefinementCopy } from "@/lib/discovery-refinement-copy";
 import {
   PageHero,
   PageSection,
@@ -35,12 +38,12 @@ const reviewGroups = [
 ];
 
 export const metadata: Metadata = {
-  title: "Review SpeakAce by Use Case",
+  title: "SpeakAce Product Experience & Use Cases",
   description:
     "Review SpeakAce features for IELTS and TOEFL self-study, band improvement, and teacher workflows before choosing a plan.",
   alternates: { canonical: "/reviews" },
   openGraph: {
-    title: "Review SpeakAce by Use Case",
+    title: "SpeakAce Product Experience & Use Cases",
     description:
       "Inspect SpeakAce workflows for self-study learners and teachers without anonymous testimonial claims.",
     url: `${siteConfig.domain}/reviews`,
@@ -49,13 +52,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ReviewsPage() {
+export default async function ReviewsPage() {
+  const t =
+    discoveryRefinementCopy[normalizePublicLanguage(await getServerLanguage())];
   return (
     <main className="public-container">
       <PageHero
-        eyebrow="Product review"
-        title="See how the practice fits your day."
-        description="Explore the learner and teacher workflows, then try a prompt with your own answer. These are product use cases, rather than customer testimonials."
+        eyebrow={t.reviewLabel}
+        title={t.reviewTitle}
+        description={t.reviewIntro}
         actions={
           <>
             <PublicButton href="/app/practice">

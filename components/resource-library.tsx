@@ -1,5 +1,8 @@
 "use client";
 
+import { useAppState } from "@/components/providers";
+import { normalizePublicLanguage } from "@/lib/copy";
+import { discoveryRefinementCopy } from "@/lib/discovery-refinement-copy";
 import { usePanelFeedback } from "@/components/motion/use-panel-feedback";
 import { handleTabKeys } from "@/lib/tab-navigation";
 import type { Route } from "next";
@@ -52,6 +55,8 @@ export function ResourceLibrary({
   categories,
   items,
 }: ResourceLibraryProps) {
+  const { language } = useAppState();
+  const discovery = discoveryRefinementCopy[normalizePublicLanguage(language)];
   const [activeCategory, setActiveCategory] = useState<
     "all" | ResourceCategory
   >("all");
@@ -90,6 +95,24 @@ export function ResourceLibrary({
         <p>{description}</p>
       </div>
 
+      <div className="resource-intent-grid" aria-label={discovery.title}>
+        {(["habit", "skills", "exam", "tools"] as const).map(
+          (category, index) => (
+            <button
+              key={category}
+              type="button"
+              aria-pressed={activeCategory === category}
+              onClick={() => {
+                setActiveCategory(category);
+                setVisibleLimit(6);
+              }}
+            >
+              <strong>{discovery.intents[index]}</strong>
+              <span>{discovery.notes[index]}</span>
+            </button>
+          ),
+        )}
+      </div>
       <div className="resource-library-controls">
         <div
           className="resource-library-tabs"
@@ -175,8 +198,22 @@ export function ResourceLibrary({
         </button>
       ) : null}
 
+      {(activeCategory !== "all" || query) && (
+        <button
+          type="button"
+          className="library-reset"
+          onClick={() => {
+            setActiveCategory("all");
+            setQuery("");
+            setVisibleLimit(6);
+          }}
+        >
+          {discovery.reset}
+        </button>
+      )}
       <p className="resource-library-count" aria-live="polite">
-        {visibleItems.length} {resultLabel}
+        {discovery.showing} {Math.min(visibleLimit, visibleItems.length)}{" "}
+        {discovery.of} {visibleItems.length} {resultLabel}
       </p>
     </section>
   );

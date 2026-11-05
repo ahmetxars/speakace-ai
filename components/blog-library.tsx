@@ -1,5 +1,8 @@
 "use client";
 
+import { useAppState } from "@/components/providers";
+import { normalizePublicLanguage } from "@/lib/copy";
+import { discoveryRefinementCopy } from "@/lib/discovery-refinement-copy";
 import { usePanelFeedback } from "@/components/motion/use-panel-feedback";
 import { handleTabKeys } from "@/lib/tab-navigation";
 import { ResourceCard } from "@/components/public/page-primitives";
@@ -69,6 +72,8 @@ export function BlogLibrary({
   categories,
   posts,
 }: BlogLibraryProps) {
+  const { language } = useAppState();
+  const discovery = discoveryRefinementCopy[normalizePublicLanguage(language)];
   const [activeCategory, setActiveCategory] = useState<"all" | BlogCategory>(
     "all",
   );
@@ -194,8 +199,22 @@ export function BlogLibrary({
         </button>
       ) : null}
 
+      {(activeCategory !== "all" || query) && (
+        <button
+          type="button"
+          className="library-reset"
+          onClick={() => {
+            setActiveCategory("all");
+            setQuery("");
+            setVisibleLimit(12);
+          }}
+        >
+          {discovery.reset}
+        </button>
+      )}
       <p className="blog-library-count" aria-live="polite">
-        {visiblePosts.length} {resultLabel}
+        {discovery.showing} {Math.min(visibleLimit, visiblePosts.length)}{" "}
+        {discovery.of} {visiblePosts.length} {resultLabel}
       </p>
     </section>
   );

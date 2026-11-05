@@ -34,7 +34,7 @@ export function GrowthProofBoard() {
       </div>
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
         <Link href="/success-stories" className="button button-primary">{tr ? "Success stories sayfasını aç" : "Open success stories"}</Link>
-        <Link href="/reviews" className="button button-secondary">{tr ? "Yorumları gör" : "See reviews"}</Link>
+        <Link href="/reviews" className="button button-secondary">{tr ? "Ürün deneyimini incele" : "Explore the product experience"}</Link>
       </div>
     </section>
   );
