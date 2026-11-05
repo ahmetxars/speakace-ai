@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "./voice-in-motion.css";
 import { MarketingSchema } from "@/components/marketing-schema";
 import { EditorialHome } from "@/components/editorial-home";
 import { getServerLanguage } from "@/lib/language";

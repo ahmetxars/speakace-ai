@@ -2,7 +2,10 @@
 import Link from "next/link";
 import { PreviewScenes } from "@/components/motion/preview-scenes";
 import { MotionDisclosure } from "@/components/motion/motion-disclosure";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { HeroProductShowcase, PracticeSignal, AudienceProductScene, FinalCTAVisual } from "@/components/voice-in-motion/product-scenes";
+import { FeedbackTransformation } from "@/components/voice-in-motion/feedback-transformation";
+import { ScrollPracticeJourney } from "@/components/voice-in-motion/scroll-practice-journey";
 import { handleTabKeys } from "@/lib/tab-navigation";
 import { useAppState } from "@/components/providers";
 import type { Language } from "@/lib/copy";
@@ -23,13 +26,7 @@ export function EditorialHome() {
   const [role, setRole] = useState<keyof typeof homeRoles>("students");
   const [menuOpen, setMenuOpen] = useState(false);
   const [instantMotion, setInstantMotion] = useState(false);
-  const retryControl = useRef<HTMLButtonElement>(null);
-  const restoreRetryFocus = useRef(false);
-  useLayoutEffect(() => {
-    if (!restoreRetryFocus.current) return;
-    retryControl.current?.focus({ preventScroll: true });
-    restoreRetryFocus.current = false;
-  }, [retry]);
+  const [autoplayPaused, setAutoplayPaused] = useState(false);
   const samples = homeExamples.map((example, index) => ({
     ...example,
     ...(tr ? homeFeedbackTurkish[index] : {}),
@@ -42,8 +39,9 @@ export function EditorialHome() {
   };
   return (
     <div
-      className="editorial-site"
+      className="editorial-site voice-in-motion-site"
       data-instant-motion={instantMotion || undefined}
+      data-autoplay-paused={autoplayPaused || undefined}
       onKeyDownCapture={() => setInstantMotion(true)}
       onPointerDownCapture={() => setInstantMotion(false)}
       onKeyDown={(event) => {
@@ -130,11 +128,9 @@ export function EditorialHome() {
       </nav>
       <main id="main">
         <section className="hero wrap">
-          <svg className="hero-frequency" viewBox="0 0 600 180" fill="none" aria-hidden="true">
-            <path d="M0 90H120C145 90 148 55 163 55S180 135 195 135S210 20 226 20S241 160 257 160S273 45 289 45S305 125 322 125S340 70 357 70S375 90 405 90H600" />
-            <path d="M0 104H110C145 104 148 83 163 83S180 122 195 122S210 56 226 56S241 143 257 143S273 70 289 70S305 118 322 118S340 91 357 91S375 104 405 104H600" />
-          </svg>
-          <div className="hero-main">
+          <div className="voice-hero-layout">
+            <div className="voice-hero-copy">
+            <span className="voice-hero-kicker"><span aria-hidden="true">✳</span>{tr ? "BİR SES. DAHA NET BİR FİKİR." : "ONE VOICE. A CLEARER PICTURE."}</span>
             <h1>
               {tr ? (
                 <>
@@ -173,6 +169,8 @@ export function EditorialHome() {
                 <span aria-hidden="true">↗</span>
               </a>
             </div>
+            </div>
+            <HeroProductShowcase tr={tr} paused={autoplayPaused} onPause={() => setAutoplayPaused((current) => !current)} />
           </div>
           <div className="hero-bottom">
             <span>{t("ONE QUESTION. ONE ANSWER. ONE STEP FORWARD.")}</span>
@@ -187,7 +185,7 @@ export function EditorialHome() {
           id="practice"
           aria-labelledby="demo-title"
         >
-          <div className="workbench" data-reveal>
+          <div className="workbench voice-workbench">
             <div className="workbench-header">
               <div className="workspace-brand">
                 <span className="tiny-mark" aria-hidden="true">
@@ -217,43 +215,7 @@ export function EditorialHome() {
                   ))}
                 </PreviewScenes>
                 <div className="prompt-bottom">
-                  <div className="waveform" aria-hidden="true">
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                    <i></i>
-                  </div>
+                  <PracticeSignal tr={tr} topic={topic} key={topic} />
                   <p>{t("Small steps. Spoken out loud.")}</p>
                   <div className="question-progress" aria-hidden="true">
                     {samples.map((_, index) => <i key={index} data-active={topic === index} />)}
@@ -322,37 +284,7 @@ export function EditorialHome() {
                   aria-labelledby={retry ? "tab-retry" : "tab-first"}
                   tabIndex={0}
                 >
-                  <PreviewScenes active={topic * 2 + Number(retry)}>
-                    {samples.flatMap((sample, sampleIndex) => [false, true].map((isRetry) => {
-                      const selected = sampleIndex === topic && isRetry === retry;
-                      return (
-                        <div key={`${sampleIndex}-${isRetry}`}>
-                          <div className="transcript-label">
-                            <span>{t("YOUR TRANSCRIPT")}</span>
-                            <span id={selected ? "answer-duration" : undefined}>{t("EXAMPLE 0")}{sampleIndex + 1}</span>
-                          </div>
-                          <blockquote id={selected ? "transcript" : undefined} dangerouslySetInnerHTML={{ __html: isRetry ? sample.retry : sample.first }} />
-                          <div className="coach-note">
-                            <span className="note-icon" aria-hidden="true">↳</span>
-                            <div>
-                              <h3 id={selected ? "feedback-title" : undefined}>{isRetry ? sample.retryHeading : sample.heading}</h3>
-                              <p id={selected ? "feedback-text" : undefined}>{isRetry ? sample.retryFeedback : sample.feedback}</p>
-                            </div>
-                          </div>
-                          <div className="next-step">
-                            <span className="step-star" aria-hidden="true">✳</span>
-                            <p id={selected ? "next-instruction" : undefined}>
-                              <strong>{isRetry ? (tr ? "Devam et" : "Keep going") : (tr ? "Sonraki denemen" : "Your next attempt")}</strong>
-                              {isRetry ? sample.retryNext : sample.next}
-                            </p>
-                            <button ref={selected ? retryControl : undefined} id={selected ? "show-retry" : undefined} onClick={() => { restoreRetryFocus.current = true; setRetry((current) => !current); }}>
-                              {isRetry ? (tr ? "İlk cevaba dön ↶" : "Back to first answer ↶") : (tr ? "Yeni denemeyi gör →" : "See the retry →")}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    }))}
-                  </PreviewScenes>
+                  <FeedbackTransformation sample={samples[topic]} topic={topic} retry={retry} tr={tr} instant={instantMotion} onToggle={() => setRetry((current) => !current)} />
                 </div>
                 <p className="demo-footnote">
                   {" "}
@@ -403,56 +335,7 @@ export function EditorialHome() {
               {t("the answer you just gave.")}{" "}
             </p>
           </div>
-          <div className="loop-rows">
-            <article data-reveal>
-              <span className="row-number">01</span>
-              <h3>
-                {" "}
-                {t("Pick a question.")} <br /> {t("Make it yours.")}{" "}
-              </h3>
-              <p>
-                {" "}
-                {t(
-                  "Choose an IELTS or TOEFL speaking task. Take a breath and answer in your own words.",
-                )}{" "}
-              </p>
-              <span className="row-symbol" aria-hidden="true">
-                ↗
-              </span>
-            </article>
-            <article data-reveal data-reveal-delay="90">
-              <span className="row-number">02</span>
-              <h3>
-                {" "}
-                {t("Hear yourself.")} <br /> {t("See the details.")}{" "}
-              </h3>
-              <p>
-                {" "}
-                {t(
-                  "Read your transcript alongside AI feedback on fluency, vocabulary, grammar, and pronunciation.",
-                )}{" "}
-              </p>
-              <span className="row-symbol" aria-hidden="true">
-                ≋
-              </span>
-            </article>
-            <article data-reveal data-reveal-delay="180">
-              <span className="row-number">03</span>
-              <h3>
-                {" "}
-                {t("Change one thing.")} <br /> {t("Say it again.")}{" "}
-              </h3>
-              <p>
-                {" "}
-                {t(
-                  "Put the feedback into your next attempt while the question is still fresh. Keep building from there.",
-                )}{" "}
-              </p>
-              <span className="row-symbol" aria-hidden="true">
-                ↻
-              </span>
-            </article>
-          </div>
+          <ScrollPracticeJourney tr={tr} />
           <p className="honesty">
             <span aria-hidden="true">ⓘ</span>{" "}
             {t(
@@ -530,36 +413,7 @@ export function EditorialHome() {
                   const audience = roles[roleKey];
                   const selected = roleKey === role;
                   return <div key={roleKey} className="audience-scene">
-              <div className="notebook">
-                <div className="notebook-top">
-                  <span>{audience.label}</span>
-                  <span aria-hidden="true">↗</span>
-                </div>
-                <div className="notebook-line">
-                  <span className="hand-check" aria-hidden="true">
-                    ✓
-                  </span>
-                  <span id={selected ? "note-one" : undefined}>{audience.notes[0]}</span>
-                </div>
-                <div className="notebook-line">
-                  <span className="hand-check" aria-hidden="true">
-                    ✓
-                  </span>
-                  <span id={selected ? "note-two" : undefined}>{audience.notes[1]}</span>
-                </div>
-                <div className="notebook-line">
-                  <span className="hand-check" aria-hidden="true">
-                    ✓
-                  </span>
-                  <span id={selected ? "note-three" : undefined}>{audience.notes[2]}</span>
-                </div>
-                <div className="notebook-bottom">
-                  <span id={selected ? "note-caption" : undefined}>{audience.caption}</span>
-                  <span className="notebook-flower" aria-hidden="true">
-                    ✳
-                  </span>
-                </div>
-              </div>
+              <AudienceProductScene role={roleKey} tr={tr} notes={audience.notes} label={audience.label} caption={audience.caption} />
               <h3 id={selected ? "role-title" : undefined}>{audience.title}</h3>
               <p id={selected ? "role-description" : undefined}>{audience.description}</p>
               <a
@@ -700,6 +554,7 @@ export function EditorialHome() {
           </div>
         </section>
         <section className="final-section wrap">
+          <FinalCTAVisual />
           <div className="final-top">
             <span className="eyebrow">
               {t("YOUR NEXT ATTEMPT IS WAITING.")}
@@ -707,7 +562,7 @@ export function EditorialHome() {
             <span aria-hidden="true">↗</span>
           </div>
           <div className="final-main">
-            <h2 data-reveal>
+            <h2>
               {" "}
               {t("A little less hesitation.")} <br />{" "}
               <em>{t("A little more you.")}</em>

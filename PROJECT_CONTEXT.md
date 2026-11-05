@@ -1156,3 +1156,14 @@ update this file so future agents do not need to repeat the same discovery work.
 - Workspace branding selectors must remain scoped to `.workspace-header .workspace-brand`; the unscoped selector previously leaked into the homepage preview.
 - Application motion is limited to functional control, genuine report and real mic state. Do not animate timers or scores or trigger fake recording behavior.
 - Full audit, changed-file map, bundle comparison, manual checks and limits: `docs/2026-11-04-motion.md`.
+
+
+### Voice in Motion marketing scenes (2026-11-05)
+
+- Homepage imports app/voice-in-motion.css and composes components/voice-in-motion/*, preserving the paper/cobalt/lime identity and existing home demo data. Other public and authenticated workflows retain their existing ownership.
+- SpeakAceVoiceSignal is the shared original SVG motif; VoiceWave is explicitly illustrative. Never attach these marketing animations to a fake microphone/assessment state.
+- HeroProductShowcase assembles authored product artifacts; narrow layouts use intrinsic rows. The homepage offers an automatic-motion pause control. Ambient animation pauses out of view, while inactive, or when the document is hidden. Finite CSS assembly settles into a readable resting scene.
+- ScrollPracticeJourney is the single desktop sticky story: four persistent objects use paused native animation timelines, with currentTime updated only on visible, deliberate scroll frames. Measure narrative chapter centers on resize; do not add per-frame React state or scroll snapping. Mobile/reduced motion uses three stacked visual chapters.
+- FeedbackTransformation reserves both answer heights and reveals an authored concrete phrase through a reversible annotation path. Its retry button has stable DOM identity; preserve focus and immediate keyboard/reduced-motion activation.
+- Audience previews show actual journal, assignment-review and class/programme capabilities, explicitly labelled illustrative. Do not replace the practice pathway with fabricated score graphs or school analytics.
+- Full audit, references, architecture and browser evidence: docs/2026-11-05-voice-in-motion.md.
