@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { publicLocaleOptions } from "@/lib/copy";
 import { useAppState } from "@/components/providers";
 
@@ -47,15 +48,17 @@ export default function SettingsPage() {
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
           <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
             <strong>{tr ? "Arayüz dili" : "Interface language"}</strong>
-            <p>{tr ? `Seçili dil: ${language.toUpperCase()}` : `Current selection: ${language.toUpperCase()}`}</p>
+            <p>{tr ? `Çalışma alanı dili: ${tr ? "TR" : "EN"}` : "Workspace language: EN"}</p>
+            <p>{tr ? "Çalışma alanı Türkçe ve İngilizce sunulur. Herkese açık rehberlerde beş dil seçeneği vardır." : "The workspace is available in English and Turkish. Public learning pages offer five languages."}</p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.6rem" }}>
-              {publicLocaleOptions.map((locale) => (
+              {publicLocaleOptions.filter((locale) => locale.code === "en" || locale.code === "tr").map((locale) => (
                 <button
                   key={locale.code}
                   className="button button-secondary"
                   type="button"
                   onClick={() => setLanguage(locale.code)}
-                  aria-pressed={language === locale.code}
+                  aria-pressed={(tr ? "tr" : "en") === locale.code}
+                  disabled={locale.code !== "en" && locale.code !== "tr"}
                   style={{ justifyContent: "center", gap: "0.45rem" }}
                 >
                   <span>{locale.nativeLabel}</span>
@@ -77,7 +80,7 @@ export default function SettingsPage() {
           </div>
           <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
             <strong>{tr ? "Hesap durumu" : "Account state"}</strong>
-            <p>{signedIn ? (tr ? "Güvenli oturum ile giriş yapıldı." : "Signed in with a secure session cookie.") : tr ? "Misafir modu açık." : "Guest mode is active."}</p>
+            <p>{signedIn ? (tr ? "Güvenli oturum ile giriş yapıldı." : "You are signed in.") : tr ? "Misafir modu açık." : "Guest mode is active."}</p>
             {signedIn ? (
               <button className="button button-secondary" type="button" onClick={signOut}>
                 {tr ? "Çıkış yap" : "Sign out"}
@@ -87,7 +90,8 @@ export default function SettingsPage() {
           <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
             <strong>{tr ? "Üyelik durumu" : "Membership status"}</strong>
             <p style={{ fontSize: "1.1rem", fontWeight: 700 }}>{formatPlanLabel(currentUser?.plan, tr)}</p>
-            <p>{tr ? "Ücretli planlar elle açılmaz. Ödeme tamamlandıktan sonra otomatik olarak aktifleşir." : "Paid plans no longer unlock from manual buttons. They will activate from the billing flow after payment."}</p>
+            <p>{tr ? "Planını ve ödeme bilgilerini üyelik sayfandan yönet." : "Manage your plan and payment details from your membership page."}</p>
+            <Link className="button button-secondary" href="/app/billing">{tr ? "Üyeliği yönet" : "Manage membership"}</Link>
           </div>
           <div className="card" style={{ padding: "1rem", background: "var(--surface-strong)" }}>
             <strong>{tr ? "Şifre değiştir" : "Change password"}</strong>

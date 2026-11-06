@@ -1,4 +1,7 @@
 "use client";
+import { requestAdminAction } from "@/lib/admin-request";
+import { getAdminHealthRows } from "@/lib/admin-health";
+import { BrandMark } from "@/components/public/brand";
 import { AdminServiceCheck } from "@/components/admin-service-check";
 
 import { useMemo, useState } from "react";
@@ -331,9 +334,9 @@ function AdminDailyOverview({
     });
   } else if (checkoutDropOff > 0) {
     actions.push({
-      title: "Checkout kaybını azalt",
-      detail: `Son 30 günde checkout başlatan ${overview.monetizationFunnel30d.checkoutInitiated} kişiden ${checkoutDropOff} kişi ödemeyi tamamlamadı.`,
-      label: "Kaybı incele",
+      title: "Checkout sonuçlarını incele",
+      detail: `Son 30 günde checkout başlatan ${overview.monetizationFunnel30d.checkoutInitiated} kişiden ${checkoutDropOff} kişi için tamamlanma kaydı görünmüyor. Bu fark tek başına terk edilme kanıtı değildir.`,
+      label: "Sonuçları incele",
       tab: "billing",
       severity: "warning"
     });
@@ -365,7 +368,7 @@ function AdminDailyOverview({
     !systemHealth.commercialEmailConfigured
   ) {
     actions.push({
-      title: "E-posta teslimatını düzelt",
+      title: overview.emailQuotaBlocked || overview.emailFailed24h > 0 || !systemHealth.emailConfigured ? "E-posta teslimatını kontrol et" : "Ticari gönderim ayarlarını tamamla",
       detail: !systemHealth.emailConfigured
         ? "Resend bağlantısı canlı ortamda yapılandırılmamış görünüyor."
         : !systemHealth.emailLegalIdentityConfigured
@@ -373,14 +376,14 @@ function AdminDailyOverview({
         : `${overview.emailSent24h} gönderim başarılı, ${overview.emailFailed24h} gönderim başarısız. Yaşam döngüsü maillerinin kullanıcıya ulaştığını doğrula.`,
       label: "Sistemi kontrol et",
       tab: "system",
-      severity: overview.emailQuotaBlocked || !systemHealth.commercialEmailConfigured ? "critical" : "warning"
+      severity: overview.emailQuotaBlocked || !systemHealth.emailConfigured ? "critical" : "warning"
     });
   }
 
   if (actions.length < 3 && publishedPosts === 0) {
     actions.push({
-      title: "İlk organik içerikleri yayınla",
-      detail: "Henüz yayında özel içerik görünmüyor. Satın alma niyeti yüksek bir IELTS rehberiyle organik trafik akışını başlat.",
+      title: "Özel blog içeriği ekle",
+      detail: "Panelden yayımlanan özel yazı yok. Sitedeki hazır rehberler bu sayıya dahil değildir.",
       label: "İçeriklere git",
       tab: "content",
       severity: "info"
@@ -415,41 +418,7 @@ function AdminDailyOverview({
     }
   ];
 
-  const systemRows = [
-    {
-      label: "Veritabanı",
-      detail: systemHealth.databaseConfigured ? "Canlı bağlantı hazır" : "Bağlantı eksik",
-      ready: systemHealth.databaseConfigured
-    },
-    {
-      label: "Lemon webhook",
-      detail: systemHealth.lemonWebhookConfigured ? "İmza secretı hazır" : "Canlı secret eksik",
-      ready: systemHealth.lemonWebhookConfigured
-    },
-    {
-      label: "E-posta",
-      detail: overview.emailQuotaBlocked
-        ? "Sağlayıcı kotası bloklu"
-        : !systemHealth.emailConfigured
-          ? "Resend bağlantısı eksik"
-          : !systemHealth.emailLegalIdentityConfigured
-            ? "Yasal gönderen adı ve posta adresi eksik"
-            : systemHealth.commercialEmailConfigured
-              ? `${overview.emailSent24h} gönderim / 24 saat`
-              : "Yapılandırma eksik",
-      ready: systemHealth.commercialEmailConfigured && !overview.emailQuotaBlocked
-    },
-    {
-      label: "Birinci taraf analitik",
-      detail: systemHealth.analyticsConfigured ? `${overview.pageViews1h} görüntülenme / son saat` : "Bağlantı eksik",
-      ready: systemHealth.analyticsConfigured
-    },
-    {
-      label: "PostHog",
-      detail: systemHealth.posthogConfigured ? "Harici event akışı bağlı" : "Harici izleme kapalı; analitik yalnızca izinle çalışır",
-      ready: systemHealth.posthogConfigured
-    }
-  ];
+  const systemRows = getAdminHealthRows(systemHealth);
 
   return (
     <div className="adm-daily">
@@ -515,7 +484,7 @@ function AdminDailyOverview({
           <strong>
             {overview.monetizationFunnel30d.checkoutCompleted} / {overview.monetizationFunnel30d.checkoutInitiated}
           </strong>
-          <small>{checkoutDropOff} ödeme adayı kaybedildi</small>
+          <small>{checkoutDropOff} başlangıç için tamamlanma kaydı yok</small>
         </article>
       </section>
 
@@ -584,13 +553,13 @@ function AdminDailyOverview({
           <div className="adm-system-list">
             {systemRows.map((row) => (
               <div className="adm-system-row" key={row.label}>
-                <span className={`adm-status-dot${row.ready ? " is-ready" : " is-blocked"}`} />
+                <span className={`adm-status-dot ${row.tone === "success" ? "is-ready" : row.tone === "warning" ? "is-blocked" : "is-neutral"}`} />
                 <div>
                   <strong>{row.label}</strong>
                   <span>{row.detail}</span>
                 </div>
-                <span className={`adm-health-label${row.ready ? " is-ready" : " is-blocked"}`}>
-                  {row.ready ? "Hazır" : "Kontrol et"}
+                <span className={`adm-health-label ${row.tone === "success" ? "is-ready" : row.tone === "warning" ? "is-blocked" : "is-neutral"}`}>
+                  {row.status}
                 </span>
               </div>
             ))}
@@ -625,7 +594,7 @@ function AdminDailyOverview({
           </div>
           <div className="adm-recent-summary">
             <span>{billingEvents.length} ödeme olayı</span>
-            <span>{publishedPosts} içerik yayında</span>
+            <span>{publishedPosts} özel yazı yayında</span>
           </div>
         </section>
       </div>
@@ -1088,40 +1057,51 @@ export function AdminPanel(props: {
     setBusy(true);
     setError("");
     setMessage("");
-    const response = await fetch("/api/admin/referrals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code,
-        label,
-        trialDays: Number(trialDays || 7),
-        usageLimit: usageLimit ? Number(usageLimit) : null
-      })
-    });
-    const data = (await response.json()) as { error?: string };
-    setBusy(false);
-    if (!response.ok) {
-      setError(data.error ?? "Davet kodu oluşturulamadı.");
-      return;
+    try {
+      await requestAdminAction<{ error?: string }>(
+        "/api/admin/referrals",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code,
+            label,
+            trialDays: Number(trialDays || 7),
+            usageLimit: usageLimit ? Number(usageLimit) : null,
+          }),
+        },
+        "Davet kodu oluşturulamadı.",
+      );
+
+      setMessage("Davet kodu oluşturuldu.");
+      setCode("");
+      setLabel("");
+      setUsageLimit("");
+      setTrialDays("7");
+      router.refresh();
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "Davet kodu oluşturulamadı.",
+      );
+    } finally {
+      setBusy(false);
     }
-    setMessage("Davet kodu oluşturuldu.");
-    setCode("");
-    setLabel("");
-    setUsageLimit("");
-    setTrialDays("7");
-    router.refresh();
   };
 
   const updateMemberDraft = (
     memberId: string,
-    patch: Partial<{ plan: string; billingStatus: string; trialDays: string }>
+    patch: Partial<{ plan: string; billingStatus: string; trialDays: string }>,
   ) => {
     setMemberDrafts((current) => ({
       ...current,
       [memberId]: {
-        ...(current[memberId] ?? { plan: "free", billingStatus: "free", trialDays: "7" }),
-        ...patch
-      }
+        ...(current[memberId] ?? {
+          plan: "free",
+          billingStatus: "free",
+          trialDays: "7",
+        }),
+        ...patch,
+      },
     }));
   };
 
@@ -1131,71 +1111,99 @@ export function AdminPanel(props: {
     setMemberBusyId(memberId);
     setMemberError("");
     setMemberMessage("");
-    const response = await fetch(`/api/admin/members/${memberId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        plan: draft.plan,
-        billingStatus: draft.billingStatus,
-        trialDays: draft.trialDays ? Number(draft.trialDays) : null
-      })
-    });
-    const data = (await response.json()) as { error?: string };
-    setMemberBusyId(null);
-    if (!response.ok) {
-      setMemberError(data.error ?? "Kullanıcı erişimi güncellenemedi.");
-      return;
+    try {
+      await requestAdminAction<{ error?: string }>(
+        `/api/admin/members/${memberId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            plan: draft.plan,
+            billingStatus: draft.billingStatus,
+            trialDays: draft.trialDays ? Number(draft.trialDays) : null,
+          }),
+        },
+        "Kullanıcı erişimi güncellenemedi.",
+      );
+
+      setMemberMessage("Kullanıcı erişimi güncellendi.");
+      router.refresh();
+    } catch (error) {
+      setMemberError(
+        error instanceof Error
+          ? error.message
+          : "Kullanıcı erişimi güncellenemedi.",
+      );
+    } finally {
+      setMemberBusyId(null);
     }
-    setMemberMessage("Kullanıcı erişimi güncellendi.");
-    router.refresh();
   };
 
   const createPost = async () => {
     setContentBusy(true);
     setContentError("");
     setContentMessage("");
-    const response = await fetch("/api/admin/content/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newPost)
-    });
-    const data = (await response.json()) as { error?: string };
-    setContentBusy(false);
-    if (!response.ok) {
-      setContentError(data.error ?? "İçerik kaydedilemedi.");
-      return;
+    try {
+      await requestAdminAction<{ error?: string }>(
+        "/api/admin/content/posts",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newPost),
+        },
+        "İçerik kaydedilemedi.",
+      );
+
+      setContentMessage("Blog içeriği kaydedildi.");
+      setNewPost({
+        language: "en",
+        title: "",
+        slug: "",
+        description: "",
+        keywords: "",
+        intro: "",
+        body: "## What this guide covers\n\nAdd the first key explanation here.\n\n## Common mistakes\n\nExplain what usually goes wrong.\n\n## Better answer pattern\n\nShow what a stronger answer sounds like.\n\n## How to practice it\n\nGive the learner a repeatable action plan.",
+        status: "draft",
+      });
+      router.refresh();
+    } catch (error) {
+      setContentError(
+        error instanceof Error ? error.message : "İçerik kaydedilemedi.",
+      );
+    } finally {
+      setContentBusy(false);
     }
-    setContentMessage("Blog içeriği kaydedildi.");
-    setNewPost({
-      language: "en",
-      title: "",
-      slug: "",
-      description: "",
-      keywords: "",
-      intro: "",
-      body: "## What this guide covers\n\nAdd the first key explanation here.\n\n## Common mistakes\n\nExplain what usually goes wrong.\n\n## Better answer pattern\n\nShow what a stronger answer sounds like.\n\n## How to practice it\n\nGive the learner a repeatable action plan.",
-      status: "draft"
-    });
-    router.refresh();
   };
 
-  const updatePostStatus = async (postId: string, status: "draft" | "published") => {
+  const updatePostStatus = async (
+    postId: string,
+    status: "draft" | "published",
+  ) => {
     setContentBusyId(postId);
     setContentError("");
     setContentMessage("");
-    const response = await fetch(`/api/admin/content/posts/${postId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status })
-    });
-    const data = (await response.json()) as { error?: string };
-    setContentBusyId(null);
-    if (!response.ok) {
-      setContentError(data.error ?? "İçerik durumu güncellenemedi.");
-      return;
+    try {
+      await requestAdminAction<{ error?: string }>(
+        `/api/admin/content/posts/${postId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        },
+        "İçerik durumu güncellenemedi.",
+      );
+
+      setContentMessage(
+        status === "published" ? "İçerik yayınlandı." : "İçerik taslağa taşındı.",
+      );
+      router.refresh();
+    } catch (error) {
+      setContentError(
+        error instanceof Error ? error.message : "İçerik durumu güncellenemedi.",
+      );
+    } finally {
+      setContentBusyId(null);
     }
-    setContentMessage(status === "published" ? "İçerik yayınlandı." : "İçerik taslağa taşındı.");
-    router.refresh();
   };
 
   const sendEmailDeliveryTest = async () => {
@@ -1203,29 +1211,39 @@ export function AdminPanel(props: {
     setEmailTestMessage("");
     setEmailTestError("");
 
-    const response = await fetch("/api/admin/email-test", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
-    });
-    const data = (await response.json()) as {
-      ok?: boolean;
-      quotaRecoveryRecorded?: boolean;
-      error?: string;
-    };
+    try {
+      const data = await requestAdminAction<{
+        ok?: boolean;
+        quotaRecoveryRecorded?: boolean;
+        error?: string;
+      }>(
+        "/api/admin/email-test",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        },
+        "E-posta teslimat testi başarısız oldu.",
+      );
 
-    setEmailTestBusy(false);
-    if (!response.ok || !data.ok) {
-      setEmailTestError(data.error ?? "E-posta teslimat testi başarısız oldu.");
-      return;
+      if (!data.ok)
+        throw new Error(data.error ?? "E-posta teslimat testi başarısız oldu.");
+
+      setEmailTestMessage(
+        data.quotaRecoveryRecorded
+          ? "Test gönderildi ve eski sağlayıcı kota blokajı temizlendi."
+          : "Test gönderildi ancak kota kurtarma kaydı oluşturulamadı.",
+      );
+      router.refresh();
+    } catch (error) {
+      setEmailTestError(
+        error instanceof Error
+          ? error.message
+          : "E-posta teslimat testi başarısız oldu.",
+      );
+    } finally {
+      setEmailTestBusy(false);
     }
-
-    setEmailTestMessage(
-      data.quotaRecoveryRecorded
-        ? "Test gönderildi ve eski sağlayıcı kota blokajı temizlendi."
-        : "Test gönderildi ancak kota kurtarma kaydı oluşturulamadı."
-    );
-    router.refresh();
   };
 
   return (
@@ -1235,7 +1253,7 @@ export function AdminPanel(props: {
       {/* ── Sidebar ─────────────────────────────── */}
       <aside className="adm-sidebar">
         <div className="adm-brand">
-          <div className="adm-brand-icon" aria-hidden="true">≋</div>
+          <div className="adm-brand-icon" aria-hidden="true"><BrandMark /></div>
           {!sidebarCollapsed && (
             <div className="adm-brand-copy">
               <span className="adm-brand-name">SpeakAce</span>
@@ -1264,9 +1282,9 @@ export function AdminPanel(props: {
                     key={item.id}
                     type="button"
                     className={`adm-nav-item${isActive ? " is-active" : ""}`}
+                    aria-current={isActive ? "page" : undefined}
                     onClick={() => navigateTo(item.id)}
                     title={sidebarCollapsed ? item.label : undefined}
-                    aria-current={isActive ? "page" : undefined}
                   >
                     <Icon size={18} className="adm-nav-icon-svg" />
                     {!sidebarCollapsed && <span>{item.label}</span>}
@@ -2849,55 +2867,15 @@ export function AdminPanel(props: {
                   <h3>Gelir altyapısı</h3>
                 </div>
                 <div className="adm-stack-list">
-                  {[
-                    {
-                      label: "Canlı veritabanı",
-                      ready: props.systemHealth.databaseConfigured,
-                      detail: props.systemHealth.databaseConfigured ? "Kalıcı ürün verisi bağlı." : "DATABASE_URL eksik."
-                    },
-                    {
-                      label: "Lemon webhook",
-                      ready: props.systemHealth.lemonWebhookConfigured,
-                      detail: props.systemHealth.lemonWebhookConfigured
-                        ? "İmzalı ödeme olayları erişimi güncelleyebilir."
-                        : "Secret eklenene kadar ödeme olayları ücretli erişimi açamaz."
-                    },
-                    {
-                      label: "E-posta teslimatı",
-                      ready: props.systemHealth.commercialEmailConfigured && !props.overview.emailQuotaBlocked,
-                      detail: props.overview.emailQuotaBlocked
-                        ? "Sağlayıcı kotası yaşam döngüsü gönderimlerini engelliyor."
-                        : !props.systemHealth.emailConfigured
-                          ? "RESEND_API_KEY veya EMAIL_FROM eksik."
-                          : !props.systemHealth.emailLegalIdentityConfigured
-                            ? "COMPANY_LEGAL_NAME ve COMPANY_POSTAL_ADDRESS eksik; ticari gönderimler durduruldu."
-                            : props.systemHealth.commercialEmailConfigured
-                              ? `Günlük ${props.systemHealth.lifecycleDailyBudget} gönderim bütçesiyle hazır.`
-                              : "E-posta yapılandırması eksik."
-                    },
-                    {
-                      label: "Ürün analitiği",
-                      ready: props.systemHealth.analyticsConfigured,
-                      detail: props.systemHealth.analyticsConfigured
-                        ? "Birinci taraf funnel olayları açık."
-                        : "Analitik ortam ayarlarında kapalı."
-                    },
-                    {
-                      label: "PostHog event akışı",
-                      ready: props.systemHealth.posthogConfigured,
-                      detail: props.systemHealth.posthogConfigured
-                        ? "Tarayıcı ve sunucu event aktarımı bağlı."
-                        : "NEXT_PUBLIC_POSTHOG_KEY eksik; birinci taraf funnel verileri etkilenmiyor."
-                    }
-                  ].map((item) => (
-                    <div key={item.label} className="adm-list-row">
+                  {getAdminHealthRows(props.systemHealth).map((item) => (
+                    <div key={item.label} className="adm-list-row adm-health-config-row">
                       <div>
                         <span className="adm-table-name">{item.label}</span>
                         <span className="adm-table-email">{item.detail}</span>
                       </div>
                       <StatusBadge
-                        label={item.ready ? "Hazır" : "Aksiyon gerekli"}
-                        tone={item.ready ? "success" : "warning"}
+                        label={item.status}
+                        tone={item.tone}
                       />
                     </div>
                   ))}

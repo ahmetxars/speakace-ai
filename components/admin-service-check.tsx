@@ -5,15 +5,21 @@ export function AdminServiceCheck() {
   const [checks, setChecks] = useState<ServiceCheck[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const check = async () => {
     setBusy(true);
     setError("");
+    setChecks([]);
+    setCheckedAt(null);
     try {
       const response = await fetch("/api/admin/services", { method: "POST" });
       const data = await response.json();
       if (!response.ok)
         throw new Error(data.error || "Servis kontrolü tamamlanamadı.");
+      if (!Array.isArray(data.checks))
+        throw new Error("Servis yanıtı okunamadı.");
       setChecks(data.checks);
+      setCheckedAt(typeof data.checkedAt === "string" ? data.checkedAt : null);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Bağlantı hatası.");
     } finally {
@@ -37,7 +43,15 @@ export function AdminServiceCheck() {
       >
         {busy ? "Kontrol ediliyor…" : "Servisleri kontrol et"}
       </button>
-      <div aria-live="polite">
+      <div aria-live="polite" aria-busy={busy}>
+        {checkedAt && (
+          <p>
+            Son canlı kontrol:{" "}
+            <time dateTime={checkedAt}>
+              {new Date(checkedAt).toLocaleString("tr-TR")}
+            </time>
+          </p>
+        )}
         {checks.map((item) => (
           <p key={item.service}>
             <strong>

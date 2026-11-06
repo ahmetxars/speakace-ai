@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import { ArrowUpRight, Bell, BookOpen, ChevronDown, CircleUserRound, LayoutDashboard, LogOut, Mic, Moon, PenLine, Settings2, Sun, Target, TrendingUp } from "lucide-react";
 import { useAppState } from "@/components/providers";
 import { publicLocaleOptions, type Language } from "@/lib/copy";
+import { PublicBrand } from "@/components/public/brand";
 import { resolveDashboardRole } from "@/lib/roles";
 
 export function WorkspaceHeader() {
@@ -51,15 +52,15 @@ export function WorkspaceHeader() {
   }, []);
 
   return (
-    <header className="workspace-header" onKeyDown={(event) => { if (event.key === "Escape" && menuRef.current) menuRef.current.open = false; }}>
+    <header className="workspace-header" onKeyDown={(event) => { if (event.key === "Escape" && menuRef.current?.open) { menuRef.current.open = false; menuRef.current.querySelector("summary")?.focus(); } }}>
       <a className="workspace-skip" href="#workspace-main">{tr ? "İçeriğe geç" : "Skip to content"}</a>
       <div className="workspace-topbar">
-        <Link className="workspace-brand" href="/" aria-label="SpeakAce home"><span aria-hidden="true">≋</span>SpeakAce<i>.</i></Link>
+        <PublicBrand className="workspace-brand"/>
         <span className="workspace-edition">{role === "school" ? (tr ? "Kurum alanı" : "Institution workspace") : role === "teacher" ? (tr ? "Öğretmen alanı" : "Teaching workspace") : (tr ? "Kişisel çalışma alanın" : "Your learning workspace")}</span>
         <div className="workspace-tools">
           <Link className="workspace-resource-link" href="/resources">{tr ? "Kaynaklar" : "Resources"}<ArrowUpRight size={14} /></Link>
-          <select aria-label={tr ? "Arayüz dili" : "Interface language"} value={language} onChange={(event) => setLanguage(event.target.value as Language)}>
-            {publicLocaleOptions.map((locale) => <option value={locale.code} key={locale.code}>{locale.code.toUpperCase()}</option>)}
+          <select aria-label={tr ? "Arayüz dili" : "Interface language"} value={tr ? "tr" : "en"} title={tr ? "Çalışma alanı: Türkçe ve İngilizce. Kaynaklar: beş dil." : "Workspace: English and Turkish. Resources: five languages."} onChange={(event) => setLanguage(event.target.value as Language)}>
+            {publicLocaleOptions.map((locale) => <option value={locale.code} key={locale.code} disabled={locale.code !== "en" && locale.code !== "tr"}>{locale.code.toUpperCase()}</option>)}
           </select>
           <button className="workspace-icon-button" type="button" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={tr ? (theme === "dark" ? "Açık tema" : "Koyu tema") : (theme === "dark" ? "Light theme" : "Dark theme")}>
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}

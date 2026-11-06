@@ -8,13 +8,20 @@ export function PublicBrand({ className = "" }: { className?: string }) {
       href="/"
       aria-label="SpeakAce home"
     >
-      <span className="brand-mark" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-        <i />
-      </span>
+      <BrandMark />
       SpeakAce<span className="brand-dot">.</span>
     </Link>
+  );
+}
+
+/** Original four-bar voice mark for public and signed-in shells. */
+export function BrandMark() {
+  return (
+    <span className="brand-mark" aria-hidden="true">
+      <i />
+      <i />
+      <i />
+      <i />
+    </span>
   );
 }

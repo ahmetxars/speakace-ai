@@ -98,7 +98,7 @@ body.application-site .app-main strong { font-weight: 600; }
 .workspace-header { position: sticky; top: 0; z-index: 70; background: var(--background); border-bottom: 1px solid var(--line); }
 .workspace-topbar { width: min(1280px, calc(100% - 96px)); margin: auto; min-height: 83px; display: flex; align-items: center; gap: 25px; }
 .workspace-header .workspace-brand { color: var(--foreground); text-decoration: none; display: inline-flex; align-items: center; font-size: 24px; font-weight: 650; letter-spacing: -1px; white-space: nowrap; }
-.workspace-header .workspace-brand > span { width: 33px; height: 34px; display: grid; place-items: center; background: #3155df; color: #fff; font-size: 24px; border-radius: 8px 8px 8px 1px; margin-right: 10px; }
+.workspace-header .workspace-brand > .brand-mark { width: 33px; height: 34px; display: flex; align-items: center; justify-content: center; gap:3px; background: #3155df; color: #fff; font-size: 24px; border-radius: 8px 8px 8px 1px; margin-right: 10px; }
 .workspace-header .workspace-brand i { color: #3155df; font-style: normal; }
 .workspace-edition { border-left: 1px solid var(--line); padding-left: 24px; color: var(--muted); font-size: 11px; }
 .workspace-tools { margin-left: auto; display: flex; gap: 12px; align-items: center; }
@@ -298,7 +298,7 @@ body.application-site .teacher-class-card, body.application-site .teacher-studen
   body.application-site .page-shell, .workspace-topbar { width: calc(100% - 36px); }
   .workspace-topbar { min-height: 70px; gap: 8px; }
   .workspace-header .workspace-brand { font-size: 21px; }
-  .workspace-header .workspace-brand > span { width: 28px; height: 30px; font-size: 21px; margin-right: 7px; }
+  .workspace-header .workspace-brand > .brand-mark { width: 28px; height: 30px; font-size: 21px; margin-right: 7px; }
   .workspace-resource-link, .workspace-account-name, .workspace-tools > .workspace-icon-button { display: none; }
   .workspace-tools { gap: 6px; }
   .workspace-account { margin-left: 2px; }
@@ -445,6 +445,16 @@ body.admin-site[data-theme="dark"] .adm-shell {
   --adm-muted: #acb8a7; --adm-line: #3b4b3e; --adm-accent: #b4c0ff;
   --adm-accent-strong: #d1d9ff; --adm-accent-soft: #2b3a49;
 }
+body.admin-site .adm-brand-icon .brand-mark { display:flex; align-items:center; justify-content:center; gap:3px; width:34px; height:34px; }
+body.admin-site .adm-brand-icon .brand-mark i { display:block; width:3px; height:11px; border-radius:2px; background:#fff; }
+body.admin-site .adm-brand-icon .brand-mark i:nth-child(2) { height:19px; }
+body.admin-site .adm-brand-icon .brand-mark i:nth-child(3) { height:15px; }
+body.admin-site .adm-brand-icon .brand-mark i:nth-child(4) { height:8px; }
+body.admin-site .adm-health-config-row > div { display:grid; gap:5px; min-width:0; }
+body.admin-site .adm-health-config-row .adm-table-email { line-height:1.65; overflow-wrap:anywhere; }
+body.admin-site .adm-health-config-row .adm-badge { flex-shrink:0; }
+body.admin-site .adm-status-dot.is-neutral { background:var(--adm-muted); box-shadow:0 0 0 4px var(--adm-bg); }
+body.admin-site .adm-health-label.is-neutral { color:var(--adm-muted); }
 body.admin-site .adm-brand-icon { background: #3155df; color: #fff; border-radius: 8px 8px 8px 1px; font-size: 27px; }
 body.admin-site .adm-brand-name { font-family: "DM Sans", sans-serif; letter-spacing: -.7px; }
 body.admin-site .adm-header { background: var(--adm-bg); border-bottom-color: var(--adm-line); box-shadow: none; }
