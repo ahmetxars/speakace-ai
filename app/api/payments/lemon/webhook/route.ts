@@ -4,19 +4,18 @@ import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { sendPurchaseAccountClaimEmail } from "@/lib/server/email";
 import {
-  applyBillingPlanByEmail,
-  applyBillingPlanByUserId,
+  processBillingEvent,
   applyInstitutionBillingByUserId,
   getMember,
   getMemberByEmail,
   getMemberEmailById,
-  recordBillingEvent
 } from "@/lib/store";
 import {
   getLemonCheckoutMetadata,
   getLemonCustomerId,
   getLemonEmail,
   getLemonEventName,
+  getLemonEventId,
   getLemonPaymentDetails,
   getLemonSubscriptionId,
   getLemonTrialEndsAt,
@@ -73,6 +72,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON payload." }, { status: 400 });
   }
 
+  if (process.env.NODE_ENV === "production" && payload.data?.attributes?.test_mode === true) return NextResponse.json({received:true,ignored:true});
+  if (!payload.data?.id) return NextResponse.json({error:"Missing provider object identity."},{status:400});
   const eventName = getLemonEventName(payload);
   const email = getLemonEmail(payload);
   const userId = getLemonUserId(payload);
@@ -85,11 +86,14 @@ export async function POST(request: Request) {
   const checkoutMetadata = getLemonCheckoutMetadata(payload);
   const paymentDetails = getLemonPaymentDetails(payload);
   const posthog = getPostHogClient();
-  const providerEventId = `lemonsqueezy:${createHash("sha256").update(rawBody).digest("hex")}`;
+  const providerEventId = getLemonEventId(payload);
+  const legacyEventId = `lemonsqueezy:${createHash("sha256").update(rawBody).digest("hex")}`;
 
   if (!status) {
     return NextResponse.json({ received: true, ignored: true });
   }
+
+  if (!email) return NextResponse.json({error:"Missing merchant customer email."},{status:400});
 
   // Cross-check: if both userId and email are present, confirm they belong to the same account
   let matchedUserId = userId;
@@ -98,7 +102,7 @@ export async function POST(request: Request) {
     if (!storedEmail) {
       matchedUserId = null;
     } else if (email && storedEmail.trim().toLowerCase() !== email.trim().toLowerCase()) {
-      console.error(`Lemon webhook userId/email mismatch: userId=${userId} payload_email=${email} stored_email=${storedEmail}`);
+      console.error("Lemon webhook userId/email mismatch");
       return NextResponse.json({ error: "User identity mismatch." }, { status: 400 });
     }
   }
@@ -108,14 +112,12 @@ export async function POST(request: Request) {
     matchedUserId = memberByEmail?.id ?? null;
   }
 
-  const existingMember = basePlan
-    ? null
-    : matchedUserId
+  const existingMember = matchedUserId
       ? await getMember(matchedUserId).catch(() => null)
       : email
         ? await getMemberByEmail(email).catch(() => null)
         : null;
-  const retainedPlan = existingMember?.plan && existingMember.plan !== "free" ? existingMember.plan : null;
+  const retainedPlan = providerSubscriptionId && existingMember?.lemonSubscriptionId === providerSubscriptionId && existingMember.plan !== "free" ? existingMember.plan : null;
   const resolvedPlan = basePlan ?? retainedPlan;
   const nextPlan = resolvedPlan ? resolvePlanForStatus(resolvedPlan, status) : null;
   const eventPlan = nextPlan ?? retainedPlan ?? "free";
@@ -148,35 +150,12 @@ export async function POST(request: Request) {
           seatCount: getInstitutionSeatCount(payload)
         });
       }
-    } else if (nextPlan) {
-      // Individual subscription — prefer the authenticated user id captured at checkout,
-      // then fall back to email to support older checkout links.
-      const updatedByUserId = matchedUserId
-        ? await applyBillingPlanByUserId({
-            userId: matchedUserId,
-            plan: nextPlan,
-            billingStatus: status,
-            providerCustomerId,
-            providerSubscriptionId,
-            trialEndsAt
-          })
-        : null;
-
-      if (!updatedByUserId && email) {
-        await applyBillingPlanByEmail({
-          email,
-          plan: nextPlan,
-          billingStatus: status,
-          providerCustomerId,
-          providerSubscriptionId,
-          trialEndsAt
-        });
-      }
     }
 
-    // Entitlements are applied first so an audit-table outage never leaves a paying user on Free.
-    const inserted = await recordBillingEvent({
+    // The ledger and cached entitlement are one atomic operation. No duplicate can reapply old access.
+    const inserted = await processBillingEvent({
       id: providerEventId,
+      legacyId: legacyEventId,
       provider: "lemonsqueezy",
       eventName,
       userEmail: email,

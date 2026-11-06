@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { getEffectiveLocale } from "@/lib/public-locale";
 import { defaultLanguage, isPublicLanguage, Language } from "@/lib/copy";
 import { createGuestProfile } from "@/lib/membership";
 import { trackClientEvent } from "@/lib/analytics-client";
@@ -13,6 +14,7 @@ export type ThemeMode = "light" | "dark";
 interface AppContextValue {
   commercialEmailEnabled: boolean;
   language: Language;
+  preferredLanguage: Language;
   setLanguage: (language: Language) => void;
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
@@ -26,11 +28,11 @@ interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-export function Providers({ children, initialLanguage = defaultLanguage, commercialEmailEnabled = false }: { children: ReactNode; initialLanguage?: Language; commercialEmailEnabled?: boolean }) {
+export function Providers({ children, initialLanguage = defaultLanguage, initialPath = "/", commercialEmailEnabled = false }: { children: ReactNode; initialLanguage?: Language; initialPath?: string; commercialEmailEnabled?: boolean }) {
   const pathname = usePathname();
-  const [language, setLanguageState] = useState<Language>(
-    isPublicLanguage(initialLanguage) ? initialLanguage : defaultLanguage
-  );
+  const router = useRouter();
+  const preferredLanguage = isPublicLanguage(initialLanguage) ? initialLanguage : defaultLanguage;
+  const language = getEffectiveLocale(preferredLanguage, pathname ?? initialPath);
   const [theme, setThemeState] = useState<ThemeMode>("light");
   const [signedIn, setSignedInState] = useState(false);
   const [currentUser, setCurrentUser] = useState<MemberProfile | null>(null);
@@ -51,14 +53,9 @@ export function Providers({ children, initialLanguage = defaultLanguage, commerc
 
   const setLanguage = (nextLanguage: Language) => {
     const publicLanguage = isPublicLanguage(nextLanguage) ? nextLanguage : defaultLanguage;
-    setLanguageState(publicLanguage);
     window.localStorage.setItem("speakace-language", publicLanguage);
     document.cookie = `speakace-language=${publicLanguage}; path=/; max-age=31536000; samesite=lax`;
-    document.documentElement.lang = publicLanguage;
-    document.documentElement.dir = "ltr";
-    window.setTimeout(() => {
-      window.location.reload();
-    }, 10);
+    router.refresh();
   };
 
   const setTheme = (nextTheme: ThemeMode) => {
@@ -107,20 +104,9 @@ export function Providers({ children, initialLanguage = defaultLanguage, commerc
   }, [currentUser?.id, pathname, signedIn]);
 
   useEffect(() => {
-    const storedLanguage = window.localStorage.getItem("speakace-language");
     const storedTheme = window.localStorage.getItem("speakace-theme");
     const storedUser = window.localStorage.getItem("speakace-user");
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-    if (isPublicLanguage(storedLanguage)) {
-      setLanguageState(storedLanguage);
-      document.cookie = `speakace-language=${storedLanguage}; path=/; max-age=31536000; samesite=lax`;
-    } else {
-      const publicLanguage = isPublicLanguage(initialLanguage) ? initialLanguage : defaultLanguage;
-      setLanguageState(publicLanguage);
-      window.localStorage.setItem("speakace-language", publicLanguage);
-      document.cookie = `speakace-language=${publicLanguage}; path=/; max-age=31536000; samesite=lax`;
-    }
 
     if (storedTheme === "light" || storedTheme === "dark") {
       setThemeState(storedTheme);
@@ -132,7 +118,24 @@ export function Providers({ children, initialLanguage = defaultLanguage, commerc
     }
 
     void initializeUser(storedUser);
-  }, [initialLanguage, initializeUser]);
+  }, [initializeUser]);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("speakace-language");
+    const hasCookie = document.cookie.split(";").some(entry => entry.trim().startsWith("speakace-language="));
+    if (!hasCookie && isPublicLanguage(saved) && saved !== preferredLanguage) {
+      // One-time recovery for older storage-only preferences; commit server and client copy together.
+      document.cookie = `speakace-language=${saved}; path=/; max-age=31536000; samesite=lax`;
+      router.refresh();
+      return;
+    }
+    window.localStorage.setItem("speakace-language", preferredLanguage);
+  }, [preferredLanguage, router]);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dir = "ltr";
+  }, [language]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
@@ -217,7 +220,7 @@ export function Providers({ children, initialLanguage = defaultLanguage, commerc
   };
 
   return (
-    <AppContext.Provider value={{ commercialEmailEnabled, language, setLanguage, theme, setTheme, signedIn, signOut, currentUser, setGuestProfile, refreshSession, updatePlan }}>
+    <AppContext.Provider value={{ commercialEmailEnabled, language, preferredLanguage, setLanguage, theme, setTheme, signedIn, signOut, currentUser, setGuestProfile, refreshSession, updatePlan }}>
       {children}
     </AppContext.Provider>
   );

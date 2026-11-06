@@ -1,6 +1,46 @@
 // Localized UI copy for this public route family.
 export const discoveryRefinementCopy = {
   en: {
+    toolSearch: "Search tools by task or keyword",
+    toolHero: "One small tool. A more focused session.",
+    toolHeroBody:
+      "Choose a timer, calculator or planning exercise. Search in any of our five languages; tool names and learning examples are in English. These aids do not award official exam scores.",
+    toolClosing: "Take your notes into a real answer.",
+    toolClosingBody: "Open a speaking prompt and work on one thing at a time.",
+    practiceAction: "Start free practice",
+    demoAction: "Explore the class demo",
+    compareAction: "Compare plans",
+    reviewSection: "Three ways to practise",
+    reviewSectionTitle: "Choose the workflow you want to examine.",
+    reviewClosing: "Try the workflow on your own answer.",
+    reviewClosingBody:
+      "Start with Free; compare daily allowances and payment terms when you need more room.",
+    reviewGroups: [
+      [
+        "For learners targeting a higher band",
+        [
+          "Use the transcript to see where your answer lost structure.",
+          "Retry the same prompt to turn feedback into a specific revision.",
+          "AI practice supports lessons; it does not replace official assessment.",
+        ],
+      ],
+      [
+        "Teachers and small schools",
+        [
+          "Set speaking practice between lessons.",
+          "Review attempts and feedback before planning the next lesson.",
+          "Let students record and review independently.",
+        ],
+      ],
+      [
+        "Self-study learners",
+        [
+          "Build a short daily practice and feedback loop.",
+          "Examine a sample answer to develop your own response.",
+          "Keep the next task visible in your dashboard.",
+        ],
+      ],
+    ] as Array<[string, string[]]>,
     eyebrow: "Find your next step",
     title: "What do you want to work on?",
     intents: [
@@ -48,6 +88,47 @@ export const discoveryRefinementCopy = {
       "Homepage: English and Turkish. Learning pages: five supported languages.",
   },
   tr: {
+    toolSearch: "Görev veya kelimeyle araç ara",
+    toolHero: "Küçük bir araç. Daha odaklı bir pratik.",
+    toolHeroBody:
+      "Zamanlayıcı, hesaplayıcı veya planlama alıştırması seç. Beş dilimizde de arama yapabilirsin; araç adları ve öğrenme örnekleri İngilizcedir. Bu yardımcılar resmî sınav puanı vermez.",
+    toolClosing: "Notlarını gerçek bir yanıta dönüştür.",
+    toolClosingBody:
+      "Bir konuşma sorusu aç ve her seferinde tek bir yönünü geliştir.",
+    practiceAction: "Ücretsiz pratiğe başla",
+    demoAction: "Sınıf demosunu keşfet",
+    compareAction: "Planları karşılaştır",
+    reviewSection: "Üç pratik yolu",
+    reviewSectionTitle: "İncelemek istediğin çalışma akışını seç.",
+    reviewClosing: "Bu akışı kendi yanıtınla dene.",
+    reviewClosingBody:
+      "Free ile başla; daha fazla pratiğe ihtiyaç duyduğunda günlük hakları ve ödeme koşullarını karşılaştır.",
+    reviewGroups: [
+      [
+        "Daha yüksek band hedefleyenler",
+        [
+          "Yanıtının yapısının nerede dağıldığını transkriptte gör.",
+          "Aynı soruyu tekrar yanıtlayarak geri bildirimi somut bir düzeltmeye dönüştür.",
+          "Yapay zekâ pratiği dersleri destekler; resmî değerlendirmenin yerini almaz.",
+        ],
+      ],
+      [
+        "Öğretmenler ve küçük okullar",
+        [
+          "Dersler arasına konuşma pratiği ekle.",
+          "Sonraki dersi planlamadan önce denemeleri ve geri bildirimi incele.",
+          "Öğrenciler bağımsız olarak kayıt yapıp yanıtlarını inceleyebilir.",
+        ],
+      ],
+      [
+        "Kendi kendine çalışanlar",
+        [
+          "Kısa bir günlük pratik ve geri bildirim döngüsü oluştur.",
+          "Kendi yanıtını geliştirmek için örnek yanıtı incele.",
+          "Sonraki görevi çalışma panelinde görünür tut.",
+        ],
+      ],
+    ] as Array<[string, string[]]>,
     eyebrow: "Sonraki adımını bul",
     title: "Neyin üzerinde çalışmak istiyorsun?",
     intents: [
@@ -95,6 +176,47 @@ export const discoveryRefinementCopy = {
       "Ana sayfa: İngilizce ve Türkçe. Öğrenme sayfaları: desteklenen beş dil.",
   },
   de: {
+    toolSearch: "Tools nach Aufgabe oder Stichwort suchen",
+    toolHero: "Ein kleines Tool. Eine gezieltere Übung.",
+    toolHeroBody:
+      "Wähle einen Timer, Rechner oder eine Planungsübung. Suche in allen fünf Sprachen; Toolnamen und Lernbeispiele sind auf Englisch. Diese Hilfen vergeben keine offiziellen Prüfungsergebnisse.",
+    toolClosing: "Mache aus deinen Notizen eine echte Antwort.",
+    toolClosingBody:
+      "Öffne eine Sprechaufgabe und arbeite jeweils an einem Punkt.",
+    practiceAction: "Kostenlos üben",
+    demoAction: "Klassendemo ansehen",
+    compareAction: "Tarife vergleichen",
+    reviewSection: "Drei Wege zum Üben",
+    reviewSectionTitle: "Wähle den Ablauf, den du kennenlernen möchtest.",
+    reviewClosing: "Probiere den Ablauf mit deiner eigenen Antwort.",
+    reviewClosingBody:
+      "Beginne kostenlos; vergleiche Tageskontingente und Zahlungsbedingungen, wenn du mehr üben möchtest.",
+    reviewGroups: [
+      [
+        "Für Lernende mit höherem Band-Ziel",
+        [
+          "Erkenne im Transkript, wo deine Antwort an Struktur verliert.",
+          "Wiederhole dieselbe Aufgabe und setze Feedback in konkrete Änderungen um.",
+          "KI-Übungen ergänzen Unterricht und ersetzen keine offizielle Bewertung.",
+        ],
+      ],
+      [
+        "Lehrkräfte und kleine Schulen",
+        [
+          "Plane Sprechübungen zwischen den Unterrichtsstunden.",
+          "Prüfe Versuche und Feedback vor der nächsten Unterrichtsplanung.",
+          "Lass Lernende selbstständig aufnehmen und ihre Antworten prüfen.",
+        ],
+      ],
+      [
+        "Selbstlernende",
+        [
+          "Entwickle eine kurze tägliche Übungs- und Feedbackroutine.",
+          "Untersuche eine Beispielantwort, um deine eigene Antwort auszubauen.",
+          "Behalte die nächste Aufgabe im Dashboard im Blick.",
+        ],
+      ],
+    ] as Array<[string, string[]]>,
     eyebrow: "Den nächsten Schritt finden",
     title: "Woran möchtest du arbeiten?",
     intents: [
@@ -138,6 +260,46 @@ export const discoveryRefinementCopy = {
       "Startseite: Englisch und Türkisch. Lernseiten: fünf unterstützte Sprachen.",
   },
   es: {
+    toolSearch: "Buscar herramientas por tarea o palabra",
+    toolHero: "Una pequeña herramienta. Una práctica más enfocada.",
+    toolHeroBody:
+      "Elige un temporizador, calculadora o ejercicio de planificación. Busca en cualquiera de los cinco idiomas; los nombres y ejemplos están en inglés. Estas ayudas no otorgan resultados oficiales.",
+    toolClosing: "Convierte tus notas en una respuesta real.",
+    toolClosingBody: "Abre una pregunta y trabaja un aspecto cada vez.",
+    practiceAction: "Practicar gratis",
+    demoAction: "Explorar la demo de clase",
+    compareAction: "Comparar planes",
+    reviewSection: "Tres formas de practicar",
+    reviewSectionTitle: "Elige el proceso que quieres explorar.",
+    reviewClosing: "Prueba el proceso con tu propia respuesta.",
+    reviewClosingBody:
+      "Empieza gratis; compara los límites diarios y las condiciones de pago cuando necesites más práctica.",
+    reviewGroups: [
+      [
+        "Para quienes buscan una banda superior",
+        [
+          "Consulta la transcripción para ver dónde tu respuesta pierde estructura.",
+          "Repite la misma pregunta para convertir los comentarios en mejoras concretas.",
+          "La práctica con IA complementa las clases; no sustituye una evaluación oficial.",
+        ],
+      ],
+      [
+        "Docentes y escuelas pequeñas",
+        [
+          "Asigna práctica oral entre clases.",
+          "Revisa intentos y comentarios antes de preparar la siguiente clase.",
+          "Permite que el alumnado grabe y revise sus respuestas de forma independiente.",
+        ],
+      ],
+      [
+        "Estudiantes autodidactas",
+        [
+          "Crea una rutina diaria breve de práctica y comentarios.",
+          "Estudia una respuesta de ejemplo para desarrollar la tuya.",
+          "Mantén visible la siguiente tarea en tu panel.",
+        ],
+      ],
+    ] as Array<[string, string[]]>,
     eyebrow: "Encuentra tu próximo paso",
     title: "¿En qué quieres trabajar?",
     intents: [
@@ -185,6 +347,46 @@ export const discoveryRefinementCopy = {
       "Inicio: inglés y turco. Páginas de aprendizaje: cinco idiomas compatibles.",
   },
   fr: {
+    toolSearch: "Rechercher un outil par tâche ou mot-clé",
+    toolHero: "Un petit outil. Une séance plus ciblée.",
+    toolHeroBody:
+      "Choisissez un minuteur, un calculateur ou un exercice de planification. Recherchez dans les cinq langues ; noms et exemples restent en anglais. Ces aides ne donnent pas de résultats officiels.",
+    toolClosing: "Transformez vos notes en une vraie réponse.",
+    toolClosingBody: "Ouvrez une question et travaillez un aspect à la fois.",
+    practiceAction: "Pratiquer gratuitement",
+    demoAction: "Voir la démo de classe",
+    compareAction: "Comparer les offres",
+    reviewSection: "Trois façons de pratiquer",
+    reviewSectionTitle: "Choisissez le parcours à découvrir.",
+    reviewClosing: "Essayez le parcours avec votre propre réponse.",
+    reviewClosingBody:
+      "Commencez gratuitement ; comparez les quotas quotidiens et les conditions de paiement lorsque vous souhaitez pratiquer davantage.",
+    reviewGroups: [
+      [
+        "Pour viser un meilleur score IELTS",
+        [
+          "Repérez dans la transcription où votre réponse perd sa structure.",
+          "Reprenez la même question pour transformer les retours en corrections concrètes.",
+          "La pratique avec l’IA complète les cours ; elle ne remplace pas une évaluation officielle.",
+        ],
+      ],
+      [
+        "Enseignants et petites écoles",
+        [
+          "Proposez des exercices oraux entre les cours.",
+          "Examinez les tentatives et les retours avant de préparer le prochain cours.",
+          "Laissez les élèves enregistrer et revoir leurs réponses en autonomie.",
+        ],
+      ],
+      [
+        "Apprenants autonomes",
+        [
+          "Créez une courte routine quotidienne de pratique et de retour.",
+          "Étudiez une réponse modèle pour développer la vôtre.",
+          "Gardez la prochaine tâche visible dans votre tableau de bord.",
+        ],
+      ],
+    ] as Array<[string, string[]]>,
     eyebrow: "Trouvez la prochaine étape",
     title: "Sur quoi voulez-vous travailler ?",
     intents: [

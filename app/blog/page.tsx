@@ -5,7 +5,7 @@ import { ArrowRight, BookOpenText, Library } from "lucide-react";
 import { AdSenseUnit } from "@/components/adsense-unit";
 import { BlogLibrary, type BlogLibraryPost } from "@/components/blog-library";
 import { getBlogChromeCopy, getFeaturedBlogPosts } from "@/lib/blog-content";
-import { getBlogPublicDescription, getBlogPublicTitle } from "@/lib/blog-seo";
+import { blogSeoMap, getBlogPublicDescription, getBlogPublicTitle } from "@/lib/blog-seo";
 import { normalizePublicLanguage, type PublicLanguage } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
 import { listPublishedCustomBlogPosts } from "@/lib/server/custom-blog";
@@ -310,6 +310,7 @@ export default async function BlogIndexPage() {
     title: getBlogPublicTitle(post.slug, post.title),
     description: getBlogPublicDescription(post.slug, post.description),
     keywords: post.keywords,
+    contentLanguage: blogSeoMap[post.slug] ? "en" : language,
   }));
 
   const blogJsonLd = {
@@ -345,8 +346,8 @@ export default async function BlogIndexPage() {
           <div className="blog-index-feature-number" aria-hidden="true">
             01
           </div>
-          <h2>{featuredTitle}</h2>
-          <p>{featuredDescription || ui.featuredNote}</p>
+          <h2 lang={blogSeoMap[featured.slug] ? "en" : language}>{featuredTitle}</h2>
+          <p lang={blogSeoMap[featured.slug] ? "en" : language}>{featuredDescription || ui.featuredNote}</p>
           <Link
             className="button button-primary"
             href={`/blog/${featured.slug}` as Route}
@@ -370,7 +371,7 @@ export default async function BlogIndexPage() {
               {firstPath.slice(0, 3).map((post, index) => (
                 <Link key={post.slug} href={`/blog/${post.slug}` as Route}>
                   <small>{String(index + 1).padStart(2, "0")}</small>
-                  <strong>{getBlogPublicTitle(post.slug, post.title)}</strong>
+                  <strong lang={blogSeoMap[post.slug] ? "en" : language}>{getBlogPublicTitle(post.slug, post.title)}</strong>
                 </Link>
               ))}
             </div>
@@ -379,7 +380,7 @@ export default async function BlogIndexPage() {
               {secondPath.slice(0, 3).map((post, index) => (
                 <Link key={post.slug} href={`/blog/${post.slug}` as Route}>
                   <small>{String(index + 1).padStart(2, "0")}</small>
-                  <strong>{getBlogPublicTitle(post.slug, post.title)}</strong>
+                  <strong lang={blogSeoMap[post.slug] ? "en" : language}>{getBlogPublicTitle(post.slug, post.title)}</strong>
                 </Link>
               ))}
             </div>

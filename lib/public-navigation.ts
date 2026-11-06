@@ -28,3 +28,16 @@ export const productExperienceLabel = {
   es: "Experiencia del producto",
   fr: "Expérience produit",
 };
+
+export const navigationLandmarks = {
+  en: ["Main navigation", "Mobile navigation"],
+  tr: ["Ana gezinme", "Mobil gezinme"],
+  de: ["Hauptnavigation", "Mobile Navigation"],
+  es: ["Navegación principal", "Navegación móvil"],
+  fr: ["Navigation principale", "Navigation mobile"],
+};
+
+/** Keep public typography out of the homepage and private workspaces after client navigation. */
+export function hasPublicPageFrame(pathname: string) {
+  return pathname !== "/" && !/^\/(app|admin|maintenance)(\/|$)/.test(pathname);
+}

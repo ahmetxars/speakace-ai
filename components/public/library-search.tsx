@@ -1,4 +1,5 @@
 "use client";
+import { useRef } from "react";
 import { Search, X } from "lucide-react";
 import { useAppState } from "@/components/providers";
 import { normalizePublicLanguage } from "@/lib/copy";
@@ -13,10 +14,12 @@ export function LibrarySearch({
   label: string;
 }) {
   const { language } = useAppState();
+  const input = useRef<HTMLInputElement>(null);
   return (
-    <label className="public-library-search">
+    <div className="public-library-search">
       <Search size={16} aria-hidden="true" />
       <input
+        ref={input}
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -27,11 +30,11 @@ export function LibrarySearch({
         <button
           type="button"
           aria-label={publicDesignCopy[normalizePublicLanguage(language)].clear}
-          onClick={() => onChange("")}
+          onClick={() => { onChange(""); input.current?.focus(); }}
         >
           <X size={16} />
         </button>
       )}
-    </label>
+    </div>
   );
 }

@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { normalizePublicLanguage } from "@/lib/copy";
+import { cookieConsentCopy } from "@/lib/cookie-consent-copy";
+import { useEffect, useRef, useState } from "react";
 import {
   CONSENT_COOKIE,
   CONSENT_MAX_AGE,
@@ -11,7 +13,8 @@ import { useAppState } from "@/components/providers";
 
 export function CookieConsentPanel() {
   const { language } = useAppState();
-  const tr = language === "tr";
+  const t = cookieConsentCopy[normalizePublicLanguage(language)];
+  const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [preferences, setPreferences] = useState(false);
   const [analytics, setAnalytics] = useState(false);
@@ -47,12 +50,14 @@ export function CookieConsentPanel() {
     }
     setAnalytics(allowAnalytics);
     setOpen(false);
+    requestAnimationFrame(() => trigger.current?.focus());
     window.dispatchEvent(new Event("speakace-consent-change"));
     if (previous?.analytics && !allowAnalytics) location.reload();
   };
   return (
     <>
       <button
+        ref={trigger}
         className="cookie-settings-trigger"
         type="button"
         onClick={() => {
@@ -60,25 +65,23 @@ export function CookieConsentPanel() {
           setPreferences(true);
         }}
       >
-        {tr ? "Çerez tercihleri" : "Cookie settings"}
+        {t.settings}
       </button>
       {open && (
         <section
           className="cookie-panel"
-          aria-label={tr ? "Çerez tercihleri" : "Cookie preferences"}
+          aria-label={t.label}
         >
           <div className="cookie-panel-heading">
             <span aria-hidden="true">✳</span>
             <h2>
-              {tr ? "Gizlilik senin elinde." : "Your privacy. Your choice."}
+              {t.title}
             </h2>
           </div>
           <p>
-            {tr
-              ? "Oturum açma ve seçtiğin ayarları hatırlamak için gerekli çerezleri kullanıyoruz. İsteğe bağlı kullanım analitiği yalnızca izin verirsen çalışır. Reddederek de siteyi kullanabilirsin."
-              : "Necessary cookies keep sign-in and your chosen settings working. Optional usage analytics run only with your permission. You can use the site if you decline."}{" "}
+            {t.body}{" "}
             <Link href="/cookie-policy">
-              {tr ? "Çerez politikası" : "Cookie policy"}
+              {t.policy}
             </Link>
           </p>
           {preferences && (
@@ -86,10 +89,8 @@ export function CookieConsentPanel() {
               <label>
                 <input type="checkbox" checked disabled />{" "}
                 <span>
-                  <strong>{tr ? "Gerekli" : "Necessary"}</strong> —{" "}
-                  {tr
-                    ? "Oturum, güvenlik, dil ve izin tercihin. Her zaman açık."
-                    : "Sign-in, security, language and your consent choice. Always on."}
+                  <strong>{t.necessary}</strong> —{" "}
+                  {t.necessaryBody}
                 </span>
               </label>
               <label>
@@ -99,25 +100,21 @@ export function CookieConsentPanel() {
                   onChange={(event) => setAnalytics(event.target.checked)}
                 />{" "}
                 <span>
-                  <strong>{tr ? "Analitik" : "Analytics"}</strong> —{" "}
-                  {tr
-                    ? "Hangi sayfa ve özelliklerin kullanıldığını anlamamıza yardımcı olur. Varsayılan kapalı."
-                    : "Helps us understand which pages and features are used. Off by default."}
+                  <strong>{t.analytics}</strong> —{" "}
+                  {t.analyticsBody}
                 </span>
               </label>
               <p>
-                {tr
-                  ? "Reklam ve üçüncü taraf oturum kaydı araçları devre dışı."
-                  : "Advertising and third-party session recording are disabled."}
+                {t.disabled}
               </p>
             </div>
           )}
           <div className="cookie-actions">
             <button type="button" onClick={() => save(false)}>
-              {tr ? "İsteğe bağlıları reddet" : "Reject optional"}
+              {t.reject}
             </button>
             <button type="button" onClick={() => save(true)}>
-              {tr ? "Analitiğe izin ver" : "Allow analytics"}
+              {t.allow}
             </button>
             <button
               type="button"
@@ -125,13 +122,7 @@ export function CookieConsentPanel() {
                 preferences ? save(analytics) : setPreferences(true)
               }
             >
-              {preferences
-                ? tr
-                  ? "Tercihlerimi kaydet"
-                  : "Save preferences"
-                : tr
-                  ? "Tercihleri düzenle"
-                  : "Manage preferences"}
+              {preferences ? t.save : t.manage}
             </button>
           </div>
         </section>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { publicSection } from "./public-navigation";
+import { publicSection, hasPublicPageFrame } from "./public-navigation";
 describe("public section ownership", () => {
   it("keeps nested editorial and practice resources under Resources", () => {
     for (const path of [
@@ -33,5 +33,13 @@ describe("public section ownership", () => {
       "/for-schools-extra",
     ])
       expect(publicSection(path)).toBeNull();
+  });
+});
+
+describe("public typography boundary", () => {
+  it("follows every transition without styling the homepage or private workspace", () => {
+    for (const path of ["/pricing", "/auth", "/for-teachers", "/tools", "/resources", "/reviews"]) expect(hasPublicPageFrame(path)).toBe(true);
+    for (const path of ["/", "/app", "/app/billing", "/admin", "/admin/users", "/maintenance"]) expect(hasPublicPageFrame(path)).toBe(false);
+    expect(hasPublicPageFrame("/apple")).toBe(true);
   });
 });

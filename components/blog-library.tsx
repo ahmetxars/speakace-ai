@@ -7,13 +7,14 @@ import { usePanelFeedback } from "@/components/motion/use-panel-feedback";
 import { handleTabKeys } from "@/lib/tab-navigation";
 import { ResourceCard } from "@/components/public/page-primitives";
 import { LibrarySearch } from "@/components/public/library-search";
-import { startTransition, useDeferredValue, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useRef, useState } from "react";
 
 export type BlogLibraryPost = {
   slug: string;
   title: string;
   description: string;
   keywords: string[];
+  contentLanguage?: string;
 };
 
 type BlogCategory = "ielts" | "toefl" | "skills" | "strategy";
@@ -80,6 +81,13 @@ export function BlogLibrary({
   const [query, setQuery] = useState("");
   const feedback = usePanelFeedback(activeCategory);
   const [visibleLimit, setVisibleLimit] = useState(12);
+  const expansionFocus = useRef<number | null>(null);
+  useEffect(() => {
+    const index = expansionFocus.current;
+    if (index === null) return;
+    document.getElementById("blog-results")?.querySelectorAll<HTMLAnchorElement>("article h3 a")[index]?.focus();
+    expansionFocus.current = null;
+  }, [visibleLimit]);
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
   const categoryOrder: Array<"all" | BlogCategory> = [
     "all",
@@ -156,6 +164,7 @@ export function BlogLibrary({
         <div
           className="blog-library-grid public-resource-grid"
           role="tabpanel"
+        tabIndex={0}
           ref={feedback.ref}
           id="blog-results"
           aria-labelledby={`blog-tab-${activeCategory}`}
@@ -167,6 +176,7 @@ export function BlogLibrary({
               category={post.keywords[0] ?? categories[resolveCategory(post)]}
               title={post.title}
               description={post.description}
+              contentLanguage={post.contentLanguage}
               action={readLabel}
               index={index}
             />
@@ -176,11 +186,12 @@ export function BlogLibrary({
         <div
           className="blog-library-empty"
           role="tabpanel"
+        tabIndex={0}
           ref={feedback.ref}
           id="blog-results"
           aria-labelledby={`blog-tab-${activeCategory}`}
         >
-          <span role="status">{emptyLabel}</span>
+          <span>{emptyLabel}</span>
         </div>
       )}
 
@@ -188,9 +199,10 @@ export function BlogLibrary({
         <button
           type="button"
           className="blog-library-more"
-          onClick={() =>
-            startTransition(() => setVisibleLimit((current) => current + 12))
-          }
+          onClick={() => {
+            expansionFocus.current = visibleLimit;
+            startTransition(() => setVisibleLimit((current) => current + 12));
+          }}
         >
           {showMoreLabel}
           <span>
@@ -203,7 +215,8 @@ export function BlogLibrary({
         <button
           type="button"
           className="library-reset"
-          onClick={() => {
+          onClick={(event) => {
+            event.currentTarget.closest("section")?.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
             setActiveCategory("all");
             setQuery("");
             setVisibleLimit(12);

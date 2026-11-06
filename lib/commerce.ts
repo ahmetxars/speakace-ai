@@ -1,3 +1,6 @@
+import { PLAN_LIMITS } from "@/lib/membership";
+import { pricingCopy } from "@/lib/pricing-copy";
+
 export const commerceConfig = {
   // Plus — weekly & annual
   plusMonthlyCheckout:
@@ -171,26 +174,12 @@ export function buildInstitutionCheckoutUrl(input: {
 }
 
 export function getPlanComparison(tr: boolean) {
+  const t = pricingCopy[tr ? "tr" : "en"];
   return [
-    {
-      label: tr ? "Günlük speaking süresi" : "Daily speaking minutes",
-      free: tr ? "8 dakika" : "8 minutes",
-      plus: tr ? "35 dakika" : "35 minutes"
-    },
-    {
-      label: tr ? "Günlük oturum" : "Daily sessions",
-      free: "4",
-      plus: "18"
-    },
-    {
-      label: tr ? "Detaylı geri bildirim" : "Detailed AI feedback",
-      free: tr ? "Temel" : "Basic",
-      plus: tr ? "Geniş" : "Expanded"
-    },
-    {
-      label: tr ? "Skor ve trend takibi" : "Score and trend tracking",
-      free: tr ? "Sınırlı" : "Limited",
-      plus: tr ? "Tam erişim" : "Full access"
-    }
+    { label: t.minutes, free: String(PLAN_LIMITS.free.speakingMinutesPerDay), plus: String(PLAN_LIMITS.plus.speakingMinutesPerDay) },
+    { label: t.sessions, free: String(PLAN_LIMITS.free.sessionsPerDay), plus: String(PLAN_LIMITS.plus.sessionsPerDay) },
+    { label: t.feedback, free: t.included, plus: t.included },
+    { label: t.writing, free: t.included, plus: t.included },
+    { label: t.export, free: t.unavailable, plus: t.included }
   ];
 }

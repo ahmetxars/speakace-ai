@@ -1,3 +1,4 @@
+import { resolveBillingForMember } from "@/lib/server/billing-ledger";
 import { ACCOUNT_LEGAL_VERSION, type AccountConsent } from "@/lib/account-consent";
 import { ensureAccountConsentSchema } from "@/lib/server/account-consent";
 import { createHash, randomBytes } from "node:crypto";
@@ -518,11 +519,11 @@ export async function getAuthenticatedUser(sessionToken: string | undefined) {
         u.organization_name as "organizationName",
         u.organization_id as "organizationId",
         case
-          when u.billing_status = 'on_trial' and u.trial_ends_at is not null and u.trial_ends_at <= now() then 'free'
+          when u.plan <> 'lifetime' and u.billing_status in ('on_trial', 'cancelled') and u.trial_ends_at is not null and u.trial_ends_at <= now() then 'free'
           else u.plan
         end as "plan",
         case
-          when u.billing_status = 'on_trial' and u.trial_ends_at is not null and u.trial_ends_at <= now() then 'expired'
+          when u.plan <> 'lifetime' and u.billing_status in ('on_trial', 'cancelled') and u.trial_ends_at is not null and u.trial_ends_at <= now() then 'expired'
           else u.billing_status
         end as "billingStatus",
         u.lemon_customer_id as "lemonCustomerId", u.lemon_subscription_id as "lemonSubscriptionId",
@@ -535,7 +536,7 @@ export async function getAuthenticatedUser(sessionToken: string | undefined) {
       limit 1
     `;
 
-    return rows[0] ? ensureSchoolAccountAccess(rows[0]) : null;
+    return rows[0] ? ensureSchoolAccountAccess(await resolveBillingForMember(rows[0])) : null;
   }
 
   const session = getMemoryAuthStore().sessions.get(tokenHash);

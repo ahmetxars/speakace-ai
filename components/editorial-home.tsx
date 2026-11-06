@@ -133,7 +133,7 @@ export function EditorialHome() {
                     <div key={index}>
                       <span className="prompt-caption">{t("LET’S TALK ABOUT")}</span>
                       <h2 id={index === topic ? "demo-title" : undefined} dangerouslySetInnerHTML={{ __html: sample.title }} />
-                      <p className="example-question" id={index === topic ? "question" : undefined}>{sample.question}</p>
+                      <p lang="en" className="example-question" id={index === topic ? "question" : undefined}>{sample.question}</p>
                     </div>
                   ))}
                 </PreviewScenes>

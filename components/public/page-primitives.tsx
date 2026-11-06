@@ -4,10 +4,6 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { SpeakAceVoiceSignal } from "@/components/voice-in-motion/voice-signal";
 
-export function PublicPageFrame({ children }: { children: ReactNode }) {
-  return <div className="public-page">{children}</div>;
-}
-
 export function PageHero({
   eyebrow,
   title,
@@ -155,6 +151,7 @@ export function ResourceCard({
   action,
   index,
   icon,
+  contentLanguage,
 }: {
   href: string;
   category: string;
@@ -163,6 +160,7 @@ export function ResourceCard({
   action: string;
   index?: number;
   icon?: ReactNode;
+  contentLanguage?: string;
 }) {
   return (
     <article className="public-resource-card">
@@ -175,10 +173,10 @@ export function ResourceCard({
       {index !== undefined && (
         <span className="public-card-category">{category}</span>
       )}
-      <h3>
+      <h3 lang={contentLanguage}>
         <Link href={href as Route}>{title}</Link>
       </h3>
-      <p>{description}</p>
+      <p lang={contentLanguage}>{description}</p>
       <span className="public-card-action" aria-hidden="true">
         {action}
         <ArrowUpRight size={16} aria-hidden="true" />

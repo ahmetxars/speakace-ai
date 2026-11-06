@@ -6,14 +6,14 @@ const en = {
     "Try speaking and writing on Free. Plus gives you a larger daily practice allowance and downloadable reports.",
   offer: "Choose a Plus offer",
   weekly: "Weekly subscription",
-  annual: "Plus Annual · one payment",
+  annual: "Plus · 12 months · one payment",
   free: "Free",
   forever: "No payment required",
   week: "/ week",
   once: "one payment",
-  trial: "3 days free, then $3.99 every week unless cancelled.",
+  trial: "Eligible customers: 3 days free, then $3.99/week unless cancelled in the customer portal. A payment method is required; checkout confirms eligibility, taxes and the final total.",
   annualTerms:
-    "$49.99 paid once. The current checkout does not automatically renew. No trial is shown for this offer.",
+    "$49.99 once for 12 months from purchase. No automatic renewal or trial. Checkout confirms payment method, taxes and final total.",
   freeNote: "Get to know the practice loop.",
   plusNote: "More attempts. More time to work on the feedback.",
   sessions: "Daily session allowance",
@@ -49,7 +49,7 @@ const en = {
   checkoutSteps: [
     {
       title: "Choose your offer",
-      body: "Weekly is a recurring subscription with a three-day trial. Plus Annual is currently a one-time purchase, despite its product name.",
+      body: "Eligible customers: 3 days free, then $3.99/week unless cancelled in the customer portal. A payment method is required; checkout confirms eligibility, taxes and the final total. $49.99 once for 12 months from purchase. No automatic renewal or trial. Checkout confirms payment method, taxes and final total.",
     },
     {
       title: "Review Lemon Squeezy checkout",
@@ -64,7 +64,7 @@ const en = {
   faqs: [
     {
       q: "Will my payment repeat?",
-      a: "Weekly renews at $3.99 every week after the three-day trial unless cancelled. The current $49.99 Plus Annual checkout shows a single payment with no automatic renewal.",
+      a: "Eligible customers: 3 days free, then $3.99/week unless cancelled in the customer portal. A payment method is required; checkout confirms eligibility, taxes and the final total. $49.99 once for 12 months from purchase. No automatic renewal or trial. Checkout confirms payment method, taxes and final total.",
     },
     {
       q: "How do I cancel a subscription?",
@@ -97,14 +97,14 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
       "Konuşma ve yazmayı Free ile dene. Plus, günlük pratik limitlerini artırır ve rapor indirmeyi açar.",
     offer: "Plus teklifini seç",
     weekly: "Haftalık abonelik",
-    annual: "Plus Annual · tek ödeme",
+    annual: "Plus · 12 ay · tek ödeme",
     free: "Free",
     forever: "Ödeme gerektirmez",
     week: "/ hafta",
     once: "tek ödeme",
-    trial: "3 gün ücretsiz; iptal edilmezse ardından her hafta $3.99.",
+    trial: "Uygun müşterilere 3 gün ücretsiz; ardından portalda iptal edilmezse $3.99/hafta. Ödeme yöntemi gerekir; uygunluğu, vergileri ve son tutarı ödeme ekranında kontrol et.",
     annualTerms:
-      "Bir kez $49.99 ödenir. Mevcut ödeme sayfası otomatik yenilenmez. Bu teklifte deneme süresi görünmüyor.",
+      "Satın alma tarihinden itibaren 12 ay için tek sefer $49.99. Otomatik yenileme ve deneme yok. Ödeme yöntemi, vergiler ve son tutar ödeme ekranında gösterilir.",
     freeNote: "Pratik döngüsünü tanı.",
     plusNote:
       "Daha fazla deneme. Geri bildirim üzerinde çalışmak için daha fazla zaman.",
@@ -141,7 +141,7 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
     checkoutSteps: [
       {
         title: "Teklifini seç",
-        body: "Haftalık plan, üç gün denemeli yenilenen aboneliktir. Plus Annual, ürün adına rağmen şu anda tek seferlik satın almadır.",
+        body: "Uygun müşterilere 3 gün ücretsiz; ardından portalda iptal edilmezse $3.99/hafta. Ödeme yöntemi gerekir; uygunluğu, vergileri ve son tutarı ödeme ekranında kontrol et. Satın alma tarihinden itibaren 12 ay için tek sefer $49.99. Otomatik yenileme ve deneme yok. Ödeme yöntemi, vergiler ve son tutar ödeme ekranında gösterilir.",
       },
       {
         title: "Lemon Squeezy ekranını incele",
@@ -156,7 +156,7 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
     faqs: [
       {
         q: "Ödemem tekrar eder mi?",
-        a: "Haftalık plan üç günlük denemeden sonra iptal edilene kadar her hafta $3.99 olarak yenilenir. Mevcut $49.99 Plus Annual ödeme sayfasında otomatik yenileme olmadan tek ödeme görünür.",
+        a: "Uygun müşterilere 3 gün ücretsiz; ardından portalda iptal edilmezse $3.99/hafta. Ödeme yöntemi gerekir; uygunluğu, vergileri ve son tutarı ödeme ekranında kontrol et. Satın alma tarihinden itibaren 12 ay için tek sefer $49.99. Otomatik yenileme ve deneme yok. Ödeme yöntemi, vergiler ve son tutar ödeme ekranında gösterilir.",
       },
       {
         q: "Aboneliğimi nasıl iptal ederim?",
@@ -187,14 +187,14 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
       "Teste Sprechen und Schreiben mit Free. Plus erhöht das Tageskontingent und ermöglicht den Berichtexport.",
     offer: "Plus-Angebot wählen",
     weekly: "Wöchentliches Abo",
-    annual: "Plus Annual · Einmalzahlung",
+    annual: "Plus · 12 Monate · Einmalzahlung",
     free: "Free",
     forever: "Keine Zahlung nötig",
     week: "/ Woche",
     once: "einmalig",
-    trial: "3 Tage kostenlos, danach $3.99 pro Woche bis zur Kündigung.",
+    trial: "Für berechtigte Kunden: 3 Tage kostenlos, danach $3.99/Woche bis zur Kündigung im Kundenportal. Zahlungsmittel erforderlich; Berechtigung, Steuern und Endbetrag im Checkout prüfen.",
     annualTerms:
-      "Einmalig $49.99. Der aktuelle Checkout verlängert sich nicht automatisch. Für dieses Angebot wird keine Testphase angezeigt.",
+      "Einmal $49.99 für 12 Monate ab Kauf. Keine automatische Verlängerung und keine Testphase. Zahlungsmittel, Steuern und Endbetrag stehen im Checkout.",
     freeNote: "Lerne den Übungsablauf kennen.",
     plusNote: "Mehr Versuche. Mehr Zeit für dein Feedback.",
     sessions: "Tägliches Sitzungskontingent",
@@ -229,7 +229,7 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
     checkoutSteps: [
       {
         title: "Angebot wählen",
-        body: "Das Wochenabo hat drei kostenlose Testtage. Plus Annual ist trotz seines Namens derzeit ein einmaliger Kauf.",
+        body: "Für berechtigte Kunden: 3 Tage kostenlos, danach $3.99/Woche bis zur Kündigung im Kundenportal. Zahlungsmittel erforderlich; Berechtigung, Steuern und Endbetrag im Checkout prüfen. Einmal $49.99 für 12 Monate ab Kauf. Keine automatische Verlängerung und keine Testphase. Zahlungsmittel, Steuern und Endbetrag stehen im Checkout.",
       },
       {
         title: "Lemon Squeezy prüfen",
@@ -244,7 +244,7 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
     faqs: [
       {
         q: "Wird die Zahlung wiederholt?",
-        a: "Das Wochenabo verlängert sich nach drei Testtagen für $3.99 pro Woche bis zur Kündigung. Der aktuelle Plus-Annual-Checkout zeigt eine Einmalzahlung von $49.99 ohne automatische Verlängerung.",
+        a: "Für berechtigte Kunden: 3 Tage kostenlos, danach $3.99/Woche bis zur Kündigung im Kundenportal. Zahlungsmittel erforderlich; Berechtigung, Steuern und Endbetrag im Checkout prüfen. Einmal $49.99 für 12 Monate ab Kauf. Keine automatische Verlängerung und keine Testphase. Zahlungsmittel, Steuern und Endbetrag stehen im Checkout.",
       },
       {
         q: "Wie kündige ich ein Abo?",
@@ -275,14 +275,14 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
       "Prueba speaking y writing con Free. Plus amplía el límite diario y permite descargar informes.",
     offer: "Elige una oferta Plus",
     weekly: "Suscripción semanal",
-    annual: "Plus Annual · pago único",
+    annual: "Plus · 12 meses · pago único",
     free: "Free",
     forever: "Sin pago",
     week: "/ semana",
     once: "pago único",
-    trial: "3 días gratis; después $3.99 cada semana hasta cancelar.",
+    trial: "Clientes elegibles: 3 días gratis, después $3.99/semana hasta cancelar en el portal. Se requiere un método de pago; confirma elegibilidad, impuestos e importe final al pagar.",
     annualTerms:
-      "Un pago de $49.99. El checkout actual no se renueva automáticamente. Esta oferta no muestra prueba gratuita.",
+      "Un pago de $49.99 por 12 meses desde la compra. Sin renovación automática ni prueba. Confirma método de pago, impuestos e importe final al pagar.",
     freeNote: "Conoce el ciclo de práctica.",
     plusNote: "Más intentos. Más tiempo para trabajar el feedback.",
     sessions: "Sesiones diarias",
@@ -318,7 +318,7 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
     checkoutSteps: [
       {
         title: "Elige tu oferta",
-        body: "El plan semanal es recurrente con tres días de prueba. Plus Annual es actualmente un pago único, pese a su nombre.",
+        body: "Clientes elegibles: 3 días gratis, después $3.99/semana hasta cancelar en el portal. Se requiere un método de pago; confirma elegibilidad, impuestos e importe final al pagar. Un pago de $49.99 por 12 meses desde la compra. Sin renovación automática ni prueba. Confirma método de pago, impuestos e importe final al pagar.",
       },
       {
         title: "Revisa Lemon Squeezy",
@@ -333,7 +333,7 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
     faqs: [
       {
         q: "¿Se repetirá el pago?",
-        a: "El semanal se renueva por $3.99 cada semana tras los tres días de prueba hasta cancelar. El checkout actual de Plus Annual muestra $49.99 en un pago sin renovación automática.",
+        a: "Clientes elegibles: 3 días gratis, después $3.99/semana hasta cancelar en el portal. Se requiere un método de pago; confirma elegibilidad, impuestos e importe final al pagar. Un pago de $49.99 por 12 meses desde la compra. Sin renovación automática ni prueba. Confirma método de pago, impuestos e importe final al pagar.",
       },
       {
         q: "¿Cómo cancelo una suscripción?",
@@ -364,14 +364,14 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
       "Essayez l’oral et l’écrit avec Free. Plus augmente le quota quotidien et permet de télécharger les rapports.",
     offer: "Choisir une offre Plus",
     weekly: "Abonnement hebdomadaire",
-    annual: "Plus Annual · paiement unique",
+    annual: "Plus · 12 mois · paiement unique",
     free: "Free",
     forever: "Aucun paiement requis",
     week: "/ semaine",
     once: "paiement unique",
-    trial: "3 jours gratuits, puis $3.99 chaque semaine jusqu’à résiliation.",
+    trial: "Clients éligibles : 3 jours gratuits, puis $3.99/semaine jusqu’à résiliation dans le portail. Moyen de paiement requis ; vérifiez éligibilité, taxes et total au paiement.",
     annualTerms:
-      "Un paiement de $49.99. Le checkout actuel ne se renouvelle pas automatiquement. Aucun essai n’est affiché pour cette offre.",
+      "Un paiement de $49.99 pour 12 mois à compter de l’achat. Sans renouvellement automatique ni essai. Moyen de paiement, taxes et total sont précisés au paiement.",
     freeNote: "Découvrez la boucle de pratique.",
     plusNote: "Plus d’essais. Plus de temps pour travailler le feedback.",
     sessions: "Quota quotidien de sessions",
@@ -407,7 +407,7 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
     checkoutSteps: [
       {
         title: "Choisissez votre offre",
-        body: "L’hebdomadaire est récurrent avec trois jours d’essai. Plus Annual est actuellement un achat unique malgré son nom.",
+        body: "Clients éligibles : 3 jours gratuits, puis $3.99/semaine jusqu’à résiliation dans le portail. Moyen de paiement requis ; vérifiez éligibilité, taxes et total au paiement. Un paiement de $49.99 pour 12 mois à compter de l’achat. Sans renouvellement automatique ni essai. Moyen de paiement, taxes et total sont précisés au paiement.",
       },
       {
         title: "Vérifiez Lemon Squeezy",
@@ -422,7 +422,7 @@ export const pricingCopy: Record<PublicLanguage, typeof en> = {
     faqs: [
       {
         q: "Le paiement se répète-t-il ?",
-        a: "L’hebdomadaire se renouvelle à $3.99 par semaine après les trois jours d’essai jusqu’à résiliation. Le checkout Plus Annual actuel affiche un paiement de $49.99 sans renouvellement automatique.",
+        a: "Clients éligibles : 3 jours gratuits, puis $3.99/semaine jusqu’à résiliation dans le portail. Moyen de paiement requis ; vérifiez éligibilité, taxes et total au paiement. Un paiement de $49.99 pour 12 mois à compter de l’achat. Sans renouvellement automatique ni essai. Moyen de paiement, taxes et total sont précisés au paiement.",
       },
       {
         q: "Comment résilier un abonnement ?",

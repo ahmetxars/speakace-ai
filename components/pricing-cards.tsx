@@ -143,7 +143,6 @@ export function PricingCards() {
               <small>{annual ? t.once : t.week}</small>
             </div>
             <p>{t.plusNote}</p>
-            <p className="pricing-terms">{annual ? t.annualTerms : t.trial}</p>
             <ul>
               <li>
                 <Check size={15} />
@@ -158,6 +157,7 @@ export function PricingCards() {
                 {t.export}
               </li>
             </ul>
+            <p className="pricing-terms">{annual ? t.annualTerms : t.trial}</p>
             <TrackedLink
               className="public-button"
               href={
@@ -206,8 +206,8 @@ export function PricingCards() {
         <div className="pricing-demo" {...demoFeedback.input}>
           <div className="pricing-demo-notebook">
             <span className="public-kicker">IELTS · Speaking Part 1</span>
-            <h3>{t.samplePrompt}</h3>
-            <blockquote>{t.sampleAnswer}</blockquote>
+            <h3 lang="en">{t.samplePrompt}</h3>
+            <blockquote lang="en">{t.sampleAnswer}</blockquote>
             <div className="audience-note">
               <MessageSquareText size={20} />
               <strong>{t.sampleFeedback}</strong>

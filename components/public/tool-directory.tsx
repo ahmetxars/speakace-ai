@@ -1,4 +1,5 @@
 "use client";
+import { filterTools } from "@/lib/tool-search";
 import { useDeferredValue, useState } from "react";
 import { useAppState } from "@/components/providers";
 import { normalizePublicLanguage } from "@/lib/copy";
@@ -20,14 +21,7 @@ export function ToolDirectory({ tools }: { tools: Tool[] }) {
   const [group, setGroup] = useState(-1);
   const [query, setQuery] = useState("");
   const search = useDeferredValue(query.trim().toLocaleLowerCase());
-  const filtered = tools.filter(
-    (tool) =>
-      (group === -1 || tool.group === group) &&
-      (!search ||
-        `${tool.title} ${tool.description}`
-          .toLocaleLowerCase()
-          .includes(search)),
-  );
+  const filtered = filterTools(tools, search, group);
   return (
     <section
       className="public-section tool-directory-library"
@@ -63,7 +57,7 @@ export function ToolDirectory({ tools }: { tools: Tool[] }) {
       </div>
       <div className="tool-discovery-summary">
         <p>{group === -1 ? t.limitation : t.toolNotes[group]}</p>
-        <LibrarySearch value={query} label={t.allTools} onChange={setQuery} />
+        <LibrarySearch value={query} label={t.toolSearch} onChange={setQuery} />
       </div>
       <p className="resource-library-count" aria-live="polite">
         {filtered.length} {t.results}
@@ -71,6 +65,7 @@ export function ToolDirectory({ tools }: { tools: Tool[] }) {
       <div
         id="tool-results"
         role="tabpanel"
+        tabIndex={0}
         aria-labelledby={`tool-tab-${group + 1}`}
         className="public-resource-grid"
       >
@@ -80,6 +75,7 @@ export function ToolDirectory({ tools }: { tools: Tool[] }) {
             href={tool.href}
             title={tool.title}
             description={tool.description}
+            contentLanguage="en"
             category={
               t.toolGroups[tool.group] +
               " · " +
@@ -98,7 +94,8 @@ export function ToolDirectory({ tools }: { tools: Tool[] }) {
           <button
             className="public-button is-secondary"
             type="button"
-            onClick={() => {
+            onClick={(event) => {
+              event.currentTarget.closest("section")?.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
               setGroup(-1);
               setQuery("");
             }}

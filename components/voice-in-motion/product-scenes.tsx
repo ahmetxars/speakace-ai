@@ -36,15 +36,15 @@ export function HeroProductShowcase({ tr, paused, onPause }: { tr: boolean; paus
         <div className="hero-question">
           <span className="scene-eyebrow">IELTS SPEAKING · PART 1</span>
           <span className="hero-question-number" aria-hidden="true">01</span>
-          <p>{homeExamples[0].question}</p>
-          <div className="question-topic"><span>{tr ? "Bugünkü konumuz" : "Today’s topic"}</span><strong>Hometown</strong></div>
+          <p lang="en">{homeExamples[0].question}</p>
+          <div className="question-topic"><span>{tr ? "Bugünkü konumuz" : "Today’s topic"}</span><strong lang="en">Hometown</strong></div>
         </div>
         <div className="hero-audio"><span className="audio-symbol"><AudioLines size={22} /></span><VoiceWave /><span className="audio-note">{tr ? "Örnek ses görseli" : "Sample voice visualization"}</span></div>
         <div className="hero-route"><span><Check size={12} />{tr ? "Soru" : "Question"}</span><i /><span><AudioLines size={12} />{tr ? "Ses" : "Voice"}</span><i /><span><Sparkles size={12} />{tr ? "Geri bildirim" : "Feedback"}</span></div>
       </div>
       <div className="hero-transcript">
         <span className="artifact-label"><FileText size={13} />{tr ? "CEVABIN İÇİNDEN" : "FROM YOUR ANSWER"}<span aria-hidden="true">↗</span></span>
-        <p><span className="transcript-group group-one">“I like my hometown</span>{" "}<span className="transcript-group group-two">because it is <mark>very nice</mark></span>{" "}<span className="transcript-group group-three">and the people are friendly.”</span></p>
+        <p lang="en"><span className="transcript-group group-one">“I like my hometown</span>{" "}<span className="transcript-group group-two">because it is <mark>very nice</mark></span>{" "}<span className="transcript-group group-three">and the people are friendly.”</span></p>
         <div className="transcript-tail" aria-hidden="true"><i /><i /><i /></div>
       </div>
       <div className="hero-suggestion">
@@ -83,14 +83,14 @@ export function AudienceProductScene({ role, tr, notes, label, caption }: { role
 
 function LearningDashboardPreview({ tr }: { tr: boolean }) {
   return <>
-    <div className="journal-sheet"><div className="mini-window"><span /><span /><span /><strong>{tr ? "Çalışma defterin" : "Your practice journal"}</strong></div><div className="journal-entry"><span className="journal-icon"><BookOpen size={20} /></span><div><span>IELTS · PART 1</span><strong>Hometown</strong><p>{tr ? "Cevabını gözden geçir" : "Review your answer"}</p></div><ArrowUpRight size={16} /></div><div className="journal-path"><span><Check size={12} />{tr ? "İlk deneme" : "First attempt"}</span><i /><span><MessageSquareText size={12} />{tr ? "Gözden geçir" : "Review"}</span><i /><span><RotateCcw size={12} />{tr ? "Tekrar dene" : "Retry"}</span></div></div>
+    <div className="journal-sheet"><div className="mini-window"><span /><span /><span /><strong>{tr ? "Çalışma defterin" : "Your practice journal"}</strong></div><div className="journal-entry"><span className="journal-icon"><BookOpen size={20} /></span><div><span>IELTS · PART 1</span><strong lang="en">Hometown</strong><p>{tr ? "Cevabını gözden geçir" : "Review your answer"}</p></div><ArrowUpRight size={16} /></div><div className="journal-path"><span><Check size={12} />{tr ? "İlk deneme" : "First attempt"}</span><i /><span><MessageSquareText size={12} />{tr ? "Gözden geçir" : "Review"}</span><i /><span><RotateCcw size={12} />{tr ? "Tekrar dene" : "Retry"}</span></div></div>
     <div className="journal-focus"><Sparkles size={15} /><span>{tr ? "Sonraki odak" : "Next focus"}</span><strong>{tr ? "Bir ayrıntı ekle." : "Add one detail."}</strong></div>
   </>;
 }
 
 function TeacherWorkflowPreview({ tr }: { tr: boolean }) {
   return <>
-    <div className="assignment-sheet"><div className="mini-window"><span /><span /><span /><strong>{tr ? "Sınıf çalışma alanı" : "Class workspace"}</strong></div><div className="assignment-question"><span><UsersRound size={16} />{tr ? "KONUŞMA ÖDEVİ" : "SPEAKING ASSIGNMENT"}</span><strong>What do you like most about your hometown?</strong></div>{[tr ? "Deneme inceleme" : "Attempt review", tr ? "Öğretmen notu" : "Teacher note"].map((text, index) => <div className="assignment-row" key={text}><span className="assignment-avatar">{index === 0 ? <AudioLines size={14} /> : <MessageSquareText size={14} />}</span><span>{text}</span><span className="assignment-status">{index === 0 ? <VoiceWave compact /> : <span className="note-lines" aria-hidden="true"><i /><i /></span>}</span></div>)}</div>
+    <div className="assignment-sheet"><div className="mini-window"><span /><span /><span /><strong>{tr ? "Sınıf çalışma alanı" : "Class workspace"}</strong></div><div className="assignment-question"><span><UsersRound size={16} />{tr ? "KONUŞMA ÖDEVİ" : "SPEAKING ASSIGNMENT"}</span><strong lang="en">What do you like most about your hometown?</strong></div>{[tr ? "Deneme inceleme" : "Attempt review", tr ? "Öğretmen notu" : "Teacher note"].map((text, index) => <div className="assignment-row" key={text}><span className="assignment-avatar">{index === 0 ? <AudioLines size={14} /> : <MessageSquareText size={14} />}</span><span>{text}</span><span className="assignment-status">{index === 0 ? <VoiceWave compact /> : <span className="note-lines" aria-hidden="true"><i /><i /></span>}</span></div>)}</div>
     <div className="assignment-focus"><FileText size={16} /><span>{tr ? "Sıradaki ders için" : "For your next lesson"}</span><strong>{tr ? "Cevabı örnekle geliştir." : "Develop with an example."}</strong></div>
   </>;
 }

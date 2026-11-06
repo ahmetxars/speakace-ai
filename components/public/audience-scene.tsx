@@ -69,7 +69,7 @@ export function AudienceScene({
                 <FileText size={25} />
                 <strong>{t.writing}</strong>
                 <p>{t.writingNote}</p>
-                <blockquote className="audience-writing-excerpt">
+                <blockquote lang="en" className="audience-writing-excerpt">
                   “Studying with others can make difficult topics easier to
                   understand.{" "}
                   <mark>
@@ -87,7 +87,7 @@ export function AudienceScene({
               <>
                 <div className="audience-question">
                   <small>{t.question}</small>
-                  <strong>{example.question}</strong>
+                  <strong lang="en">{example.question}</strong>
                 </div>
                 <div className="audience-signal-strip">
                   <VoiceWave compact />
@@ -96,7 +96,7 @@ export function AudienceScene({
                     {t.transcript}
                   </span>
                 </div>
-                <blockquote>
+                <blockquote lang="en">
                   {stage === 1
                     ? "“What I love most is the riverside market on Sunday mornings. I go there with my sister for breakfast.”"
                     : "“I like my hometown because it is very nice and the people are friendly.”"}
@@ -133,7 +133,7 @@ export function AudienceScene({
                   <BookOpenText size={22} />
                   <small>{t.studyList}</small>
                   <strong>IELTS · Part 1</strong>
-                  <p>{example.question}</p>
+                  <p lang="en">{example.question}</p>
                 </div>
                 <div>
                   <MessageSquareText size={22} />
@@ -145,7 +145,7 @@ export function AudienceScene({
               <>
                 <div className="audience-class-task">
                   <small>{stage === 0 ? t.attempts : t.assignment}</small>
-                  <strong>{example.question}</strong>
+                  <strong lang="en">{example.question}</strong>
                   <span>
                     <BookOpenText size={13} /> IELTS · Part 1
                   </span>

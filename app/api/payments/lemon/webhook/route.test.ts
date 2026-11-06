@@ -1,68 +1,53 @@
 import { createHmac } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
 const mocks = vi.hoisted(() => ({
-  applyBillingPlanByEmail: vi.fn(),
-  applyBillingPlanByUserId: vi.fn(),
+  processBillingEvent: vi.fn(),
   applyInstitutionBillingByUserId: vi.fn(),
   getMember: vi.fn(),
   getMemberByEmail: vi.fn(),
   getMemberEmailById: vi.fn(),
-  recordBillingEvent: vi.fn(),
   sendPurchaseAccountClaimEmail: vi.fn(),
   trackAnalyticsEvent: vi.fn(),
-  posthogCapture: vi.fn()
+  posthogCapture: vi.fn(),
 }));
-
 vi.mock("@/lib/store", () => ({
-  applyBillingPlanByEmail: mocks.applyBillingPlanByEmail,
-  applyBillingPlanByUserId: mocks.applyBillingPlanByUserId,
+  processBillingEvent: mocks.processBillingEvent,
   applyInstitutionBillingByUserId: mocks.applyInstitutionBillingByUserId,
   getMember: mocks.getMember,
   getMemberByEmail: mocks.getMemberByEmail,
   getMemberEmailById: mocks.getMemberEmailById,
-  recordBillingEvent: mocks.recordBillingEvent
 }));
-
 vi.mock("@/lib/posthog-server", () => ({
-  getPostHogClient: () => ({ capture: mocks.posthogCapture })
+  getPostHogClient: () => ({ capture: mocks.posthogCapture }),
 }));
-
 vi.mock("@/lib/analytics-store", () => ({
-  trackAnalyticsEvent: mocks.trackAnalyticsEvent
+  trackAnalyticsEvent: mocks.trackAnalyticsEvent,
 }));
-
 vi.mock("@/lib/server/email", () => ({
-  sendPurchaseAccountClaimEmail: mocks.sendPurchaseAccountClaimEmail
+  sendPurchaseAccountClaimEmail: mocks.sendPurchaseAccountClaimEmail,
 }));
-
-import { POST } from "@/app/api/payments/lemon/webhook/route";
-
-const webhookSecret = "test-lemon-webhook-secret";
-
-function signedRequest(payload: unknown) {
-  const body = JSON.stringify(payload);
-  const signature = createHmac("sha256", webhookSecret).update(body).digest("hex");
+import { POST } from "./route";
+const secret = "test-lemon-webhook-secret";
+function request(payload: unknown, pretty = false) {
+  const body = JSON.stringify(payload, null, pretty ? 2 : undefined);
   return new Request("https://speakace.org/api/payments/lemon/webhook", {
     method: "POST",
     headers: {
-      "content-type": "application/json",
-      "x-signature": signature
+      "x-signature": createHmac("sha256", secret).update(body).digest("hex"),
     },
-    body
+    body,
   });
 }
-
-function plusOrderPayload() {
+function order(anonymous = false) {
   return {
     meta: {
       event_name: "order_created",
       custom_data: {
-        user_id: "user-1",
+        ...(anonymous ? {} : { user_id: "user-1" }),
         checkout_id: "checkout-1",
         visitor_id: "visitor-1234567890",
-        cta_path: "/pricing/plus/weekly"
-      }
+        cta_path: "/pricing/plus/annual",
+      },
     },
     data: {
       type: "orders",
@@ -71,242 +56,195 @@ function plusOrderPayload() {
         customer_id: 17,
         identifier: "receipt-1",
         user_email: "buyer@example.com",
-        total: 399,
+        total: 4999,
         currency: "USD",
         status: "paid",
+        created_at: "2026-01-01T00:00:00Z",
+        updated_at: "2026-01-01T00:00:00Z",
         first_order_item: {
-          product_name: "SpeakAce Plus",
-          variant_name: "Weekly"
-        }
-      }
-    }
+          product_name: "SpeakAce Plus Annual",
+          variant_name: "Annual",
+        },
+      },
+    },
   };
 }
-
-function anonymousPlusOrderPayload() {
-  const payload = plusOrderPayload();
-  const customData: Record<string, unknown> = payload.meta.custom_data;
-  delete customData.user_id;
-  return payload;
-}
-
-describe("Lemon webhook entitlement sync", () => {
-  beforeEach(() => {
-    process.env.LEMON_SQUEEZY_WEBHOOK_SECRET = webhookSecret;
-    for (const mock of Object.values(mocks)) mock.mockReset();
-
-    mocks.getMemberEmailById.mockResolvedValue("buyer@example.com");
-    mocks.getMember.mockResolvedValue({ id: "user-1", email: "buyer@example.com", plan: "free" });
-    mocks.getMemberByEmail.mockResolvedValue({ id: "user-1", email: "buyer@example.com", plan: "free" });
-    mocks.applyBillingPlanByUserId.mockResolvedValue({ id: "user-1", plan: "plus" });
-    mocks.applyBillingPlanByEmail.mockResolvedValue({ id: "user-1", plan: "plus" });
-    mocks.recordBillingEvent.mockResolvedValue(true);
-    mocks.sendPurchaseAccountClaimEmail.mockResolvedValue({ ok: true });
+beforeEach(() => {
+  process.env.LEMON_SQUEEZY_WEBHOOK_SECRET = secret;
+  for (const m of Object.values(mocks)) m.mockReset();
+  mocks.getMemberEmailById.mockResolvedValue("buyer@example.com");
+  mocks.getMember.mockResolvedValue({
+    id: "user-1",
+    email: "buyer@example.com",
+    plan: "free",
   });
-
-  it("grants Plus from the nested order item before writing the audit event", async () => {
-    const response = await POST(signedRequest(plusOrderPayload()));
-
-    expect(response.status).toBe(200);
-    expect(mocks.applyBillingPlanByUserId).toHaveBeenCalledWith({
-      userId: "user-1",
-      plan: "plus",
-      billingStatus: "active",
-      providerCustomerId: "17",
-      providerSubscriptionId: null,
-      trialEndsAt: null
-    });
-    expect(mocks.recordBillingEvent).toHaveBeenCalledWith(expect.objectContaining({
-      eventName: "order_created",
-      userId: "user-1",
-      plan: "plus",
-      billingStatus: "active"
-    }));
-    expect(mocks.applyBillingPlanByUserId.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.recordBillingEvent.mock.invocationCallOrder[0]
+  mocks.getMemberByEmail.mockResolvedValue({
+    id: "user-1",
+    email: "buyer@example.com",
+    plan: "free",
+  });
+  mocks.processBillingEvent.mockResolvedValue(true);
+});
+describe("verified Lemon webhook processing", () => {
+  it("delegates order audit and entitlement persistence to one atomic store operation", async () => {
+    expect((await POST(request(order()))).status).toBe(200);
+    expect(mocks.processBillingEvent).toHaveBeenCalledOnce();
+    expect(mocks.processBillingEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventName: "order_created",
+        userId: "user-1",
+        userEmail: "buyer@example.com",
+        plan: "plus",
+        billingStatus: "active",
+        payloadJson: order(),
+      }),
     );
-    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(expect.objectContaining({
-      userId: "user-1",
-      visitorId: "visitor-1234567890",
-      event: "checkout_completed",
-      path: "/pricing/plus/weekly",
-      eventId: "lemonsqueezy:order:receipt-1",
-      source: null,
-      plan: "plus"
-    }));
+    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "checkout_completed",
+        eventId: "lemonsqueezy:order:receipt-1",
+      }),
+    );
   });
-
-  it("emails an anonymous buyer once so they can claim paid access", async () => {
-    mocks.getMemberByEmail.mockResolvedValueOnce(null);
-    mocks.applyBillingPlanByEmail.mockResolvedValueOnce(null);
-
-    const response = await POST(signedRequest(anonymousPlusOrderPayload()));
-
-    expect(response.status).toBe(200);
-    expect(mocks.applyBillingPlanByUserId).not.toHaveBeenCalled();
-    expect(mocks.applyBillingPlanByEmail).toHaveBeenCalledWith(expect.objectContaining({
-      email: "buyer@example.com",
-      plan: "plus",
-      billingStatus: "active"
-    }));
-    expect(mocks.recordBillingEvent).toHaveBeenCalledWith(expect.objectContaining({
-      eventName: "order_created",
-      userId: null,
-      userEmail: "buyer@example.com",
-      plan: "plus"
-    }));
-    expect(mocks.sendPurchaseAccountClaimEmail).toHaveBeenCalledWith({
-      to: "buyer@example.com",
-      plan: "plus",
-      idempotencyKey: expect.stringMatching(
-        /^purchase-account-claim:lemonsqueezy:[0-9a-f]{64}$/
-      )
-    });
-    expect(mocks.trackAnalyticsEvent).toHaveBeenCalledWith(expect.objectContaining({
-      userId: null,
-      visitorId: "visitor-1234567890",
-      event: "checkout_completed",
-      plan: "plus"
-    }));
+  it("sends an anonymous buyer a claim message only after the purchase is safely recorded", async () => {
+    mocks.getMemberByEmail.mockResolvedValue(null);
+    await POST(request(order(true)));
+    expect(mocks.processBillingEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: null, userEmail: "buyer@example.com" }),
+    );
+    expect(mocks.sendPurchaseAccountClaimEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "buyer@example.com", plan: "plus" }),
+    );
+    expect(mocks.processBillingEvent.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.sendPurchaseAccountClaimEmail.mock.invocationCallOrder[0],
+    );
   });
-
-  it("attaches an email-only purchase to an existing account without a claim email", async () => {
-    const response = await POST(signedRequest(anonymousPlusOrderPayload()));
-
-    expect(response.status).toBe(200);
-    expect(mocks.getMemberByEmail).toHaveBeenCalledWith("buyer@example.com");
-    expect(mocks.applyBillingPlanByUserId).toHaveBeenCalledWith(expect.objectContaining({
-      userId: "user-1",
-      plan: "plus",
-      billingStatus: "active"
-    }));
-    expect(mocks.recordBillingEvent).toHaveBeenCalledWith(expect.objectContaining({
-      userId: "user-1"
-    }));
+  it("links an email-only checkout to an existing account without a claim message", async () => {
+    await POST(request(order(true)));
+    expect(mocks.processBillingEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user-1" }),
+    );
     expect(mocks.sendPurchaseAccountClaimEmail).not.toHaveBeenCalled();
   });
-
-  it("preserves the current paid plan for a planless renewal invoice", async () => {
-    mocks.getMember.mockResolvedValue({ id: "user-1", email: "buyer@example.com", plan: "plus" });
+  it("retains trusted plan identity for planless renewal invoices", async () => {
+    mocks.getMember.mockResolvedValue({
+      id: "user-1",
+      email: "buyer@example.com",
+      plan: "plus",
+      lemonSubscriptionId: "sub-1",
+    });
     const payload = {
       meta: {
         event_name: "subscription_payment_success",
-        custom_data: { user_id: "user-1" }
+        custom_data: { user_id: "user-1" },
       },
       data: {
         type: "subscription-invoices",
         id: "invoice-1",
         attributes: {
-          subscription_id: "subscription-22",
-          customer_id: 17,
+          subscription_id: "sub-1",
           user_email: "buyer@example.com",
-          billing_reason: "renewal",
           status: "paid",
           total: 399,
-          currency: "USD"
-        }
-      }
+        },
+      },
     };
-
-    const response = await POST(signedRequest(payload));
-
-    expect(response.status).toBe(200);
-    expect(mocks.applyBillingPlanByUserId).toHaveBeenCalledWith(expect.objectContaining({
-      userId: "user-1",
-      plan: "plus",
-      billingStatus: "active",
-      providerSubscriptionId: "subscription-22"
-    }));
-    expect(mocks.recordBillingEvent).toHaveBeenCalledWith(expect.objectContaining({
-      plan: "plus",
-      providerSubscriptionId: "subscription-22"
-    }));
+    await POST(request(payload));
+    expect(mocks.processBillingEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        plan: "plus",
+        providerSubscriptionId: "sub-1",
+      }),
+    );
     expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
   });
-
-  it("does not downgrade a Free member when an invoice contains no plan identity", async () => {
-    const payload = {
-      meta: {
-        event_name: "subscription_payment_success",
-        custom_data: { user_id: "user-1" }
-      },
-      data: {
-        type: "subscription-invoices",
-        id: "invoice-2",
-        attributes: {
-          subscription_id: "subscription-23",
-          user_email: "buyer@example.com",
-          status: "paid",
-          total: 399,
-          currency: "USD"
-        }
-      }
-    };
-
-    const response = await POST(signedRequest(payload));
-
-    expect(response.status).toBe(200);
-    expect(mocks.applyBillingPlanByUserId).not.toHaveBeenCalled();
-    expect(mocks.applyBillingPlanByEmail).not.toHaveBeenCalled();
-    expect(mocks.recordBillingEvent).toHaveBeenCalledWith(expect.objectContaining({ plan: "free" }));
-  });
-
-  it("restores a legacy Free member when the renewal subtotal identifies Plus", async () => {
-    const payload = {
-      meta: {
-        event_name: "subscription_payment_success",
-        custom_data: { user_id: "user-1" }
-      },
-      data: {
-        type: "subscription-invoices",
-        id: "invoice-legacy",
-        attributes: {
-          subscription_id: "subscription-legacy",
-          user_email: "buyer@example.com",
-          status: "paid",
-          subtotal_usd: 399,
-          discount_total_usd: 80,
-          total_usd: 319,
-          total: 319,
-          currency: "USD"
-        }
-      }
-    };
-
-    const response = await POST(signedRequest(payload));
-
-    expect(response.status).toBe(200);
-    expect(mocks.applyBillingPlanByUserId).toHaveBeenCalledWith(expect.objectContaining({
-      userId: "user-1",
-      plan: "plus",
-      billingStatus: "active",
-      providerSubscriptionId: "subscription-legacy"
-    }));
-  });
-
-  it("still grants paid access before returning an audit-storage failure", async () => {
-    mocks.recordBillingEvent.mockRejectedValueOnce(new Error("billing_events unavailable"));
-
-    const response = await POST(signedRequest(plusOrderPayload()));
-
-    expect(response.status).toBe(500);
-    expect(mocks.applyBillingPlanByUserId).toHaveBeenCalledWith(expect.objectContaining({ plan: "plus" }));
-    expect(mocks.applyBillingPlanByUserId.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.recordBillingEvent.mock.invocationCallOrder[0]
+  it("does not invent a paid plan when an invoice has no product identity or existing paid account", async () => {
+    await POST(
+      request({
+        meta: { event_name: "subscription_payment_success" },
+        data: {
+          type: "subscription-invoices",
+          id: "invoice",
+          attributes: {
+            subscription_id: "sub",
+            user_email: "buyer@example.com",
+            status: "paid",
+            total: 399,
+          },
+        },
+      }),
+    );
+    expect(mocks.processBillingEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ plan: "free" }),
     );
   });
-
-  it("does not emit conversion analytics twice for a duplicate delivery", async () => {
-    mocks.recordBillingEvent.mockResolvedValueOnce(false);
-
-    const response = await POST(signedRequest(plusOrderPayload()));
-    const body = (await response.json()) as { duplicate?: boolean };
-
-    expect(response.status).toBe(200);
-    expect(body.duplicate).toBe(true);
-    expect(mocks.applyBillingPlanByUserId).toHaveBeenCalledWith(expect.objectContaining({ plan: "plus" }));
+  it("preserves legacy USD-subtotal reconciliation for actual subscription invoices", async () => {
+    await POST(
+      request({
+        meta: { event_name: "subscription_payment_success" },
+        data: {
+          type: "subscription-invoices",
+          id: "invoice",
+          attributes: {
+            subscription_id: "sub",
+            user_email: "buyer@example.com",
+            status: "paid",
+            subtotal_usd: 399,
+            total: 319,
+          },
+        },
+      }),
+    );
+    expect(mocks.processBillingEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ plan: "plus" }),
+    );
+  });
+  it("returns a retryable failure without success emails/analytics when the atomic transaction fails", async () => {
+    mocks.processBillingEvent.mockRejectedValue(
+      new Error("synthetic rollback"),
+    );
+    expect((await POST(request(order()))).status).toBe(500);
+    expect(mocks.sendPurchaseAccountClaimEmail).not.toHaveBeenCalled();
+    expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
+  });
+  it("does not repeat side effects for duplicate deliveries", async () => {
+    mocks.processBillingEvent.mockResolvedValue(false);
+    const response = await POST(request(order()));
+    expect(await response.json()).toMatchObject({ duplicate: true });
     expect(mocks.trackAnalyticsEvent).not.toHaveBeenCalled();
     expect(mocks.posthogCapture).not.toHaveBeenCalled();
     expect(mocks.sendPurchaseAccountClaimEmail).not.toHaveBeenCalled();
+  });
+  it("uses the same event identity when a replay changes only JSON formatting", async () => {
+    await POST(request(order()));
+    const first = mocks.processBillingEvent.mock.calls[0][0].id;
+    await POST(request(order(), true));
+    expect(mocks.processBillingEvent.mock.calls[1][0].id).toBe(first);
+  });
+  it("rejects an account email mismatch before any entitlement write", async () => {
+    mocks.getMemberEmailById.mockResolvedValue("different@example.com");
+    expect((await POST(request(order()))).status).toBe(400);
+    expect(mocks.processBillingEvent).not.toHaveBeenCalled();
+  });
+  it("does not accept a client-controlled Lifetime plan in a paid Plus order", async () => {
+    const payload = order();
+    Object.assign(payload.meta.custom_data, { plan: "lifetime" });
+    await POST(request(payload));
+    expect(mocks.processBillingEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ plan: "plus" }),
+    );
+  });
+  it("rejects unsigned requests before reading account data", async () => {
+    expect(
+      (
+        await POST(
+          new Request("https://speakace.org/api/payments/lemon/webhook", {
+            method: "POST",
+            body: JSON.stringify(order()),
+          }),
+        )
+      ).status,
+    ).toBe(401);
+    expect(mocks.processBillingEvent).not.toHaveBeenCalled();
   });
 });

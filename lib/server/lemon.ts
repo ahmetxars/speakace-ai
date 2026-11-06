@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { commerceNumbers } from "@/lib/commerce";
 import type { BillingStatus, SubscriptionPlan } from "@/lib/types";
 
@@ -31,16 +31,12 @@ export function getLemonEventName(payload: LemonPayload) {
 
 export function getLemonEmail(payload: LemonPayload) {
   const attributes = payload.data?.attributes ?? {};
-  const customData = payload.meta?.custom_data ?? {};
-
   const email =
     attributes.user_email ??
     attributes.customer_email ??
-    attributes.email ??
-    customData.email ??
-    customData.user_email;
+    attributes.email;
 
-  return typeof email === "string" ? email.toLowerCase() : null;
+  return typeof email === "string" ? email.trim().toLowerCase() : null;
 }
 
 export function getLemonUserId(payload: LemonPayload) {
@@ -49,15 +45,19 @@ export function getLemonUserId(payload: LemonPayload) {
   return typeof userId === "string" || typeof userId === "number" ? String(userId) : null;
 }
 
-export function getLemonTrialEndsAt(payload: LemonPayload) {
-  const attributes = payload.data?.attributes ?? {};
-  const rawAccessEndsAt = ["cancelled", "expired"].includes(String(attributes.status ?? ""))
-    ? attributes.ends_at ?? attributes.trial_ends_at
-    : attributes.trial_ends_at ?? attributes.ends_at;
-  if (typeof rawAccessEndsAt !== "string" || !rawAccessEndsAt.trim()) return null;
-
-  const parsed = new Date(rawAccessEndsAt);
+function lemonDate(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+export function getLemonTrialEndsAt(payload: LemonPayload) {
+  return lemonDate(payload.data?.attributes?.trial_ends_at);
+}
+export function getLemonAccessEndsAt(payload: LemonPayload) {
+  const attributes = payload.data?.attributes ?? {};
+  return ["cancelled", "expired"].includes(String(attributes.status ?? ""))
+    ? lemonDate(attributes.ends_at)
+    : attributes.status === "on_trial" ? lemonDate(attributes.trial_ends_at) : null;
 }
 
 export function getLemonCheckoutMetadata(payload: LemonPayload) {
@@ -113,7 +113,6 @@ export function getLemonSubscriptionId(payload: LemonPayload) {
 
 export function resolvePlanFromLemonPayload(payload: LemonPayload): Exclude<SubscriptionPlan, "free"> | null {
   const attributes = payload.data?.attributes ?? {};
-  const customData = payload.meta?.custom_data ?? {};
   const firstOrderItem =
     attributes.first_order_item && typeof attributes.first_order_item === "object"
       ? (attributes.first_order_item as Record<string, unknown>)
@@ -123,16 +122,15 @@ export function resolvePlanFromLemonPayload(payload: LemonPayload): Exclude<Subs
     attributes.product_name,
     attributes.order_item_name,
     firstOrderItem?.variant_name,
-    firstOrderItem?.product_name,
-    customData.plan
+    firstOrderItem?.product_name
   ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
 
-  if (sourceText.includes("lifetime")) return "lifetime";
-  if (sourceText.includes("pro")) return "pro";
-  if (sourceText.includes("plus")) return "plus";
+  if (/\blifetime\b/.test(sourceText)) return "lifetime";
+  if (/\bpro\b/.test(sourceText)) return "pro";
+  if (/\bplus\b/.test(sourceText)) return "plus";
 
   const rawSubtotalUsd = attributes.subtotal_usd;
   const rawSubtotal = attributes.subtotal;
@@ -201,8 +199,16 @@ export function resolveBillingStatusFromEvent(eventName: string, payload: LemonP
 }
 
 export function resolvePlanForStatus(plan: SubscriptionPlan, status: BillingStatus): SubscriptionPlan {
-  // Lifetime purchases never expire — ignore cancellation/expiry events
+  if (status === "refunded") return "free";
   if (plan === "lifetime") return "lifetime";
-  if (["expired", "refunded"].includes(status)) return "free";
+  if (status === "expired") return "free";
   return plan;
+}
+
+/** Stable provider-object identity; a replay with different JSON formatting is still one event. */
+export function getLemonEventId(payload:LemonPayload) {
+ const name=getLemonEventName(payload),a=payload.data?.attributes??{};
+ const once=name==="order_created" || name==="subscription_created" || (payload.data?.type==="subscription-invoices" && !name.includes("refunded"));
+ const identity={name,type:payload.data?.type??"",id:payload.data?.id??"",version:once?"":a.updated_at??a.created_at??null,status:once?"":a.status??null,refunded:once?null:a.refunded_amount??a.refunded??null};
+ return `lemonsqueezy:${createHash("sha256").update(JSON.stringify(identity)).digest("hex")}`;
 }

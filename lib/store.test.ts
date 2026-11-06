@@ -1,7 +1,8 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createMemberProfile, createGuestProfile } from "@/lib/membership";
 import {
   applyBillingPlanByUserId,
+  processBillingEvent,
   createSession,
   evaluateStoredSession,
   getProgressSummary,
@@ -161,4 +162,26 @@ describe("session store", () => {
     expect(updated?.lemonCustomerId).toBe("customer_123");
     expect(updated?.lemonSubscriptionId).toBe("subscription_123");
   });
+  it("enforces annual expiry for memory-mode session creation and quota summaries", async () => {
+    vi.useFakeTimers({toFake:["Date"]});
+    try {
+      vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+      const member = createGuestProfile();
+      await upsertMember(member);
+      await processBillingEvent({id:"memory-annual",provider:"lemonsqueezy",eventName:"order_created",userId:member.id,userEmail:member.email,plan:"plus",billingStatus:"active",payloadJson:{data:{id:"memory-order",type:"orders",attributes:{product_name:"SpeakAce Plus Annual",status:"paid",created_at:"2026-01-01T00:00:00Z"}}}});
+      expect((await getProgressSummary(member.id)).currentPlan).toBe("plus");
+      vi.setSystemTime(new Date("2027-01-01T00:00:00Z"));
+      expect((await getProgressSummary(member.id)).currentPlan).toBe("free");
+      const result=await createSession({userId:member.id,examType:"IELTS",taskType:"ielts-part-1",difficulty:"Starter"});
+      expect("session" in result && result.session?.plan).toBe("free");
+    } finally {vi.useRealTimers();}
+  });
+
+  it("preserves a manual legacy Lifetime grant when an unrelated annual order arrives", async () => {
+    const member = {...createGuestProfile(), plan:"lifetime" as const};
+    await upsertMember(member);
+    await processBillingEvent({id:"manual-life-annual",provider:"lemonsqueezy",eventName:"order_created",userId:member.id,userEmail:member.email,plan:"plus",billingStatus:"active",payloadJson:{data:{id:"unrelated-order",type:"orders",attributes:{product_name:"SpeakAce Plus Annual",status:"paid",created_at:new Date().toISOString()}}}});
+    expect((await getProgressSummary(member.id)).currentPlan).toBe("lifetime");
+  });
+
 });

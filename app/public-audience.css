@@ -393,9 +393,14 @@
     padding: 12px 14px 25px;
   }
   .teacher-workbench aside > svg,
-  .teacher-workbench aside > .public-kicker,
-  .teacher-task-context {
+  .teacher-workbench aside > .public-kicker {
     display: none;
+  }
+  .teacher-task-context {
+    display: block;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--public-line);
   }
   .teacher-workbench aside h3 {
     margin: 0;

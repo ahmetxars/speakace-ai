@@ -34,7 +34,7 @@
 .public-page :where(a, button, summary, input, select, textarea):focus-visible,
 .public-chrome :where(a, button, summary, select):focus-visible,
 .public-footer a:focus-visible {
-  outline: 3px solid #de742c;
+  outline: 3px solid #b95a1c;
   outline-offset: 4px;
 }
 .public-page :where(h1, h2, h3, h4) {
@@ -1905,6 +1905,13 @@
     padding-bottom: 30px;
   }
 }
+.public-locale-fallback {
+  display: block;
+  max-width: 180px;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: normal;
+}
 /* Resource discovery and editorial library. Search/filter state stays immediate. */
 .public-library-search {
   display: flex;
@@ -1938,8 +1945,8 @@
   border: 0;
   background: none;
   color: var(--public-ink);
-  min-width: 36px;
-  min-height: 36px;
+  min-width: 44px;
+  min-height: 44px;
   cursor: pointer;
   padding: 0;
 }

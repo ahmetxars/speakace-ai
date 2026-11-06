@@ -1,3 +1,5 @@
+import { resolveBillingForMember, resetBillingLedgerMemory, billingEventsForIdentity, ingestBillingLedgerEvent, type BillingIngestion } from "@/lib/server/billing-ledger";
+import { projectBillingEvents } from "@/lib/billing-entitlements";
 import { buildRetryRequiredReport, buildSessionTranscript, cleanTranscriptText, detectTranscriptIssue, evaluateSession, getTranscriptQuality } from "@/lib/evaluator";
 import { withAdminPrivileges } from "@/lib/admin";
 import { PLAN_LIMITS } from "@/lib/membership";
@@ -224,7 +226,7 @@ export async function createSession(input: {
   }
 
   const store = getStore();
-  const member = store.members.get(input.userId);
+  const member = await getMember(input.userId);
   if (!member) {
     return {
       error: "User profile not found. Sign in again to continue.",
@@ -373,7 +375,7 @@ export async function reserveSessionAudioUpload(
 
   const store = getStore();
   const session = store.sessions.get(sessionId);
-  const member = session ? store.members.get(session.userId) : null;
+  const member = session ? await getMember(session.userId) : null;
   if (!session || !member) {
     return { reserved: false, error: "Session not found.", status: 404 };
   }
@@ -780,7 +782,7 @@ export async function getProgressSummary(userId: string, since?: string): Promis
   }
 
   const store = getStore();
-  const member = store.members.get(userId);
+  const member = await getMember(userId);
   const plan = member?.plan ?? "free";
   const limits = PLAN_LIMITS[plan];
   const usage = store.usageByDay.get(todayKey(userId)) ?? { sessions: 0, seconds: 0 };
@@ -865,11 +867,11 @@ export async function getMember(userId: string) {
       select
         id, email, name, role, member_type as "memberType", organization_name as "organizationName",
         case
-          when billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'free'
+          when plan <> 'lifetime' and billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'free'
           else plan
         end as "plan",
         case
-          when billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'expired'
+          when plan <> 'lifetime' and billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'expired'
           else billing_status
         end as "billingStatus",
         lemon_customer_id as "lemonCustomerId", lemon_subscription_id as "lemonSubscriptionId",
@@ -879,11 +881,11 @@ export async function getMember(userId: string) {
       where id = ${userId}
       limit 1
     `;
-    return rows[0] ? withAdminPrivileges(rows[0]) : null;
+    return rows[0] ? resolveBillingForMember(withAdminPrivileges(rows[0])) : null;
   }
 
   const profile = getStore().members.get(userId) ?? null;
-  return profile ? withAdminPrivileges(profile) : null;
+  return profile ? resolveBillingForMember(withAdminPrivileges(profile)) : null;
 }
 
 export async function getMemberByEmail(email: string) {
@@ -896,11 +898,11 @@ export async function getMemberByEmail(email: string) {
       select
         id, email, name, role, member_type as "memberType", organization_name as "organizationName",
         case
-          when billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'free'
+          when plan <> 'lifetime' and billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'free'
           else plan
         end as "plan",
         case
-          when billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'expired'
+          when plan <> 'lifetime' and billing_status in ('on_trial', 'cancelled') and trial_ends_at is not null and trial_ends_at <= now() then 'expired'
           else billing_status
         end as "billingStatus",
         lemon_customer_id as "lemonCustomerId", lemon_subscription_id as "lemonSubscriptionId",
@@ -910,13 +912,13 @@ export async function getMemberByEmail(email: string) {
       where lower(email) = ${normalizedEmail}
       limit 1
     `;
-    return rows[0] ? withAdminPrivileges(rows[0]) : null;
+    return rows[0] ? resolveBillingForMember(withAdminPrivileges(rows[0])) : null;
   }
 
   const store = getStore();
   for (const profile of store.members.values()) {
     if (profile.email.toLowerCase() === normalizedEmail) {
-      return withAdminPrivileges(profile);
+      return resolveBillingForMember(withAdminPrivileges(profile));
     }
   }
   return null;
@@ -956,108 +958,21 @@ export async function recordBillingEvent(input: {
 }
 
 export async function getActiveBillingPlanForEmail(email: string): Promise<MemberProfile["plan"] | null> {
-  const normalizedEmail = email.trim().toLowerCase();
-  if (!normalizedEmail || !hasDatabaseUrl()) return null;
-
-  const sql = getSql();
-  const rows = await sql<Array<{ plan: MemberProfile["plan"] }>>`
-    select plan
-    from billing_events
-    where lower(user_email) = ${normalizedEmail}
-      and billing_status in ('active', 'on_trial', 'cancelled')
-    order by created_at desc
-    limit 1
-  `;
-
-  return rows[0]?.plan ?? null;
+  const projection=projectBillingEvents(await billingEventsForIdentity(null,email));
+  return projection && projection.plan!=="free" ? projection.plan : null;
 }
 
 export async function syncBillingStateForMember(member: MemberProfile) {
-  if (!hasDatabaseUrl()) return member;
+  return resolveBillingForMember(member);
+}
 
-  const normalizedEmail = member.email.trim().toLowerCase();
-  const sql = getSql();
-  const rows = await sql<
-    Array<{
-      plan: MemberProfile["plan"];
-      billingStatus: BillingStatus;
-      providerCustomerId: string | null;
-      providerSubscriptionId: string | null;
-      trialEndsAt: string | null;
-    }>
-  >`
-    with normalized_events as (
-      select
-        plan,
-        billing_status,
-        provider_customer_id,
-        provider_subscription_id,
-        created_at,
-        case
-          when jsonb_typeof(payload_json) = 'string' then (payload_json #>> '{}')::jsonb
-          else payload_json
-        end as payload
-      from billing_events
-      where user_id = ${member.id}
-        or lower(user_email) = ${normalizedEmail}
-    ), latest_event as (
-      select
-        plan,
-        billing_status,
-        provider_customer_id,
-        provider_subscription_id,
-        coalesce(
-          nullif(payload #>> '{data,attributes,trial_ends_at}', ''),
-          nullif(payload #>> '{data,attributes,ends_at}', '')
-        ) as access_ends_at
-      from normalized_events
-      where coalesce(payload->'meta'->'custom_data'->>'type', '') <> 'institution'
-      order by created_at desc
-      limit 1
-    )
-    select
-      case
-        when billing_status in ('on_trial', 'cancelled')
-          and access_ends_at is not null
-          and access_ends_at::timestamptz <= now()
-          then 'free'
-        else plan
-      end as plan,
-      case
-        when billing_status in ('on_trial', 'cancelled')
-          and access_ends_at is not null
-          and access_ends_at::timestamptz <= now()
-          then 'expired'
-        else billing_status
-      end as "billingStatus",
-      provider_customer_id as "providerCustomerId",
-      provider_subscription_id as "providerSubscriptionId",
-      access_ends_at as "trialEndsAt"
-    from latest_event
-  `;
-
-  const latest = rows[0];
-  if (!latest) return member;
-
-  const hasChange =
-    latest.plan !== member.plan ||
-    latest.billingStatus !== (member.billingStatus ?? "free") ||
-    (latest.providerCustomerId ?? null) !== (member.lemonCustomerId ?? null) ||
-    (latest.providerSubscriptionId ?? null) !== (member.lemonSubscriptionId ?? null) ||
-    (latest.trialEndsAt ?? null) !== (member.trialEndsAt ?? null);
-
-  if (!hasChange) return member;
-
-  return (
-    (await applyBillingPlanByUserId({
-      userId: member.id,
-      plan: latest.plan,
-      billingStatus: latest.billingStatus,
-      providerCustomerId: latest.providerCustomerId,
-      providerSubscriptionId: latest.providerSubscriptionId,
-      trialEndsAt: latest.trialEndsAt
-    })) ?? member
-  );
+export async function processBillingEvent(input: BillingIngestion) {
+  const result=await ingestBillingLedgerEvent(input);
+  if(!hasDatabaseUrl() && result.inserted && result.projection) {
+    const member=input.userId ? getStore().members.get(input.userId) : [...getStore().members.values()].find(m=>m.email.toLowerCase()===input.userEmail?.toLowerCase());
+    if(member) getStore().members.set(member.id,await resolveBillingForMember(member));
+  }
+  return result.inserted;
 }
 
 export async function applyBillingPlanByEmail(input: {
@@ -1238,4 +1153,5 @@ export async function resetStore() {
   store.sessions.clear();
   store.usageByDay.clear();
   store.members.clear();
+  resetBillingLedgerMemory();
 }

@@ -16,7 +16,7 @@ import {
 import { getBlogChromeCopy, getLocalizedBlogPosts } from "@/lib/blog-content";
 import { normalizePublicLanguage, type PublicLanguage } from "@/lib/copy";
 import { getServerLanguage } from "@/lib/language";
-import { getBlogPublicTitle, getBlogPublicDescription } from "@/lib/blog-seo";
+import { blogSeoMap, getBlogPublicTitle, getBlogPublicDescription } from "@/lib/blog-seo";
 import { siteConfig } from "@/lib/site";
 
 type ResourceLocaleContent = {
@@ -1078,10 +1078,10 @@ export default async function ResourcesPage() {
           </div>
           <div>
             <span className="public-kicker">{copy.featuredEyebrow}</span>
-            <h2>
+            <h2 lang={blogSeoMap[featuredArticle.slug] ? "en" : language}>
               {getBlogPublicTitle(featuredArticle.slug, featuredArticle.title)}
             </h2>
-            <p>
+            <p lang={blogSeoMap[featuredArticle.slug] ? "en" : language}>
               {getBlogPublicDescription(
                 featuredArticle.slug,
                 featuredArticle.description,
@@ -1138,6 +1138,7 @@ export default async function ResourcesPage() {
                 href={`/blog/${post.slug}`}
                 category={copy.latestEyebrow}
                 title={getBlogPublicTitle(post.slug, post.title)}
+                contentLanguage={blogSeoMap[post.slug] ? "en" : language}
                 description={getBlogPublicDescription(
                   post.slug,
                   post.description,

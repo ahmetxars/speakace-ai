@@ -10,33 +10,6 @@ import {
 import type { Metadata } from "next";
 import { siteConfig } from "@/lib/site";
 
-const reviewGroups = [
-  {
-    title: "For learners targeting a higher band",
-    points: [
-      "The transcript view makes it easier to see where the answer lost structure.",
-      "Retrying the same prompt turns vague feedback into a specific revision.",
-      "Short AI practice can support, but does not replace, lessons or official assessment.",
-    ],
-  },
-  {
-    title: "Teachers and small schools",
-    points: [
-      "The class workflow is useful between lessons when students need extra speaking practice.",
-      "Homework and replay give a clearer picture of who is progressing and who is stalling.",
-      "Students can record and review independently before the next live lesson.",
-    ],
-  },
-  {
-    title: "Self-study learners",
-    points: [
-      "Daily speaking becomes more realistic when the feedback loop is short.",
-      "A stronger sample answer shows how a response can be developed.",
-      "The dashboard keeps the next task visible instead of leaving practice to guesswork.",
-    ],
-  },
-];
-
 export const metadata: Metadata = {
   title: "SpeakAce Product Experience & Use Cases",
   description:
@@ -64,25 +37,25 @@ export default async function ReviewsPage() {
         actions={
           <>
             <PublicButton href="/app/practice">
-              Try a free practice
+              {t.practiceAction}
             </PublicButton>
             <PublicButton href="/teacher-demo" secondary>
-              Explore the class demo
+              {t.demoAction}
             </PublicButton>
           </>
         }
       />
       <PageSection
-        eyebrow="Three ways to practise"
-        title="Choose the workflow you want to examine."
+        eyebrow={t.reviewSection}
+        title={t.reviewSectionTitle}
       >
         <div className="marketing-reading-features">
-          {reviewGroups.map((group, index) => (
-            <article key={group.title}>
+          {t.reviewGroups.map(([title, points], index) => (
+            <article key={title}>
               <span>0{index + 1}</span>
-              <h3>{group.title}</h3>
+              <h3>{title}</h3>
               <ul className="seo-bullet-list">
-                {group.points.map((point) => (
+                {points.map((point) => (
                   <li key={point}>{point}</li>
                 ))}
               </ul>
@@ -91,12 +64,12 @@ export default async function ReviewsPage() {
         </div>
       </PageSection>
       <PageCTA
-        title="Try the workflow on your own answer."
-        description="Start with Free; compare the daily allowances and payment terms when you need more room."
+        title={t.reviewClosing}
+        description={t.reviewClosingBody}
       >
-        <PublicButton href="/app/practice">Start free practice</PublicButton>
+        <PublicButton href="/app/practice">{t.practiceAction}</PublicButton>
         <PublicButton href="/pricing" secondary>
-          Compare plans
+          {t.compareAction}
         </PublicButton>
       </PageCTA>
     </main>

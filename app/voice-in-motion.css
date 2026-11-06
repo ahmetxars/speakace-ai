@@ -30,8 +30,8 @@
 .voice-wave-scan { position: absolute; top: 0; bottom: 0; left: 0; width: 1px; background: currentColor; opacity: .25; }
 .voice-wave.is-compact { height: 30px; width: 100%; gap: 2px; }
 .voice-wave.is-compact > i:nth-child(n+24) { display: none; }
-.voice-scene[data-entered="true"] .voice-wave > i { animation: voice-rhythm var(--scene-rhythm) ease-in-out var(--bar-delay) infinite; }
-.voice-scene[data-entered="true"] .voice-wave-scan { animation: voice-scan 5s linear infinite; }
+.voice-scene[data-entered="true"] .voice-wave > i { animation: voice-rhythm var(--scene-rhythm) ease-in-out var(--bar-delay) 1; }
+.voice-scene[data-entered="true"] .voice-wave-scan { animation: voice-scan 4s linear 1; }
 .voice-scene:not([data-motion="running"]) *, .voice-scene:not([data-motion="running"]) *::before, .voice-scene:not([data-motion="running"]) *::after { animation-play-state: paused !important; }
 @keyframes voice-rhythm { 0%,100% { transform: scaleY(.48); } 35% { transform: scaleY(.95); } 65% { transform: scaleY(.66); } }
 @keyframes voice-scan { from { transform: translateX(0); } to { transform: translateX(380px); } }
@@ -265,7 +265,7 @@
 .final-voice-visual .voice-signal-echo { stroke-width: 2; }
 .final-signal-core { position: absolute; width: 64px; height: 64px; top: 42%; left: 46%; border-radius: 50%; border: 1px solid currentColor; display: grid; place-items: center; background: #3155df; }
 .final-voice-visual[data-entered="true"] .voice-signal-path { stroke-dasharray: 1; animation: signal-draw var(--scene-draw) var(--motion-enter) both; }
-.final-voice-visual[data-entered="true"] .voice-signal-point { animation: signal-travel 12s linear infinite; }
+.final-voice-visual[data-entered="true"] .voice-signal-point { animation: signal-travel 4s linear 1; }
 @media (hover: hover) and (pointer: fine) { .voice-in-motion-site .plus-plan:hover::before { transform: scaleX(1); } }
 @media (hover: none), (pointer: coarse) { .hero-depth { transform: none !important; } }
 

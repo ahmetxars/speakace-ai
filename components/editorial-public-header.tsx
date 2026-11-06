@@ -28,7 +28,7 @@ import {
 } from "@/lib/copy";
 import { publicDesignCopy } from "@/lib/public-design-copy";
 import { resolveDashboardRole } from "@/lib/roles";
-import { publicSection, publicLanguageNotice } from "@/lib/public-navigation";
+import { publicSection, publicLanguageNotice, navigationLandmarks } from "@/lib/public-navigation";
 import { PublicBrand } from "@/components/public/brand";
 
 type Menu = "audience" | "resources";
@@ -40,7 +40,7 @@ export function EditorialPublicHeader({
   home?: boolean;
   account?: boolean;
 }) {
-  const { language, setLanguage, signedIn, currentUser } = useAppState();
+  const { language, preferredLanguage, setLanguage, signedIn, currentUser } = useAppState();
   const locale = normalizePublicLanguage(language);
   const t = publicDesignCopy[locale];
   const pathname = usePathname();
@@ -249,7 +249,7 @@ export function EditorialPublicHeader({
     <>
       <select
         aria-label={mobilePicker ? t.language + " · mobile" : t.language}
-        value={home && !["en", "tr"].includes(locale) ? "en" : locale}
+        value={locale}
         title={publicLanguageNotice[locale]}
         aria-describedby={`${id}-locale-${mobilePicker ? "mobile" : "desktop"}`}
         onChange={(event) => setLanguage(event.target.value as Language)}
@@ -265,10 +265,10 @@ export function EditorialPublicHeader({
         ))}
       </select>
       <span
-        className="sr-only"
+        className={home && preferredLanguage !== language ? "public-locale-fallback" : "sr-only"}
         id={`${id}-locale-${mobilePicker ? "mobile" : "desktop"}`}
       >
-        {publicLanguageNotice[locale]}
+        {home && preferredLanguage !== language ? "Homepage shown in English. Your preferred language is saved for translated pages." : publicLanguageNotice[locale]}
       </span>
     </>
   );
@@ -314,7 +314,7 @@ export function EditorialPublicHeader({
             </>
           ) : (
             <>
-              <nav className="public-main-nav" aria-label="Main navigation">
+              <nav className="public-main-nav" aria-label={navigationLandmarks[locale][0]}>
                 <Link
                   href={home ? "#practice" : "/#practice"}
                   aria-label={t.practiceLabel}
@@ -410,7 +410,7 @@ export function EditorialPublicHeader({
         <nav
           className="mobile-nav public-mobile-nav"
           id={id + "-mobile-nav"}
-          aria-label="Mobile navigation"
+          aria-label={navigationLandmarks[locale][1]}
           hidden={!mobile}
         >
           <Link href={home ? "#practice" : "/#practice"} onClick={close}>

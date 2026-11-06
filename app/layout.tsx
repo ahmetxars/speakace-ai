@@ -4,12 +4,12 @@ import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { CookieConsentPanel } from "@/components/cookie-consent";
 import { CheckoutRecoveryPrompt } from "@/components/checkout-recovery-prompt";
-import { PublicPageFrame } from "@/components/public/page-primitives";
+import { PublicPageFrame } from "@/components/public/page-frame";
 import { SiteMotion } from "@/components/motion/site-motion";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Providers } from "@/components/providers";
-import { getServerDirection, getServerLanguage } from "@/lib/language";
+import { getServerDirection, getServerLanguage, getServerLanguagePreference } from "@/lib/language";
 import { siteConfig } from "@/lib/site";
 import "@fontsource/dm-sans/400.css";
 import "@fontsource/dm-sans/500.css";
@@ -104,7 +104,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             __html: `(function(){try{if(document.body.classList.contains('public-site')||document.body.classList.contains('auth-site')){document.body.dataset.theme='light';return;}var t=localStorage.getItem('speakace-theme');if(t==='dark'||t==='light'){document.body.dataset.theme=t;}else{document.body.dataset.theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}}catch(e){}})();`
           }}
         />
-        <Providers initialLanguage={language} commercialEmailEnabled={getCommercialEmailConfigurationStatus().ready}>
+        <Providers initialLanguage={await getServerLanguagePreference()} initialPath={currentPath} commercialEmailEnabled={getCommercialEmailConfigurationStatus().ready}>
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
@@ -156,7 +156,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             }}
           />
           {!hideGlobalChrome ? <SiteHeader /> : null}
-          {currentPath !== "/" && !currentPath.startsWith("/app") && !currentPath.startsWith("/admin") && !isMaintenancePage ? <PublicPageFrame>{children}</PublicPageFrame> : children}
+          <PublicPageFrame initialPath={currentPath}>{children}</PublicPageFrame>
           <SiteMotion />
           {!hideGlobalChrome ? <CookieConsentPanel /> : null}
           {!hideGlobalChrome ? <CheckoutRecoveryPrompt /> : null}

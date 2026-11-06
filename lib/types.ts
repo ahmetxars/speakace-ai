@@ -158,6 +158,8 @@ export interface MemberProfile {
   lemonCustomerId?: string | null;
   lemonSubscriptionId?: string | null;
   trialEndsAt?: string | null;
+  accessEndsAt?: string | null;
+  billingKind?: "subscription" | "fixed_duration" | "lifetime";
   referralCodeUsed?: string | null;
   emailVerified?: boolean;
   isAdmin?: boolean;

@@ -15,6 +15,16 @@ import { clearShareAttribution, getShareAttributionFromStorage } from "@/lib/sha
 import { siteConfig } from "@/lib/site";
 
 type AuthUi = {
+  termsLabel: string;
+  termsAccept: string;
+  privacyLabel: string;
+  privacyAccept: string;
+  marketingChoice: string;
+  serviceMail: string;
+  wait: string;
+  successLabel: string;
+  consentError: string;
+
   secure: string;
   signupTitle: string;
   signinTitle: string;
@@ -55,24 +65,74 @@ type AuthUi = {
 
 const authUi: Record<PublicLanguage, AuthUi> = {
   en: {
+    termsLabel: "Terms of Use",
+    termsAccept: " — I have read and accept these terms.",
+    privacyLabel: "Privacy Notice",
+    privacyAccept: " — I understand how my account and practice data are processed.",
+    marketingChoice: "Email me practice tips and SpeakAce offers. Optional; I can unsubscribe anytime.",
+    serviceMail: "Essential verification, password and service emails are separate from this optional choice.",
+    wait: "Please wait…",
+    successLabel: "Success",
+    consentError: "Accept the Terms of Use and acknowledge the Privacy Notice to create an account.",
+
     secure: "Protected account access", signupTitle: "Create the account. Start the practice.", signinTitle: "Welcome back to your practice.", resetTitle: "Choose a new password.", signupBody: "Start with the essentials. Class, school, and referral details stay optional and out of your way.", signinBody: "Sign in and continue from your latest score, draft, or assigned practice.", resetBody: "Set a new password and return to your account securely.",
     features: ["Your speaking and writing history stays together", "Student, teacher, and school workspaces stay separate", "Secure server-side session protection"], access: "Account access", create: "Create account", signIn: "Sign in", reset: "Reset password", createHint: "Only the essentials are required.", signInHint: "Use your email and password to continue.", resetHint: "Enter a new password to regain access.", google: "Continue with Google", emailDivider: "or use email", chooseRole: "I am joining as", roleHint: "This sets up the right workspace after signup.",
     roles: [{ key: "student", label: "Student", description: "Practise and track progress" }, { key: "teacher", label: "Teacher", description: "Run classes and assignments" }, { key: "school", label: "School", description: "Coordinate a programme" }],
     name: "Full name", namePlaceholder: "Your name", password: "Password", passwordPlaceholder: "At least 8 characters and 1 number", passwordHint: "Use at least 8 characters and include 1 number.", optionalOpen: "Have a class, school, or referral code?", optionalClose: "Hide optional details", classCode: "Class code", classPlaceholder: "Code from your teacher", schoolCode: "School invite code", schoolPlaceholder: "Code from your school admin", organization: "School or organization", organizationPlaceholder: "Example: SpeakAce Academy", referral: "Referral code", referralPlaceholder: "Add your code", guest: "Continue as guest"
   },
   tr: {
+    termsLabel: "Kullanım koşullarını",
+    termsAccept: " okudum ve kabul ediyorum.",
+    privacyLabel: "Gizlilik ve KVKK aydınlatma metnini",
+    privacyAccept: " okudum; hesap ve pratik verilerimin nasıl işlendiğini biliyorum.",
+    marketingChoice: "Pratik önerileri ve SpeakAce teklifleri içeren e-postalar almak istiyorum. İsteğe bağlı; her zaman abonelikten çıkabilirim.",
+    serviceMail: "Doğrulama, parola ve hizmetle ilgili gerekli e-postalar bu isteğe bağlı izinden bağımsızdır.",
+    wait: "Bekle…",
+    successLabel: "İşlem tamamlandı",
+    consentError: "Hesap açmadan önce kullanım koşullarını kabul et ve gizlilik bildirimini okuduğunu belirt.",
+
     secure: "Korumalı hesap erişimi", signupTitle: "Hesabı oluştur. Pratiğe başla.", signinTitle: "Pratiğine tekrar hoş geldin.", resetTitle: "Yeni şifreni belirle.", signupBody: "Yalnız gerekli bilgilerle başla. Sınıf, okul ve referans detayları opsiyonel kalır.", signinBody: "Giriş yap; son skorundan, taslağından veya ödevinden devam et.", resetBody: "Yeni şifreni belirle ve hesabına güvenle dön.",
     features: ["Konuşma ve yazma geçmişin birlikte kalır", "Öğrenci, öğretmen ve kurum alanları ayrıdır", "Güvenli sunucu tarafı oturum koruması"], access: "Hesap erişimi", create: "Hesap oluştur", signIn: "Giriş yap", reset: "Şifreyi yenile", createHint: "Yalnız gerekli bilgiler zorunlu.", signInHint: "Devam etmek için e-posta ve şifreni kullan.", resetHint: "Erişimini geri almak için yeni şifreni gir.", google: "Google ile devam et", emailDivider: "veya e-posta kullan", chooseRole: "Katılım türüm", roleHint: "Kayıttan sonra doğru çalışma alanı hazırlanır.",
     roles: [{ key: "student", label: "Öğrenci", description: "Pratik yap ve ilerlemeni izle" }, { key: "teacher", label: "Öğretmen", description: "Sınıf ve ödev yönet" }, { key: "school", label: "Kurum", description: "Programı koordine et" }],
     name: "Ad soyad", namePlaceholder: "Adın soyadın", password: "Şifre", passwordPlaceholder: "En az 8 karakter ve 1 sayı", passwordHint: "En az 8 karakter ve 1 sayı kullan.", optionalOpen: "Sınıf, okul veya referans kodun var mı?", optionalClose: "Opsiyonel detayları gizle", classCode: "Sınıf kodu", classPlaceholder: "Öğretmeninden aldığın kod", schoolCode: "Okul davet kodu", schoolPlaceholder: "Okul yöneticinden aldığın kod", organization: "Okul veya kurum", organizationPlaceholder: "Örn. SpeakAce Academy", referral: "Referans kodu", referralPlaceholder: "Kodunu ekle", guest: "Misafir olarak devam et"
   },
   de: {
+    termsLabel: "Nutzungsbedingungen",
+    termsAccept: " — Ich habe diese Bedingungen gelesen und akzeptiere sie.",
+    privacyLabel: "Datenschutzhinweise",
+    privacyAccept: " — Ich verstehe, wie meine Konto- und Übungsdaten verarbeitet werden.",
+    marketingChoice: "Ich möchte Übungstipps und SpeakAce-Angebote per E-Mail erhalten. Freiwillig; jederzeit abbestellbar.",
+    serviceMail: "Erforderliche Bestätigungs-, Passwort- und Service-E-Mails sind von dieser freiwilligen Auswahl getrennt.",
+    wait: "Bitte warten…",
+    successLabel: "Erfolgreich",
+    consentError: "Akzeptiere die Nutzungsbedingungen und bestätige die Datenschutzhinweise, um ein Konto zu erstellen.",
+
     secure: "Geschützter Kontozugang", signupTitle: "Konto erstellen. Übung starten.", signinTitle: "Willkommen zurück beim Training.", resetTitle: "Neues Passwort wählen.", signupBody: "Beginne mit dem Nötigsten. Klassen-, Schul- und Empfehlungscodes bleiben optional.", signinBody: "Anmelden und beim letzten Ergebnis, Entwurf oder Auftrag weitermachen.", resetBody: "Lege ein neues Passwort fest und kehre sicher zurück.", features: ["Sprech- und Schreibverlauf bleiben zusammen", "Getrennte Bereiche für Lernende, Lehrkräfte und Schulen", "Sichere serverseitige Sitzung"], access: "Kontozugang", create: "Konto erstellen", signIn: "Anmelden", reset: "Passwort zurücksetzen", createHint: "Nur das Nötigste ist Pflicht.", signInHint: "Mit E-Mail und Passwort fortfahren.", resetHint: "Neues Passwort eingeben.", google: "Mit Google fortfahren", emailDivider: "oder E-Mail nutzen", chooseRole: "Ich bin", roleHint: "Damit wird der richtige Bereich eingerichtet.", roles: [{ key: "student", label: "Lernende", description: "Üben und Fortschritt sehen" }, { key: "teacher", label: "Lehrkraft", description: "Klassen und Aufgaben führen" }, { key: "school", label: "Schule", description: "Programm koordinieren" }], name: "Vollständiger Name", namePlaceholder: "Dein Name", password: "Passwort", passwordPlaceholder: "Mindestens 8 Zeichen und 1 Zahl", passwordHint: "Mindestens 8 Zeichen und eine Zahl verwenden.", optionalOpen: "Hast du einen Klassen-, Schul- oder Empfehlungscode?", optionalClose: "Optionale Angaben ausblenden", classCode: "Klassencode", classPlaceholder: "Code der Lehrkraft", schoolCode: "Schul-Einladungscode", schoolPlaceholder: "Code der Schulverwaltung", organization: "Schule oder Organisation", organizationPlaceholder: "Beispiel: SpeakAce Academy", referral: "Empfehlungscode", referralPlaceholder: "Code hinzufügen", guest: "Als Gast fortfahren"
   },
   es: {
+    termsLabel: "Condiciones de uso",
+    termsAccept: " — He leído y acepto estas condiciones.",
+    privacyLabel: "Aviso de privacidad",
+    privacyAccept: " — Entiendo cómo se tratan mis datos de cuenta y práctica.",
+    marketingChoice: "Quiero recibir consejos y ofertas de SpeakAce por correo. Opcional; puedo darme de baja en cualquier momento.",
+    serviceMail: "Los correos necesarios de verificación, contraseña y servicio son independientes de esta opción.",
+    wait: "Espera…",
+    successLabel: "Completado",
+    consentError: "Acepta las condiciones de uso y confirma el aviso de privacidad para crear una cuenta.",
+
     secure: "Acceso protegido", signupTitle: "Crea la cuenta. Empieza a practicar.", signinTitle: "Bienvenido de nuevo a tu práctica.", resetTitle: "Elige una nueva contraseña.", signupBody: "Empieza con lo esencial. Los códigos de clase, escuela y referido son opcionales.", signinBody: "Entra y continúa desde tu última puntuación, borrador o tarea.", resetBody: "Define una nueva contraseña y vuelve a tu cuenta de forma segura.", features: ["Tu historial de speaking y writing permanece unido", "Espacios separados para alumno, profesor y escuela", "Sesión segura en el servidor"], access: "Acceso a la cuenta", create: "Crear cuenta", signIn: "Entrar", reset: "Restablecer contraseña", createHint: "Solo pedimos lo esencial.", signInHint: "Usa tu email y contraseña para continuar.", resetHint: "Introduce una nueva contraseña.", google: "Continuar con Google", emailDivider: "o usar email", chooseRole: "Me uno como", roleHint: "Prepararemos el espacio correcto.", roles: [{ key: "student", label: "Estudiante", description: "Practicar y ver progreso" }, { key: "teacher", label: "Profesor", description: "Gestionar clases y tareas" }, { key: "school", label: "Escuela", description: "Coordinar un programa" }], name: "Nombre completo", namePlaceholder: "Tu nombre", password: "Contraseña", passwordPlaceholder: "Mínimo 8 caracteres y 1 número", passwordHint: "Usa al menos 8 caracteres e incluye 1 número.", optionalOpen: "¿Tienes código de clase, escuela o referido?", optionalClose: "Ocultar datos opcionales", classCode: "Código de clase", classPlaceholder: "Código de tu profesor", schoolCode: "Código de invitación", schoolPlaceholder: "Código de la escuela", organization: "Escuela u organización", organizationPlaceholder: "Ejemplo: SpeakAce Academy", referral: "Código de referido", referralPlaceholder: "Añade tu código", guest: "Continuar como invitado"
   },
   fr: {
+    termsLabel: "Conditions d’utilisation",
+    termsAccept: " — J’ai lu et j’accepte ces conditions.",
+    privacyLabel: "Notice de confidentialité",
+    privacyAccept: " — Je comprends le traitement de mes données de compte et de pratique.",
+    marketingChoice: "Je souhaite recevoir des conseils et offres SpeakAce par e-mail. Facultatif ; désinscription possible à tout moment.",
+    serviceMail: "Les e-mails nécessaires de vérification, de mot de passe et de service sont indépendants de ce choix.",
+    wait: "Veuillez patienter…",
+    successLabel: "Terminé",
+    consentError: "Acceptez les conditions et confirmez la lecture de la notice de confidentialité pour créer un compte.",
+
     secure: "Accès protégé", signupTitle: "Crée le compte. Commence la pratique.", signinTitle: "Bienvenue dans ta pratique.", resetTitle: "Choisis un nouveau mot de passe.", signupBody: "Commence par l’essentiel. Les codes classe, école et parrainage restent facultatifs.", signinBody: "Connecte-toi et reprends depuis ton dernier score, brouillon ou devoir.", resetBody: "Définis un nouveau mot de passe et retrouve ton compte en sécurité.", features: ["L’historique oral et écrit reste réuni", "Espaces séparés pour élève, enseignant et école", "Session sécurisée côté serveur"], access: "Accès au compte", create: "Créer un compte", signIn: "Connexion", reset: "Réinitialiser", createHint: "Seul l’essentiel est obligatoire.", signInHint: "Utilise ton e-mail et ton mot de passe.", resetHint: "Saisis un nouveau mot de passe.", google: "Continuer avec Google", emailDivider: "ou utiliser l’e-mail", chooseRole: "Je rejoins comme", roleHint: "Nous préparerons le bon espace.", roles: [{ key: "student", label: "Élève", description: "Pratiquer et suivre ses progrès" }, { key: "teacher", label: "Enseignant", description: "Gérer classes et devoirs" }, { key: "school", label: "École", description: "Coordonner un programme" }], name: "Nom complet", namePlaceholder: "Ton nom", password: "Mot de passe", passwordPlaceholder: "8 caractères et 1 chiffre minimum", passwordHint: "Utilise au moins 8 caractères et un chiffre.", optionalOpen: "Tu as un code classe, école ou parrainage ?", optionalClose: "Masquer les détails facultatifs", classCode: "Code classe", classPlaceholder: "Code de ton enseignant", schoolCode: "Code d’invitation école", schoolPlaceholder: "Code de l’administration", organization: "École ou organisation", organizationPlaceholder: "Exemple : SpeakAce Academy", referral: "Code de parrainage", referralPlaceholder: "Ajouter le code", guest: "Continuer en invité"
   }
 };
@@ -228,7 +288,7 @@ function AuthPageInner() {
   const submit = async () => {
     if (submitting) return;
     if (mode === "signup" && (!termsAccepted || !privacyAcknowledged)) {
-      setError(tr ? "Hesap açmadan önce kullanım koşullarını kabul et ve gizlilik bildirimini okuduğunu belirt." : "Accept the Terms of Use and acknowledge the Privacy Notice to create an account.");
+      setError(ui.consentError);
       return;
     }
     setSubmitting(true);
@@ -548,7 +608,7 @@ function AuthPageInner() {
                 ✓
               </span>
               <div>
-                <strong>{tr ? "İşlem tamamlandı" : "Success"}</strong>
+                <strong>{ui.successLabel}</strong>
                 <p>{successToast}</p>
               </div>
             </div>
@@ -613,7 +673,7 @@ function AuthPageInner() {
             <>
               <a
                 href={`/api/auth/google${googleParams.size ? `?${googleParams.toString()}` : ""}`}
-                onClick={(event) => { if (isSignup && (!termsAccepted || !privacyAcknowledged)) { event.preventDefault(); setError(tr ? "Önce aşağıdaki kullanım ve gizlilik onaylarını tamamla." : "Complete the Terms and Privacy acknowledgements below first."); } }}
+                onClick={(event) => { if (isSignup && (!termsAccepted || !privacyAcknowledged)) { event.preventDefault(); setError(ui.consentError); } }}
                 className="auth-google-button"
               >
                 <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -639,7 +699,7 @@ function AuthPageInner() {
                     <strong>{ui.chooseRole}</strong>
                     <span>{ui.roleHint}</span>
                   </div>
-                  <div className="auth-account-grid">
+                  <div className="auth-account-grid" role="group" aria-label={ui.chooseRole}>
                     {ui.roles.map((item) => {
                       const Icon = roleIcons[item.key];
                       return (
@@ -647,6 +707,7 @@ function AuthPageInner() {
                           key={item.key}
                           type="button"
                           className={`auth-account-card ${memberType === item.key ? "is-active" : ""}`}
+                          aria-pressed={memberType === item.key}
                           onClick={() => setMemberType(item.key)}
                         >
                           <Icon size={16} />
@@ -663,6 +724,8 @@ function AuthPageInner() {
                     <span>{ui.name}</span>
                     <input
                       type="text"
+                      autoComplete="name"
+                      required
                       value={name}
                       onChange={(event) => setName(event.target.value)}
                       placeholder={ui.namePlaceholder}
@@ -673,6 +736,8 @@ function AuthPageInner() {
                     <span>Email</span>
                     <input
                       type="email"
+                      autoComplete="email"
+                      required
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                       placeholder="learner@example.com"
@@ -696,14 +761,15 @@ function AuthPageInner() {
                   className="auth-optional-toggle"
                   type="button"
                   aria-expanded={showOptionalFields}
+                  aria-controls="auth-optional-fields"
                   onClick={() => setShowOptionalFields((current) => !current)}
                 >
                   <span>{showOptionalFields ? ui.optionalClose : ui.optionalOpen}</span>
                   <ChevronDown size={16} />
                 </button>
 
-                {showOptionalFields ? (
-                  <div className="auth-optional-fields">
+                {(
+                  <div id="auth-optional-fields" className="auth-optional-fields" hidden={!showOptionalFields}>
                     {memberType === "student" ? (
                       <label className="auth-field">
                         <span>{ui.classCode}</span>
@@ -721,13 +787,15 @@ function AuthPageInner() {
                       <input type="text" value={referralCode} onChange={(event) => setReferralCode(event.target.value.toUpperCase())} placeholder={ui.referralPlaceholder} />
                     </label>
                   </div>
-                ) : null}
+                )}
               </>
             ) : !isResetMode ? (
               <label className="auth-field">
                 <span>Email</span>
                 <input
                   type="email"
+                      autoComplete="email"
+                      required
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="learner@example.com"
@@ -739,6 +807,8 @@ function AuthPageInner() {
               <span>{ui.password}</span>
               <input
                 type="password"
+                autoComplete={isSignup || isResetMode ? "new-password" : "current-password"}
+                required
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder={ui.passwordPlaceholder}
@@ -749,10 +819,10 @@ function AuthPageInner() {
             </label>
 
             {isSignup && <div className="auth-consent-fields">
-              <label><input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} /><span><Link href="/terms" target="_blank">{tr ? "Kullanım koşullarını" : "Terms of Use"}</Link>{tr ? " okudum ve kabul ediyorum." : " — I have read and accept these terms."}</span></label>
-              <label><input type="checkbox" checked={privacyAcknowledged} onChange={(event) => setPrivacyAcknowledged(event.target.checked)} /><span><Link href="/privacy-policy" target="_blank">{tr ? "Gizlilik ve KVKK aydınlatma metnini" : "Privacy Notice"}</Link>{tr ? " okudum; hesap ve pratik verilerimin nasıl işlendiğini biliyorum." : " — I understand how my account and practice data are processed."}</span></label>
-              <label><input type="checkbox" checked={marketingConsent} onChange={(event) => setMarketingConsent(event.target.checked)} /><span>{tr ? "Pratik önerileri ve SpeakAce teklifleri içeren e-postalar almak istiyorum. İsteğe bağlı; her zaman abonelikten çıkabilirim." : "Email me practice tips and SpeakAce offers. Optional; I can unsubscribe anytime."}</span></label>
-              <p>{tr ? "Doğrulama, parola ve hizmetle ilgili gerekli e-postalar bu isteğe bağlı izinden bağımsızdır." : "Essential verification, password and service emails are separate from this optional choice."}</p>
+              <label><input type="checkbox" required checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} /><span><Link href="/terms" target="_blank">{ui.termsLabel}</Link>{ui.termsAccept}</span></label>
+              <label><input type="checkbox" required checked={privacyAcknowledged} onChange={(event) => setPrivacyAcknowledged(event.target.checked)} /><span><Link href="/privacy-policy" target="_blank">{ui.privacyLabel}</Link>{ui.privacyAccept}</span></label>
+              <label><input type="checkbox" checked={marketingConsent} onChange={(event) => setMarketingConsent(event.target.checked)} /><span>{ui.marketingChoice}</span></label>
+              <p>{ui.serviceMail}</p>
             </div>}
             {error ? <p className="auth-inline-message auth-inline-error" role="alert">{error}</p> : null}
             {googleErrorMessage ? <p className="auth-inline-message auth-inline-error" role="alert">{googleErrorMessage}</p> : null}
@@ -782,7 +852,7 @@ function AuthPageInner() {
                 </button>
               ) : (
                 <button className="button button-primary auth-submit" type="button" onClick={submit} disabled={submitting}>
-                  {submitting ? (tr ? "Bekle…" : "Please wait…") : isSignup ? ui.create : ui.signIn}
+                  {submitting ? (ui.wait) : isSignup ? ui.create : ui.signIn}
                 </button>
               )}
               <Link className="button button-secondary auth-guest" href="/app/practice">

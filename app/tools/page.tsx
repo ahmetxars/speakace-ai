@@ -1,3 +1,5 @@
+import { getServerLanguage } from "@/lib/language";
+import { discoveryRefinementCopy } from "@/lib/discovery-refinement-copy";
 import type { Metadata } from "next";
 import { ToolDirectory } from "@/components/public/tool-directory";
 import {
@@ -23,7 +25,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ToolsHubPage() {
+export default async function ToolsHubPage() {
+  const t = discoveryRefinementCopy[await getServerLanguage()];
   const standalone = [
     {
       href: "/ielts-band-estimator",
@@ -51,15 +54,9 @@ export default function ToolsHubPage() {
   return (
     <main className="public-container tools-directory">
       <PageHero
-        eyebrow="Practice toolkit"
-        title={
-          <>
-            One small tool.
-            <br />
-            <em>A more focused session.</em>
-          </>
-        }
-        description="Choose a timer, a calculator or a planning exercise. These tools help you prepare and reflect; they do not award an official exam score."
+        eyebrow={t.eyebrow}
+        title={t.toolHero}
+        description={t.toolHeroBody}
       />
       <ToolDirectory
         tools={[
@@ -67,7 +64,12 @@ export default function ToolsHubPage() {
           ...toolPages.map((item) => ({
             href: `/tools/${item.slug}`,
             title: item.title,
-            description: item.description,
+            description: item.slug === "toefl-speaking-timer"
+              ? "TOEFL timing reference and practice guidance. Use Speaking Practice Timer for an interactive countdown."
+              : item.slug === "session-replay-tool"
+                ? "Replay guidance and practice tips. Open saved attempts in your account to review your own recordings."
+                : item.description,
+            reference: ["toefl-speaking-timer", "session-replay-tool"].includes(item.slug),
             group: item.slug.includes("calculator")
               ? 1
               : /cue-card|question-generator|topic-generator|topic-of-the-day|timer/.test(
@@ -79,10 +81,10 @@ export default function ToolsHubPage() {
         ]}
       />
       <PageCTA
-        title="Take your notes into a real answer."
-        description="Open a speaking prompt and work on one thing at a time."
+        title={t.toolClosing}
+        description={t.toolClosingBody}
       >
-        <PublicButton href="/app/practice">Start free practice</PublicButton>
+        <PublicButton href="/app/practice">{t.practiceAction}</PublicButton>
       </PageCTA>
     </main>
   );

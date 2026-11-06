@@ -8,7 +8,7 @@ import { handleTabKeys } from "@/lib/tab-navigation";
 import type { Route } from "next";
 import { ResourceCard } from "@/components/public/page-primitives";
 import { LibrarySearch } from "@/components/public/library-search";
-import { startTransition, useDeferredValue, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useRef, useState } from "react";
 import { BookOpenText, Gauge, Repeat2, Search, Wrench } from "lucide-react";
 
 export type ResourceCategory = "exam" | "skills" | "tools" | "habit";
@@ -63,6 +63,13 @@ export function ResourceLibrary({
   const [query, setQuery] = useState("");
   const feedback = usePanelFeedback(activeCategory);
   const [visibleLimit, setVisibleLimit] = useState(6);
+  const expansionFocus = useRef<number | null>(null);
+  useEffect(() => {
+    const index = expansionFocus.current;
+    if (index === null) return;
+    document.getElementById("resource-results")?.querySelectorAll<HTMLAnchorElement>("article h3 a")[index]?.focus();
+    expansionFocus.current = null;
+  }, [visibleLimit]);
   const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase());
   const categoryOrder: Array<"all" | ResourceCategory> = [
     "all",
@@ -155,6 +162,7 @@ export function ResourceLibrary({
       <div
         className="resource-library-grid public-resource-grid"
         role="tabpanel"
+        tabIndex={0}
         ref={feedback.ref}
         id="resource-results"
         aria-labelledby={`resource-tab-${activeCategory}`}
@@ -177,7 +185,7 @@ export function ResourceLibrary({
       </div>
 
       {visibleItems.length === 0 ? (
-        <p className="resource-library-empty" role="status">
+        <p className="resource-library-empty">
           <Search size={20} aria-hidden="true" />
           {emptyLabel}
         </p>
@@ -187,9 +195,10 @@ export function ResourceLibrary({
         <button
           type="button"
           className="resource-library-more"
-          onClick={() =>
-            startTransition(() => setVisibleLimit((current) => current + 6))
-          }
+          onClick={() => {
+            expansionFocus.current = visibleLimit;
+            startTransition(() => setVisibleLimit((current) => current + 6));
+          }}
         >
           {showMoreLabel}
           <span>
@@ -202,7 +211,8 @@ export function ResourceLibrary({
         <button
           type="button"
           className="library-reset"
-          onClick={() => {
+          onClick={(event) => {
+            event.currentTarget.closest("section")?.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
             setActiveCategory("all");
             setQuery("");
             setVisibleLimit(6);

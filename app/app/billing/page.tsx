@@ -15,12 +15,17 @@ import {
   getPlanComparison
 } from "@/lib/commerce";
 import { useAppState } from "@/components/providers";
+import { pricingCopy } from "@/lib/pricing-copy";
+import { normalizePublicLanguage } from "@/lib/copy";
 import { resolveDashboardRole } from "@/lib/roles";
 
 export default function BillingPage() {
   const router = useRouter();
   const { currentUser, signedIn, language, refreshSession } = useAppState();
   const tr = language === "tr";
+  const terms = pricingCopy[normalizePublicLanguage(language)];
+  const fixedDuration = currentUser?.billingKind === "fixed_duration";
+  const merchantSubscription = Boolean(currentUser?.lemonSubscriptionId);
   const dashboardRole = resolveDashboardRole(currentUser);
   const comparison = getPlanComparison(tr);
   const plusAnnualMonthlyEquivalent = getAnnualMonthlyEquivalent(commerceNumbers.plusAnnualPrice);
@@ -28,20 +33,22 @@ export default function BillingPage() {
   const billingStatus = currentUser?.billingStatus ?? "free";
   const isPaidPlan = currentUser?.plan === "plus" || currentUser?.plan === "pro" || currentUser?.plan === "lifetime";
   const accessEndsLabel = useMemo(() => {
-    if (!currentUser?.trialEndsAt) return null;
-    const accessEndsAt = new Date(currentUser.trialEndsAt);
+    const boundary = currentUser?.accessEndsAt ?? currentUser?.trialEndsAt;
+    if (!boundary) return null;
+    const accessEndsAt = new Date(boundary);
     if (Number.isNaN(accessEndsAt.getTime())) return null;
     return new Intl.DateTimeFormat(tr ? "tr-TR" : "en-US", {
       dateStyle: "medium",
       timeStyle: "short"
     }).format(accessEndsAt);
-  }, [currentUser?.trialEndsAt, tr]);
+  }, [currentUser?.accessEndsAt, currentUser?.trialEndsAt, tr]);
   const billingStatusLabel = useMemo(() => {
     if (billingStatus === "on_trial") return tr ? "Deneme aktif" : "Trial active";
     if (billingStatus === "cancelled") return tr ? "Yenileme iptal" : "Renewal cancelled";
     if (billingStatus === "active") return tr ? "Aktif" : "Active";
     if (billingStatus === "past_due") return tr ? "Ödeme bekleniyor" : "Payment due";
     if (billingStatus === "paused") return tr ? "Duraklatıldı" : "Paused";
+    if (billingStatus === "refunded") return tr ? "İade edildi" : "Refunded";
     if (billingStatus === "expired") return tr ? "Sona erdi" : "Expired";
     return tr ? "Ücretsiz" : "Free";
   }, [billingStatus, tr]);
@@ -79,16 +86,28 @@ export default function BillingPage() {
     if (currentUser?.plan === "free") {
       return {
         heading: tr ? "En dusuk surtunmeli baslangic" : "Lowest-friction start",
-        title: tr ? "3 gunluk Plus denemesini haftalik planla baslat" : "Start the 3-day Plus trial on the weekly plan",
-        detail: tr
-          ? `Once 3 gun boyunca tam geri bildirim ve retry dongusunu dene. Deneme sonrasinda Plus haftalik $3.99 ile devam eder; uzun hazirlik yapacaksan yillik secenek yaklasik %${plusAnnualSavings} tasarruf saglar.`
-          : `Try the full feedback and retry loop for 3 days first. Plus then continues at $3.99/week; if you already expect a longer prep cycle, annual saves about ${plusAnnualSavings}%.`,
-        ctaLabel: tr ? "3 gunluk Plus denemesini baslat" : "Start the 3-day Plus trial",
+        title: tr ? "Haftalık Plus koşullarını incele" : "Review the weekly Plus offer",
+        detail: terms.trial,
+        ctaLabel: tr ? "Haftalık teklifi incele" : "Review weekly offer",
         ctaHref: buildPlanCheckoutPath({ plan: "plus", campaign: "billing_decision_weekly" }),
         ctaAnalyticsPath: "/app/billing/decision/plus/weekly",
         secondaryLabel: tr ? "Uzun hazirlik: yillik" : "Longer prep: annual",
         secondaryHref: buildPlanCheckoutPath({ plan: "plus", billing: "annual", campaign: "billing_decision_annual" }),
         secondaryAnalyticsPath: "/app/billing/decision/plus/annual"
+      };
+    }
+
+    if (currentUser?.plan === "plus" && fixedDuration) {
+      return {
+        heading: tr ? "12 aylık erişim · tek ödeme" : "12-month access · one payment",
+        title: accessEndsLabel ? (tr ? `Erişimin ${accessEndsLabel} tarihinde sona erer` : `Access ends ${accessEndsLabel}`) : terms.annual,
+        detail: terms.annualTerms,
+        ctaLabel: tr ? "Pratiğe devam et" : "Continue practising",
+        ctaHref: "/app/practice",
+        ctaAnalyticsPath: "/app/billing/fixed-duration/practice",
+        secondaryLabel: terms.portal,
+        secondaryHref: "/api/payments/lemon/portal",
+        secondaryAnalyticsPath: "/app/billing/fixed-duration/receipt"
       };
     }
 
@@ -112,13 +131,11 @@ export default function BillingPage() {
 
     if (currentUser?.plan === "plus" && billingStatus === "on_trial") {
       return {
-        heading: tr ? "3 gunluk Plus denemesi aktif" : "3-day Plus trial active",
+        heading: tr ? "Plus denemesi aktif" : "Plus trial active",
         title: accessEndsLabel
           ? (tr ? `${accessEndsLabel} oncesi bir geri bildirim ve retry dongusu tamamla` : `Complete one feedback and retry loop before ${accessEndsLabel}`)
           : (tr ? "Deneme bitmeden bir geri bildirim ve retry dongusu tamamla" : "Complete one feedback and retry loop before the trial ends"),
-        detail: tr
-          ? "En iyi karar sinyali daha fazla sayfa gezmek degil, ayni cevabi geri bildirimle ikinci kez denemektir. Deneme sonrasinda Plus haftalik $3.99 ile devam eder."
-          : "The best decision signal is not another page view; it is retrying the same answer after feedback. After the trial, Plus continues at $3.99/week.",
+        detail: merchantSubscription ? terms.trial : (tr ? "Bu erişim deneme bitiş tarihinde sona erer. Bağlı bir ücretli abonelik görünmüyor." : "This access ends on the trial end date. No linked paid subscription is shown."),
         ctaLabel: tr ? "Geri bildirimli practice yap" : "Practice with feedback",
         ctaHref: "/app/practice",
         ctaAnalyticsPath: "/app/billing/trial/practice",
@@ -157,48 +174,13 @@ export default function BillingPage() {
       secondaryHref: "/app/referrals",
       secondaryAnalyticsPath: "/app/billing/decision/referrals"
     };
-  }, [accessEndsLabel, billingStatus, currentUser?.plan, plusAnnualSavings, tr]);
+  }, [accessEndsLabel, billingStatus, currentUser?.plan, fixedDuration, merchantSubscription, terms, tr]);
   const purchaseConfidencePoints = useMemo(() => {
-    if (currentUser?.plan === "plus" && billingStatus === "cancelled") {
-      return tr
-        ? [
-            accessEndsLabel ? `Plus erisimin ${accessEndsLabel} tarihine kadar devam eder.` : "Plus erisimin mevcut donemin sonuna kadar devam eder.",
-            "Iptal edilen abonelik otomatik yenilenmez veya haftalik ucret cekmez.",
-            "Kararini degistirirsen aboneligi Lemon Squeezy billing portalinda gozden gecirebilirsin."
-          ]
-        : [
-            accessEndsLabel ? `Your Plus access continues until ${accessEndsLabel}.` : "Your Plus access continues through the current period.",
-            "A cancelled subscription will not renew or create a weekly charge.",
-            "If you change your mind, review the subscription in the Lemon Squeezy billing portal."
-          ];
-    }
-
-    if (currentUser?.plan === "plus" && billingStatus === "on_trial") {
-      return tr
-        ? [
-            accessEndsLabel ? `Bugun $0; deneme ${accessEndsLabel} tarihinde sona erer.` : "Bugun $0; deneme 3 gun surer.",
-            "Deneme sonrasinda Plus haftalik $3.99 ile devam eder.",
-            "Yenilemeyi istemiyorsan guvenli billing portalindan deneme bitmeden iptal edebilirsin."
-          ]
-        : [
-            accessEndsLabel ? `$0 today; the trial ends ${accessEndsLabel}.` : "$0 today; the trial lasts 3 days.",
-            "After the trial, Plus continues at $3.99/week.",
-            "If you do not want renewal, cancel in the secure billing portal before the trial ends."
-          ];
-    }
-
-    return tr
-      ? [
-          "Checkout ayni hesaba baglanir, yeni hesap acman gerekmez.",
-          "3 gunluk deneme sonrasinda plan haftalik $3.99 ile devam eder; billing sayfasindan yonetebilirsin.",
-          "Bugun ucret alinmaz. Yenilemeyi istemiyorsan deneme bitmeden iptal edebilirsin."
-        ]
-      : [
-          "Checkout stays on the same account, so you do not need a second login.",
-          "After the 3-day trial, the plan continues at $3.99/week and can be managed from billing.",
-          "There is no charge today. Cancel before the trial ends if you do not want it to renew."
-        ];
-  }, [accessEndsLabel, billingStatus, currentUser?.plan, tr]);
+    if (fixedDuration) return [terms.annualTerms, accessEndsLabel ? `${tr ? "Erişim bitişi" : "Access ends"}: ${accessEndsLabel}` : terms.annual, terms.account];
+    if (billingStatus === "cancelled") return [accessEndsLabel ? `${tr ? "Erişim bitişi" : "Access ends"}: ${accessEndsLabel}` : billingStatusLabel, tr ? "Otomatik yenileme iptal edildi." : "Automatic renewal is cancelled.", terms.portal];
+    if (billingStatus === "on_trial" && !merchantSubscription) return [accessEndsLabel ?? billingStatusLabel, tr ? "Bağlı ücretli abonelik görünmüyor." : "No linked paid subscription is shown.", terms.account];
+    return [terms.trial, terms.annualTerms, terms.account];
+  }, [accessEndsLabel, billingStatus, billingStatusLabel, fixedDuration, merchantSubscription, terms, tr]);
 
   useEffect(() => {
     if (dashboardRole === "teacher") {
@@ -249,15 +231,15 @@ export default function BillingPage() {
             : (tr ? "Planını ve speaking erişimini yönet" : "Manage your plan and speaking access")}
         </h1>
         <p style={{ color: "var(--muted)", maxWidth: 720 }}>
-          {tr ? "Ücretli plan, sadece daha fazla limit değil; ayni gun daha fazla speaking denemesi, daha derin AI geri bildirimi ve daha hizli retry dongusu aciyor." : "A paid plan does more than raise limits. It unlocks same-day retries, deeper AI feedback, and a faster improvement loop."}
+          {tr ? "Free geri bildirim içerir. Plus günlük pratik limitlerini artırır ve PDF rapor indirmeyi açar." : "Free includes feedback. Plus increases daily practice allowances and adds PDF report export."}
         </p>
         <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
           <div className="card billing-current-card" style={{ padding: "1rem" }}>
             <strong>{tr ? "Mevcut plan" : "Current plan"}</strong>
             <p>{currentUser?.plan?.toUpperCase() ?? "FREE"} · {billingStatusLabel}</p>
-            {accessEndsLabel && (billingStatus === "on_trial" || billingStatus === "cancelled") ? (
+            {accessEndsLabel && (fixedDuration || billingStatus === "on_trial" || billingStatus === "cancelled" || billingStatus === "expired") ? (
               <small style={{ color: "var(--muted)", lineHeight: 1.5 }}>
-                {billingStatus === "cancelled"
+                {billingStatus !== "on_trial"
                   ? (tr ? `Erisim bitisi: ${accessEndsLabel}` : `Access ends: ${accessEndsLabel}`)
                   : (tr ? `Deneme bitisi: ${accessEndsLabel}` : `Trial ends: ${accessEndsLabel}`)}
               </small>
@@ -265,7 +247,7 @@ export default function BillingPage() {
           </div>
           <div id="plus-checkout" className="card billing-plus-card" style={{ padding: "1rem", display: "grid", gap: "0.75rem", scrollMarginTop: "7rem" }}>
             <strong>{commerceConfig.plusPlanName} · {commerceConfig.plusMonthlyPrice}/week</strong>
-            <p style={{ margin: 0 }}>{tr ? "Bugun $0 ile basla. Daha fazla speaking yap ve ayni prompt'u geri bildirimle tekrar dene." : "Start for $0 today. Practice more and retry the same prompt with stronger feedback."}</p>
+            <p style={{ margin: 0 }}>{terms.trial}</p>
             {currentUser?.plan === "free" ? (
               <>
                 <TrackedLink
@@ -290,7 +272,7 @@ export default function BillingPage() {
                     });
                   }}
                 >
-                  {tr ? "3 gunluk ucretsiz denemeyi baslat" : "Start the free 3-day trial"}
+                  {tr ? "Haftalık teklifi incele" : "Review weekly offer"}
                 </TrackedLink>
                 <small style={{ color: "var(--muted)", lineHeight: 1.5 }}>
                   {tr
@@ -345,14 +327,14 @@ export default function BillingPage() {
                 <strong>{tr ? "Aylik esit maliyet" : "Monthly equivalent"}</strong>
                 <div style={{ fontSize: "1.35rem", fontWeight: 700, marginTop: "0.35rem" }}>{formatUsd(plusAnnualMonthlyEquivalent)}</div>
                 <p style={{ margin: "0.35rem 0 0", color: "var(--muted)" }}>
-                  {tr ? "Plus yillik icin aylik ortalama" : "Average monthly cost on Plus annual"}
+                  {tr ? "12 ay için tek ödeme; aylık tahsilat yok" : "One payment for 12 months; no monthly charge"}
                 </p>
               </div>
               <div className="card billing-value-card" style={{ padding: "0.95rem" }}>
                 <strong>{tr ? "Bugun" : "Today"}</strong>
                 <div style={{ fontSize: "1.35rem", fontWeight: 700, marginTop: "0.35rem" }}>$0</div>
                 <p style={{ margin: "0.35rem 0 0", color: "var(--muted)" }}>
-                  {tr ? "3 gunluk Plus denemesi icin" : "For the 3-day Plus trial"}
+                  {tr ? "Uygun müşterilerde 3 günlük deneme" : "3-day trial for eligible customers"}
                 </p>
               </div>
             </div>
@@ -419,7 +401,7 @@ export default function BillingPage() {
                   }
                 }}
               >
-                {tr ? "3 gunluk denemeyi baslat" : "Start the 3-day trial"}
+                {tr ? "Haftalık teklifi incele" : "Review weekly offer"}
               </TrackedLink>
               <TrackedLink
                 className="button button-secondary"
@@ -438,7 +420,7 @@ export default function BillingPage() {
                   }
                 }}
               >
-                {tr ? "Uzun hazirlik: Plus yillik" : "Longer prep: Plus annual"}
+                {terms.annual}
               </TrackedLink>
             </>
           ) : currentUser?.plan === "plus" && billingStatus === "active" ? (
@@ -473,7 +455,7 @@ export default function BillingPage() {
                 analyticsEvent="marketing_cta_click"
                 analyticsPath={billingStatus === "cancelled" ? "/app/billing/cancelled/review" : "/app/billing/trial/manage"}
               >
-                {billingStatus === "cancelled"
+                {billingStatus !== "on_trial"
                   ? (tr ? "Plus'i gozden gecir veya surdur" : "Review or resume Plus")
                   : (tr ? "Denemeyi yonet" : "Manage trial")}
               </TrackedLink>
@@ -565,9 +547,7 @@ export default function BillingPage() {
           <div className="card billing-checkout-note" style={{ padding: "1rem" }}>
             <strong style={{ display: "block", marginBottom: "0.45rem" }}>{tr ? "Ilk checkout notu" : "First checkout note"}</strong>
             <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.7 }}>
-              {tr
-                ? "Haftalik Plus icin bugun ucret alinmaz. 3 gunluk deneme bitmeden iptal etmezsen plan haftalik $3.99 ile yenilenir. Yillik secenekte $49.99 checkout sirasinda tek seferde alinir."
-                : "Weekly Plus costs $0 today. Unless cancelled before the 3-day trial ends, it renews at $3.99/week. Annual Plus is charged once at $49.99 during checkout."}
+              {terms.trial} {terms.annualTerms}
             </p>
           </div>
         ) : null}

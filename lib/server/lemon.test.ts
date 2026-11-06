@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   getLemonCheckoutMetadata,
+  getLemonEventId,
   getLemonPaymentDetails,
   getLemonSubscriptionId,
   getLemonTrialEndsAt,
+  getLemonAccessEndsAt,
   resolveBillingStatusFromEvent,
   resolvePlanFromLemonPayload
 } from "@/lib/server/lemon";
@@ -39,7 +41,7 @@ describe("Lemon billing helpers", () => {
       }
     };
 
-    expect(getLemonTrialEndsAt(payload)).toBe("2026-08-30T12:00:00.000Z");
+    expect(getLemonAccessEndsAt(payload)).toBe("2026-08-30T12:00:00.000Z");
   });
 
   it("prefers the paid access end when a cancelled subscription also keeps its old trial date", () => {
@@ -53,7 +55,7 @@ describe("Lemon billing helpers", () => {
       }
     };
 
-    expect(getLemonTrialEndsAt(payload)).toBe("2026-08-30T12:00:00.000Z");
+    expect(getLemonAccessEndsAt(payload)).toBe("2026-08-30T12:00:00.000Z");
   });
 
   it("does not turn a zero-dollar initial trial invoice into active billing", () => {
@@ -172,4 +174,15 @@ describe("Lemon billing helpers", () => {
   it("ignores webhook event types that cannot change billing state", () => {
     expect(resolveBillingStatusFromEvent("customer_updated", {})).toBeNull();
   });
+  it("does not deduplicate a full invoice refund against an earlier partial refund", () => {
+    const payload = (amount: number) => ({meta:{event_name:"subscription_payment_refunded"},data:{type:"subscription-invoices",id:"invoice-1",attributes:{refunded_amount:amount,updated_at:"2026-11-01T00:00:00Z"}}});
+    expect(getLemonEventId(payload(100))).not.toBe(getLemonEventId(payload(399)));
+    expect(getLemonEventId(payload(399))).toBe(getLemonEventId(JSON.parse(JSON.stringify(payload(399), null, 2))));
+  });
+  it("keeps trial and paid cancellation boundaries separate", () => {
+    const payload={data:{attributes:{status:"cancelled",trial_ends_at:"2026-08-03T12:00:00Z",ends_at:"2026-08-30T12:00:00Z"}}};
+    expect(getLemonTrialEndsAt(payload)).toBe("2026-08-03T12:00:00.000Z");
+    expect(getLemonAccessEndsAt(payload)).toBe("2026-08-30T12:00:00.000Z");
+  });
+
 });

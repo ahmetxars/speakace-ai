@@ -1,10 +1,17 @@
-import { cookies } from "next/headers";
+import { getEffectiveLocale } from "@/lib/public-locale";
+import { headers, cookies } from "next/headers";
 import { defaultLanguage, getLanguageDirection, isPublicLanguage, Language } from "@/lib/copy";
 
-export async function getServerLanguage() {
+export async function getServerLanguagePreference() {
   const cookieStore = await cookies();
   const cookieLanguage = cookieStore.get("speakace-language")?.value;
   return isPublicLanguage(cookieLanguage) ? cookieLanguage : defaultLanguage;
+}
+
+export async function getServerLanguage() {
+  const preference = await getServerLanguagePreference();
+  const requestHeaders = await headers();
+  return getEffectiveLocale(preference, requestHeaders.get("x-current-path") ?? "/");
 }
 
 export async function getServerDirection() {
