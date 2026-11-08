@@ -29,8 +29,7 @@ export async function POST(request: Request) {
 
     const result = await consumeOrgInvite({
       inviteCode,
-      userId: profile.id,
-      userEmail: profile.email
+      userId: profile.id
     });
 
     if (!result) {

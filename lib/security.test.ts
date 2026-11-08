@@ -7,7 +7,7 @@
  * 3. Teacher A cannot access Teacher B's students
  * 4. Teachers/admins cannot join classes as students (store-level enforcement)
  * 5. Homework cannot be assigned to students outside a teacher's classes
- * 6. Admin privileges are only granted from explicit DB flags or env config
+ * 6. Admin privileges are only granted from verified, explicitly allowlisted accounts
  * 7. Announcement org-scoping: teacher-audience announcements stay within one school
  */
 
@@ -80,13 +80,13 @@ describe("C-1: signup privilege escalation", () => {
     expect(elevated.isAdmin).toBeFalsy();
   });
 
-  it("adminAccess=true (DB flag) DOES grant isAdmin", () => {
+  it("adminAccess=true keeps school access without granting platform access", () => {
     const profile: MemberProfile = {
       ...createMemberProfile("legit@school.com", "Legit School", { memberType: "school" }),
       adminAccess: true
     };
     const elevated = withAdminPrivileges(profile);
-    expect(elevated.isAdmin).toBe(true);
+    expect(elevated.isAdmin).toBe(false);
   });
 
   it("teacherAccess=true (DB flag) DOES grant isTeacher", () => {
@@ -232,13 +232,13 @@ describe("H-3: class join restrictions", () => {
 // ---------------------------------------------------------------------------
 
 describe("Privilege flag integrity", () => {
-  it("isAdmin does NOT imply isTeacher — school admins and teachers are separate roles", () => {
+  it("organization admin access grants neither platform nor teacher access", () => {
     const profile: MemberProfile = {
       ...createMemberProfile("admin@platform.com", "Admin", { memberType: "school" }),
       adminAccess: true
     };
     const elevated = withAdminPrivileges(profile);
-    expect(elevated.isAdmin).toBe(true);
+    expect(elevated.isAdmin).toBe(false);
     // School admins don't automatically get teacher access — roles are intentionally separate
     expect(elevated.isTeacher).toBeFalsy();
   });
@@ -265,10 +265,12 @@ describe("Privilege flag integrity", () => {
     process.env.ADMIN_EMAILS = "platform-admin@internal.com";
     try {
       const profile = createMemberProfile("platform-admin@internal.com", "Platform Admin", { memberType: "student" });
-      const elevated = withAdminPrivileges(profile);
+      const elevated = withAdminPrivileges({ ...profile, emailVerified: true });
       expect(elevated.isAdmin).toBe(true);
+      expect(withAdminPrivileges({ ...profile, emailVerified: false }).isAdmin).toBe(false);
     } finally {
-      process.env.ADMIN_EMAILS = orig;
+      if (orig === undefined) delete process.env.ADMIN_EMAILS;
+      else process.env.ADMIN_EMAILS = orig;
     }
   });
 });

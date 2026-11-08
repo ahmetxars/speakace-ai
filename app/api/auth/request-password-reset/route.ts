@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   const analyticsId = getPrivacySafeAnalyticsId("password-reset", email);
 
   try {
-    const exposeAuthUrls = process.env.APP_ENV !== "production";
+    const exposeAuthUrls = process.env.NODE_ENV !== "production" && process.env.APP_ENV !== "production";
     const ip = getRequestIp(request);
     const limit = checkRateLimit({
       key: `request-password-reset:${ip}:${email}`,

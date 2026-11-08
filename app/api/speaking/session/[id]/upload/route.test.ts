@@ -6,7 +6,6 @@ const mocks = vi.hoisted(() => ({
   hasOpenAiKey: vi.fn(),
   transcribeAudio: vi.fn(),
   checkRateLimit: vi.fn(),
-  getRequestIp: vi.fn(),
   getSession: vi.fn(),
   reserveSessionAudioUpload: vi.fn(),
   releaseFailedAudioUpload: vi.fn(),
@@ -24,8 +23,7 @@ vi.mock("@/lib/server/openai", () => ({
 }));
 
 vi.mock("@/lib/server/rate-limit", () => ({
-  checkRateLimit: mocks.checkRateLimit,
-  getRequestIp: mocks.getRequestIp
+  checkRateLimit: mocks.checkRateLimit
 }));
 
 vi.mock("@/lib/store", () => ({
@@ -62,7 +60,6 @@ describe("speaking audio upload quota", () => {
     mocks.getAudioPayloadStats.mockReturnValue({ bytes: 24_000 });
     mocks.hasOpenAiKey.mockReturnValue(true);
     mocks.checkRateLimit.mockReturnValue({ allowed: true });
-    mocks.getRequestIp.mockReturnValue("127.0.0.1");
     mocks.getSession.mockResolvedValue(session);
   });
 
@@ -88,6 +85,19 @@ describe("speaking audio upload quota", () => {
     expect(mocks.releaseFailedAudioUpload).toHaveBeenCalledWith("session-1",expect.any(String));
     expect(mocks.uploadSessionAudio).not.toHaveBeenCalled();
     expect(JSON.stringify(await response.json())).not.toContain("sensitive details");
+  });
+
+  it("reuses a completed transcript without calling the provider again", async () => {
+    mocks.getSession.mockResolvedValue({
+      ...session,
+      audioUploaded: true,
+      transcriptSource: "openai",
+      transcript: "An existing transcript."
+    });
+    const response = await POST(uploadRequest(), { params: Promise.resolve({ id: "session-1" }) });
+    expect(response.status).toBe(200);
+    expect((await response.json()).session.transcript).toBe("An existing transcript.");
+    expect(mocks.transcribeAudio).not.toHaveBeenCalled();
   });
 
   it("transcribes after an idempotent usage reservation succeeds", async () => {

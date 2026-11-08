@@ -62,7 +62,7 @@ function isStrongEnoughPassword(password: string) {
 
 export async function ensureSchoolAccountAccess(profile: MemberProfile): Promise<MemberProfile> {
   const resolved = withAdminPrivileges(profile);
-  if (resolved.memberType !== "school") {
+  if (resolved.memberType !== "school" || !resolved.emailVerified) {
     return resolved;
   }
 
@@ -77,16 +77,14 @@ export async function ensureSchoolAccountAccess(profile: MemberProfile): Promise
 
   if (hasDatabaseUrl()) {
     const sql = getSql();
-    const { addOrgMember, createOrganization, getOrganizationById, getOrganizationByOwnerId } = await import("@/lib/server/org-store");
+    const { addOrgMember, createOrganization, getOrgMembership, getOrganizationByOwnerId } = await import("@/lib/server/org-store");
 
     const ownedOrg = await getOrganizationByOwnerId(resolved.id);
     let org = ownedOrg;
 
     if (!org && resolved.organizationId) {
-      org = await getOrganizationById(resolved.organizationId);
-      if (org) {
-        await addOrgMember({ orgId: org.id, userId: resolved.id, role: "admin", invitedBy: resolved.id });
-      }
+      const membership = await getOrgMembership(resolved.organizationId, resolved.id);
+      return { ...resolved, adminAccess: membership?.role === "owner" || membership?.role === "admin" };
     }
 
     if (!org) {
@@ -129,7 +127,7 @@ export function getSessionCookieName() {
 export function getSessionCookieOptions(expires: Date) {
   return {
     httpOnly: true,
-    secure: process.env.APP_ENV === "production",
+    secure: process.env.NODE_ENV === "production" || process.env.APP_ENV === "production",
     // OAuth returns on a top-level GET; Lax allows that handoff while continuing
     // to withhold the session from cross-site subrequests and unsafe methods.
     sameSite: "lax" as const,
@@ -167,6 +165,9 @@ export async function signUpWithPassword(input: {
   if (requestedMemberType === "school" && !input.organizationName?.trim()) {
     throw new Error("School accounts require an organization name.");
   }
+  if (isAdminEmail(normalizedEmail)) {
+    throw new Error("This account cannot be created through password signup.");
+  }
   const passwordHash = await hash(input.password, 12);
   const purchasedPlan = await getActiveBillingPlanForEmail(normalizedEmail);
   const referral = await validateReferralCode(input.referralCode);
@@ -194,7 +195,6 @@ export async function signUpWithPassword(input: {
     trialEndsAt,
     referralCodeUsed: referral?.code ?? (inviteReferrer ? buildInviteReferralCode(inviteReferrer.id) : null)
   });
-  const autoVerified = isAdminEmail(normalizedEmail);
 
   if (hasDatabaseUrl()) {
     await ensureAccountConsentSchema();
@@ -214,7 +214,7 @@ export async function signUpWithPassword(input: {
       )
       values (
         ${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.memberType}, ${profile.organizationName ?? null},
-        ${profile.plan}, ${passwordHash}, ${autoVerified}, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false},
+        ${profile.plan}, ${passwordHash}, false, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false},
         ${profile.billingStatus ?? "free"}, ${profile.trialEndsAt ?? null}, ${profile.referralCodeUsed ?? null}, ${profile.createdAt},
         ${input.consent?.legalAccepted ? new Date().toISOString() : null},
         ${input.consent?.legalAccepted ? new Date().toISOString() : null},
@@ -231,9 +231,9 @@ export async function signUpWithPassword(input: {
     return ensureSchoolAccountAccess(rows[0]);
   }
 
-  await upsertMember({ ...profile, emailVerified: autoVerified });
+  await upsertMember(profile);
   getMemoryAuthStore().passwordHashes.set(profile.id, passwordHash);
-  return ensureSchoolAccountAccess({ ...profile, emailVerified: autoVerified });
+  return profile;
 }
 
 export async function signUpWithGoogle(input: {
@@ -265,16 +265,14 @@ export async function signUpWithGoogle(input: {
     : inviteReferrer
       ? new Date(Date.now() + inviteTrialDays * 24 * 60 * 60 * 1000).toISOString()
       : null;
-  const autoAdmin = isAdminEmail(normalizedEmail);
   const profile = withAdminPrivileges({
     ...createMemberProfile(normalizedEmail, input.name, {
       memberType: requestedMemberType,
       organizationName: input.organizationName?.trim() || null
     }),
     // teacherAccess / adminAccess not granted from self-selected memberType (C-1 fix).
-    // autoAdmin is still allowed because it comes from the server-side ADMIN_EMAILS env var.
     teacherAccess: false,
-    adminAccess: autoAdmin,
+    adminAccess: false,
     plan: purchasedPlan ?? (referral || inviteReferrer ? "plus" : "free"),
     billingStatus: referral || inviteReferrer ? "on_trial" : purchasedPlan ? "active" : "free",
     trialEndsAt,
@@ -358,12 +356,8 @@ export async function signInWithPassword(input: { email: string; password: strin
     if (!isValid) {
       throw new Error("Invalid email or password.");
     }
-    if (!user.emailVerified && !isAdminEmail(normalizedEmail)) {
+    if (!user.emailVerified) {
       throw new Error("Please verify your email before signing in.");
-    }
-    if (!user.emailVerified && isAdminEmail(normalizedEmail)) {
-      await sql`update users set email_verified = true where id = ${user.id}`;
-      user.emailVerified = true;
     }
 
     const profile = withAdminPrivileges({
@@ -387,7 +381,8 @@ export async function signInWithPassword(input: { email: string; password: strin
     });
     const normalizedProfile = await ensureSchoolAccountAccess(profile);
     await recordAuthActivity({ userId: normalizedProfile.id, eventType: "signin", meta: { source: "password" } });
-    return normalizedProfile;
+    const session = await createAuthSession(normalizedProfile.id, user.password_hash);
+    return { profile: normalizedProfile, session };
   }
 
   const profile = await findMemberByEmail(normalizedEmail);
@@ -404,15 +399,13 @@ export async function signInWithPassword(input: { email: string; password: strin
   if (!isValid) {
     throw new Error("Invalid email or password.");
   }
-  if (!profile.emailVerified && !isAdminEmail(normalizedEmail)) {
+  if (!profile.emailVerified) {
     throw new Error("Please verify your email before signing in.");
   }
-  if (!profile.emailVerified && isAdminEmail(normalizedEmail)) {
-    await upsertMember({ ...profile, emailVerified: true });
-    return withAdminPrivileges({ ...profile, emailVerified: true });
-  }
 
-  return ensureSchoolAccountAccess(profile);
+  const normalizedProfile = await ensureSchoolAccountAccess(profile);
+  const session = await createAuthSession(normalizedProfile.id, storedHash);
+  return { profile: normalizedProfile, session };
 }
 
 export async function applyInviteReferralToUser(input: {
@@ -483,18 +476,27 @@ export async function applyInviteReferralToUser(input: {
   return true;
 }
 
-export async function createAuthSession(userId: string) {
+export async function createAuthSession(userId: string, expectedPasswordHash?: string) {
   const token = randomBytes(32).toString("hex");
   const tokenHash = sha256(token);
   const expiresAt = buildExpiryDate();
 
   if (hasDatabaseUrl()) {
     const sql = getSql();
-    await sql`
+    const [inserted] = await sql`
       insert into auth_sessions (id, user_id, token_hash, expires_at)
-      values (${crypto.randomUUID()}, ${userId}, ${tokenHash}, ${expiresAt.toISOString()})
+      select ${crypto.randomUUID()}, id, ${tokenHash}, ${expiresAt.toISOString()}::timestamptz
+      from users
+      where id = ${userId} and email_verified = true
+        and (${expectedPasswordHash ?? null}::text is null or password_hash = ${expectedPasswordHash ?? null})
+      for share
+      returning id
     `;
+    if (!inserted) throw new Error("Could not sign in. Please try again.");
   } else {
+    if (expectedPasswordHash && getMemoryAuthStore().passwordHashes.get(userId) !== expectedPasswordHash) {
+      throw new Error("Could not sign in. Please try again.");
+    }
     getMemoryAuthStore().sessions.set(tokenHash, {
       userId,
       expiresAt: expiresAt.toISOString()
@@ -532,7 +534,7 @@ export async function getAuthenticatedUser(sessionToken: string | undefined) {
         u.teacher_access as "teacherAccess", u.created_at as "createdAt"
       from auth_sessions s
       inner join users u on u.id = s.user_id
-      where s.token_hash = ${tokenHash} and s.expires_at > now()
+      where s.token_hash = ${tokenHash} and s.expires_at > now() and u.email_verified = true
       limit 1
     `;
 
@@ -550,7 +552,7 @@ export async function getAuthenticatedUser(sessionToken: string | undefined) {
   }
 
   const profile = await getMember(session.userId);
-  return profile ? ensureSchoolAccountAccess(profile) : null;
+  return profile?.emailVerified ? ensureSchoolAccountAccess(profile) : null;
 }
 
 export async function signOutSession(sessionToken: string | undefined) {
@@ -595,8 +597,15 @@ async function findMemberByEmail(email: string) {
   return null;
 }
 
-async function createAuthToken(input: { userId: string; type: "verify_email" | "reset_password"; ttlMs: number }) {
-  const token = randomBytes(32).toString("hex");
+async function createAuthToken(input: {
+  userId: string;
+  type: "verify_email" | "reset_password";
+  ttlMs: number;
+  schoolInviteCode?: string;
+}) {
+  const nonce = randomBytes(32).toString("hex");
+  const invite = input.schoolInviteCode?.trim().toLowerCase() ?? "";
+  const token = input.type === "verify_email" && /^[a-f0-9]{32}$/.test(invite) ? `${nonce}.${invite}` : nonce;
   const tokenHash = sha256(token);
   const expiresAt = buildTokenExpiryDate(input.ttlMs);
 
@@ -617,11 +626,11 @@ async function createAuthToken(input: { userId: string; type: "verify_email" | "
   return { token, expiresAt };
 }
 
-async function consumeAuthToken(token: string, type: "verify_email" | "reset_password") {
+async function consumeAuthToken(token: string, type: "verify_email" | "reset_password", connection?: ReturnType<typeof getSql>) {
   const tokenHash = sha256(token);
 
   if (hasDatabaseUrl()) {
-    const sql = getSql();
+    const sql = connection ?? getSql();
     const rows = await sql<Array<{ user_id: string }>>`
       update auth_tokens
       set used_at = now()
@@ -670,7 +679,7 @@ async function getUnverifiedUserByEmail(email: string) {
   return withAdminPrivileges(profile);
 }
 
-export async function createEmailVerificationFlow(email: string, nextPath?: string | null) {
+export async function createEmailVerificationFlow(email: string, nextPath?: string | null, schoolInviteCode?: string) {
   const user = await getUnverifiedUserByEmail(email);
   if (!user) {
     return { ok: true as const };
@@ -679,7 +688,8 @@ export async function createEmailVerificationFlow(email: string, nextPath?: stri
   const { token } = await createAuthToken({
     userId: user.id,
     type: "verify_email",
-    ttlMs: VERIFY_TOKEN_TTL_MS
+    ttlMs: VERIFY_TOKEN_TTL_MS,
+    schoolInviteCode
   });
 
   const verificationParams = new URLSearchParams({ verify: token });
@@ -714,22 +724,84 @@ export async function createEmailVerificationFlow(email: string, nextPath?: stri
   };
 }
 
-export async function verifyEmailToken(token: string) {
-  const userId = await consumeAuthToken(token, "verify_email");
-  if (!userId) {
-    throw new Error("Verification link is invalid or expired.");
-  }
+// Password reset and identity linking lock the user before changing tokens or credentials.
+async function lockAuthTokenUser(sql: ReturnType<typeof getSql>, token: string, type: "verify_email" | "reset_password") {
+  const [user] = await sql<Array<{ id: string }>>`
+    select u.id
+    from users u
+    join auth_tokens t on t.user_id = u.id
+    where t.token_hash = ${sha256(token)} and t.token_type = ${type}
+      and t.used_at is null and t.expires_at > now()
+    for update of u
+  `;
+  return user?.id;
+}
 
+function revokeMemoryCredentials(userId: string) {
+  const store = getMemoryAuthStore();
+  for (const [key, session] of store.sessions) if (session.userId === userId) store.sessions.delete(key);
+  for (const [key, token] of store.tokens) if (token.userId === userId) store.tokens.delete(key);
+}
+
+export async function claimUnverifiedGoogleAccount(userId: string) {
   if (hasDatabaseUrl()) {
     const sql = getSql();
-    await sql`update users set email_verified = ${true} where id = ${userId}`;
-  } else {
-    const profile = await getMember(userId);
-    if (profile) {
-      await upsertMember({ ...profile, emailVerified: true });
-    }
+    await sql.begin(async (transaction) => {
+      const tx = transaction as unknown as typeof sql;
+      const [claimed] = await tx<Array<{ id: string }>>`
+        update users set email_verified = true, password_hash = null
+        where id = ${userId} and email_verified = false
+        returning id
+      `;
+      if (!claimed) return;
+      await tx`delete from auth_sessions where user_id = ${userId}`;
+      await tx`delete from admin_panel_sessions where admin_user_id = ${userId}`;
+      await tx`delete from auth_tokens where user_id = ${userId}`;
+    });
+    return;
   }
 
+  const profile = await getMember(userId);
+  if (!profile || profile.emailVerified) return;
+  getMemoryAuthStore().passwordHashes.delete(userId);
+  revokeMemoryCredentials(userId);
+  await upsertMember({ ...profile, emailVerified: true });
+}
+
+export async function verifyEmailToken(token: string) {
+  let userId: string | null;
+  if (hasDatabaseUrl()) {
+    const sql = getSql();
+    userId = await sql.begin(async (transaction) => {
+      const tx = transaction as unknown as typeof sql;
+      if (!await lockAuthTokenUser(tx, token, "verify_email")) return null;
+      const verifiedId = await consumeAuthToken(token, "verify_email", tx);
+      if (!verifiedId) return null;
+      await tx`update users set email_verified = true where id = ${verifiedId}`;
+      await tx`delete from auth_tokens where user_id = ${verifiedId} and token_type = 'verify_email'`;
+      return verifiedId;
+    });
+  } else {
+    userId = await consumeAuthToken(token, "verify_email");
+    if (userId) {
+      const profile = await getMember(userId);
+      if (profile) await upsertMember({ ...profile, emailVerified: true });
+      for (const [key, entry] of getMemoryAuthStore().tokens) {
+        if (entry.userId === userId && entry.type === "verify_email") getMemoryAuthStore().tokens.delete(key);
+      }
+    }
+  }
+  if (!userId) throw new Error("Verification link is invalid or expired.");
+
+  const inviteCode = token.split(".")[1];
+  if (inviteCode && hasDatabaseUrl()) {
+    try {
+      const { consumeOrgInvite } = await import("@/lib/server/org-store");
+      await consumeOrgInvite({ inviteCode, userId, requiredRole: "teacher" });
+    } catch {
+      console.error("Teacher invitation could not be redeemed during verification.");
+    }
+  }
   return { ok: true as const, userId };
 }
 
@@ -790,23 +862,36 @@ export async function resetPasswordWithToken(input: { token: string; password: s
     throw new Error("Password must be at least 8 characters long and include at least 1 number.");
   }
 
-  const userId = await consumeAuthToken(input.token, "reset_password");
-  if (!userId) {
-    throw new Error("Reset link is invalid or expired.");
-  }
-
-  const passwordHash = await hash(input.password, 12);
+  if (!/^[a-f0-9]{64}$/.test(input.token)) throw new Error("Reset link is invalid or expired.");
 
   if (hasDatabaseUrl()) {
     const sql = getSql();
-    await sql`
-      update users
-      set password_hash = ${passwordHash}
-      where id = ${userId}
+    const [candidate] = await sql<Array<{ user_id: string }>>`
+      select user_id from auth_tokens
+      where token_hash = ${sha256(input.token)} and token_type = 'reset_password'
+        and used_at is null and expires_at > now()
     `;
+    if (!candidate) throw new Error("Reset link is invalid or expired.");
+    const passwordHash = await hash(input.password, 12);
+    await sql.begin(async (transaction) => {
+      const tx = transaction as unknown as typeof sql;
+      if (!await lockAuthTokenUser(tx, input.token, "reset_password")) throw new Error("Reset link is invalid or expired.");
+      const userId = await consumeAuthToken(input.token, "reset_password", tx);
+      if (!userId) throw new Error("Reset link is invalid or expired.");
+      await tx`update users set password_hash = ${passwordHash}, email_verified = true where id = ${userId}`;
+      await tx`delete from auth_sessions where user_id = ${userId}`;
+      await tx`delete from admin_panel_sessions where admin_user_id = ${userId}`;
+      await tx`delete from auth_tokens where user_id = ${userId}`;
+    });
     return { ok: true as const };
   }
 
+  const userId = await consumeAuthToken(input.token, "reset_password");
+  if (!userId) throw new Error("Reset link is invalid or expired.");
+  const passwordHash = await hash(input.password, 12);
+  revokeMemoryCredentials(userId);
   getMemoryAuthStore().passwordHashes.set(userId, passwordHash);
+  const profile = await getMember(userId);
+  if (profile) await upsertMember({ ...profile, emailVerified: true });
   return { ok: true as const };
 }

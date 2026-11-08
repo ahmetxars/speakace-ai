@@ -1,6 +1,7 @@
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { AnnouncementItem, MemberProfile } from "@/lib/types";
 import { listStudentClasses, listTeacherClasses } from "@/lib/classroom-store";
+import { getOrgForAdmin } from "@/lib/server/org-store";
 
 type MemoryAnnouncementStore = {
   items: Map<string, AnnouncementItem>;
@@ -69,6 +70,14 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
       : (await listStudentClasses(profile.id)).map((item) => item.classId);
 
     const orgId = profile.organizationId ?? null;
+    const teacherAudience = sql`
+      audience_type = 'teacher' and organization_id = ${orgId}
+      and exists (
+        select 1 from organization_memberships m
+        where m.user_id = ${profile.id} and m.organization_id = announcements.organization_id
+          and (m.role in ('owner', 'admin') or (m.role = 'teacher' and m.added_by is not null))
+      )
+    `;
 
     const announcementCols = sql`
       id,
@@ -81,11 +90,12 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
       created_at as "createdAt"
     `;
 
-    if (profile.isAdmin || profile.adminAccess) {
+    const managedOrg = profile.adminAccess ? await getOrgForAdmin(profile.id) : null;
+    if (managedOrg) {
       const rows = (await sql`
         select ${announcementCols}
         from announcements
-        where organization_id = ${orgId}
+        where organization_id = ${managedOrg.id}
         order by created_at desc
         limit 40
       `) as unknown as AnnouncementItem[];
@@ -97,7 +107,7 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
         ? ((await sql`
             select ${announcementCols}
             from announcements
-            where audience_type = 'teacher' and organization_id = ${orgId}
+            where ${teacherAudience}
             order by created_at desc
             limit 20
           `) as unknown as AnnouncementItem[])
@@ -115,7 +125,7 @@ export async function listAnnouncementsForUser(profile: MemberProfile): Promise<
       ? ((await sql`
           select ${announcementCols}
           from announcements
-          where (audience_type = 'teacher' and organization_id = ${orgId})
+          where (${teacherAudience})
             or class_id = any(${classIds})
           order by created_at desc
           limit 20

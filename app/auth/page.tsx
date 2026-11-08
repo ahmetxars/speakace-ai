@@ -448,7 +448,8 @@ function AuthPageInner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
-          next: safeNext
+          next: safeNext,
+          schoolInviteCode
         })
       });
       const data = (await response.json()) as { error?: string; emailSent?: boolean };

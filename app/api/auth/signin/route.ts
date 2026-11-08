@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
-  createAuthSession,
   getSessionCookieName,
   getSessionCookieOptions,
   signInWithPassword
@@ -30,11 +29,10 @@ export async function POST(request: Request) {
       return rateLimitResponse(limit.retryAfterSeconds, "Too many sign-in attempts. Please try again later.");
     }
 
-    const profile = await signInWithPassword({
+    const { profile, session } = await signInWithPassword({
       email,
       password: body.password ?? ""
     });
-    const session = await createAuthSession(profile.id);
     posthog.identify({ distinctId: profile.id });
     posthog.capture({ distinctId: profile.id, event: "user_signed_in" });
     const cookieStore = await cookies();

@@ -9,11 +9,8 @@ import {
   signUpWithPassword
 } from "@/lib/server/auth";
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
-import { addOrgMember, getOrganizationByJoinCode } from "@/lib/server/org-store";
-import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { ANALYTICS_VISITOR_COOKIE, normalizeAnalyticsVisitorId } from "@/lib/analytics-policy";
-import { isAdminEmail } from "@/lib/admin";
 import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { getPrivacySafeAnalyticsId } from "@/lib/server/analytics-identity";
@@ -55,19 +52,6 @@ export async function POST(request: Request) {
       inviteReferrerId: body.inviteReferrerId ?? null
     });
     let classJoinMessage: string | undefined;
-    if (profile.memberType === "teacher" && typeof body.schoolInviteCode === "string" && body.schoolInviteCode.trim() && hasDatabaseUrl()) {
-      try {
-        const org = await getOrganizationByJoinCode(body.schoolInviteCode.trim());
-        if (org) {
-          await addOrgMember({ orgId: org.id, userId: profile.id, role: "teacher" });
-          await getSql()`update users set teacher_access = true where id = ${profile.id}`;
-          profile.teacherAccess = true;
-          classJoinMessage = `Joined ${org.name} as a teacher.`;
-        }
-      } catch {
-        // non-blocking — signup still succeeds even if org join fails
-      }
-    }
     if (profile.memberType === "student" && typeof body.classCode === "string" && body.classCode.trim()) {
       try {
         const joinResult = await joinTeacherClassByCode({
@@ -82,7 +66,6 @@ export async function POST(request: Request) {
         classJoinMessage = error instanceof Error ? error.message : "Class code could not be applied.";
       }
     }
-    const autoVerified = isAdminEmail(profile.email);
     const cookieStore = await cookies();
     const visitorId = normalizeAnalyticsVisitorId(cookieStore.get(ANALYTICS_VISITOR_COOKIE)?.value);
     const rawPath = typeof body.attributionPath === "string"
@@ -108,12 +91,13 @@ export async function POST(request: Request) {
 
     const verification = await createEmailVerificationFlow(
       profile.email,
-      resolveSafeAppRedirect(typeof body.next === "string" ? body.next : null)
+      resolveSafeAppRedirect(typeof body.next === "string" ? body.next : null),
+      profile.memberType === "teacher" && typeof body.schoolInviteCode === "string" ? body.schoolInviteCode : undefined
     );
     cookieStore.set(getSessionCookieName(), "", getSessionCookieOptions(new Date(0)));
     return NextResponse.json({
       profile,
-      verificationRequired: !autoVerified,
+      verificationRequired: true,
       emailSent: "emailSent" in verification ? verification.emailSent : false,
       deliveryUnavailable:
         "deliveryUnavailable" in verification ? verification.deliveryUnavailable : false,

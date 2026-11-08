@@ -7,12 +7,11 @@ import { resolveGoogleCallbackRedirect } from "@/lib/auth-redirect";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { ANALYTICS_VISITOR_COOKIE, normalizeAnalyticsVisitorId } from "@/lib/analytics-policy";
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
-import { addOrgMember, getOrganizationByJoinCode } from "@/lib/server/org-store";
+import { consumeOrgInvite } from "@/lib/server/org-store";
 import { markOnboardingEmailSent, sendOnboardingEmail } from "@/lib/server/email-sequences";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
-import { createAuthSession, ensureSchoolAccountAccess, getSessionCookieName, getSessionCookieOptions, signUpWithGoogle } from "@/lib/server/auth";
+import { claimUnverifiedGoogleAccount, createAuthSession, ensureSchoolAccountAccess, getSessionCookieName, getSessionCookieOptions, signUpWithGoogle } from "@/lib/server/auth";
 import { recordAuthActivity } from "@/lib/server/admin-panel";
-import { upsertMember } from "@/lib/store";
 import { MemberProfile } from "@/lib/types";
 
 /**
@@ -46,7 +45,7 @@ function signGoogleState(payload: string, secret: string) {
 function clearGoogleOAuthStateCookie(response: NextResponse) {
   response.cookies.set(GOOGLE_OAUTH_STATE_COOKIE, "", {
     httpOnly: true,
-    secure: process.env.APP_ENV === "production",
+    secure: process.env.NODE_ENV === "production" || process.env.APP_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 0
@@ -99,6 +98,7 @@ async function findOrCreateGoogleUser(input: {
     const existing = await sql<MemberProfile[]>`
       select
         id, email, name, role, member_type as "memberType", organization_name as "organizationName",
+        organization_id as "organizationId",
         case
           when billing_status = 'on_trial' and trial_ends_at is not null and trial_ends_at <= now() then 'free'
           else plan
@@ -116,9 +116,8 @@ async function findOrCreateGoogleUser(input: {
     `;
 
     if (existing[0]) {
-      // User exists — ensure email is verified (Google already verified it)
       if (!existing[0].emailVerified) {
-        await sql`update users set email_verified = true where email = ${normalizedEmail}`;
+        await claimUnverifiedGoogleAccount(existing[0].id);
         existing[0].emailVerified = true;
       }
       return { profile: await ensureSchoolAccountAccess(existing[0]), isNewUser: false };
@@ -148,7 +147,7 @@ async function findOrCreateGoogleUser(input: {
     for (const profile of members.values()) {
       if (profile.email.toLowerCase() === normalizedEmail) {
         if (!profile.emailVerified) {
-          await upsertMember({ ...profile, emailVerified: true });
+          await claimUnverifiedGoogleAccount(profile.id);
           return { profile: await ensureSchoolAccountAccess({ ...profile, emailVerified: true }), isNewUser: false };
         }
         return { profile: await ensureSchoolAccountAccess(profile), isNewUser: false };
@@ -234,7 +233,7 @@ export async function GET(request: Request) {
 
     const googleUser = await getGoogleUserInfo(tokens.access_token);
 
-    if (!googleUser.email) {
+    if (typeof googleUser.email !== "string" || !googleUser.email || googleUser.email_verified !== true) {
       return clearGoogleOAuthStateCookie(NextResponse.redirect(`${siteUrl}/auth?error=google_no_email`));
     }
 
@@ -285,12 +284,7 @@ export async function GET(request: Request) {
     }
     if (isNewUser && schoolInviteCode && profile.memberType === "teacher" && hasDatabaseUrl()) {
       try {
-        const org = await getOrganizationByJoinCode(schoolInviteCode);
-        if (org) {
-          await addOrgMember({ orgId: org.id, userId: profile.id, role: "teacher" });
-          await getSql()`update users set teacher_access = true where id = ${profile.id}`;
-          profile.teacherAccess = true;
-        }
+        await consumeOrgInvite({ inviteCode: schoolInviteCode, userId: profile.id, requiredRole: "teacher" });
       } catch {
         // Non-blocking.
       }

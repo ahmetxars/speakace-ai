@@ -199,8 +199,13 @@ export async function createWritingSession(input: {
   return { session };
 }
 
+export const MAX_WRITING_DRAFT_LENGTH = 20_000;
+
 export async function submitWritingDraft(input: { sessionId: string; draftText: string; minutesSpent?: number }) {
   const draftText = input.draftText.trim();
+  if (draftText.length > MAX_WRITING_DRAFT_LENGTH) {
+    return { error: "Writing drafts must be at most 20,000 characters.", status: 400 as const };
+  }
   const wordCount = countWords(draftText);
   if (wordCount < 40) {
     return { error: "Please write a fuller draft before submitting.", status: 400 as const };

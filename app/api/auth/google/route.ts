@@ -82,7 +82,7 @@ export async function GET(request: Request) {
   const response = NextResponse.redirect(authUrl);
   response.cookies.set(GOOGLE_OAUTH_STATE_COOKIE, nonce, {
     httpOnly: true,
-    secure: process.env.APP_ENV === "production",
+    secure: process.env.NODE_ENV === "production" || process.env.APP_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: GOOGLE_OAUTH_STATE_TTL_SECONDS

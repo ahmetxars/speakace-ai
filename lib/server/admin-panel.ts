@@ -1,6 +1,6 @@
 import { compare } from "bcryptjs";
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { isAdminEmail } from "@/lib/admin";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { isPlatformAdmin } from "@/lib/admin";
 import { getAiUsageSummary } from "@/lib/server/ai-usage";
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
 import {
@@ -21,6 +21,10 @@ function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function equalCredential(left: string, right: string) {
+  return timingSafeEqual(Buffer.from(sha256(left), "hex"), Buffer.from(sha256(right), "hex"));
+}
+
 function buildExpiryDate() {
   return new Date(Date.now() + ADMIN_SESSION_TTL_MS);
 }
@@ -32,7 +36,7 @@ export function getAdminSessionCookieName() {
 export function getAdminSessionCookieOptions(expires: Date) {
   return {
     httpOnly: true,
-    secure: process.env.APP_ENV === "production",
+    secure: process.env.NODE_ENV === "production" || process.env.APP_ENV === "production",
     sameSite: "strict" as const,
     path: "/",
     expires
@@ -56,33 +60,40 @@ export function getConfiguredAdminCredentials() {
   return username && password ? { username, password } : null;
 }
 
+function getConfigSessionHash(token: string) {
+  const config = getConfiguredAdminCredentials();
+  return config ? createHmac("sha256", config.password).update(config.username).update("\0").update(token).digest("hex") : null;
+}
+
 export async function createAdminPanelSession(input: {
-  adminUserId?: string | null;
+  adminUserId: string | null;
   adminLabel: string;
   authMode: "config" | "member";
+  passwordHash?: string;
 }) {
   const token = randomBytes(32).toString("hex");
-  const tokenHash = sha256(token);
   const expiresAt = buildExpiryDate();
-
-  if (!hasDatabaseUrl()) {
-    return { token, expiresAt };
-  }
-
   const sql = getSql();
-  await sql`
-    insert into admin_panel_sessions (id, admin_user_id, admin_label, auth_mode, token_hash, expires_at, created_at)
-    values (
-      ${crypto.randomUUID()},
-      ${input.adminUserId ?? null},
-      ${input.adminLabel},
-      ${input.authMode},
-      ${tokenHash},
-      ${expiresAt.toISOString()},
-      ${new Date().toISOString()}
-    )
-  `;
+  const tokenHash = input.authMode === "config" ? getConfigSessionHash(token) : sha256(token);
+  if (!tokenHash) throw new Error("Admin credentials changed. Please sign in again.");
 
+  if (input.authMode === "config") {
+    await sql`
+      insert into admin_panel_sessions (id, admin_user_id, admin_label, auth_mode, token_hash, expires_at)
+      values (${crypto.randomUUID()}, null, ${input.adminLabel}, 'config', ${tokenHash}, ${expiresAt.toISOString()})
+    `;
+  } else {
+    const [inserted] = await sql`
+      insert into admin_panel_sessions (id, admin_user_id, admin_label, auth_mode, token_hash, expires_at)
+      select ${crypto.randomUUID()}, id, ${input.adminLabel}, 'member', ${tokenHash}, ${expiresAt.toISOString()}::timestamptz
+      from users
+      where id = ${input.adminUserId} and role = 'member'
+        and email_verified = true and password_hash = ${input.passwordHash ?? null}
+      for share
+      returning id
+    `;
+    if (!inserted) throw new Error("Admin credentials changed. Please sign in again.");
+  }
   return { token, expiresAt };
 }
 
@@ -93,19 +104,38 @@ export async function getAdminPanelSession(sessionToken: string | undefined): Pr
 
   const sql = getSql();
   const tokenHash = sha256(sessionToken);
-  const rows = await sql<AdminPanelSession[]>`
+  const rows = await sql<Array<AdminPanelSession & { email: string | null; emailVerified: boolean | null }>>`
     select
-      admin_user_id as "adminUserId",
-      admin_label as "adminLabel",
-      auth_mode as "authMode",
-      expires_at as "expiresAt"
-    from admin_panel_sessions
-    where token_hash = ${tokenHash}
-      and expires_at > now()
+      s.admin_user_id as "adminUserId",
+      s.admin_label as "adminLabel",
+      s.auth_mode as "authMode",
+      s.expires_at as "expiresAt",
+      u.email,
+      u.email_verified as "emailVerified"
+    from admin_panel_sessions s
+    left join users u on u.id = s.admin_user_id and u.role = 'member'
+    where ((s.auth_mode = 'member' and s.token_hash = ${tokenHash})
+      or (s.auth_mode = 'config' and s.token_hash = ${getConfigSessionHash(sessionToken)}))
+      and s.expires_at > now()
     limit 1
   `;
 
-  return rows[0] ?? null;
+  const session = rows[0];
+  if (!session) return null;
+  if (session.authMode === "member") {
+    if (!session.email || !isPlatformAdmin({ email: session.email, emailVerified: session.emailVerified === true })) {
+      return null;
+    }
+  } else if (getConfiguredAdminCredentials()?.username !== session.adminLabel) {
+    return null;
+  }
+
+  return {
+    adminUserId: session.adminUserId,
+    adminLabel: session.adminLabel,
+    authMode: session.authMode,
+    expiresAt: session.expiresAt
+  };
 }
 
 export async function clearAdminPanelSession(sessionToken: string | undefined) {
@@ -115,7 +145,7 @@ export async function clearAdminPanelSession(sessionToken: string | undefined) {
 
   const sql = getSql();
   const tokenHash = sha256(sessionToken);
-  await sql`delete from admin_panel_sessions where token_hash = ${tokenHash}`;
+  await sql`delete from admin_panel_sessions where token_hash in (${tokenHash}, ${getConfigSessionHash(sessionToken)})`;
 }
 
 export async function authenticateAdminPanel(input: { identifier: string; password: string }) {
@@ -127,12 +157,8 @@ export async function authenticateAdminPanel(input: { identifier: string; passwo
 
   const configured = getConfiguredAdminCredentials();
   if (configured) {
-    const usernameMatch =
-      identifier.length === configured.username.length &&
-      timingSafeEqual(Buffer.from(identifier, "utf8"), Buffer.from(configured.username, "utf8"));
-    const passwordMatch =
-      password.length === configured.password.length &&
-      timingSafeEqual(Buffer.from(password, "utf8"), Buffer.from(configured.password, "utf8"));
+    const usernameMatch = equalCredential(identifier, configured.username);
+    const passwordMatch = equalCredential(password, configured.password);
     if (usernameMatch && passwordMatch) {
       return {
         adminUserId: null,
@@ -153,16 +179,16 @@ export async function authenticateAdminPanel(input: { identifier: string; passwo
       email: string;
       name: string;
       password_hash: string | null;
-      admin_access: boolean;
+      emailVerified: boolean;
     }>
   >`
-    select id, email, name, password_hash, admin_access
+    select id, email, name, password_hash, email_verified as "emailVerified"
     from users
-    where lower(email) = ${identifier.toLowerCase()}
+    where lower(email) = ${identifier.toLowerCase()} and role = 'member'
     limit 1
   `;
   const user = rows[0];
-  if (!user?.password_hash) {
+  if (!user?.password_hash || !isPlatformAdmin(user)) {
     throw new Error("Invalid admin credentials.");
   }
 
@@ -171,12 +197,9 @@ export async function authenticateAdminPanel(input: { identifier: string; passwo
     throw new Error("Invalid admin credentials.");
   }
 
-  if (!user.admin_access && !isAdminEmail(user.email)) {
-    throw new Error("This account does not have admin access.");
-  }
-
   return {
     adminUserId: user.id,
+    passwordHash: user.password_hash,
     adminLabel: user.name || user.email,
     authMode: "member" as const
   };

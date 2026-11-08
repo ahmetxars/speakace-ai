@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   processBillingEvent: vi.fn(),
   applyInstitutionBillingByUserId: vi.fn(),
   getMember: vi.fn(),
+  getOrgForAdmin: vi.fn(),
   getMemberByEmail: vi.fn(),
   getMemberEmailById: vi.fn(),
   sendPurchaseAccountClaimEmail: vi.fn(),
@@ -17,6 +18,7 @@ vi.mock("@/lib/store", () => ({
   getMemberByEmail: mocks.getMemberByEmail,
   getMemberEmailById: mocks.getMemberEmailById,
 }));
+vi.mock("@/lib/server/org-store", () => ({ getOrgForAdmin: mocks.getOrgForAdmin }));
 vi.mock("@/lib/posthog-server", () => ({
   getPostHogClient: () => ({ capture: mocks.posthogCapture }),
 }));
@@ -86,6 +88,30 @@ beforeEach(() => {
   mocks.processBillingEvent.mockResolvedValue(true);
 });
 describe("verified Lemon webhook processing", () => {
+  it("ignores customer-supplied institution claims on an individual purchase", async () => {
+    const payload = order();
+    Object.assign(payload.meta.custom_data, { type: "institution", plan: "campus", seat_count: "9999" });
+    expect((await POST(request(payload))).status).toBe(200);
+    expect(mocks.applyInstitutionBillingByUserId).not.toHaveBeenCalled();
+    expect(mocks.processBillingEvent).toHaveBeenCalledWith(expect.objectContaining({ plan: "plus" }));
+  });
+
+  it("derives institutional access from a configured merchant variant", async () => {
+    vi.stubEnv("LEMON_SQUEEZY_INSTITUTION_STARTER_VARIANT_ID", "98765");
+    mocks.getOrgForAdmin.mockResolvedValue({ id: "school-1" });
+    try {
+      const payload = order();
+      Object.assign(payload.meta.custom_data, { plan: "campus", seat_count: "9999" });
+      Object.assign(payload.data.attributes.first_order_item, { variant_id: 98765 });
+      expect((await POST(request(payload))).status).toBe(200);
+      expect(mocks.applyInstitutionBillingByUserId).toHaveBeenCalledWith(expect.objectContaining({ plan: "starter" }));
+      expect(mocks.applyInstitutionBillingByUserId.mock.calls[0][0]).not.toHaveProperty("seatCount");
+      expect(mocks.processBillingEvent).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("delegates order audit and entitlement persistence to one atomic store operation", async () => {
     expect((await POST(request(order()))).status).toBe(200);
     expect(mocks.processBillingEvent).toHaveBeenCalledOnce();

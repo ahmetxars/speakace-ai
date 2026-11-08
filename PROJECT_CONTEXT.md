@@ -1195,3 +1195,11 @@ update this file so future agents do not need to repeat the same discovery work.
 - FeedbackTransformation reserves both answer heights and reveals an authored concrete phrase through a reversible annotation path. Its retry button has stable DOM identity; preserve focus and immediate keyboard/reduced-motion activation.
 - Audience previews show actual journal, assignment-review and class/programme capabilities, explicitly labelled illustrative. Do not replace the practice pathway with fabricated score graphs or school analytics.
 - Full audit, references, architecture and browser evidence: docs/2026-11-05-voice-in-motion.md.
+
+### Platform and organization authorization (2026-11-08)
+
+- `isAdmin` grants platform privileges to verified member accounts configured in `ADMIN_EMAILS`. `adminAccess` is an institution flag and protected organization actions use a membership check.
+- The separate admin panel also supports its configured username and password. Existing member sessions are rechecked on each request. Changing the configured credentials invalidates config-based sessions.
+- Teacher registration accepts a one-time organization invite after email verification. Organization identifiers are for lookup and are not invitations. Existing memberships are stored separately and should be reviewed using their provenance.
+- Password reset revokes member and admin-panel sessions. Production builds suppress email verification and reset links from API responses. Use the isolated `speakace_security_test` database with `SECURITY_TEST_DATABASE_URL` for auth regressions.
+- Organization teacher announcements require membership with an inviter or an organization admin/owner role. Institution billing webhooks accept only configured merchant variant IDs and use tier-defined seats.

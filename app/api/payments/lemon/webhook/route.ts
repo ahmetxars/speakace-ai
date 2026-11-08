@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { sendPurchaseAccountClaimEmail } from "@/lib/server/email";
+import { getOrgForAdmin } from "@/lib/server/org-store";
 import {
   processBillingEvent,
   applyInstitutionBillingByUserId,
@@ -37,24 +38,21 @@ type LemonPayload = {
   };
 };
 
-function getInstitutionType(payload: LemonPayload): string | null {
-  const customData = payload.meta?.custom_data ?? {};
-  const type = customData.type;
-  return typeof type === "string" ? type : null;
-}
+function getVerifiedInstitutionPlan(payload: LemonPayload) {
+  const attributes = payload.data?.attributes;
+  const firstOrderItem = attributes?.first_order_item;
+  const variantId = firstOrderItem && typeof firstOrderItem === "object"
+    ? (firstOrderItem as Record<string, unknown>).variant_id
+    : attributes?.variant_id;
+  const id = String(variantId ?? "");
+  if (!/^\d+$/.test(id)) return null;
 
-function getInstitutionPlan(payload: LemonPayload): "starter" | "team" | "campus" | null {
-  const customData = payload.meta?.custom_data ?? {};
-  const plan = customData.plan;
-  if (plan === "starter" || plan === "team" || plan === "campus") return plan;
-  return null;
-}
-
-function getInstitutionSeatCount(payload: LemonPayload): number | undefined {
-  const customData = payload.meta?.custom_data ?? {};
-  const seats = customData.seat_count;
-  const n = typeof seats === "string" ? parseInt(seats, 10) : typeof seats === "number" ? seats : NaN;
-  return isNaN(n) ? undefined : n;
+  const tiers = [
+    ["starter", process.env.LEMON_SQUEEZY_INSTITUTION_STARTER_VARIANT_ID],
+    ["team", process.env.LEMON_SQUEEZY_INSTITUTION_TEAM_VARIANT_ID],
+    ["campus", process.env.LEMON_SQUEEZY_INSTITUTION_CAMPUS_VARIANT_ID]
+  ] as const;
+  return tiers.find(([, configuredId]) => configuredId?.trim() === id)?.[0] ?? null;
 }
 
 export async function POST(request: Request) {
@@ -82,7 +80,7 @@ export async function POST(request: Request) {
   const trialEndsAt = getLemonTrialEndsAt(payload);
   const status = resolveBillingStatusFromEvent(eventName, payload);
   const basePlan = resolvePlanFromLemonPayload(payload);
-  const institutionType = getInstitutionType(payload);
+  const institutionPlan = getVerifiedInstitutionPlan(payload);
   const checkoutMetadata = getLemonCheckoutMetadata(payload);
   const paymentDetails = getLemonPaymentDetails(payload);
   const posthog = getPostHogClient();
@@ -125,7 +123,6 @@ export async function POST(request: Request) {
     ? nextPlan
     : null;
   const needsAccountClaim = eventName === "order_created"
-    && institutionType !== "institution"
     && Boolean(email)
     && !matchedUserId
     && Boolean(claimablePlan);
@@ -137,19 +134,17 @@ export async function POST(request: Request) {
     ?? `billing:${eventName}`;
 
   try {
-    if (institutionType === "institution" && matchedUserId) {
-      // Institution subscription — update institution_billing table instead of user plan
-      const institutionPlan = getInstitutionPlan(payload);
-      if (institutionPlan) {
+    if (institutionPlan) {
+      if (matchedUserId && await getOrgForAdmin(matchedUserId)) {
         await applyInstitutionBillingByUserId({
           userId: matchedUserId,
           plan: institutionPlan,
           billingStatus: status,
           providerCustomerId,
-          providerSubscriptionId,
-          seatCount: getInstitutionSeatCount(payload)
+          providerSubscriptionId
         });
       }
+      return NextResponse.json({ received: true, institution: true });
     }
 
     // The ledger and cached entitlement are one atomic operation. No duplicate can reapply old access.
@@ -194,7 +189,6 @@ export async function POST(request: Request) {
       billing_status: status,
       plan: eventPlan,
       provider: "lemonsqueezy",
-      institution_type: institutionType,
       trial_ends_at: trialEndsAt
     }
   });
@@ -226,7 +220,6 @@ export async function POST(request: Request) {
         plan: eventPlan,
         billing_status: status,
         provider: "lemonsqueezy",
-        institution_type: institutionType,
         order_id: paymentDetails.orderId,
         checkout_id: checkoutMetadata.checkoutId,
         revenue: paymentDetails.value,
@@ -263,7 +256,6 @@ export async function POST(request: Request) {
         plan: eventPlan,
         billing_status: status,
         provider: "lemonsqueezy",
-        institution_type: institutionType
       }
     });
   }

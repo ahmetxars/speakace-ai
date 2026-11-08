@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { getAudioPayloadStats, hasOpenAiKey, transcribeAudio } from "@/lib/server/openai";
-import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { checkRateLimit } from "@/lib/server/rate-limit";
 import { getSession, reserveSessionAudioUpload, releaseFailedAudioUpload, uploadSessionAudio } from "@/lib/store";
 
 export const maxDuration = 60;
@@ -14,6 +14,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   }
 
+  const { id } = await params;
+  const limit = checkRateLimit({
+    key: `session-upload:${profile.id}`,
+    windowMs: 1000 * 60 * 15,
+    max: 24
+  });
+  if (!limit.allowed) {
+    return NextResponse.json({ error: "Too many upload attempts. Please try again later." }, { status: 429 });
+  }
+
+  const existing = await getSession(id);
+  if (!existing || (existing.userId !== profile.id && !profile.isAdmin)) {
+    return NextResponse.json({ error: "Session not found." }, { status: 404 });
+  }
+  if (existing.audioUploaded && existing.transcriptSource === "openai" && (existing.rawTranscript || existing.transcript)) {
+    return NextResponse.json({ session: existing, transcriptSource: "openai", transcriptStatus: existing.transcriptStatus });
+  }
+
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (contentLength > MAX_BODY_BYTES) {
     return NextResponse.json({ error: "Audio payload too large (max 10 MB)." }, { status: 413 });
@@ -21,22 +39,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   let body;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid recording payload." }, { status: 400 }); }
-  const { id } = await params;
-  const ip = getRequestIp(request);
-  const limit = checkRateLimit({
-    key: `session-upload:${ip}:${id}`,
-    windowMs: 1000 * 60 * 15,
-    max: 24
-  });
-  if (!limit.allowed) {
-    return NextResponse.json({ error: "Too many upload attempts. Please try again later." }, { status: 429 });
-  }
-  const audioBase64 = typeof body.audioBase64 === "string" ? body.audioBase64 : "";
-  const existing = await getSession(id);
-
-  if (!existing || (existing.userId !== profile.id && !profile.isAdmin)) {
-    return NextResponse.json({ error: "Session not found." }, { status: 404 });
-  }
+  const audioBase64 = typeof body?.audioBase64 === "string" ? body.audioBase64 : "";
 
   if (!audioBase64) {
     return NextResponse.json({ error: "Missing recording payload." }, { status: 400 });

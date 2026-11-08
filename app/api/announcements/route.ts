@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { createAnnouncement, listAnnouncementsForUser } from "@/lib/announcements-store";
 import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
 import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
-import { requireSchoolOwnsClass, requireTeacherOwnsClass } from "@/lib/server/permissions";
+import { requireTeacherOwnsClass } from "@/lib/server/permissions";
+import { getOrgForAdmin } from "@/lib/server/org-store";
 
 async function getSignedInProfile() {
   const cookieStore = await cookies();
@@ -22,7 +23,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const profile = await getSignedInProfile();
-  if (!profile || (!profile.isTeacher && !profile.isAdmin)) {
+  if (!profile || profile.role !== "member") {
     return NextResponse.json({ error: "Teacher or admin access required." }, { status: 403 });
   }
 
@@ -46,27 +47,28 @@ export async function POST(request: Request) {
     if (requestedAudienceType === "global") {
       return NextResponse.json({ error: "Platform-wide announcements are not allowed from app dashboards." }, { status: 403 });
     }
-    if (profile.isTeacher && audienceType !== "class") {
-      return NextResponse.json({ error: "Teachers can only create class announcements." }, { status: 403 });
-    }
-    if (profile.isAdmin && audienceType !== "teacher") {
-      return NextResponse.json({ error: "Institution admins can only create organization teacher announcements." }, { status: 403 });
-    }
-    const classId = body.classId ? String(body.classId) : null;
-    if (audienceType === "class") {
+    let orgId = profile.organizationId ?? null;
+    let classId: string | null = null;
+    if (audienceType === "teacher") {
+      const org = await getOrgForAdmin(profile.id);
+      if (!org) {
+        return NextResponse.json({ error: "Organization admin access required." }, { status: 403 });
+      }
+      orgId = org.id;
+    } else {
+      if (!profile.isTeacher) {
+        return NextResponse.json({ error: "Teacher access required." }, { status: 403 });
+      }
+      classId = body.classId ? String(body.classId) : null;
       if (!classId) {
         return NextResponse.json({ error: "Class id is required for class announcements." }, { status: 400 });
       }
-      if (profile.isAdmin) {
-        await requireSchoolOwnsClass(profile.organizationId ?? "", classId);
-      } else {
-        await requireTeacherOwnsClass(profile.id, classId);
-      }
+      await requireTeacherOwnsClass(profile.id, classId);
     }
     const announcement = await createAnnouncement({
       authorId: profile.id,
-      orgId: profile.organizationId ?? null,
-      audienceType: audienceType as "teacher" | "class",
+      orgId,
+      audienceType,
       classId,
       title: String(body.title ?? ""),
       body: String(body.body ?? "")

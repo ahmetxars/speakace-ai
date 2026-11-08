@@ -406,7 +406,7 @@ export default async function BlogIndexPage() {
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd).replace(/</g, "\\u003c") }}
       />
     </main>
   );

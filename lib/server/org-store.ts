@@ -313,18 +313,6 @@ export async function getOrganizationById(orgId: string): Promise<Organization |
   return rows[0] ? toOrganization(rows[0]) : null;
 }
 
-export async function getOrganizationByJoinCode(joinCode: string): Promise<Organization | null> {
-  const sql = getSql();
-  const rows = await sql<Array<{ id: string; name: string; slug: string | null; ownerId: string; createdAt: string }>>`
-    select id, name, slug, owner_id as "ownerId", created_at as "createdAt"
-    from organizations
-    where lower(slug) = lower(${joinCode.trim()})
-       or lower(id) = lower(${joinCode.trim()})
-    limit 1
-  `;
-  return rows[0] ? toOrganization(rows[0]) : null;
-}
-
 /** Returns the organization for which the given user is an owner or admin. */
 export async function getOrgForAdmin(userId: string): Promise<Organization | null> {
   const sql = getSql();
@@ -345,9 +333,8 @@ export async function addOrgMember(input: {
   userId: string;
   role: OrgMemberRole;
   invitedBy?: string;
-}): Promise<OrgMembership> {
-  const sql = getSql();
-  const existing = await getOrgMembership(input.orgId, input.userId);
+}, sql = getSql()): Promise<OrgMembership> {
+  const existing = await getOrgMembership(input.orgId, input.userId, sql);
   const nextRole = existing ? upgradeRole(existing.role, input.role) : input.role;
   const rows = await sql<OrgMembership[]>`
     insert into organization_memberships (id, organization_id, user_id, role, added_by, joined_at)
@@ -374,8 +361,7 @@ export async function addOrgMember(input: {
   return rows[0];
 }
 
-export async function getOrgMembership(orgId: string, userId: string): Promise<OrgMembership | null> {
-  const sql = getSql();
+export async function getOrgMembership(orgId: string, userId: string, sql = getSql()): Promise<OrgMembership | null> {
   const rows = await sql<OrgMembership[]>`
     select
       id,
@@ -452,70 +438,67 @@ export async function listOrgInvites(orgId: string): Promise<OrgInvite[]> {
 export async function consumeOrgInvite(input: {
   inviteCode: string;
   userId: string;
-  userEmail: string;
+  requiredRole?: Exclude<OrgMemberRole, "owner">;
 }): Promise<{ org: Organization; role: Exclude<OrgMemberRole, "owner"> } | null> {
+  const code = input.inviteCode.trim().toLowerCase();
+  if (!/^[a-f0-9]{32}$/.test(code)) return null;
   const sql = getSql();
-  const rows = await sql<Array<{
-    id: string;
-    orgId: string;
-    email: string | null;
-    role: Exclude<OrgMemberRole, "owner">;
-    createdBy: string;
-    orgName: string;
-    orgOwnerId: string;
-    orgSlug: string | null;
-    orgCreatedAt: string;
-  }>>`
-    select
-      i.id,
-      i.organization_id as "orgId",
-      i.email,
-      i.role,
-      i.invited_by as "createdBy",
-      o.name as "orgName",
-      o.owner_id as "orgOwnerId",
-      o.slug as "orgSlug",
-      o.created_at as "orgCreatedAt"
-    from organization_invites i
-    join organizations o on o.id = i.organization_id
-    where i.token_hash = ${input.inviteCode}
-      and i.accepted_at is null
-      and i.expires_at > now()
-      and (i.email is null or lower(i.email) = lower(${input.userEmail}))
-    limit 1
-  `;
-  const invite = rows[0];
-  if (!invite) return null;
+  return sql.begin(async (transaction) => {
+    const tx = transaction as unknown as typeof sql;
+    const [user] = await tx<Array<{ email: string }>>`
+      select email from users
+      where id = ${input.userId} and email_verified = true
+      for update
+    `;
+    if (!user) return null;
 
-  await sql`
-    update organization_invites
-    set accepted_at = now()
-    where id = ${invite.id}
-  `;
+    const [invite] = await tx<Array<{
+      orgId: string;
+      role: Exclude<OrgMemberRole, "owner">;
+      createdBy: string;
+      orgName: string;
+      orgOwnerId: string;
+      orgSlug: string | null;
+      orgCreatedAt: string;
+    }>>`
+      update organization_invites i
+      set accepted_at = now()
+      from organizations o
+      where i.organization_id = o.id
+        and i.token_hash = ${code}
+        and i.accepted_at is null
+        and i.expires_at > now()
+        and (i.email is null or lower(i.email) = lower(${user.email}))
+        and (${input.requiredRole ?? null}::text is null or i.role = ${input.requiredRole ?? null})
+      returning i.organization_id as "orgId", i.role, i.invited_by as "createdBy",
+                o.name as "orgName", o.owner_id as "orgOwnerId", o.slug as "orgSlug", o.created_at as "orgCreatedAt"
+    `;
+    if (!invite) return null;
 
-  await addOrgMember({
-    orgId: invite.orgId,
-    userId: input.userId,
-    role: invite.role,
-    invitedBy: invite.createdBy,
+    await addOrgMember({
+      orgId: invite.orgId,
+      userId: input.userId,
+      role: invite.role,
+      invitedBy: invite.createdBy
+    }, tx);
+
+    if (invite.role === "admin") {
+      await tx`update users set teacher_access = true, admin_access = true, organization_id = ${invite.orgId} where id = ${input.userId}`;
+    } else if (invite.role === "teacher") {
+      await tx`update users set teacher_access = true where id = ${input.userId}`;
+    }
+
+    return {
+      org: toOrganization({
+        id: invite.orgId,
+        name: invite.orgName,
+        ownerId: invite.orgOwnerId,
+        slug: invite.orgSlug,
+        createdAt: invite.orgCreatedAt
+      }),
+      role: invite.role
+    };
   });
-
-  if (invite.role === "admin") {
-    await sql`update users set teacher_access = true, admin_access = true, organization_id = ${invite.orgId} where id = ${input.userId}`;
-  } else if (invite.role === "teacher") {
-    await sql`update users set teacher_access = true, organization_id = coalesce(organization_id, ${invite.orgId}) where id = ${input.userId}`;
-  }
-
-  return {
-    org: toOrganization({
-      id: invite.orgId,
-      name: invite.orgName,
-      ownerId: invite.orgOwnerId,
-      slug: invite.orgSlug,
-      createdAt: invite.orgCreatedAt,
-    }),
-    role: invite.role,
-  };
 }
 
 export async function listOrgUsers(orgId: string, search?: string): Promise<InstitutionUserSummary[]> {

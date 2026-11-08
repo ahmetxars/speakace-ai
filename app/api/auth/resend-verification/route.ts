@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const analyticsId = getPrivacySafeAnalyticsId("email-verification", email);
 
   try {
-    const exposeAuthUrls = process.env.APP_ENV !== "production";
+    const exposeAuthUrls = process.env.NODE_ENV !== "production" && process.env.APP_ENV !== "production";
     const ip = getRequestIp(request);
     const limit = checkRateLimit({
       key: `resend-verification:${ip}:${email}`,
@@ -34,7 +34,8 @@ export async function POST(request: Request) {
 
     const result = await createEmailVerificationFlow(
       email,
-      resolveSafeAppRedirect(typeof body.next === "string" ? body.next : null)
+      resolveSafeAppRedirect(typeof body.next === "string" ? body.next : null),
+      typeof body.schoolInviteCode === "string" ? body.schoolInviteCode : undefined
     );
     posthog.capture({
       distinctId: analyticsId,
