@@ -1,3 +1,4 @@
+import { csvCell } from "@/lib/csv";
 import { NextResponse } from "next/server";
 import { ensureTeacherOwnsClass, listClassStudents } from "@/lib/classroom-store";
 import { permissionErrorResponse, requireTeacher } from "@/lib/server/permissions";
@@ -34,8 +35,4 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   } catch (error) {
     return permissionErrorResponse(error);
   }
-}
-
-function csvCell(value: string) {
-  return `"${value.replaceAll('"', '""')}"`;
 }

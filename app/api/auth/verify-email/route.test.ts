@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   getCurrentEmailQuotaBlock: vi.fn(),
   markOnboardingEmailSent: vi.fn(),
   sendOnboardingEmail: vi.fn(),
-  checkRateLimit: vi.fn(),
+  checkSharedRateLimit: vi.fn(),
   getRequestIp: vi.fn(),
   posthogCapture: vi.fn()
 }));
@@ -27,7 +27,7 @@ vi.mock("@/lib/server/auth", () => ({
 }));
 
 vi.mock("@/lib/server/rate-limit", () => ({
-  checkRateLimit: mocks.checkRateLimit,
+  checkSharedRateLimit: mocks.checkSharedRateLimit,
   getRequestIp: mocks.getRequestIp
 }));
 
@@ -41,14 +41,22 @@ vi.mock("@/lib/posthog-server", () => ({
   getPostHogClient: () => ({ capture: mocks.posthogCapture })
 }));
 
-import { GET } from "@/app/api/auth/verify-email/route";
+import { POST } from "@/app/api/auth/verify-email/route";
+
+function verifyRequest(token: string, password?: string) {
+  return new Request("https://speakace.org/api/auth/verify-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, password })
+  });
+}
 
 describe("email verification activation", () => {
   beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
 
     mocks.cookies.mockResolvedValue({ set: mocks.cookieSet });
-    mocks.checkRateLimit.mockReturnValue({ allowed: true, retryAfterSeconds: 0 });
+    mocks.checkSharedRateLimit.mockReturnValue({ allowed: true, retryAfterSeconds: 0 });
     mocks.getRequestIp.mockReturnValue("127.0.0.1");
     mocks.getSessionCookieName.mockReturnValue("speakace_session");
     mocks.getSessionCookieOptions.mockReturnValue({
@@ -58,7 +66,7 @@ describe("email verification activation", () => {
       path: "/",
       expires: new Date("2026-08-01T00:00:00.000Z")
     });
-    mocks.verifyEmailToken.mockResolvedValue({ ok: true, userId: "user-1" });
+    mocks.verifyEmailToken.mockResolvedValue({ ok: true, userId: "user-1", passwordHash: "test-password-hash" });
     mocks.createAuthSession.mockResolvedValue({
       token: "session-token",
       expiresAt: new Date("2026-08-01T00:00:00.000Z")
@@ -69,12 +77,12 @@ describe("email verification activation", () => {
   });
 
   it("creates a signed-in session immediately after a valid verification", async () => {
-    const response = await GET(new Request("https://speakace.org/api/auth/verify-email?token=valid-token"));
+    const response = await POST(verifyRequest("valid-token", "Fixture-password1"));
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ ok: true, authenticated: true });
-    expect(mocks.verifyEmailToken).toHaveBeenCalledWith("valid-token");
-    expect(mocks.createAuthSession).toHaveBeenCalledWith("user-1");
+    expect(mocks.verifyEmailToken).toHaveBeenCalledWith("valid-token", "Fixture-password1");
+    expect(mocks.createAuthSession).toHaveBeenCalledWith("user-1", "test-password-hash");
     expect(mocks.cookieSet).toHaveBeenCalledWith(
       "speakace_session",
       "session-token",
@@ -89,10 +97,16 @@ describe("email verification activation", () => {
     });
   });
 
+  it("does not consume a verification link without a password", async () => {
+    expect((await POST(verifyRequest("valid-token"))).status).toBe(400);
+    expect(mocks.verifyEmailToken).not.toHaveBeenCalled();
+    expect(mocks.createAuthSession).not.toHaveBeenCalled();
+  });
+
   it("does not create a session when the verification token is invalid", async () => {
     mocks.verifyEmailToken.mockRejectedValueOnce(new Error("Verification link is invalid or expired."));
 
-    const response = await GET(new Request("https://speakace.org/api/auth/verify-email?token=expired-token"));
+    const response = await POST(verifyRequest("expired-token", "Fixture-password1"));
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "Verification link is invalid or expired." });
@@ -107,10 +121,10 @@ describe("email verification activation", () => {
       detectedAt: "2026-07-18T00:00:00.000Z"
     });
 
-    const response = await GET(new Request("https://speakace.org/api/auth/verify-email?token=valid-token"));
+    const response = await POST(verifyRequest("valid-token", "Fixture-password1"));
 
     expect(response.status).toBe(200);
-    expect(mocks.createAuthSession).toHaveBeenCalledWith("user-1");
+    expect(mocks.createAuthSession).toHaveBeenCalledWith("user-1", "test-password-hash");
     expect(mocks.sendOnboardingEmail).not.toHaveBeenCalled();
     expect(mocks.markOnboardingEmailSent).not.toHaveBeenCalled();
   });

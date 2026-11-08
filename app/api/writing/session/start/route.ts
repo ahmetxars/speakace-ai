@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { checkSharedRateLimit, sharedRateLimitResponse } from "@/lib/server/rate-limit";
 import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { createWritingSession } from "@/lib/writing-store";
 
@@ -11,10 +11,9 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const ip = getRequestIp(request);
-    const limit = checkRateLimit({ key: `writing-start:${ip}:${profile.id}`, windowMs: 1000 * 60 * 15, max: 18 });
+    const limit = await checkSharedRateLimit({ key: `writing-start:${profile.id}`, windowMs: 1000 * 60 * 15, max: 18 });
     if (!limit.allowed) {
-      return NextResponse.json({ error: "Too many writing session starts. Please try again later." }, { status: 429 });
+      return sharedRateLimitResponse(limit, "Too many writing session starts. Please try again later.");
     }
 
     const result = await createWritingSession({

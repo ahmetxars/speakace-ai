@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createEmailVerificationFlow } from "@/lib/server/auth";
 import { getPostHogClient } from "@/lib/posthog-server";
-import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { checkSharedRateLimit, getRequestIp, sharedRateLimitResponse } from "@/lib/server/rate-limit";
 import { getPrivacySafeAnalyticsId } from "@/lib/server/analytics-identity";
 import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
 
@@ -14,11 +14,10 @@ export async function POST(request: Request) {
   try {
     const exposeAuthUrls = process.env.NODE_ENV !== "production" && process.env.APP_ENV !== "production";
     const ip = getRequestIp(request);
-    const limit = checkRateLimit({
-      key: `resend-verification:${ip}:${email}`,
-      windowMs: 1000 * 60 * 30,
-      max: 4
-    });
+    const limit = await checkSharedRateLimit(
+      { key: `resend-verification:ip:${ip}`, windowMs: 1000 * 60 * 30, max: 20 },
+      { key: `resend-verification:email:${email}`, windowMs: 1000 * 60 * 30, max: 4 }
+    );
 
     if (!limit.allowed) {
       posthog.capture({
@@ -26,10 +25,7 @@ export async function POST(request: Request) {
         event: "email_verification_request_failed",
         properties: { reason: "rate_limited" }
       });
-      return NextResponse.json(
-        { error: "Too many verification email requests. Please try again later." },
-        { status: 429 }
-      );
+      return sharedRateLimitResponse(limit, "Too many verification email requests. Please try again later.");
     }
 
     const result = await createEmailVerificationFlow(

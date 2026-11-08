@@ -1,3 +1,4 @@
+import { csvCell } from "@/lib/csv";
 import { NextResponse } from "next/server";
 import { listOrgTeacherSummaries, getOrgForAdmin } from "@/lib/server/org-store";
 import { permissionErrorResponse, requireSchoolAdmin } from "@/lib/server/permissions";
@@ -44,8 +45,4 @@ export async function GET() {
   } catch (error) {
     return permissionErrorResponse(error);
   }
-}
-
-function csvCell(value: string) {
-  return `"${value.replaceAll('"', '""')}"`;
 }

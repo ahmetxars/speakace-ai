@@ -11,7 +11,7 @@ import {
 import { joinTeacherClassByCode } from "@/lib/classroom-store";
 import { trackAnalyticsEvent } from "@/lib/analytics-store";
 import { ANALYTICS_VISITOR_COOKIE, normalizeAnalyticsVisitorId } from "@/lib/analytics-policy";
-import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
+import { checkSharedRateLimit, getRequestIp, sharedRateLimitResponse } from "@/lib/server/rate-limit";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { getPrivacySafeAnalyticsId } from "@/lib/server/analytics-identity";
 import { resolveSafeAppRedirect } from "@/lib/auth-redirect";
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   try {
     const exposeAuthUrls = process.env.NODE_ENV !== "production" && process.env.APP_ENV !== "production";
     const ip = getRequestIp(request);
-    const limit = checkRateLimit({
+    const limit = await checkSharedRateLimit({
       key: `signup:${ip}`,
       windowMs: 1000 * 60 * 30,
       max: 5
@@ -38,13 +38,12 @@ export async function POST(request: Request) {
         event: "signup_failed",
         properties: { member_type: body.memberType ?? "student", reason: "rate_limited" }
       });
-      return rateLimitResponse(limit.retryAfterSeconds, "Too many sign-up attempts. Please try again later.");
+      return sharedRateLimitResponse(limit, "Too many sign-up attempts. Please try again later.");
     }
 
     const profile = await signUpWithPassword({
       consent: { legalAccepted: true, marketingConsent: body.marketingConsent === true },
       email: body.email ?? "",
-      password: body.password ?? "",
       name: body.name ?? "",
       memberType: body.memberType ?? "student",
       organizationName: body.organizationName ?? null,

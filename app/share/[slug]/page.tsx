@@ -1,3 +1,4 @@
+import { validateAvatarDataUrl } from "@/lib/server/avatar-image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ShareAttributionCapture } from "@/components/share-attribution-capture";
@@ -58,6 +59,7 @@ export default async function SharedResultPage({ params }: { params: Promise<{ s
   const pricingPath = buildSharePricingHref(card.slug);
   const attributionPath = buildShareAttributionPath(card.slug);
 
+  const avatarDataUrl = validateAvatarDataUrl(card.avatarDataUrl);
   const scorePct = Math.round((card.overallScore / (card.examType === "TOEFL" ? 4 : 9)) * 100);
   const catColors = ["#22d3ee", "#f472b6", "#818cf8", "#fbbf24"];
 
@@ -75,8 +77,8 @@ export default async function SharedResultPage({ params }: { params: Promise<{ s
 
           <div className="rsc-user-row">
             <div className="rsc-avatar">
-              {card.avatarDataUrl
-                ? <img src={card.avatarDataUrl} alt={card.learnerName} />
+              {avatarDataUrl
+                ? <img src={avatarDataUrl} alt={card.learnerName} />
                 : <span>{card.learnerName.slice(0, 2).toUpperCase()}</span>}
             </div>
             <div className="rsc-user-info">

@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { hash } from "bcryptjs";
 import postgres from "postgres";
 import { createAnnouncement, listAnnouncementsForUser } from "@/lib/announcements-store";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -18,6 +19,7 @@ import {
   signUpWithPassword,
   verifyEmailToken
 } from "./auth";
+import { checkSharedRateLimit } from "./rate-limit";
 import { consumeOrgInvite, createOrgInvite, getOrgForAdmin } from "./org-store";
 
 const url = process.env.SECURITY_TEST_DATABASE_URL;
@@ -28,7 +30,6 @@ async function signUp(memberType: "student" | "school" | "teacher" = "student") 
   const suffix = randomUUID();
   return signUpWithPassword({
     email: `fixture-${suffix}@example.test`,
-    password,
     name: "Local fixture",
     memberType,
     organizationName: memberType === "school" ? `Local school ${suffix}` : null
@@ -38,7 +39,7 @@ async function signUp(memberType: "student" | "school" | "teacher" = "student") 
 async function verify(email: string, inviteCode?: string) {
   const { verificationUrl } = await createEmailVerificationFlow(email, null, inviteCode);
   if (!verificationUrl) throw new Error("Missing local verification link");
-  await verifyEmailToken(new URL(verificationUrl).searchParams.get("verify")!);
+  await verifyEmailToken(new URL(verificationUrl).searchParams.get("verify")!, password);
 }
 
 async function registerSchool() {
@@ -194,8 +195,44 @@ describe.skipIf(!url)("isolated PostgreSQL authorization", () => {
     }
   });
 
+  it("sets the email owner's password and revokes links from a legacy pre-registration", async () => {
+    const user = await signUp();
+    const [pending] = await sql`select password_hash from users where id = ${user.id}`;
+    expect(pending.password_hash).toBeNull();
+    const oldPassword = "Legacy-pre-registration1";
+    const oldHash = await hash(oldPassword, 4);
+    await sql`update users set password_hash = ${oldHash} where id = ${user.id}`;
+    const { verificationUrl } = await createEmailVerificationFlow(user.email);
+    const verifyToken = new URL(verificationUrl!).searchParams.get("verify")!;
+    const { resetUrl } = await createPasswordResetFlow(user.email);
+    const resetToken = new URL(resetUrl!).searchParams.get("reset")!;
+    await expect(verifyEmailToken(verifyToken, "")).rejects.toThrow("Use a password");
+    const results = await Promise.allSettled([
+      verifyEmailToken(verifyToken, password),
+      verifyEmailToken(verifyToken, password)
+    ]);
+    expect(results.filter(result => result.status === "fulfilled")).toHaveLength(1);
+    await expect(signInWithPassword({ email: user.email, password: oldPassword })).rejects.toThrow("Invalid email or password");
+    await expect(resetPasswordWithToken({ token: resetToken, password: oldPassword })).rejects.toThrow("invalid or expired");
+    expect((await signInWithPassword({ email: user.email, password })).profile.id).toBe(user.id);
+  });
+
+  it("shares quota across concurrent PostgreSQL clients and resets expired buckets", async () => {
+    const key = `local-rate-fixture:${randomUUID()}`;
+    const keyHash = createHash("sha256").update(key).digest("hex");
+    const input = { key, max: 2, windowMs: 60_000 };
+    const outcomes = await Promise.all(Array.from({ length: 8 }, () => checkSharedRateLimit(input)));
+    expect(outcomes.filter(result => result.allowed)).toHaveLength(2);
+    expect(outcomes.filter(result => !result.allowed).every(result => result.retryAfterSeconds > 0 && !result.unavailable)).toBe(true);
+    await sql`update request_rate_limits set expires_at = now() - interval '1 minute' where key_hash = ${keyHash}`;
+    expect(await checkSharedRateLimit(input)).toEqual({ allowed: true, retryAfterSeconds: 0 });
+    await sql`delete from request_rate_limits where key_hash = ${keyHash}`;
+  });
+
   it("clears a password set before a verified Google identity claims the account", async () => {
     const user = await signUp();
+    const oldHash = await hash(password, 4);
+    await sql`update users set password_hash = ${oldHash} where id = ${user.id}`;
     await expect(createAuthSession(user.id)).rejects.toThrow("Could not sign in");
     await claimUnverifiedGoogleAccount(user.id);
     await expect(signInWithPassword({ email: user.email, password })).rejects.toThrow("Invalid email or password");

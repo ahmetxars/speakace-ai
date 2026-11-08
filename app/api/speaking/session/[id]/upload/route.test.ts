@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   getAudioPayloadStats: vi.fn(),
   hasOpenAiKey: vi.fn(),
   transcribeAudio: vi.fn(),
-  checkRateLimit: vi.fn(),
+  checkSharedRateLimit: vi.fn(),
   getSession: vi.fn(),
   reserveSessionAudioUpload: vi.fn(),
   releaseFailedAudioUpload: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock("@/lib/server/openai", () => ({
 }));
 
 vi.mock("@/lib/server/rate-limit", () => ({
-  checkRateLimit: mocks.checkRateLimit
+  checkSharedRateLimit: mocks.checkSharedRateLimit
 }));
 
 vi.mock("@/lib/store", () => ({
@@ -59,7 +59,7 @@ describe("speaking audio upload quota", () => {
     mocks.getAuthenticatedUserFromCookies.mockResolvedValue({ id: "user-1", role: "student", isAdmin: false });
     mocks.getAudioPayloadStats.mockReturnValue({ bytes: 24_000 });
     mocks.hasOpenAiKey.mockReturnValue(true);
-    mocks.checkRateLimit.mockReturnValue({ allowed: true });
+    mocks.checkSharedRateLimit.mockReturnValue({ allowed: true });
     mocks.getSession.mockResolvedValue(session);
   });
 

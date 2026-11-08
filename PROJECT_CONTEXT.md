@@ -1203,3 +1203,9 @@ update this file so future agents do not need to repeat the same discovery work.
 - Teacher registration accepts a one-time organization invite after email verification. Organization identifiers are for lookup and are not invitations. Existing memberships are stored separately and should be reviewed using their provenance.
 - Password reset revokes member and admin-panel sessions. Production builds suppress email verification and reset links from API responses. Use the isolated `speakace_security_test` database with `SECURITY_TEST_DATABASE_URL` for auth regressions.
 - Organization teacher announcements require membership with an inviter or an organization admin/owner role. Institution billing webhooks accept only configured merchant variant IDs and use tier-defined seats.
+
+### Account activation and abuse limits (2026-11-08)
+
+- Email signup creates a pending account with no password. Existing and new verification links open the password setup form, and POST activation atomically sets the password, invalidates legacy credentials and consumes the link. The Google flow still verifies provider identity.
+- Auth, admin login, paid practice and study-plan email limits use atomic PostgreSQL counters. The first database-backed request creates the additive schema under an advisory lock when needed. Production fails closed if counters are unavailable.
+- Shared avatars accept local PNG, JPEG or WebP data only. The page and Open Graph renderer validate existing stored values before rendering, including legacy cards. Both teacher and organization reports use the shared CSV cell encoder.

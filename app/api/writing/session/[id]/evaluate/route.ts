@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
-import { checkRateLimit, rateLimitResponse } from "@/lib/server/rate-limit";
+import { checkSharedRateLimit, sharedRateLimitResponse } from "@/lib/server/rate-limit";
 import { evaluateStoredWritingSession, getWritingSession, MAX_WRITING_DRAFT_LENGTH } from "@/lib/writing-store";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -20,8 +20,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       return NextResponse.json({ error: "Shorten your draft before evaluating it." }, { status: 400 });
     }
 
-    const limit = checkRateLimit({ key: `writing-evaluate:${profile.id}`, windowMs: 1000 * 60 * 15, max: 18 });
-    if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+    const limit = await checkSharedRateLimit({ key: `writing-evaluate:${profile.id}`, windowMs: 1000 * 60 * 15, max: 18 });
+    if (!limit.allowed) return sharedRateLimitResponse(limit);
 
     const session = await evaluateStoredWritingSession(id);
     if (!session) {

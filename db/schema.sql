@@ -38,6 +38,15 @@ create table if not exists auth_tokens (
   created_at timestamptz not null default now()
 );
 
+create table if not exists request_rate_limits (
+  key_hash text primary key,
+  hits integer not null,
+  expires_at timestamptz not null
+);
+
+create index if not exists request_rate_limits_expires_at_idx
+  on request_rate_limits (expires_at);
+
 create table if not exists teacher_classes (
   id text primary key,
   teacher_id text not null references users(id) on delete cascade,

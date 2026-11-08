@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getRequestIp, checkRateLimit } from "@/lib/server/rate-limit";
+import { getRequestIp, checkSharedRateLimit, sharedRateLimitResponse } from "@/lib/server/rate-limit";
 import {
   createAuthSession,
   getSessionCookieName,
@@ -14,10 +14,10 @@ import {
 } from "@/lib/server/email-sequences";
 import { getPostHogClient } from "@/lib/posthog-server";
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   const ip = getRequestIp(request);
   const posthog = getPostHogClient();
-  const limit = checkRateLimit({
+  const limit = await checkSharedRateLimit({
     key: `verify-email:${ip}`,
     windowMs: 1000 * 60 * 15,
     max: 20
@@ -29,16 +29,16 @@ export async function GET(request: Request) {
       event: "email_verification_failed",
       properties: { reason: "rate_limited" }
     });
-    return NextResponse.json(
-      { error: "Too many verification attempts. Please try again later." },
-      { status: 429 }
-    );
+    return sharedRateLimitResponse(limit, "Too many verification attempts. Please try again later.");
   }
 
   try {
-    const token = new URL(request.url).searchParams.get("token") ?? "";
-    const verification = await verifyEmailToken(token);
-    const session = await createAuthSession(verification.userId);
+    const body = await request.json().catch(() => null);
+    if (typeof body?.token !== "string" || typeof body.password !== "string") {
+      return NextResponse.json({ error: "A verification link and a new password are required." }, { status: 400 });
+    }
+    const verification = await verifyEmailToken(body.token, body.password);
+    const session = await createAuthSession(verification.userId, verification.passwordHash);
     const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), session.token, getSessionCookieOptions(session.expiresAt));
     try {
@@ -55,7 +55,7 @@ export async function GET(request: Request) {
     posthog.capture({
       distinctId: verification.userId,
       event: "email_verification_completed",
-      properties: { token_present: Boolean(token), session_created: true }
+      properties: { token_present: true, session_created: true }
     });
     return NextResponse.json({ ok: true, authenticated: true });
   } catch (error) {

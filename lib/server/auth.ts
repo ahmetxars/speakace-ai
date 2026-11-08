@@ -57,7 +57,7 @@ function buildAppUrl(path: string) {
 
 function isStrongEnoughPassword(password: string) {
   const trimmed = password.trim();
-  return trimmed.length >= 8 && /\d/.test(trimmed);
+  return trimmed.length >= 8 && /\d/.test(trimmed) && Buffer.byteLength(password, "utf8") <= 72;
 }
 
 export async function ensureSchoolAccountAccess(profile: MemberProfile): Promise<MemberProfile> {
@@ -145,7 +145,6 @@ export async function getAuthenticatedUserFromCookies() {
 export async function signUpWithPassword(input: {
   consent?: AccountConsent;
   email: string;
-  password: string;
   name: string;
   memberType?: MemberProfile["memberType"];
   organizationName?: string | null;
@@ -153,11 +152,8 @@ export async function signUpWithPassword(input: {
   inviteReferrerId?: string | null;
 }) {
   const normalizedEmail = input.email.trim().toLowerCase();
-  if (!normalizedEmail || !input.password.trim()) {
-    throw new Error("Email and password are required.");
-  }
-  if (!isStrongEnoughPassword(input.password)) {
-    throw new Error("Password must be at least 8 characters long and include at least 1 number.");
+  if (!normalizedEmail) {
+    throw new Error("Email is required.");
   }
 
   const requestedMemberType =
@@ -168,7 +164,6 @@ export async function signUpWithPassword(input: {
   if (isAdminEmail(normalizedEmail)) {
     throw new Error("This account cannot be created through password signup.");
   }
-  const passwordHash = await hash(input.password, 12);
   const purchasedPlan = await getActiveBillingPlanForEmail(normalizedEmail);
   const referral = await validateReferralCode(input.referralCode);
   const inviteReferrer =
@@ -214,7 +209,7 @@ export async function signUpWithPassword(input: {
       )
       values (
         ${profile.id}, ${profile.email}, ${profile.name}, ${profile.role}, ${profile.memberType}, ${profile.organizationName ?? null},
-        ${profile.plan}, ${passwordHash}, false, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false},
+        ${profile.plan}, null, false, ${profile.adminAccess ?? false}, ${profile.teacherAccess ?? false},
         ${profile.billingStatus ?? "free"}, ${profile.trialEndsAt ?? null}, ${profile.referralCodeUsed ?? null}, ${profile.createdAt},
         ${input.consent?.legalAccepted ? new Date().toISOString() : null},
         ${input.consent?.legalAccepted ? new Date().toISOString() : null},
@@ -232,7 +227,6 @@ export async function signUpWithPassword(input: {
   }
 
   await upsertMember(profile);
-  getMemoryAuthStore().passwordHashes.set(profile.id, passwordHash);
   return profile;
 }
 
@@ -768,27 +762,55 @@ export async function claimUnverifiedGoogleAccount(userId: string) {
   await upsertMember({ ...profile, emailVerified: true });
 }
 
-export async function verifyEmailToken(token: string) {
+export async function verifyEmailToken(token: string, password: string) {
+  if (!/^[a-f0-9]{64}(?:\.[a-f0-9]{32})?$/.test(token)) throw new Error("Verification link is invalid or expired.");
+  if (!isStrongEnoughPassword(password)) {
+    throw new Error("Use a password with at least 8 characters, one number, and no more than 72 bytes.");
+  }
+
+  const sql = hasDatabaseUrl() ? getSql() : null;
+  if (sql) {
+    const [candidate] = await sql`
+      select t.user_id from auth_tokens t join users u on u.id = t.user_id
+      where t.token_hash = ${sha256(token)} and t.token_type = 'verify_email'
+        and t.used_at is null and t.expires_at > now() and u.email_verified = false
+    `;
+    if (!candidate) throw new Error("Verification link is invalid or expired.");
+  } else {
+    const entry = getMemoryAuthStore().tokens.get(sha256(token));
+    if (entry?.type !== "verify_email" || entry.usedAt || Date.parse(entry.expiresAt) <= Date.now()) {
+      throw new Error("Verification link is invalid or expired.");
+    }
+  }
+
+  const passwordHash = await hash(password, 12);
   let userId: string | null;
-  if (hasDatabaseUrl()) {
-    const sql = getSql();
+  if (sql) {
     userId = await sql.begin(async (transaction) => {
       const tx = transaction as unknown as typeof sql;
       if (!await lockAuthTokenUser(tx, token, "verify_email")) return null;
       const verifiedId = await consumeAuthToken(token, "verify_email", tx);
       if (!verifiedId) return null;
-      await tx`update users set email_verified = true where id = ${verifiedId}`;
-      await tx`delete from auth_tokens where user_id = ${verifiedId} and token_type = 'verify_email'`;
+      const [updated] = await tx`
+        update users set email_verified = true, password_hash = ${passwordHash}
+        where id = ${verifiedId} and email_verified = false
+        returning id
+      `;
+      if (!updated) return null;
+      await tx`delete from auth_sessions where user_id = ${verifiedId}`;
+      await tx`delete from admin_panel_sessions where admin_user_id = ${verifiedId}`;
+      await tx`delete from auth_tokens where user_id = ${verifiedId}`;
       return verifiedId;
     });
   } else {
     userId = await consumeAuthToken(token, "verify_email");
-    if (userId) {
-      const profile = await getMember(userId);
-      if (profile) await upsertMember({ ...profile, emailVerified: true });
-      for (const [key, entry] of getMemoryAuthStore().tokens) {
-        if (entry.userId === userId && entry.type === "verify_email") getMemoryAuthStore().tokens.delete(key);
-      }
+    const profile = userId ? await getMember(userId) : null;
+    if (profile && !profile.emailVerified) {
+      revokeMemoryCredentials(profile.id);
+      getMemoryAuthStore().passwordHashes.set(profile.id, passwordHash);
+      await upsertMember({ ...profile, emailVerified: true });
+    } else {
+      userId = null;
     }
   }
   if (!userId) throw new Error("Verification link is invalid or expired.");
@@ -802,7 +824,7 @@ export async function verifyEmailToken(token: string) {
       console.error("Teacher invitation could not be redeemed during verification.");
     }
   }
-  return { ok: true as const, userId };
+  return { ok: true as const, userId, passwordHash };
 }
 
 export async function createPasswordResetFlow(email: string) {
@@ -859,7 +881,7 @@ export async function createPasswordResetFlow(email: string) {
 
 export async function resetPasswordWithToken(input: { token: string; password: string }) {
   if (!isStrongEnoughPassword(input.password)) {
-    throw new Error("Password must be at least 8 characters long and include at least 1 number.");
+    throw new Error("Use a password with at least 8 characters, one number, and no more than 72 bytes.");
   }
 
   if (!/^[a-f0-9]{64}$/.test(input.token)) throw new Error("Reset link is invalid or expired.");

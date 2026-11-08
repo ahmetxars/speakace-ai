@@ -1,3 +1,4 @@
+import { validateAvatarDataUrl } from "@/lib/server/avatar-image";
 import { ImageResponse } from "next/og";
 import { notFound } from "next/navigation";
 import { estimateCountryRank } from "@/lib/share-growth";
@@ -18,7 +19,10 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
 
   if (!card) notFound();
 
-  const rankMeta = estimateCountryRank(card.overallScore, card.examType, card.localeFlag);
+  const avatarDataUrl = card.avatarDataUrl && card.avatarDataUrl.length < 65536
+    ? validateAvatarDataUrl(card.avatarDataUrl)
+    : null;
+  const rankMeta = estimateCountryRank(card.overallScore, card.examType, "");
 
   return new ImageResponse(
     (
@@ -78,7 +82,7 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
             }}
           />
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 2 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div
               style={{
                 display: "flex",
@@ -109,11 +113,11 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 2, marginTop: 28 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: 28 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              {card.avatarDataUrl && card.avatarDataUrl.length < 65536 ? (
+              {avatarDataUrl ? (
                 <img
-                  src={card.avatarDataUrl}
+                  src={avatarDataUrl}
                   alt={card.learnerName}
                   width={84}
                   height={84}
@@ -139,7 +143,7 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
               )}
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{ fontSize: 30, fontWeight: 700 }}>{card.learnerName}</div>
-                <div style={{ fontSize: 22, color: "#94a3b8" }}>{card.localeFlag} {card.streakLabel}</div>
+                <div style={{ fontSize: 22, color: "#94a3b8" }}>{card.streakLabel}</div>
               </div>
             </div>
 
@@ -148,13 +152,13 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
             </div>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "center", zIndex: 2, marginTop: 18 }}>
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
             <div
               style={{
                 width: 360,
                 height: 360,
                 borderRadius: 9999,
-                background: "conic-gradient(#22d3ee 0% 78%, rgba(255,255,255,0.10) 78% 100%)",
+                border: "8px solid #22d3ee",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -173,13 +177,13 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
                   justifyContent: "center"
                 }}
               >
-                <div style={{ fontSize: 120, fontWeight: 800, lineHeight: 1 }}>{card.overallScore}</div>
+                <div style={{ fontSize: 120, fontWeight: 800, lineHeight: 1 }}>{String(card.overallScore)}</div>
                 <div style={{ fontSize: 24, color: "#94a3b8" }}>OVERALL SCORE</div>
               </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "center", zIndex: 2, marginTop: 18 }}>
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
             <div
               style={{
                 display: "flex",
@@ -193,11 +197,11 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
                 fontWeight: 700
               }}
             >
-              ≈ {card.scaleLabel}
+              {`~ ${card.scaleLabel}`}
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, zIndex: 2, marginTop: 30 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 18, marginTop: 30 }}>
             {card.categories.slice(0, 4).map((item, index) => {
               const pct = Math.max(8, Math.min(100, (item.score / (card.examType === "TOEFL" ? 4 : 9)) * 100));
               return (
@@ -205,6 +209,7 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
                   key={item.label}
                   style={{
                     display: "flex",
+                    width: "48%",
                     flexDirection: "column",
                     gap: 12,
                     padding: 22,
@@ -217,9 +222,9 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
                     <div style={{ fontSize: 24, color: "#94a3b8" }}>
                       {item.label.length > 18 ? `${item.label.slice(0, 18)}...` : item.label}
                     </div>
-                    <div style={{ fontSize: 28, fontWeight: 800 }}>{item.score}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800 }}>{String(item.score)}</div>
                   </div>
-                  <div style={{ width: "100%", height: 10, borderRadius: 9999, background: "rgba(255,255,255,0.10)", overflow: "hidden" }}>
+                  <div style={{ display: "flex", width: "100%", height: 10, borderRadius: 9999, background: "rgba(255,255,255,0.10)", overflow: "hidden" }}>
                     <div style={{ width: `${pct}%`, height: "100%", borderRadius: 9999, background: statTones[index % 4] }} />
                   </div>
                 </div>
@@ -227,7 +232,7 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
             })}
           </div>
 
-          <div style={{ display: "grid", gap: 16, zIndex: 2, marginTop: 24 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 24 }}>
             <div
               style={{
                 display: "flex",
@@ -242,14 +247,14 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ slu
                 fontWeight: 700
               }}
             >
-              {rankMeta.percentileLabel} • {rankMeta.countrySignal}
+              {`${rankMeta.percentileLabel} · ${rankMeta.countrySignal.trim()}`}
             </div>
             <div style={{ fontSize: 24, color: "#94a3b8", textAlign: "center", lineHeight: 1.5 }}>
               {card.nextExercise.length > 138 ? `${card.nextExercise.slice(0, 135)}...` : card.nextExercise}
             </div>
           </div>
 
-          <div style={{ display: "grid", gap: 14, zIndex: 2, marginTop: 28 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 28 }}>
             <div style={{ fontSize: 22, color: "#94a3b8", textAlign: "center" }}>Analyzed by SpeakAce AI.</div>
             <div
               style={{

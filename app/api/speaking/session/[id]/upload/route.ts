@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { getAudioPayloadStats, hasOpenAiKey, transcribeAudio } from "@/lib/server/openai";
-import { checkRateLimit } from "@/lib/server/rate-limit";
+import { checkSharedRateLimit, sharedRateLimitResponse } from "@/lib/server/rate-limit";
 import { getSession, reserveSessionAudioUpload, releaseFailedAudioUpload, uploadSessionAudio } from "@/lib/store";
 
 export const maxDuration = 60;
@@ -15,13 +15,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const { id } = await params;
-  const limit = checkRateLimit({
+  const limit = await checkSharedRateLimit({
     key: `session-upload:${profile.id}`,
     windowMs: 1000 * 60 * 15,
     max: 24
   });
   if (!limit.allowed) {
-    return NextResponse.json({ error: "Too many upload attempts. Please try again later." }, { status: 429 });
+    return sharedRateLimitResponse(limit, "Too many upload attempts. Please try again later.");
   }
 
   const existing = await getSession(id);

@@ -6,13 +6,13 @@ import {
   getAdminSessionCookieName,
   getAdminSessionCookieOptions
 } from "@/lib/server/admin-panel";
-import { checkRateLimit, getRequestIp, rateLimitResponse } from "@/lib/server/rate-limit";
+import { checkSharedRateLimit, getRequestIp, sharedRateLimitResponse } from "@/lib/server/rate-limit";
 
 export async function POST(request: NextRequest) {
   const ip = getRequestIp(request);
-  const limit = checkRateLimit({ key: `admin-login:${ip}`, windowMs: 1000 * 60 * 15, max: 5 });
+  const limit = await checkSharedRateLimit({ key: `admin-login:${ip}`, windowMs: 1000 * 60 * 15, max: 5 });
   if (!limit.allowed) {
-    return rateLimitResponse(limit.retryAfterSeconds, "Too many login attempts. Please try again later.");
+    return sharedRateLimitResponse(limit, "Too many login attempts. Please try again later.");
   }
 
   try {

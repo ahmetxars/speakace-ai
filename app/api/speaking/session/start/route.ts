@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { checkSharedRateLimit, sharedRateLimitResponse } from "@/lib/server/rate-limit";
 import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
 import { createSession } from "@/lib/store";
 
@@ -11,14 +11,13 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const ip = getRequestIp(request);
-    const limit = checkRateLimit({
-      key: `session-start:${ip}:${profile.id}`,
+    const limit = await checkSharedRateLimit({
+      key: `session-start:${profile.id}`,
       windowMs: 1000 * 60 * 15,
       max: 18
     });
     if (!limit.allowed) {
-      return NextResponse.json({ error: "Too many session starts. Please try again later." }, { status: 429 });
+      return sharedRateLimitResponse(limit, "Too many session starts. Please try again later.");
     }
 
     const result = await createSession({

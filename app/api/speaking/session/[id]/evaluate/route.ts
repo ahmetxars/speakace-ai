@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUserFromCookies } from "@/lib/server/auth";
-import { checkRateLimit } from "@/lib/server/rate-limit";
+import { checkSharedRateLimit, sharedRateLimitResponse } from "@/lib/server/rate-limit";
 import { evaluateStoredSession, getSession } from "@/lib/store";
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -10,13 +10,13 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   }
 
   const { id } = await params;
-  const limit = checkRateLimit({
+  const limit = await checkSharedRateLimit({
     key: `session-evaluate:${profile.id}`,
     windowMs: 1000 * 60 * 15,
     max: 24
   });
   if (!limit.allowed) {
-    return NextResponse.json({ error: "Too many evaluation attempts. Please try again later." }, { status: 429 });
+    return sharedRateLimitResponse(limit, "Too many evaluation attempts. Please try again later.");
   }
   const existing = await getSession(id);
 

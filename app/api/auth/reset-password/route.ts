@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkRateLimit, getRequestIp } from "@/lib/server/rate-limit";
+import { checkSharedRateLimit, getRequestIp, sharedRateLimitResponse } from "@/lib/server/rate-limit";
 import { resetPasswordWithToken } from "@/lib/server/auth";
 import { getPostHogClient } from "@/lib/posthog-server";
 
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
 
   try {
     const ip = getRequestIp(request);
-    const limit = checkRateLimit({
+    const limit = await checkSharedRateLimit({
       key: `reset-password:${ip}`,
       windowMs: 1000 * 60 * 15,
       max: 8
@@ -22,10 +22,7 @@ export async function POST(request: Request) {
         event: "password_reset_failed",
         properties: { reason: "rate_limited", token_present: Boolean(token) }
       });
-      return NextResponse.json(
-        { error: "Too many password reset attempts. Please try again later." },
-        { status: 429 }
-      );
+      return sharedRateLimitResponse(limit, "Too many password reset attempts. Please try again later.");
     }
 
     await resetPasswordWithToken({

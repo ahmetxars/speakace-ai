@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
+import { validateAvatarDataUrl } from "@/lib/server/avatar-image";
 import { getStudentProfile, upsertStudentProfile } from "@/lib/student-profile-store";
 
 async function getSignedInProfile() {
@@ -16,7 +17,7 @@ export async function GET() {
   }
 
   const studentProfile = await getStudentProfile(profile.id);
-  return NextResponse.json({ profile: studentProfile });
+  return NextResponse.json({ profile: { ...studentProfile, avatarDataUrl: validateAvatarDataUrl(studentProfile.avatarDataUrl) ?? "" } });
 }
 
 export async function POST(request: Request) {
@@ -27,6 +28,10 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    const avatarDataUrl = validateAvatarDataUrl(body.avatarDataUrl) ?? "";
+    if (body.avatarDataUrl && !avatarDataUrl) {
+      return NextResponse.json({ error: "Upload a PNG, JPEG, or WebP photo up to 2 MB." }, { status: 400 });
+    }
     const studentProfile = await upsertStudentProfile({
       userId: profile.id,
       preferredExamType: body.preferredExamType === "TOEFL" ? "TOEFL" : "IELTS",
@@ -40,7 +45,7 @@ export async function POST(request: Request) {
       targetReason: body.targetReason ? String(body.targetReason) : "",
       discoverySource: body.discoverySource ? String(body.discoverySource) : "",
       bio: body.bio ? String(body.bio) : "",
-      avatarDataUrl: body.avatarDataUrl ? String(body.avatarDataUrl) : "",
+      avatarDataUrl,
       onboardingComplete: Boolean(body.onboardingComplete),
       englishBackground: body.englishBackground ? String(body.englishBackground) : "",
       biggestChallenge: body.biggestChallenge ? String(body.biggestChallenge) : "",

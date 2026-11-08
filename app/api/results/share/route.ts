@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createSharedResultCard } from "@/lib/shared-result-cards";
 import { getAuthenticatedUser, getSessionCookieName } from "@/lib/server/auth";
 import { getSession } from "@/lib/store";
+import { validateAvatarDataUrl } from "@/lib/server/avatar-image";
 import { getStudentProfile } from "@/lib/student-profile-store";
 
 function parseDelta(value: unknown) {
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
       scaleLabel: session.report.scaleLabel,
       delta: parseDelta(body.delta),
       learnerName: profile.name,
-      avatarDataUrl: studentProfile.avatarDataUrl || undefined,
+      avatarDataUrl: validateAvatarDataUrl(studentProfile.avatarDataUrl) ?? undefined,
       localeFlag: "🌍",
       streakLabel: "",
       badgeLabel: "Building momentum",

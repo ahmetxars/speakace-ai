@@ -173,7 +173,7 @@ export async function sendVerificationEmail(input: { to: string; name?: string; 
       <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
         <h2 style="margin:0 0 12px">Verify your email</h2>
         <p>Hi ${greeting},</p>
-        <p>Welcome to SpeakAce. Click the button below to verify your email and activate your speaking dashboard.</p>
+        <p>If you requested a SpeakAce account, open this link and set your password to finish signing up.</p>
         <p style="margin:24px 0">
           <a href="${input.verificationUrl}" style="background:#d95d39;color:#fff8f2;text-decoration:none;padding:12px 18px;border-radius:999px;font-weight:700;display:inline-block">Verify email</a>
         </p>
@@ -181,7 +181,7 @@ export async function sendVerificationEmail(input: { to: string; name?: string; 
         <p><a href="${input.verificationUrl}">${input.verificationUrl}</a></p>
       </div>
     `,
-    text: `Hi ${greeting}, verify your SpeakAce account here: ${input.verificationUrl}`
+    text: `Hi ${greeting}, finish setting up your SpeakAce account here: ${input.verificationUrl}`
   });
 }
 
@@ -641,12 +641,12 @@ export async function sendGeneratedStudyPlanEmail(input: {
     subject: `${input.title} is ready in SpeakAce`,
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1b120d">
-        <h2 style="margin:0 0 12px">${input.title}</h2>
+        <h2 style="margin:0 0 12px">${escapeHtml(input.title)}</h2>
         <p>Hi ${greeting},</p>
         <p>Your study plan was generated successfully and saved to your SpeakAce study list.</p>
         <div style="background:#fff8f2;border:1px solid #e9d9ca;border-radius:16px;padding:16px 18px;margin:20px 0">
           <p style="margin:0 0 8px;font-weight:700">Plan summary</p>
-          <p style="margin:0">${input.plan}</p>
+          <p style="margin:0;white-space:pre-wrap">${escapeHtml(input.plan)}</p>
         </div>
         ${dueText ? `<p>Suggested deadline: <strong>${dueText}</strong></p>` : ""}
         <p style="margin:24px 0">

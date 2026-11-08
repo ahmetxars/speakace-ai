@@ -213,6 +213,14 @@ const practiceIntentUi: Record<PublicLanguage, {
   }
 };
 
+const activationUi = {
+  en: { title: "Finish creating your account", body: "Choose a password to confirm your email and finish signing up.", submit: "Verify email and sign in" },
+  tr: { title: "Hesabını oluşturmayı tamamla", body: "E-postanı doğrulayıp kaydı tamamlamak için bir parola belirle.", submit: "E-postayı doğrula ve giriş yap" },
+  de: { title: "Kontoerstellung abschließen", body: "Wähle ein Passwort, um deine E-Mail-Adresse zu bestätigen und die Anmeldung abzuschließen.", submit: "E-Mail bestätigen und anmelden" },
+  es: { title: "Termina de crear tu cuenta", body: "Elige una contraseña para confirmar tu correo y completar el registro.", submit: "Confirmar correo e iniciar sesión" },
+  fr: { title: "Termine la création de ton compte", body: "Choisis un mot de passe pour confirmer ton adresse e-mail et terminer ton inscription.", submit: "Confirmer et se connecter" }
+};
+
 export default function AuthPage() {
   return (
     <Suspense fallback={null}>
@@ -227,6 +235,10 @@ function AuthPageInner() {
   const { refreshSession, language } = useAppState();
   const publicLanguage = normalizePublicLanguage(language);
   const ui = authUi[publicLanguage];
+  const activation = activationUi[publicLanguage];
+  const verifyToken = searchParams.get("verify");
+  const resetToken = searchParams.get("reset");
+  const isPasswordSetup = Boolean(verifyToken || resetToken);
   const checkoutUi = checkoutIntentUi[publicLanguage];
   const practiceUi = practiceIntentUi[publicLanguage];
   const safeNext = resolveSafeAppRedirect(searchParams.get("next"));
@@ -254,8 +266,6 @@ function AuthPageInner() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [successToast, setSuccessToast] = useState("");
-  const [verifying, setVerifying] = useState(false);
-  const [handledVerifyToken, setHandledVerifyToken] = useState("");
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
   const [storedAttributionPath, setStoredAttributionPath] = useState<string | null>(null);
@@ -304,7 +314,7 @@ function AuthPageInner() {
       body: JSON.stringify({
         email,
         termsAccepted, privacyAcknowledged, marketingConsent, legalVersion: ACCOUNT_LEGAL_VERSION,
-        password,
+        ...(mode === "signin" ? { password } : {}),
         name,
         memberType,
         classCode,
@@ -330,9 +340,9 @@ function AuthPageInner() {
     };
     if (!response.ok) {
       setError(data.error ?? (tr ? "Kimlik doğrulama işlemi tamamlanamadı." : "Authentication failed."));
+      setNeedsVerification(Boolean(email));
       if (data.needsEmailVerification) {
         setNotice(tr ? "Giriş yapmadan önce e-posta adresini doğrulaman gerekiyor. Aşağıdan yeni bir doğrulama maili isteyebilirsin." : "You need to verify your email before signing in. You can request a new verification link below.");
-        setNeedsVerification(true);
       }
       return;
     }
@@ -353,7 +363,7 @@ function AuthPageInner() {
       });
       setSuccessToast(
         data.emailSent
-          ? tr ? "Hesabın oluşturuldu. Lütfen hesabını e-posta kutundan onayla." : "Your account was created. Please verify it from your inbox."
+          ? tr ? "Kaydı tamamlamak için e-postandaki bağlantıdan parola belirle." : "Set your password using the link in your inbox to finish signing up."
           : tr ? "Hesabın oluşturuldu ancak doğrulama maili henüz teslim edilemedi." : "Your account was created, but the verification email could not be delivered yet."
       );
       const deliveryNotice = !data.emailSent
@@ -361,7 +371,7 @@ function AuthPageInner() {
           ? `E-posta teslimatı geçici olarak kullanılamıyor. Biraz sonra tekrar gönder seçeneğini dene veya ${siteConfig.contactEmail} adresine yaz.`
           : `Email delivery is temporarily unavailable. Retry shortly or contact ${siteConfig.contactEmail}.`
         : "";
-      setNeedsVerification(!data.emailSent);
+      setNeedsVerification(true);
       setPassword("");
       setMode("signin");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -404,39 +414,37 @@ function AuthPageInner() {
     finally { setSubmitting(false); }
   };
 
-  useEffect(() => {
-    const verifyToken = searchParams.get("verify");
-    if (!verifyToken || verifying || handledVerifyToken === verifyToken) return;
-
-    setVerifying(true);
-    setHandledVerifyToken(verifyToken);
+  const finishRegistration = async () => {
+    if (!verifyToken || submitting) return;
+    setSubmitting(true);
     setError("");
-    setNotice("");
-    setSuccessToast("");
-    fetch(`/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`)
-      .then(async (response) => {
-        const data = (await response.json()) as { error?: string; authenticated?: boolean };
-        if (!response.ok) {
-          setError(data.error ?? (tr ? "Doğrulama işlemi başarısız oldu." : "Verification failed."));
-          return;
-        }
-        if (data.authenticated) {
-          await refreshSession();
-          posthog.capture("signup_activated", { source: "email_verification" });
-          if (safeNext?.startsWith("/api/payments/lemon/checkout")) {
-            window.location.replace(safeNext);
-            return;
-          }
-          router.replace(
-            (safeNext ?? "/app/practice?quickStart=1&runMode=interview&activation=verified_signup") as Route
-          );
-          return;
-        }
-        setSuccessToast(tr ? "E-posta adresin doğrulandı. Artık giriş yapabilirsin." : "Your email address has been verified. You can now sign in.");
-        setMode("signin");
-      })
-      .finally(() => setVerifying(false));
-  }, [handledVerifyToken, refreshSession, router, safeNext, searchParams, tr, verifying]);
+    try {
+      const response = await fetch("/api/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: verifyToken, password })
+      });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setError(data.error ?? (tr ? "Doğrulama işlemi başarısız oldu." : "Verification failed."));
+        return;
+      }
+      setPassword("");
+      await refreshSession();
+      posthog.capture("signup_activated", { source: "email_verification" });
+      if (safeNext?.startsWith("/api/payments/lemon/checkout")) {
+        window.location.replace(safeNext);
+        return;
+      }
+      router.replace(
+        (safeNext ?? "/app/practice?quickStart=1&runMode=interview&activation=verified_signup") as Route
+      );
+    } catch {
+      setError(tr ? "Bağlantı kurulamadı. Lütfen tekrar dene." : "Could not connect. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const resendVerification = async () => {
     if (!email || resendingVerification) return;
@@ -479,7 +487,6 @@ function AuthPageInner() {
   };
 
   const resetPassword = async () => {
-    const resetToken = searchParams.get("reset");
     if (!resetToken) return;
     setError("");
     setNotice("");
@@ -501,9 +508,7 @@ function AuthPageInner() {
 
   const cta = searchParams.get("cta") ?? storedAttributionPath;
   const ctaEvent = searchParams.get("cta_event");
-  const resetToken = searchParams.get("reset");
-  const isResetMode = Boolean(resetToken);
-  const isSignup = !isResetMode && mode === "signup";
+  const isSignup = !isPasswordSetup && mode === "signup";
   const googleParams = new URLSearchParams();
   if (termsAccepted && privacyAcknowledged) googleParams.set("legalVersion", ACCOUNT_LEGAL_VERSION);
   if (marketingConsent) googleParams.set("marketingConsent", "true");
@@ -568,13 +573,13 @@ function AuthPageInner() {
   const roleIcons = { student: UserRound, teacher: GraduationCap, school: School } as const;
 
   return (
-    <main className="auth-entry" data-mode={isSignup ? "signup" : isResetMode ? "reset" : "signin"}>
+    <main className="auth-entry" data-mode={isSignup ? "signup" : isPasswordSetup ? "reset" : "signin"}>
       <div className="auth-entry-frame">
         <section className="auth-entry-story">
           <span className="auth-entry-chip"><LockKeyhole size={14} />{ui.secure}</span>
           <h1>
-            {isResetMode
-              ? ui.resetTitle
+            {isPasswordSetup
+              ? verifyToken ? activation.title : ui.resetTitle
               : isCheckoutIntent
                 ? isSignup ? checkoutUi.signupTitle : checkoutUi.signinTitle
                 : isPracticeIntent
@@ -582,8 +587,8 @@ function AuthPageInner() {
                   : isSignup ? ui.signupTitle : ui.signinTitle}
           </h1>
           <p className="auth-entry-story-copy">
-            {isResetMode
-              ? ui.resetBody
+            {isPasswordSetup
+              ? verifyToken ? activation.body : ui.resetBody
               : isCheckoutIntent
                 ? isSignup ? checkoutUi.signupBody : checkoutUi.signinBody
                 : isPracticeIntent
@@ -644,11 +649,11 @@ function AuthPageInner() {
           <div className="auth-entry-panel-head">
             <div>
               <span className="auth-mini-label">{ui.access}</span>
-              <h2>{isResetMode ? ui.reset : isSignup ? ui.create : ui.signIn}</h2>
-              <p>{isResetMode ? ui.resetHint : isSignup ? ui.createHint : ui.signInHint}</p>
+              <h2>{isPasswordSetup ? verifyToken ? activation.title : ui.reset : isSignup ? ui.create : ui.signIn}</h2>
+              <p>{isPasswordSetup ? verifyToken ? activation.body : ui.resetHint : isSignup ? ui.createHint : ui.signInHint}</p>
             </div>
 
-            {!resetToken ? (
+            {!isPasswordSetup ? (
               <div className="auth-mode-switch" role="group" aria-label={ui.access}>
                 <button
                   className={`auth-mode-tab ${isSignup ? "is-active" : ""}`}
@@ -670,7 +675,7 @@ function AuthPageInner() {
             ) : null}
           </div>
 
-          {!isResetMode ? (
+          {!isPasswordSetup ? (
             <>
               <a
                 href={`/api/auth/google${googleParams.size ? `?${googleParams.toString()}` : ""}`}
@@ -790,7 +795,7 @@ function AuthPageInner() {
                   </div>
                 )}
               </>
-            ) : !isResetMode ? (
+            ) : !isPasswordSetup ? (
               <label className="auth-field">
                 <span>Email</span>
                 <input
@@ -804,11 +809,11 @@ function AuthPageInner() {
               </label>
             ) : null}
 
-            <label className="auth-field">
+            {!isSignup ? <label className="auth-field">
               <span>{ui.password}</span>
               <input
                 type="password"
-                autoComplete={isSignup || isResetMode ? "new-password" : "current-password"}
+                autoComplete={isPasswordSetup ? "new-password" : "current-password"}
                 required
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -817,7 +822,7 @@ function AuthPageInner() {
               <small>
                 {ui.passwordHint}
               </small>
-            </label>
+            </label> : null}
 
             {isSignup && <div className="auth-consent-fields">
               <label><input type="checkbox" required checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} /><span><Link href="/terms" target="_blank">{ui.termsLabel}</Link>{ui.termsAccept}</span></label>
@@ -847,9 +852,9 @@ function AuthPageInner() {
             ) : null}
 
             <div className="auth-actions">
-              {resetToken ? (
-                <button className="button button-primary auth-submit" type="button" onClick={resetPassword}>
-                  {ui.reset}
+              {isPasswordSetup ? (
+                <button className="button button-primary auth-submit" type="button" onClick={verifyToken ? finishRegistration : resetPassword} disabled={submitting || !password}>
+                  {submitting ? ui.wait : verifyToken ? activation.submit : ui.reset}
                 </button>
               ) : (
                 <button className="button button-primary auth-submit" type="button" onClick={submit} disabled={submitting}>
