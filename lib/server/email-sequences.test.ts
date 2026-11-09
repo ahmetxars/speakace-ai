@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildCheckoutRecoveryEmailContent,
   buildDailyTipEmailContent,
@@ -165,12 +165,23 @@ describe("email quota protection", () => {
     expect(resolveEmailQuotaKind(null)).toBeNull();
   });
 
-  it("covers the verified member base and clamps unsafe overrides", () => {
-    expect(resolveEmailLifecycleDailyBudget(undefined)).toBe(500);
+  it("defaults to a conservative budget and clamps unsafe overrides", () => {
+    expect(resolveEmailLifecycleDailyBudget(undefined)).toBe(15);
     expect(resolveEmailLifecycleDailyBudget("35")).toBe(35);
     expect(resolveEmailLifecycleDailyBudget("-1")).toBe(0);
     expect(resolveEmailLifecycleDailyBudget("1200")).toBe(1000);
-    expect(resolveEmailLifecycleDailyBudget("invalid")).toBe(500);
+    expect(resolveEmailLifecycleDailyBudget("invalid")).toBe(15);
+  });
+
+  it("reserves production email capacity for transactional mail", () => {
+    vi.stubEnv("APP_ENV", "production");
+    try {
+      expect(resolveEmailLifecycleDailyBudget("500")).toBe(15);
+      expect(resolveEmailLifecycleDailyBudget("5")).toBe(5);
+      expect(resolveEmailLifecycleDailyBudget("0")).toBe(0);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("clears only failures that happened before a successful recovery probe", () => {

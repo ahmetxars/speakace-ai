@@ -1,4 +1,5 @@
 import { recordAiUsage } from "@/lib/server/ai-usage";
+import { checkSharedRateLimit } from "@/lib/server/rate-limit";
 
 const OPENAI_API_BASE_URL = "https://api.openai.com/v1";
 
@@ -13,6 +14,17 @@ type OpenAiTokenUsage = {
 
 export function hasOpenAiKey() {
   return Boolean(process.env.OPENAI_API_KEY);
+}
+
+export async function reserveOpenAiRequest() {
+  if (process.env.NODE_ENV !== "production" && process.env.APP_ENV !== "production") return;
+
+  const utcDay = new Date().toISOString().slice(0, 10);
+  const budget = await checkSharedRateLimit(
+    { key: `openai-request-budget:${utcDay}`, windowMs: 86_400_000, max: 24 },
+    { key: `openai-request-budget:${utcDay.slice(0, 7)}`, windowMs: 31 * 86_400_000, max: 120 }
+  );
+  if (!budget.allowed) throw new Error("OpenAI request budget reached or temporarily unavailable.");
 }
 
 function parseDataUrl(dataUrl: string) {
@@ -73,6 +85,7 @@ export async function transcribeAudio({
   formData.append("language", "en");
   formData.append("prompt", prompt);
 
+  await reserveOpenAiRequest();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
   const response = await fetch(`${OPENAI_API_BASE_URL}/audio/transcriptions`, {
@@ -162,6 +175,7 @@ export async function generateFeedbackReport({
           maxItems: 3
         };
 
+  await reserveOpenAiRequest();
   const feedbackController = new AbortController();
   const feedbackTimeout = setTimeout(() => feedbackController.abort(), 60_000);
   const model = process.env.OPENAI_FEEDBACK_MODEL || "gpt-4o-mini";
@@ -175,6 +189,7 @@ export async function generateFeedbackReport({
     body: JSON.stringify({
       model,
       temperature: 0.2,
+      max_completion_tokens: 1800,
       response_format: {
         type: "json_schema",
         json_schema: {
@@ -288,6 +303,7 @@ export async function generateWritingFeedbackReport({
     return null;
   }
 
+  await reserveOpenAiRequest();
   const writingController = new AbortController();
   const writingTimeout = setTimeout(() => writingController.abort(), 60_000);
   const model = process.env.OPENAI_FEEDBACK_MODEL || "gpt-4o-mini";
@@ -301,6 +317,7 @@ export async function generateWritingFeedbackReport({
     body: JSON.stringify({
       model,
       temperature: 0.2,
+      max_completion_tokens: 1800,
       response_format: {
         type: "json_schema",
         json_schema: {

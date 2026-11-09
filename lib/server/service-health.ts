@@ -1,4 +1,5 @@
 import { getSql, hasDatabaseUrl } from "@/lib/server/db";
+import { reserveOpenAiRequest } from "@/lib/server/openai";
 export type ServiceCheck = { service: string; ok: boolean; message: string };
 export async function checkServices(): Promise<ServiceCheck[]> {
   return Promise.all([
@@ -28,6 +29,7 @@ export async function checkServices(): Promise<ServiceCheck[]> {
       if (!process.env.OPENAI_API_KEY)
         return { service: "OpenAI", ok: false, message: "API anahtarı eksik" };
       try {
+        await reserveOpenAiRequest();
         const response = await fetch(
           "https://api.openai.com/v1/chat/completions",
           {

@@ -1,5 +1,6 @@
 import { generateUnsubscribeToken } from "./unsubscribe-token";
 import { siteConfig } from "@/lib/site";
+import { checkSharedRateLimit } from "@/lib/server/rate-limit";
 
 type EmailPayload = {
   to: string;
@@ -104,6 +105,20 @@ export async function sendEmail(payload: EmailPayload) {
   const config = getResendConfig();
   if (!config.apiKey || !config.from) {
     return { ok: false as const, skipped: true as const };
+  }
+
+  if (process.env.NODE_ENV === "production" || process.env.APP_ENV === "production") {
+    const utcDay = new Date().toISOString().slice(0, 10);
+    const budget = await checkSharedRateLimit({
+      key: `resend-send-budget:${utcDay}`,
+      windowMs: 24 * 60 * 60 * 1000,
+      max: 80
+    });
+    if (!budget.allowed) {
+      throw new Error(budget.unavailable
+        ? "Email send failed: The email budget is temporarily unavailable."
+        : "Email send failed: The site's daily email budget has been reached.");
+    }
   }
 
   const request: RequestInit = {

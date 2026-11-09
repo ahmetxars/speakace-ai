@@ -8,6 +8,9 @@ import {
   sendPurchaseAccountClaimEmail
 } from "@/lib/server/email";
 
+const { reserveEmailBudget } = vi.hoisted(() => ({ reserveEmailBudget: vi.fn() }));
+vi.mock("@/lib/server/rate-limit", () => ({ checkSharedRateLimit: reserveEmailBudget }));
+
 const managedEnvKeys = [
   "RESEND_API_KEY",
   "EMAIL_FROM",
@@ -22,6 +25,7 @@ const originalEnv = Object.fromEntries(managedEnvKeys.map((key) => [key, process
 beforeEach(() => {
   for (const key of managedEnvKeys) delete process.env[key];
   process.env.UNSUBSCRIBE_SECRET = "email-test-unsubscribe-secret";
+  reserveEmailBudget.mockReset();
 });
 
 afterEach(() => {
@@ -31,6 +35,7 @@ afterEach(() => {
     else process.env[key] = value;
   }
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("email reply routing", () => {
@@ -125,6 +130,27 @@ describe("commercial email delivery safety", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1]).toEqual(fetchMock.mock.calls[0]);
+  });
+
+  it("does not contact Resend when the shared production budget is exhausted", async () => {
+    vi.stubEnv("APP_ENV", "production");
+    process.env.RESEND_API_KEY = "re_test_key";
+    reserveEmailBudget.mockResolvedValue({ allowed: false, retryAfterSeconds: 60 });
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(sendEmail({
+      to: "learner@example.test",
+      subject: "Budget fixture",
+      html: "<p>Fixture</p>",
+      text: "Fixture"
+    })).rejects.toThrow("daily email budget");
+    expect(reserveEmailBudget).toHaveBeenCalledWith({
+      key: expect.stringMatching(/^resend-send-budget:\d{4}-\d{2}-\d{2}$/),
+      windowMs: 86_400_000,
+      max: 80
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("keeps an idempotency payload conflict ambiguous for manual reconciliation", async () => {

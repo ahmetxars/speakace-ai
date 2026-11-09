@@ -45,9 +45,9 @@ export function isEmailQuotaFailureRecovered(
 }
 
 export function resolveEmailLifecycleDailyBudget(value = process.env.EMAIL_LIFECYCLE_DAILY_BUDGET) {
-  const parsed = Number(value ?? "500");
-  if (!Number.isFinite(parsed)) return 500;
-  return Math.min(Math.max(Math.floor(parsed), 0), 1000);
+  const max = process.env.NODE_ENV === "production" || process.env.APP_ENV === "production" ? 15 : 1000;
+  const parsed = Number(value ?? "15");
+  return Number.isFinite(parsed) ? Math.min(Math.max(Math.floor(parsed), 0), max) : 15;
 }
 
 async function ensureEmailSequenceSchema() {

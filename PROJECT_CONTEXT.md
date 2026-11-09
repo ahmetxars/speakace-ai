@@ -1209,3 +1209,9 @@ update this file so future agents do not need to repeat the same discovery work.
 - Email signup creates a pending account with no password. Existing and new verification links open the password setup form, and POST activation atomically sets the password, invalidates legacy credentials and consumes the link. The Google flow still verifies provider identity.
 - Auth, admin login, paid practice and study-plan email limits use atomic PostgreSQL counters. The first database-backed request creates the additive schema under an advisory lock when needed. Production fails closed if counters are unavailable.
 - Shared avatars accept local PNG, JPEG or WebP data only. The page and Open Graph renderer validate existing stored values before rendering, including legacy cards. Both teacher and organization reports use the shared CSV cell encoder.
+
+### Provider usage limits (2026-11-09)
+
+- In production, all OpenAI model calls share UTC budgets of 24 requests per day and 120 per month. Reserve before contacting the provider, including admin health probes. The OpenAI project separately enforces a monthly dollar limit and automatic credit reload is disabled.
+- Production Resend sends share a cap of 80 per UTC day, and lifecycle reservations are capped at 15 per day. Quota reservation failure blocks the provider request. Operator-run scripts remain subject to the provider plan.
+- The SpeakAce Vercel project has an enabled Hobby firewall rule limiting public API requests to 90 per IP per minute. It excludes the signed Lemon webhook and authenticated cron routes. The Neon production compute uses a 0.25–0.5 CU autoscaling range and scales to zero after five idle minutes.
